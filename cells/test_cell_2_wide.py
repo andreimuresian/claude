@@ -16,7 +16,16 @@ if len(nd.logger.handlers) < 2:
 from f30_lib.bbs.settings import die_length, die_height, die_template
 from f30_lib.data_extraction.data_extraction import get_cell_data_test
 
-from f30_lib.bbs.mzms_library import doe_termination_cells2, doe_termination_cells_extra
+from f30_lib.bbs.mzms_library import (
+    build_tee_frame_terminations_dynamic,
+    build_tee_frame_terminations_extra_dynamic,
+)
+
+# Tee-with-frame terminations using the DYNAMIC (adaptive) frame instead
+# of the hardcoded 300x400 one. These are drop-in teeF lists: the main
+# builder returns 38 (TP01..TP38), the extra builder returns 4 (REF01..04).
+doe_termination_cells2 = build_tee_frame_terminations_dynamic()
+doe_termination_cells_extra = build_tee_frame_terminations_extra_dynamic()
 
 
 GC_distance_long = 11414.174
