@@ -33,35 +33,53 @@ Numeri sui minimi tabellari (2.542,98 × 13 = 33.059 €/anno):
 
 Rendimento immediato ~148% sulla quota versata. Costo in busta: ~31 € lordi/mese.
 
-**Il bivio del modulo TFR3 — il silenzio produce l'opposto a seconda della sezione:**
-- **Sezione 1 (prima assunzione in assoluto come dipendente):** non fare nulla → adesione
-  automatica → si prende il contributo aziendale.
-- **Sezione 2 (rapporti di lavoro dipendente precedenti, mai iscritto a fondo con TFR):**
-  non fare nulla → **il TFR resta in azienda e il contributo aziendale non arriva**. Serve
-  consegnare il modulo indicando Cometa.
+**Caso confermato: Sezione 2.** Lavori dipendenti precedenti (Ottimax a tempo determinato,
+~3 anni fra Terranova e Calliope, più uno stage nella stessa azienda attuale). La busta paga
+Terranova 10/2023 mostra "Contributo Fondo EST" (fondo *sanitario* del Terziario, 2 € dipendente
++ 10 € ditta) e nessuna riga di previdenza complementare; il TFR maturava in azienda
+("Quota T.F.R. 85,19"). Quindi: **mai aderito a un fondo pensione con versamento del TFR.**
 
-Da chiarire con l'ufficio paghe entro questa settimana, per iscritto.
+Conseguenza: **il silenzio è la scelta peggiore.** Senza consegna del modulo il TFR resta in
+azienda e il contributo aziendale del 2% non viene versato. Il meccanismo automatico che lo
+regala vale solo per la Sezione 1.
+
+**Azione:** modulo TFR3, Sezione 2, prima opzione, barrare "verrà conferito alla seguente forma
+pensionistica complementare" → **COMETA**, 100%, allegando il modulo di adesione Cometa.
+
+**Non si perde nulla aderendo volontariamente:** il contributo aziendale del 2% spetta a chiunque
+sia iscritto a Cometa e versi l'1,2% minimo — è una previsione del CCNL, non un premio legato
+all'adesione automatica. Sforare il 2 ottobre non è irreparabile (l'iscrizione resta possibile
+in qualsiasi momento) ma ogni mese di ritardo costa ~55 € di contributo aziendale.
 
 Nota: tetto di deducibilità previdenza complementare a 5.300 € dal 2026. Il welfare aziendale
 CCNL (200 €/anno) prevede che il residuo non speso confluisca in Cometa se il dipendente è
 iscritto, altrimenti viene azzerato.
 
-## Il netto: 2.190 € probabilmente non è il valore a regime
+## Il netto: cedolino di agosto 2026, ricostruito
 
-Con RAL 35.000 su 13 mensilità, nessun carico familiare, residenza in Lombardia, il netto a
-regime torna intorno a **1.985–2.010 €/mese**. Differenza rispetto ai 2.190 incassati: ~180 €.
+| Voce | € |
+|---|---:|
+| Retribuzione (minimo 2.542,98 + superminimo 149,33) | 2.692,31 |
+| **Indennità L. 207/24** (taglio del cuneo — spetta perché il reddito 2026 è di ~5 mesi) | +116,96 |
+| Contributo IVS 9,19% + CIGS 0,30% | −255,47 |
+| Ritenuta IRPEF (lorda 588,77 − detrazioni 224,48) | −364,29 |
+| Addizionale regionale e comunale | 0,00 |
+| **Netto** | **2.190,00** |
 
-| Voce | Effetto mensile | Da quando |
+Metasalute risulta attivo (13 €/mese a carico ditta). Nessuna voce una tantum; giorni detrazione
+29 su 31, quindi agosto è già un mese sostanzialmente pieno.
+
+| Cosa cambia | Effetto mensile | Da quando |
 |---|---:|---|
-| Addizionali regionale + comunale (si trattengono l'anno dopo) | −45 / −50 | 2027 |
-| Contributo Cometa a carico lavoratore | −31 lordi (~−22 netti) | ottobre 2026 |
-| Effetto scaglione/cuneo su anno parziale (~5 mesi di reddito 2026) | da 0 a −130 | 2027 |
+| Contributo Cometa 1,2% (30,52 lordi, deducibili) | −30 | ottobre 2026 |
+| **L'indennità L.207/24 sparisce** (reddito 2027 pieno, ~31.700, soglia 20.000) | −117 | gennaio 2027 |
+| Addizionali sul reddito 2026, in 11 rate | −25 | 2027 |
+| Addizionali sul reddito 2027, a regime | −49 | 2028 |
+| **Netto 2027 · Netto 2028** | **~2.005 · ~1.980** | |
 
-**Da controllare sulla busta paga di settembre:** (1) presenza di addizionale regionale e
-comunale fra le trattenute; (2) presenza di voci tipo "somma L.207/2024" / trattamento
-integrativo / bonus fra le competenze; (3) voci una tantum in agosto.
-Se settembre è di nuovo 2.190 € **con** addizionali e **senza** voci bonus, la stima è
-sbagliata e i 600 €/mese reggono tutto l'anno.
+**Dicembre 2026 vale ~3.300 €:** tredicesima pro rata 5/12 (~780 € netti) più conguaglio IRPEF
+a credito stimato 300–400 € (per cinque mesi le trattenute sono calcolate su un reddito annuo
+presunto di ~31.700 contro un reddito reale 2026 di ~14.600).
 
 ## Il confronto sui 600 €: la distanza è 120 €, non filosofica
 
@@ -107,19 +125,23 @@ non è un fallimento.
 
 ## Timeline verso i 5.000 €
 
-Fine 2026: ~2.580 € (4 mesi × 450 + ~780 di tredicesima).
+Set–nov 2026: 450 €/mese al fondo. Dicembre: ~1.610 € in un colpo (tredicesima + conguaglio, al
+netto delle spese normali). **Fine 2026: ~2.960 €.** Dal 2027, con netto ~2.005 e stesse spese,
+al fondo restano ~260 €/mese (più i 150 di buffer, che non sono risparmio).
 
-| Scenario | Al fondo/mese nel 2027 | 5.000 € entro |
+| Scenario | Al fondo nel 2027 | 5.000 € entro |
 |---|---:|---|
-| Il netto non scende | 450 | giu 2027 |
-| Netto a 1.990 (più probabile) | ~250 | set–ott 2027 |
-| Netto a 1.990 + metà bonus | ~250 + 1.000 una tantum | giu–lug 2027 |
+| Nessun bonus | ~260 /mese | ago 2027 |
+| Metà bonus (~1.000 € netti) | ~260 + 1.000 | giu–lug 2027 |
+| Bonus pieno (5% + 5% R&D, ~2.000 € netti) | ~260 + 2.000 | apr–mag 2027 |
 
-I "circa dieci mesi" sono realistici, ma arrivano da tredicesima e bonus, non da un 600 €
-sostenibile all'infinito. Implicazione operativa: **i criteri del bonus (fino a 3.500 € lordi)
-valgono più di qualunque taglio alla spesa alimentare (~250 €/anno).**
+I "circa dieci mesi" erano giusti, ma quasi metà del percorso lo fa dicembre: il piano regge
+grazie a quattro mesi buoni più tredicesima e conguaglio, non a un 600 € sostenibile
+all'infinito. Implicazione operativa: **il bonus (fino a 3.500 € lordi) vale più di qualunque
+taglio alla spesa alimentare (~250 €/anno).**
 
-Non abbassare l'obiettivo adesso: bonifico a 600 €, si corregge a gennaio con il dato vero.
+Non abbassare l'obiettivo adesso: bonifico a 600 €, si corregge a gennaio a 410 (260 fondo +
+150 buffer) quando il netto scende.
 
 ## Conti — tre correzioni
 
@@ -135,14 +157,14 @@ Non abbassare l'obiettivo adesso: bonifico a 600 €, si corregge a gennaio con 
 
 ## Checklist per scadenza
 
-- [ ] **Questa settimana** — ufficio paghe: Sezione 1 o 2 del modulo TFR3? Quale fondo per
-      l'adesione automatica? Contributo azienda 2% confermato? Risposta scritta.
-- [ ] **Entro il 2 ottobre** — TFR: se Sezione 1 non fare nulla; se Sezione 2 consegnare il
-      modulo indicando Cometa. Vale 661 €/anno, scelta irrevocabile.
+- [ ] **Questa settimana** — ufficio paghe: conferma che aderendo volontariamente a Cometa
+      scatta comunque il contributo azienda del 2%, e da quale mese parte la trattenuta.
+- [ ] **Entro il 2 ottobre** — modulo di adesione Cometa online, poi TFR3 con Sezione 2 barrata
+      su "verrà conferito a… COMETA", 100%. Vale 661 €/anno; ogni mese di ritardo ne costa 55.
 - [ ] BCC: estratto conto, saldo del debito, chiusura scritta, attestazione.
 - [ ] Aprire BBVA, poi spostare l'accredito. Aprire il conto risparmio (Supersmart o TR).
 - [ ] Bonifico automatico da 600 € a due giorni dall'accredito (450 fondo + 150 buffer).
-- [ ] Busta paga di settembre: addizionali, voci bonus, una tantum di agosto.
+- [ ] Dicembre: tredicesima e conguaglio (~1.160 € extra) vanno interamente al fondo.
 - [ ] Chiedere i criteri del bonus per l'esercizio in corso e il piano welfare attivo
       (quello ricevuto è il regolamento 2020/2021).
 - [ ] Metasalute: iscrizione e utilizzo — visite e dentista escono dalla riga "vita".
