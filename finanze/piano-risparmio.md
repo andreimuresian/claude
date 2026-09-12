@@ -1,200 +1,148 @@
-# Piano di risparmio — analisi di settembre 2026
+# Piano di risparmio — revisione con contratto e documenti TFR
 
 Pagina interattiva con simulatore: https://claude.ai/code/artifact/f20243ec-8649-4199-8117-368bfb7b5d3e
 
-Non è consulenza finanziaria. Tassi e promozioni bancarie sono al 12/09/2026 e cambiano
-spesso: verificare le condizioni contrattuali al momento dell'apertura. Le soglie fiscali
-vanno confermate con CAF o ufficio paghe.
+Non è consulenza finanziaria né fiscale. Le stime sul netto sono calcolate dall'esterno e
+vanno verificate sul cedolino. Tassi e promozioni bancarie sono al 12/09/2026.
 
-## Punto di partenza
+## Dati dal contratto (Advanced Fiber Resources Milan S.r.l.)
 
-| Voce | Importo |
+| Voce | Valore |
 |---|---|
-| Netto mensile (osservato) | 2.190 € |
-| Buoni pasto | 190 €/mese, vincolati |
-| RAL | 35.000 € |
-| Tredicesima dicembre 2026 | pro rata ~5/12 → 750–900 € netti |
-| TFR accantonato | ~2.400 €/anno, non liquido |
+| Assunzione | 3 agosto 2026, tempo indeterminato |
+| Inquadramento | CCNL Metalmeccanica, livello B2 impiegato, Jr RF Designer |
+| RAL | 35.000 € su **13 mensilità** da 2.692,31 € lorde |
+| Composizione | minimo tabellare 2.542,98 + superminimo **assorbibile** 149,33 |
+| Periodo di prova | **6 mesi, fino al 3 febbraio 2027** |
+| Bonus | fino al 5% RAL su performance + 5% su obiettivi R&D, in due rate semestrali → fino a 3.500 € lordi/anno, discrezionale |
+| Tredicesima | dicembre; ratei da agosto = 5/12 → ~1.122 € lordi, ~780 € netti nel 2026 |
 
-## 0 — Conto BCC
+## URGENTE — scadenza 2 ottobre 2026 (TFR)
 
-Un conto corrente aperto continua a maturare il canone anche a saldo zero. L'addebito
-non "salta": genera saldo negativo, cioè uno scoperto senza fido con interessi debitori
-(10–15% annuo) e commissioni. Il rischio serio non è il canone (60–120 €/anno tipici per
-una BCC, quindi 120–250 € su due anni) ma la possibile segnalazione in Centrale Rischi /
-CRIF, che bloccherebbe mutui e finanziamenti per tre anni.
+Assunto dopo il 1° luglio 2026 → si applica la Legge 199/2025: entro 60 giorni dall'assunzione
+scatta l'**adesione automatica** alla previdenza complementare. L'adesione è **irrevocabile**.
+Con CCNL Metalmeccanica il fondo è **Cometa**.
 
-L'imposta di bollo (34,20 €/anno) non si applica: scatta solo sopra 5.000 € di giacenza media.
+Numeri sui minimi tabellari (2.542,98 × 13 = 33.059 €/anno):
 
-Da verificare prima: se è una carta prepagata anziché un conto corrente, il canone in
-genere non può essere addebitato senza fondi e non si crea debito.
+| Voce | % | All'anno |
+|---|---:|---:|
+| Contributo lavoratore | 1,2% | −397 € lordi (~−266 € netti, è deducibile) |
+| Contributo azienda | 2,0% | **+661 €**, ma solo se versa anche il lavoratore |
+| TFR maturando | 100% | ~2.420 €, si sposta dall'azienda al fondo |
 
-Sequenza:
-1. Estratto conto + documento di sintesi (canone esatto e saldo attuale)
-2. Saldare l'eventuale debito
-3. Chiusura per iscritto (PEC / raccomandata A/R / modulo in filiale). Gratuita per legge.
-   Ogni addebito successivo alla data della richiesta non è dovuto — per questo serve
-   una richiesta scritta e datata.
-4. Farsi rilasciare l'attestazione di avvenuta chiusura
-5. Se la banca temporeggia: reclamo all'ufficio reclami (risposta entro 60 gg), poi ABF (20 €)
+Rendimento immediato ~148% sulla quota versata. Costo in busta: ~31 € lordi/mese.
 
-Nota: il foglio informativo della Cassa Rurale Caravaggio Adda e Cremasco non è stato
-consultabile (sito bloccato dal proxy di rete della sessione).
+**Il bivio del modulo TFR3 — il silenzio produce l'opposto a seconda della sezione:**
+- **Sezione 1 (prima assunzione in assoluto come dipendente):** non fare nulla → adesione
+  automatica → si prende il contributo aziendale.
+- **Sezione 2 (rapporti di lavoro dipendente precedenti, mai iscritto a fondo con TFR):**
+  non fare nulla → **il TFR resta in azienda e il contributo aziendale non arriva**. Serve
+  consegnare il modulo indicando Cometa.
 
-## 1 — Budget: la stima era ottimista di ~110 €/mese
+Da chiarire con l'ufficio paghe entro questa settimana, per iscritto.
 
-Tre errori sistematici, tutti nella stessa direzione:
+Nota: tetto di deducibilità previdenza complementare a 5.300 € dal 2026. Il welfare aziendale
+CCNL (200 €/anno) prevede che il residuo non speso confluisca in Cometa se il dipendente è
+iscritto, altrimenti viene azzerato.
 
-1. **4,33 settimane al mese, non 4.** Spesa + benzina fanno 498 €/mese, non 460 (+456 €/anno).
-2. **Le spese annuali mancavano.** Assicurazione, bollo, freni, gomme, tagliando, revisione,
-   caldaia, TARI: non sono imprevisti, sono certezze con una data. Spalmate = 142 €/mese.
-3. **I buoni pasto non sono stipendio.** Vanno sottratti dalla spesa alimentare, non sommati
-   alle entrate. Max 8 per transazione (72 € a scontrino), no resto, non accettati ovunque.
+## Il netto: 2.190 € probabilmente non è il valore a regime
 
-### Ripartizione reale dei 2.190 € netti
+Con RAL 35.000 su 13 mensilità, nessun carico familiare, residenza in Lombardia, il netto a
+regime torna intorno a **1.985–2.010 €/mese**. Differenza rispetto ai 2.190 incassati: ~180 €.
 
-| Voce | €/mese | Note |
+| Voce | Effetto mensile | Da quando |
 |---|---:|---|
-| Affitto | 1.000 | 45,7% del netto |
-| Spesa alimentare | 240 | 390 lordi − 150 di buoni pasto |
-| Vita | 200 | uscite, regali, salute, vestiti, imprevisti |
-| Auto — accantonamenti | 121 | assicurazione 46 · bollo 17 · manutenzione 58 |
-| Benzina | 108 | 25 €/sett × 4,33 |
-| Casa e abbonamenti | 96 | TIM 18 · Claude 22 · detersivi 35 · caldaia+TARI 21 |
-| Luce e gas | 95 | incl. canone RAI in bolletta |
-| **Risparmio** | **330** | |
+| Addizionali regionale + comunale (si trattengono l'anno dopo) | −45 / −50 | 2027 |
+| Contributo Cometa a carico lavoratore | −31 lordi (~−22 netti) | ottobre 2026 |
+| Effetto scaglione/cuneo su anno parziale (~5 mesi di reddito 2026) | da 0 a −130 | 2027 |
 
-**Bisogni essenziali = 1.660 €/mese** (tutto tranne "vita" e "risparmio").
+**Da controllare sulla busta paga di settembre:** (1) presenza di addizionale regionale e
+comunale fra le trattenute; (2) presenza di voci tipo "somma L.207/2024" / trattamento
+integrativo / bonus fra le competenze; (3) voci una tantum in agosto.
+Se settembre è di nuovo 2.190 € **con** addizionali e **senza** voci bonus, la stima è
+sbagliata e i 600 €/mese reggono tutto l'anno.
 
-Scenari: frugale 470 €/mese · realistico 330 €/mese · 600 €/mese solo nei mesi puliti,
-che sono circa sette su dodici.
+## Il confronto sui 600 €: la distanza è 120 €, non filosofica
 
-### Due cose sul netto
+L'altra analisi propone "450 al fondo + 150 al buffer spese annuali = 600". Quel buffer da 150
+è lo stesso accantonamento da 142 della prima analisi: non c'è doppio conteggio, e siamo
+d'accordo che serve. Il confronto vero è **330 contro 450** di risparmio effettivo:
 
-- La tredicesima 2026 matura per ratei: ~5/12, quindi 750–900 € netti, non una mensilità.
-- I 2.190 € attuali sono probabilmente puliti dalle addizionali regionali e comunali, che
-  si trattengono l'anno dopo in 11 rate: mettere in conto −20/30 €/mese nel 2027 e
-  −45/55 a regime.
-- A dicembre c'è il conguaglio IRPEF: con un reddito 2026 di soli ~5 mesi è spesso a
-  credito nel primo anno parziale. Da confermare con l'ufficio paghe, non da dare per scontato.
+| Riga | Prima analisi | Altra analisi | Delta |
+|---|---:|---:|---:|
+| Vita | 200 | 140 | 60 |
+| Detersivi / igiene / prodotti casa | 35 | 0 | 35 |
+| Utenze (incl. canone RAI, 90 €/anno in bolletta) | 95 | 80 | 15 |
+| Spesa cash (quanti buoni si riescono a usare) | 240 | 220 | 20 |
+| | | | **120** |
 
-### Affitto
+330 + 120 = 450. Su tre righe su quattro ha ragione l'utente: con Metasalute che copre visite
+e odontoiatria, "vita" a 100 è plausibile. L'unica riga che non può stare a zero è
+detersivi/prodotti casa (tenuta a 30).
 
-45,7% del netto contro un riferimento di 30–35% (660–770 €). È l'unica voce abbastanza
-grossa da cambiare il piano: passare a 750 € libererebbe 3.000 €/anno. Dall'altra parte,
-5 minuti dal lavoro valgono 150–200 ore l'anno e si vedono anche nei 108 €/mese di benzina
-contro i ~200 di chi pendola. Spesa cara e consapevole, non un errore. Da rivalutare alla
-prima scadenza contrattuale, non ora.
+## Piano da 600 €/mese (sul netto attuale di 2.190)
 
-Da verificare (~500 €/anno): con reddito complessivo ~31.800 € si è sopra la soglia di
-30.987 € delle detrazioni per inquilini di circa 800 €. Se c'è stato trasferimento per
-lavoro (comune a ≥100 km e in altra regione, entro 3 anni dall'assunzione) la detrazione
-è 495,80 €/anno per tre anni; ~1.000 € versati a un fondo pensione (deducibili) porterebbero
-sotto soglia.
+Richiede due cose: usare **tutti** e 190 € di buoni pasto, e tenere "vita" a 100.
 
-## 2 — Dove mettere i soldi
+| Voce | €/mese |
+|---|---:|
+| Affitto | 1.000 |
+| Spesa alimentare (390 lordi − 190 di buoni) | 200 |
+| Benzina (25 €/sett × 4,33) | 108 |
+| Vita | 100 |
+| Luce e gas (media annua, incl. canone RAI) | 85 |
+| TIM + Claude | 40 |
+| Cometa (da ottobre) | 31 |
+| Casa e igiene | 30 |
+| **Esce dalla PostePay** | **596** |
 
-Il 3% di BBVA dura **sei mesi**. Dal settimo, e fino a fine 2027, diventa il 25% della
-deposit facility BCE: con la BCE al 2,25% fa ~0,56% lordo. Non è un tasso di risparmio.
+Struttura a due livelli, un solo bonifico automatico spaccato in due destinazioni:
+**450 al fondo di emergenza + 150 al buffer** (assicurazione, bollo, freni, gomme, tagliando,
+revisione, caldaia). Restano ~135 €/settimana sulla PostePay: unico numero da monitorare.
 
-| Dove | Tasso lordo | Poi | Costi | Accesso |
-|---|---|---|---|---|
-| Trade Republic | 3,00% (nuovi clienti, fino a 50.000 €) | variabile, agganciato BCE | 0 canone, carta Visa gratis; bollo 34,20 €/anno oltre 5.000 di giacenza media | immediato |
-| Poste Libretto Smart + Supersmart | fino a 3,25% (Premium 366 gg) | dipende dall'emissione | 0 gestione; bollo 0,20%/anno | svincolo sempre possibile, si perdono solo gli interessi extra |
-| BBVA | 3,00% per 6 mesi | ~0,56% | 0 canone a vita, carta e bonifici gratis | immediato |
-| Revolut | 3,50% per 4 mesi sui primi 15.000 | 2% fino a 3.000, poi 1% (Standard) | 0 canone Standard | immediato |
-| Vincolati 12–24 mesi (ING, AideXa) | i più alti | — | penali sullo svincolo | non adatti a un fondo di emergenza |
+Attenzione al primo inverno: il buffer parte da zero e le spese grosse arrivano subito
+(550 assicurazione + 250–500 freni). Andrà in rosso e si finanzierà dal fondo: è previsto,
+non è un fallimento.
 
-Su 4.000 € di giacenza media la differenza fra 3% e 0,5% è ~74 € netti l'anno: reale ma
-non decisiva. Criteri, in ordine: costo zero, accesso immediato, separazione psicologica.
-Il tasso è il quarto.
+## Timeline verso i 5.000 €
 
-**Decisione:**
-- Fondo di emergenza → Poste Supersmart (zero attrito, garanzia statale illimitata,
-  l'accantonamento a 366 giorni funziona da lucchetto psicologico) oppure Trade Republic
-  (tasso migliore su tutto il saldo, nessun vincolo; controindicazione: è un'app di
-  investimento).
-- BBVA → aprirlo come conto secondario **operativo**, non come salvadanaio: gratis a vita,
-  rete di sicurezza se la PostePay ha problemi, e il 3% dei primi sei mesi si prende comunque.
-- Non aprire quattro conti per rincorrere le promozioni.
+Fine 2026: ~2.580 € (4 mesi × 450 + ~780 di tredicesima).
 
-## 3 — Quanto accumulare prima di investire
+| Scenario | Al fondo/mese nel 2027 | 5.000 € entro |
+|---|---:|---|
+| Il netto non scende | 450 | giu 2027 |
+| Netto a 1.990 (più probabile) | ~250 | set–ott 2027 |
+| Netto a 1.990 + metà bonus | ~250 + 1.000 una tantum | giu–lug 2027 |
 
-Il denominatore giusto sono le spese essenziali (1.660 €), non lo stipendio.
-Profilo single, senza debiti né persone a carico, ingegnere ricollocabile → 3 mesi bastano.
+I "circa dieci mesi" sono realistici, ma arrivano da tredicesima e bonus, non da un 600 €
+sostenibile all'infinito. Implicazione operativa: **i criteri del bonus (fino a 3.500 € lordi)
+valgono più di qualunque taglio alla spesa alimentare (~250 €/anno).**
 
-| Fase | Obiettivo | Soglia | Quando |
-|---|---|---:|---|
-| 1 | Cuscino minimo (freni + assicurazione + un imprevisto) | 1.500 € | ~4 mesi |
-| 2 | Fondo di emergenza (3 mesi di spese) | 5.000 € | ~12–13 mesi |
-| 3 | Fondo esteso + PAC in parallelo (60% investimenti / 40% fondo) | 8.000 € | a seguire |
+Non abbassare l'obiettivo adesso: bonifico a 600 €, si corregge a gennaio con il dato vero.
 
-I "10 mesi per 6.000" erano calcolati su 600 €/mese. A 330 €/mese con la tredicesima,
-5.000 € arrivano intorno a ottobre 2027; a 470 €/mese in circa 9 mesi. Meglio puntare a
-5.000 che a 6.000: la differenza in sicurezza è marginale, quella in tempo è di tre mesi.
+## Conti — tre correzioni
 
-**Unica eccezione all'ordine:** il fondo pensione con contributo del datore di lavoro.
-Se il CCNL prevede che l'azienda versi (spesso 1,2–2% della RAL) solo a fronte di un
-versamento del dipendente, quella quota è un rendimento immediato di ~100% sulla parte
-matched, più la deduzione IRPEF al 33%. Versare il minimo che sblocca il contributo, e
-non un euro di più, finché il fondo di emergenza non è pieno. Chiedere all'ufficio paghe:
-fondo negoziale del contratto, quota minima che attiva il contributo, TFR in azienda o al fondo.
+1. **Trade Republic non è più in regime dichiarativo.** Dal 30 gennaio 2025 è sostituto
+   d'imposta in regime amministrato per conti con IBAN italiano: applica il 26% sugli interessi
+   e lo 0,20% di bollo, niente quadro RW per le somme affidate. L'obiezione valida resta quella
+   comportamentale: è un'app di brokeraggio.
+2. **PostePay Evolution ha costi reali.** Canone annuo ~15–19 €, bonifico SEPA da app 1 €,
+   SDD con commissione: 40–60 €/anno che su BBVA sarebbero zero. Aprire BBVA, testarlo un mese,
+   poi spostare lì l'accredito dello stipendio (basta dare il nuovo IBAN all'ufficio paghe).
+3. **Supersmart non è un vincolo.** Lo svincolo anticipato restituisce sempre il capitale, si
+   perdono solo gli interessi extra.
 
-**Lavoretti:** la prestazione occasionale (ricevuta con ritenuta d'acconto 20%, nessuna
-iscrizione alla Gestione Separata sotto 5.000 €/anno di compensi) costa poco e permette
-di mettere il lavoro in portfolio. Dettaglio rilevante: dal 2027, con reddito complessivo
-~31.800 €, ogni euro dichiarato in più erode la detrazione aggiuntiva da 1.000 €
-(azzerata a 40.000) → aliquota marginale effettiva ~45%. Nel 2026 il reddito annuo sarà
-basso (5 mesi di lavoro), quindi conviene concentrare adesso i lavori da fatturare.
+## Checklist per scadenza
 
-Nota: la soglia di 35.000 € ricordata è quella vecchia — dal 2026 il taglio del cuneo
-arriva a 40.000 €. I buoni pasto elettronici sono esentasse fino a 10 €/giorno, quindi
-i 9 € giornalieri sono interamente esenti.
-
-## 4 — Monitoraggio: rendere il tracciamento inutile
-
-### Strato 1 — I contenitori (90% del lavoro)
-
-- **PostePay Evolution** = conto operativo: stipendio in, tutte le spese out
-- **Conto risparmio** = fondo di emergenza, nessuna carta collegata
-- **Accantonamenti** = i 142 €/mese per assicurazione/auto/casa, contati a parte
-
-Bonifico ricorrente automatico il giorno dopo l'accredito: 330 + 142 = **472 €**.
-Quello che resta sulla PostePay è spendibile per definizione. Il budget si autoapplica:
-se il conto operativo arriva a fine mese, è stato rispettato.
-
-### Strato 2 — Il numero unico
-
-Dopo affitto, utenze e abbonamenti restano circa **135 € a settimana** (buoni pasto esclusi).
-Regola: a fine settimana serve almeno 135 € × le settimane che mancano allo stipendio.
-Trenta secondi la domenica sera.
-
-### Strato 3 — Il contante
-
-Le spese con carta sono già tracciate dall'app Poste; i buoni dall'app Edenred. L'unico
-buco è il contante:
-- pagare con carta ovunque
-- prelevare una cifra fissa una volta al mese (50 €) e considerarla spesa al momento del
-  prelievo. Errore massimo 50 €/mese, problema eliminato.
-
-### Strato 4 — Revisione mensile (15 minuti)
-
-Il giorno dello stipendio: movimenti Poste → buoni Edenred usati/residui/**scadenza** →
-sei totali su un foglio (entrate, affitto, utenze, spesa, auto, altro) → saldo del fondo.
-Solo totali, mai singole transazioni. Dopo tre mesi si hanno le medie reali.
-
-### App
-
-Aggregatori PSD2: Wallet by BudgetBakers, Spendee. Verificare prima che la PostePay
-Evolution sia collegabile. Nessun aggregatore vedrà mai i buoni pasto.
-Con gli strati 1–3, un'app di tracking è un lusso, non una necessità.
-
-## Checklist
-
-- [ ] Estratto conto BCC: conto o prepagata, saldo, addebiti
-- [ ] Chiudere il BCC per iscritto dopo aver saldato; conservare l'attestazione
-- [ ] Ufficio paghe: fondo pensione e quota minima per il contributo aziendale; TFR;
-      conguaglio di dicembre e maturazione della tredicesima
-- [ ] Aprire il conto risparmio e impostare il bonifico ricorrente da 472 €
-- [ ] Accantonare 550 € (assicurazione) + ~400 € (freni) prima di contare il fondo
-- [ ] Tre mesi di soli totali mensili, poi rifare questa analisi con i numeri veri
+- [ ] **Questa settimana** — ufficio paghe: Sezione 1 o 2 del modulo TFR3? Quale fondo per
+      l'adesione automatica? Contributo azienda 2% confermato? Risposta scritta.
+- [ ] **Entro il 2 ottobre** — TFR: se Sezione 1 non fare nulla; se Sezione 2 consegnare il
+      modulo indicando Cometa. Vale 661 €/anno, scelta irrevocabile.
+- [ ] BCC: estratto conto, saldo del debito, chiusura scritta, attestazione.
+- [ ] Aprire BBVA, poi spostare l'accredito. Aprire il conto risparmio (Supersmart o TR).
+- [ ] Bonifico automatico da 600 € a due giorni dall'accredito (450 fondo + 150 buffer).
+- [ ] Busta paga di settembre: addizionali, voci bonus, una tantum di agosto.
+- [ ] Chiedere i criteri del bonus per l'esercizio in corso e il piano welfare attivo
+      (quello ricevuto è il regolamento 2020/2021).
+- [ ] Metasalute: iscrizione e utilizzo — visite e dentista escono dalla riga "vita".
