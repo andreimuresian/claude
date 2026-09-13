@@ -2,6 +2,9 @@
 
 Pagina interattiva con simulatore: https://claude.ai/code/artifact/f20243ec-8649-4199-8117-368bfb7b5d3e
 
+Registro settimanale: https://claude.ai/code/artifact/0d4db8ab-824c-4c78-ba54-d8bb0c873321
+Versione Excel dello stesso registro: `finanze/quaderno-5000.xlsx`
+
 Non è consulenza finanziaria né fiscale. Le stime sul netto sono calcolate dall'esterno e
 vanno verificate sul cedolino. Tassi e promozioni bancarie sono al 13/09/2026.
 
@@ -353,3 +356,4 @@ varianza non è sostenibile.
 - [ ] Chiedere se il bonus viene liquidato nel 2026: una rata a dicembre farebbe sfondare i
       20.000 € e perdere l'indennità.
 - [ ] Metasalute: iscrizione e utilizzo — visite e dentista escono dalla riga "vita".
+- [ ] **Ogni domenica**: due saldi dall'app della banca nel quaderno. Novanta secondi.
