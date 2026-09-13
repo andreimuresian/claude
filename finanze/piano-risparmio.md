@@ -3,7 +3,7 @@
 Pagina interattiva con simulatore: https://claude.ai/code/artifact/f20243ec-8649-4199-8117-368bfb7b5d3e
 
 Non è consulenza finanziaria né fiscale. Le stime sul netto sono calcolate dall'esterno e
-vanno verificate sul cedolino. Tassi e promozioni bancarie sono al 12/09/2026.
+vanno verificate sul cedolino. Tassi e promozioni bancarie sono al 13/09/2026.
 
 ## Dati dal contratto (Advanced Fiber Resources Milan S.r.l.)
 
@@ -46,43 +46,58 @@ regala vale solo per la Sezione 1.
 **Azione:** modulo TFR3, Sezione 2, prima opzione, barrare "verrà conferito alla seguente forma
 pensionistica complementare" → **COMETA**, 100%, allegando il modulo di adesione Cometa.
 
-### Come verificare se esiste un vecchio fondo pensione
+### Verificato con le Certificazioni Uniche: nessun fondo pensione, mai
 
-Lavori precedenti: tirocinio ~2 mesi (Bagni e Pavimenti / Orsolini), 6 mesi Ottimax,
-~3 anni Terranova/Calliope. Buste paga non più disponibili per i primi due.
+Cinque CU estratte e lette. I punti 411-420 (identificativo fondo, data iscrizione, contributi
+dedotti e non dedotti) sono **vuoti in tutti e cinque gli anni**.
 
-1. **Certificazioni Uniche degli anni passati** — prova documentale: la CU ha una sezione
-   "Previdenza complementare". Gratis nell'area riservata dell'Agenzia delle Entrate (SPID/CIE)
-   → Dichiarazione precompilata o Cassetto fiscale. Sezione vuota = nessun fondo.
-2. **Mail a Fon.Te con il codice fiscale** — Ottimax e i negozi di abbigliamento applicano il
-   CCNL Terziario, il cui fondo negoziale è Fon.Te: una richiesta copre quasi tutta la storia.
-3. **Estratto conto contributivo INPS** (MyINPS) — non dice nulla sui fondi, ma dà le date
-   esatte dei rapporti di lavoro per compilare il modulo.
+| CU | Anno | Datore | Periodo | Reddito | Punti 411-420 |
+|---|---|---|---|---:|---|
+| 2023 | 2022 | Orsolini Amedeo S.p.A. | 1/2 → 10/4 | 2.323 | vuoti |
+| 2023 | 2022 | Ottimax Italia S.p.A. | 11/4 → 16/10 | 11.410 | vuoti |
+| 2024 | 2023 | Eclisse Retail (Terranova) | dal 1/2/2023 | 15.552 | vuoti |
+| 2025 | 2024 | Eclisse Retail | anno intero | 13.185 | vuoti |
+| 2026 | 2025 | Advanced Fiber Resources (stage) | dal 1/10/2025 | 2.540 | vuoti |
 
-Il tirocinio è escluso a priori: **uno stage non è lavoro subordinato**, non matura TFR e non
-può aver aperto una posizione previdenziale.
+Conferme incrociate: l'unica riga "fondo" sono 132 € (2023) e 144 € (2024) con lo stesso codice
+fiscale — 11 e 12 mensilità da 12 €, cioè il fondo **sanitario** del Terziario, non previdenza
+(un fondo pensione sarebbe una percentuale della retribuzione). E la CU Ottimax ha la sezione TFR
+compilata con **841,39 € liquidati alla cessazione**: TFR in azienda, pagato in busta.
 
-**Non aspettare la risposta per muoverti:** entrambe le opzioni della Sezione 2 portano a
-indicare Cometa al 100% allegando il modulo di adesione. Cambia solo quale casella si barra.
-Consegnare il TFR3 entro il 2 ottobre dichiarando quello che si sa; il modulo Cometa chiede a
-sua volta delle iscrizioni precedenti e sono fondo e ufficio paghe a riconciliare. Se emerge una
-posizione dormiente a Fon.Te, si trasferisce a Cometa con la portabilità (gratuita).
+**Conclusione: Sezione 2 senza fondo preesistente.** Niente più da verificare, si può archiviare
+la mail a Fon.Te. Il tirocinio Orsolini era comunque escluso a priori.
 
-**Non si perde nulla aderendo volontariamente:** il contributo aziendale del 2% spetta a chiunque
-sia iscritto a Cometa e versi l'1,2% minimo — è una previsione del CCNL, non un premio legato
-all'adesione automatica. Sforare il 2 ottobre non è irreparabile (l'iscrizione resta possibile
-in qualsiasi momento) ma ogni mese di ritardo costa ~55 € di contributo aziendale.
+Vantaggio collaterale: mai iscritto a nulla ⇒ **"lavoratore di prima occupazione"** per Cometa.
+Il plafond di deducibilità non usato nei primi 5 anni si accumula e dal 6° al 20° anno consente
+di dedurre fino a ~2.580 €/anno in più (riquadro CU punti 416-418, oggi vuoto). Nessuna azione ora.
 
-Nota: tetto di deducibilità previdenza complementare a 5.300 € dal 2026. Il welfare aziendale
-CCNL (200 €/anno) prevede che il residuo non speso confluisca in Cometa se il dipendente è
-iscritto, altrimenti viene azzerato.
+### Accesso ai soldi prima della pensione
+
+| Motivo | Quanto | Da quando | Tassa |
+|---|---:|---|---:|
+| Spese sanitarie gravi (proprie, coniuge, figli) | 75% | subito | 15% → 9% |
+| Prima casa (acquisto o ristrutturazione) | 75% | dopo 8 anni | 23% |
+| Qualsiasi motivo, senza giustificare | 30% | dopo 8 anni | 23% |
+| Disoccupazione 12–48 mesi | 50% | — | 15% → 9% |
+| Disoccupazione oltre 48 mesi | 100% | — | 15% → 9% |
+
+Fino al 2034 l'unico accesso reale è il 75% per spese mediche gravi: **per questo il fondo di
+emergenza liquido viene prima, e per questo non versare a Cometa più dell'1,2% minimo.**
+
+Un'anticipazione **non azzera gli interessi**: vende le quote al valore del giorno, il resto della
+posizione continua a rendere. Si perde solo il rendimento futuro sulla parte ritirata, più la tassa.
+Non funziona come un deposito vincolato.
+
+**Il 2% non arriva firmando solo il TFR:** va barrata anche la casella del contributo proprio
+dell'1,2% (30,52 €/mese lordi, ~23 € netti). Chi conferisce solo il TFR perde il contributo azienda.
+Metti 397 €/anno, ricevi 661: +166%.
 
 ## Il netto: cedolino di agosto 2026, ricostruito
 
 | Voce | € |
 |---|---:|
 | Retribuzione (minimo 2.542,98 + superminimo 149,33) | 2.692,31 |
-| **Indennità L. 207/24** (taglio del cuneo — spetta perché il reddito 2026 è di ~5 mesi) | +116,96 |
+| **Indennità L. 207/24** (taglio del cuneo — il reddito 2026, stage compreso, resta sotto i 20.000 €) | +116,96 |
 | Contributo IVS 9,19% + CIGS 0,30% | −255,47 |
 | Ritenuta IRPEF (lorda 588,77 − detrazioni 224,48) | −364,29 |
 | Addizionale regionale e comunale | 0,00 |
@@ -93,12 +108,38 @@ non supera 20.000 €, spetta una somma esente da tasse e contributi pari a una 
 reddito da lavoro dipendente — 7,1% fino a 8.500, 5,3% fra 8.500 e 15.000, **4,8% oltre 15.000**.
 Il conto torna esattamente: 4,8% × 2.436,84 = 116,96.
 
-Non dipende dalla RAL da 35.000 ma da **quanto si incassa nell'anno solare**. Nel 2026, iniziando
-il 3 agosto, il reddito è ~14.600 € → sotto soglia → indennità. Nel 2027, dodici mesi su dodici,
-il reddito è ~31.700 € → sopra soglia → la riga sparisce. Al suo posto, per i redditi fra 20.001
-e 32.000, c'è la detrazione aggiuntiva da 1.000 €, che però è uno sconto d'imposta dentro le
-detrazioni e non un accredito visibile (ed è già considerata nella stima del netto 2027).
-Totale indennità incassata sul 2026: ~585 €, strutturalmente una tantum.
+Il 4,8% è a sua volta un indizio: è lo scaglione "oltre 15.000". Sui soli cinque mesi da
+dipendente (~13.200 € di imponibile) sarebbe stato il 5,3%. Il payroll **somma già lo stage
+all'assunzione** — è lo stesso sostituto d'imposta per entrambi i rapporti.
+
+**Chi la applica e come.** Non l'Agenzia delle Entrate a consuntivo: è il sostituto d'imposta che
+ogni mese anticipa la somma stimando il reddito annuo, e **verifica al conguaglio di dicembre**.
+È una soglia secca: a 19.999 € spetta tutto, a 20.001 € nulla e si restituisce l'intero importo
+già incassato — ma il recupero, sopra 60 €, **si spalma su 10 rate mensili**. Nel 2027 non sarà
+applicata **già da gennaio**, perché la proiezione sarà subito sopra i 20.000.
+
+**Reddito complessivo 2026 — il conto che decide.**
+
+| Voce | € |
+|---|---:|
+| Indennità di stage, gennaio → 1 luglio (6 × 800; l'indennità L.207/24 percepita lì è esente) | 4.800 |
+| Stipendio agosto → dicembre, lordo | 13.462 |
+| meno contributi INPS 9,49% (la soglia guarda l'imponibile, non il lordo) | −1.278 |
+| Ratei di tredicesima, imponibile | +1.015 |
+| **Reddito complessivo 2026** | **~18.000** |
+| Soglia di legge | 20.000 |
+
+**Verdetto: l'indennità è dovuta e non va restituita**, con ~2.000 € di margine. L'errore da
+evitare è confondere il lordo con l'imponibile: i contributi si sottraggono prima.
+
+**Unico allarme: il bonus.** Una rata liquidata a dicembre (fino al 5% della RAL, 1.750 € lordi)
+sfonderebbe i 20.000 e farebbe perdere l'intera somma — compensata però dalla **ulteriore
+detrazione da 1.000 €** che scatta sopra soglia. Da chiedere al payroll.
+
+Nel 2027, dodici mesi su dodici, il reddito è ~31.700 € → sopra soglia → la riga sparisce. Al suo
+posto, per i redditi fra 20.001 e 32.000, la detrazione aggiuntiva da 1.000 €, che è uno sconto
+d'imposta dentro le detrazioni e non un accredito visibile (già considerata nella stima del netto
+2027). Totale indennità incassata sul 2026: ~585 €, strutturalmente una tantum.
 
 Metasalute risulta attivo (13 €/mese a carico ditta). Nessuna voce una tantum; giorni detrazione
 29 su 31, quindi agosto è già un mese sostanzialmente pieno.
@@ -111,9 +152,9 @@ Metasalute risulta attivo (13 €/mese a carico ditta). Nessuna voce una tantum;
 | Addizionali sul reddito 2027, a regime | −49 | 2028 |
 | **Netto 2027 · Netto 2028** | **~2.005 · ~1.980** | |
 
-**Dicembre 2026 vale ~3.300 €:** tredicesima pro rata 5/12 (~780 € netti) più conguaglio IRPEF
-a credito stimato 300–400 € (per cinque mesi le trattenute sono calcolate su un reddito annuo
-presunto di ~31.700 contro un reddito reale 2026 di ~14.600).
+**Dicembre 2026 vale ~3.400 €:** tredicesima pro rata 5/12 (~780 € netti) più conguaglio IRPEF
+a credito stimato 400–600 € (per cinque mesi le trattenute sono calcolate su un reddito annuo
+presunto di ~31.700 contro un reddito reale 2026 di ~18.000, con detrazioni rapportate ai giorni).
 
 ## Il confronto sui 600 €: la distanza è 120 €, non filosofica
 
@@ -159,35 +200,66 @@ non è un fallimento.
 
 ## Timeline verso i 5.000 €
 
-Set–nov 2026: 450 €/mese al fondo. Dicembre: ~1.610 € in un colpo (tredicesima + conguaglio, al
-netto delle spese normali). **Fine 2026: ~2.960 €.** Dal 2027, con netto ~2.005 e stesse spese,
-al fondo restano ~260 €/mese (più i 150 di buffer, che non sono risparmio).
+Aiuto dei genitori, ottobre–dicembre 2026: ottobre affitto a 700 **più** 250 € da suo padre
+(+550); novembre e dicembre affitto a 700 (+300 ciascuno). Da gennaio 1.000 a carico suo.
+Totale **1.150 €**, da versare al fondo il giorno stesso.
+
+| Mese | Al fondo | Cumulato |
+|---|---:|---:|
+| set 2026 | 446 | 446 |
+| ott (+550 dai genitori) | 996 | 1.442 |
+| nov (+300) | 746 | 2.188 |
+| dic (+300, tredicesima e conguaglio) | 1.906 | **4.094** |
+| gen 2027 (netto ~2.005) | 261 | 4.355 |
+| feb 2027 | 261 | 4.616 |
+| mar 2027 | 261 | 4.877 |
+| **apr 2027** | 261 | **5.138** |
 
 | Scenario | Al fondo nel 2027 | 5.000 € entro |
 |---|---:|---|
-| Nessun bonus | ~260 /mese | ago 2027 |
-| Metà bonus (~1.000 € netti) | ~260 + 1.000 | giu–lug 2027 |
-| Bonus pieno (5% + 5% R&D, ~2.000 € netti) | ~260 + 2.000 | apr–mag 2027 |
+| Solo stipendio | ~260 /mese | **apr 2027** |
+| Con ripetizioni (200 €/mese da novembre) | ~460 /mese | **feb 2027** |
+| Con metà bonus (~1.000 € netti) | ~260 + 1.000 | gen–feb 2027 |
 
-I "circa dieci mesi" erano giusti, ma quasi metà del percorso lo fa dicembre: il piano regge
-grazie a quattro mesi buoni più tredicesima e conguaglio, non a un 600 € sostenibile
-all'infinito. Implicazione operativa: **il bonus (fino a 3.500 € lordi) vale più di qualunque
-taglio alla spesa alimentare (~250 €/anno).**
+Traguardo spostato da agosto ad **aprile 2027**. L'80% del percorso si fa entro dicembre: il piano
+regge grazie a quattro mesi assistiti più tredicesima e conguaglio, non a un 600 € sostenibile
+all'infinito. Le leve grosse sono l'aiuto dei genitori, la tredicesima, il bonus e le ripetizioni —
+non i tagli alla spesa.
 
 Non abbassare l'obiettivo adesso: bonifico a 600 €, si corregge a gennaio a 410 (260 fondo +
 150 buffer) quando il netto scende.
 
-## Conti — tre correzioni
+## Conti — due prodotti, non quattro
 
-1. **Trade Republic non è più in regime dichiarativo.** Dal 30 gennaio 2025 è sostituto
-   d'imposta in regime amministrato per conti con IBAN italiano: applica il 26% sugli interessi
-   e lo 0,20% di bollo, niente quadro RW per le somme affidate. L'obiezione valida resta quella
-   comportamentale: è un'app di brokeraggio.
-2. **PostePay Evolution ha costi reali.** Canone annuo ~15–19 €, bonifico SEPA da app 1 €,
-   SDD con commissione: 40–60 €/anno che su BBVA sarebbero zero. Aprire BBVA, testarlo un mese,
-   poi spostare lì l'accredito dello stipendio (basta dare il nuovo IBAN all'ufficio paghe).
-3. **Supersmart non è un vincolo.** Lo svincolo anticipato restituisce sempre il capitale, si
-   perdono solo gli interessi extra.
+Situazione attuale: PostePay Evolution costa canone ~15–19 €/anno + 1 € per bonifico SEPA + SDD
+con commissione. Con 2–3 bonifici al mese (affitto, Enel) sono **40–60 €/anno**.
+
+**① BBVA Conto Corrente — operativo.** Stipendio in entrata; affitto, bollette, carta in uscita.
+- Canone **0 €** a tempo indeterminato, senza condizioni.
+- **Bonifici SEPA gratuiti**, ordinari e istantanei: quelli all'affittuario e a Enel diventano gratis.
+- Prelievi in area euro gratuiti sopra i 100 €.
+- Cashback 3% sugli acquisti con carta il primo semestre, max 280 €/mese (~8 €/mese).
+
+**② BBVA Conto Risparmio — il fondo dei 5.000.** Collegato, dalla stessa app.
+- **3% lordo per 6 mesi**, interessi mensili; poi ~0,56% (un quarto del tasso BCE sui depositi).
+- **Nessun vincolo**: gli interessi maturano giorno per giorno sul saldo, prelevare non fa perdere
+  nulla di maturato. I 6 mesi di promo coprono esattamente la finestra di accumulo ott → apr.
+
+**Il buffer da 150 € resta sul conto corrente**: sono soldi in uscita entro 12 mesi. Non serve un
+terzo conto, serve il foglio di monitoraggio.
+
+**Poste Supersmart e Trade Republic: non adesso.** Supersmart è un vincolo (morbido: svincolando
+torna sempre il capitale, si perdono solo gli interessi extra) e vincolare il fondo di emergenza è
+un controsenso. Trade Republic è la scelta di fase due — 3% stabile fino a 50.000 €, senza scadenza,
+interessi giornalieri accreditati mensilmente, e dal 30/01/2025 **sostituto d'imposta in regime
+amministrato** per IBAN italiani (26% applicato alla fonte, niente quadro RW). Da valutare ad
+aprile 2027, quando scade la promo BBVA.
+
+Nota trasversale: sopra **5.000 € di giacenza media** scatta l'imposta di bollo di 34,20 €/anno su
+conti correnti e di deposito — su 5.000 € al 3% lordo è circa un terzo del rendimento netto.
+
+**Sequenza:** aprire BBVA → testarlo due settimane → nuovo IBAN all'ufficio paghe → spostare
+domiciliazioni e affitto → svuotare e chiudere PostePay → chiudere BCC.
 
 ## Welfare aziendale — 200 € esentasse che scadono
 
@@ -219,6 +291,47 @@ dai 661 €, per consegnare il modulo entro il 2 ottobre.
   fringe benefit indicato a 258 €, soglia nel frattempo cambiata). Chiedere regolamento,
   importo, date di caricamento e scadenza del **ciclo in corso**.
 
+## Leve: ripetizioni, canone RAI, investimenti
+
+### Ripetizioni — 15 €/h è sottoprezzo
+
+| Target | €/ora | Ore per 200 € |
+|---|---:|---:|
+| Matematica e fisica al liceo | 20–25 | 8–10 |
+| Analisi, Fisica 1/2, elettrotecnica all'università | 25–35 | 6–8 |
+| Ipotesi iniziale | 15 | 14 |
+
+Magistrale in Telecomunicazioni + triennale in Ingegneria Fisica al Politecnico, a Milano: 20 €/h
+è il minimo di mercato. Fiscalmente è **prestazione occasionale**: niente partita IVA, niente INPS
+sotto i 5.000 €/anno, ricevuta con marca da bollo da 2 € sopra 77,47 €, dichiarazione come
+"redditi diversi". Il reddito entra nei 20.000 € del 2026 (margine ~2.000 €, quindi nessun problema
+fino a dicembre); dal 2027 il tema non esiste più.
+
+### Canone RAI — probabilmente non dovuto
+
+Si deve solo se si detiene un **apparecchio atto alla ricezione** in un'abitazione con utenza
+elettrica intestata. PC e monitor senza sintonizzatore non contano. Ma **si presume la detenzione**
+e l'addebito parte d'ufficio in bolletta: **90 € nel 2026**, in 10 rate da 9 € da gennaio a ottobre.
+
+Per non pagarlo serve la **dichiarazione sostitutiva di non detenzione** all'Agenzia delle Entrate,
+**da rinnovare ogni anno**: entro il 31 gennaio per l'anno intero, entro il 30 giugno per il solo
+secondo semestre. Azione: controllare la voce "Canone TV" sulla bolletta Enel e, se presente,
+mettere in calendario la dichiarazione per gennaio 2027 (−90 €/anno).
+
+### Investimenti — dopo i 5.000, non prima
+
+Cometa all'1,2% è già un investimento con rendimento immediato garantito del +166%: nessun ETF ci
+si avvicina, ed è l'unica opportunità del piano con una scadenza.
+
+Il fondo di emergenza si completa ad aprile 2027: sette mesi. Investire prima significa vendere in
+perdita al primo imprevisto da 800 €. **Da maggio 2027**: PAC su un ETF azionario globale ad
+accumulazione, orizzonte 10+ anni, intermediario in regime amministrato, versamento automatico.
+
+Sulla compravendita: trasforma liquidità in magazzino illiquido e consuma le ore serali — le due
+risorse scarse. Dieci ore serali di ripetizioni valgono 200–250 € certi; le stesse dieci ore in
+compravendita valgono forse di più, forse zero, forse meno di zero. Con 5.000 € di patrimonio la
+varianza non è sostenibile.
+
 ## Checklist per scadenza
 
 - [ ] **Questa settimana** — ufficio paghe: conferma che aderendo volontariamente a Cometa
@@ -226,12 +339,17 @@ dai 661 €, per consegnare il modulo entro il 2 ottobre.
 - [ ] **Entro il 2 ottobre** — modulo di adesione Cometa online, poi TFR3 con Sezione 2 barrata
       su "verrà conferito a… COMETA", 100%. Vale 661 €/anno; ogni mese di ritardo ne costa 55.
 - [ ] BCC: estratto conto, saldo del debito, chiusura scritta, attestazione.
-- [ ] Aprire BBVA, poi spostare l'accredito. Aprire il conto risparmio (Supersmart o TR).
+- [ ] Aprire BBVA: conto corrente **e** Conto Risparmio collegato. Poi accredito stipendio,
+      domiciliazioni, e chiusura PostePay. Niente altro: Trade Republic si valuta ad aprile 2027.
 - [ ] Bonifico automatico da 600 € a due giorni dall'accredito (450 fondo + 150 buffer).
 - [ ] Dicembre: tredicesima e conguaglio (~1.160 € extra) vanno interamente al fondo.
 - [ ] Registrarsi su conto.welfare.it/al; chiedere all'ufficio paghe da quale ciclo welfare si
       è inclusi, l'importo attuale e le date di scadenza del credito.
 - [ ] Chiedere i criteri del bonus per l'esercizio in corso (fino a 3.500 € lordi).
-- [ ] Verificare il vecchio fondo: CU sull'area riservata AdE + mail a Fon.Te. Senza aspettare
-      la risposta per consegnare il TFR3.
+- [ ] Ottobre–dicembre: i 1.150 € dei genitori vanno al fondo il giorno stesso.
+- [ ] Cercare due studenti a 20–25 €/ora: 10 ore/mese = 200 €, traguardo da aprile a febbraio.
+- [ ] Controllare la voce "Canone TV" sulla bolletta Enel; se presente e non c'è un televisore,
+      dichiarazione sostitutiva entro il 31 gennaio 2027 (−90 €/anno, da rinnovare ogni anno).
+- [ ] Chiedere se il bonus viene liquidato nel 2026: una rata a dicembre farebbe sfondare i
+      20.000 € e perdere l'indennità.
 - [ ] Metasalute: iscrizione e utilizzo — visite e dentista escono dalla riga "vita".
