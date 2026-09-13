@@ -46,6 +46,28 @@ regala vale solo per la Sezione 1.
 **Azione:** modulo TFR3, Sezione 2, prima opzione, barrare "verrà conferito alla seguente forma
 pensionistica complementare" → **COMETA**, 100%, allegando il modulo di adesione Cometa.
 
+### Come verificare se esiste un vecchio fondo pensione
+
+Lavori precedenti: tirocinio ~2 mesi (Bagni e Pavimenti / Orsolini), 6 mesi Ottimax,
+~3 anni Terranova/Calliope. Buste paga non più disponibili per i primi due.
+
+1. **Certificazioni Uniche degli anni passati** — prova documentale: la CU ha una sezione
+   "Previdenza complementare". Gratis nell'area riservata dell'Agenzia delle Entrate (SPID/CIE)
+   → Dichiarazione precompilata o Cassetto fiscale. Sezione vuota = nessun fondo.
+2. **Mail a Fon.Te con il codice fiscale** — Ottimax e i negozi di abbigliamento applicano il
+   CCNL Terziario, il cui fondo negoziale è Fon.Te: una richiesta copre quasi tutta la storia.
+3. **Estratto conto contributivo INPS** (MyINPS) — non dice nulla sui fondi, ma dà le date
+   esatte dei rapporti di lavoro per compilare il modulo.
+
+Il tirocinio è escluso a priori: **uno stage non è lavoro subordinato**, non matura TFR e non
+può aver aperto una posizione previdenziale.
+
+**Non aspettare la risposta per muoverti:** entrambe le opzioni della Sezione 2 portano a
+indicare Cometa al 100% allegando il modulo di adesione. Cambia solo quale casella si barra.
+Consegnare il TFR3 entro il 2 ottobre dichiarando quello che si sa; il modulo Cometa chiede a
+sua volta delle iscrizioni precedenti e sono fondo e ufficio paghe a riconciliare. Se emerge una
+posizione dormiente a Fon.Te, si trasferisce a Cometa con la portabilità (gratuita).
+
 **Non si perde nulla aderendo volontariamente:** il contributo aziendale del 2% spetta a chiunque
 sia iscritto a Cometa e versi l'1,2% minimo — è una previsione del CCNL, non un premio legato
 all'adesione automatica. Sforare il 2 ottobre non è irreparabile (l'iscrizione resta possibile
@@ -65,6 +87,18 @@ iscritto, altrimenti viene azzerato.
 | Ritenuta IRPEF (lorda 588,77 − detrazioni 224,48) | −364,29 |
 | Addizionale regionale e comunale | 0,00 |
 | **Netto** | **2.190,00** |
+
+**Perché spetta l'indennità.** Legge 207/2024: se il **reddito complessivo dell'anno solare**
+non supera 20.000 €, spetta una somma esente da tasse e contributi pari a una percentuale del
+reddito da lavoro dipendente — 7,1% fino a 8.500, 5,3% fra 8.500 e 15.000, **4,8% oltre 15.000**.
+Il conto torna esattamente: 4,8% × 2.436,84 = 116,96.
+
+Non dipende dalla RAL da 35.000 ma da **quanto si incassa nell'anno solare**. Nel 2026, iniziando
+il 3 agosto, il reddito è ~14.600 € → sotto soglia → indennità. Nel 2027, dodici mesi su dodici,
+il reddito è ~31.700 € → sopra soglia → la riga sparisce. Al suo posto, per i redditi fra 20.001
+e 32.000, c'è la detrazione aggiuntiva da 1.000 €, che però è uno sconto d'imposta dentro le
+detrazioni e non un accredito visibile (ed è già considerata nella stima del netto 2027).
+Totale indennità incassata sul 2026: ~585 €, strutturalmente una tantum.
 
 Metasalute risulta attivo (13 €/mese a carico ditta). Nessuna voce una tantum; giorni detrazione
 29 su 31, quindi agosto è già un mese sostanzialmente pieno.
@@ -155,6 +189,36 @@ Non abbassare l'obiettivo adesso: bonifico a 600 €, si corregge a gennaio a 41
 3. **Supersmart non è un vincolo.** Lo svincolo anticipato restituisce sempre il capitale, si
    perdono solo gli interessi extra.
 
+## Welfare aziendale — 200 € esentasse che scadono
+
+I flexible benefits non concorrono a formare reddito da lavoro dipendente: zero IRPEF e zero
+contributi. Per avere 200 € netti in busta ne servirebbero ~330 lordi.
+
+**Come si prende:**
+1. Registrarsi su **https://conto.welfare.it/al/** (senza "www"). Primo accesso con codice
+   fiscale, email e dati anagrafici; arriva una mail di conferma con il link all'area riservata.
+2. Verificare se c'è un credito caricato e **fino a quando è spendibile**. Nel ciclo documentato
+   la quota veniva caricata in un'unica tranche con finestra di ~12 mesi (quota CCNL 2021:
+   da giugno 2021 al 31 maggio 2022). Scadenze perentorie.
+3. Spenderlo: il residuo viene azzerato, salvo l'eccezione sotto.
+
+**Cosa conviene, dato il budget:** voucher spesa e carburante (conversione più diretta in soldi
+veri: abbattono due righe che pesano 308 €/mese, e a differenza dei buoni pasto i voucher
+carburante funzionano al distributore); rimborso trasporto pubblico; corsi di lingua/formazione.
+Metà del catalogo (istruzione figli, baby sitter, anziani, campus) presuppone familiari a carico.
+
+**Incastro con il TFR:** le slide sono esplicite — il residuo non speso va "a previdenza
+complementare (se iscritto a Cometa)", altrimenti **azzeramento**. Secondo motivo, indipendente
+dai 661 €, per consegnare il modulo entro il 2 ottobre.
+
+**Due verifiche:**
+- **Ammissibilità.** Il regolamento art. 2 riserva il piano a chi ha **superato il periodo di
+  prova** ed è in forza a una certa data. La prova finisce il 3 febbraio 2027: probabile
+  inclusione solo dal ciclo successivo. Da chiedere all'ufficio paghe.
+- **Documenti datati.** Regolamento e slide sono del ciclo 2020/2021 (importo 200 €, limite
+  fringe benefit indicato a 258 €, soglia nel frattempo cambiata). Chiedere regolamento,
+  importo, date di caricamento e scadenza del **ciclo in corso**.
+
 ## Checklist per scadenza
 
 - [ ] **Questa settimana** — ufficio paghe: conferma che aderendo volontariamente a Cometa
@@ -165,6 +229,9 @@ Non abbassare l'obiettivo adesso: bonifico a 600 €, si corregge a gennaio a 41
 - [ ] Aprire BBVA, poi spostare l'accredito. Aprire il conto risparmio (Supersmart o TR).
 - [ ] Bonifico automatico da 600 € a due giorni dall'accredito (450 fondo + 150 buffer).
 - [ ] Dicembre: tredicesima e conguaglio (~1.160 € extra) vanno interamente al fondo.
-- [ ] Chiedere i criteri del bonus per l'esercizio in corso e il piano welfare attivo
-      (quello ricevuto è il regolamento 2020/2021).
+- [ ] Registrarsi su conto.welfare.it/al; chiedere all'ufficio paghe da quale ciclo welfare si
+      è inclusi, l'importo attuale e le date di scadenza del credito.
+- [ ] Chiedere i criteri del bonus per l'esercizio in corso (fino a 3.500 € lordi).
+- [ ] Verificare il vecchio fondo: CU sull'area riservata AdE + mail a Fon.Te. Senza aspettare
+      la risposta per consegnare il TFR3.
 - [ ] Metasalute: iscrizione e utilizzo — visite e dentista escono dalla riga "vita".
