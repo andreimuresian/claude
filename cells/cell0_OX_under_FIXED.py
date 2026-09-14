@@ -33,7 +33,7 @@ SLAB_H = TECN - WG_H                # 0.275 um (LN slab thickness)
 BUFFER_H = 0.100                    # SiO2 buffer under the electrodes (SWEEP THIS)
 EL_BOT_H = 0.500                    # 0.500 um (Bottom electrode thickness)
 EL_TOP_H = 0.500                    # 0.500 um (Top electrode thickness)
-CLAD_H = 15.0
+CLAD_H = 4.0                        # air decays in 157 nm; 15 um was dead mesh
 
 # Horizontal Dimensions (um)
 WG_TOP = 1.0
@@ -160,11 +160,15 @@ def build_polygons():
     bulk_l_top = mirror(bulk_r_top)
 
     # 7. LN Slab
-    slab_near = box(-x_near, y_slab_bot, x_near, y_slab_top)
-    slab_far  = box(-x_dev_max, y_slab_bot, x_dev_max, y_slab_top).difference(slab_near)
+    slab_fine = box(-(xg_bot + 5.0), y_slab_bot, xg_bot + 5.0, y_slab_top)
+    slab_mid  = box(-x_near, y_slab_bot, x_near, y_slab_top).difference(slab_fine)
+    slab_far  = box(-x_dev_max, y_slab_bot, x_dev_max, y_slab_top).difference(
+        unary_union([slab_fine, slab_mid]))
 
     # 8. SiO2 Underclad (BOX)
-    box_near = box(-x_near, -1.5, x_near, y_slab_bot)
+    # The BOX carries almost no field: keep it tight around the gap, do NOT
+    # let it follow x_near (that alone was ~20k triangles / 44% of the mesh).
+    box_near = box(-(xg_bot + 1.0), -1.5, xg_bot + 1.0, y_slab_bot)
     box_far  = box(-x_dev_max, y_box_bot, x_dev_max, y_slab_bot).difference(box_near)
 
     # 9. Air Cladding
@@ -174,7 +178,7 @@ def build_polygons():
         el_r_bot, el_r_top, mirror(el_r_bot), mirror(el_r_top)
     ])
     clad_all = box(-x_dev_max, y_slab_top, x_dev_max, y_clad_top).difference(all_solid)
-    clad_gap = clad_all.intersection(box(-xg_top, y_bot_el_top, xg_top, y_top_el_top + 2.5))
+    clad_gap = clad_all.intersection(box(-xg_top, y_bot_el_top, xg_top, y_top_el_top + 1.0))
     clad_far = clad_all.difference(clad_gap)
 
     polys = OrderedDict()
@@ -198,7 +202,8 @@ def build_polygons():
     polys["elL_top_skin"] = skin_l_top
     polys["elL_top_bulk"] = bulk_l_top
 
-    polys["slab_near"] = slab_near
+    polys["slab_fine"] = slab_fine
+    polys["slab_mid"] = slab_mid
     polys["slab_far"] = slab_far
     polys["box_near"] = box_near
     polys["box_far"] = box_far
@@ -216,14 +221,15 @@ resolutions = {
     "core":           {"resolution": h_core,        "distance": 0.30},
     "cap":            {"resolution": 1.5 * h_core,  "distance": 0.30},
     "clad_gap":       {"resolution": 2.0 * h_core,  "distance": 0.40},
-    "slab_near":      {"resolution": 0.050,         "distance": 0.30},
+    "slab_fine":      {"resolution": 0.050,         "distance": 0.30},
+    "slab_mid":       {"resolution": 0.110,         "distance": 0.40},
     "box_near":       {"resolution": 0.080,         "distance": 0.50},
-    "elR_bot_bulk":   {"resolution": 0.300,         "distance": 0.50},
+    "elR_bot_bulk":   {"resolution": 0.800,         "distance": 0.50},
     "elR_top_skin":   {"resolution": h_skin,        "distance": 0.20},
-    "elR_top_bulk":   {"resolution": 0.300,         "distance": 0.50},
-    "elL_bot_bulk":   {"resolution": 0.300,         "distance": 0.50},
+    "elR_top_bulk":   {"resolution": 0.800,         "distance": 0.50},
+    "elL_bot_bulk":   {"resolution": 0.800,         "distance": 0.50},
     "elL_top_skin":   {"resolution": h_skin,        "distance": 0.20},
-    "elL_top_bulk":   {"resolution": 0.300,         "distance": 0.50},
+    "elL_top_bulk":   {"resolution": 0.800,         "distance": 0.50},
     "slab_far":       {"resolution": 0.150,         "distance": 0.50},
     "box_far":        {"resolution": 0.800,         "distance": 1.00},
     "clad_far":       {"resolution": 0.800,         "distance": 1.00},
@@ -268,6 +274,9 @@ if HAS_BUF:
 else:
     print(f"[geometry OK] {len(polygons)} regions tile exactly | NO BUFFER "
           "(electrodes rest directly on the LN slab)")
+
+_est = sum(2 * polygons[k].area / resolutions[k]["resolution"] ** 2 for k in polygons)
+print(f"              estimated total mesh ~{_est:,.0f} triangles")
 
 raw_mesh = mesh_from_OrderedDict(
     polygons,
