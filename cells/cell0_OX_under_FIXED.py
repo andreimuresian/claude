@@ -51,6 +51,10 @@ ne, no = 2.136842, 2.210268
 n_sio2 = 1.438749
 eps_au = -120.7 - 11.9j             # Physical gold loss: Im(eps) < 0 in exp(+jwt)
 
+# Mesh scales
+h_core = 0.040
+h_skin = 0.025
+
 # Skin layer configuration (70 nm strip resolves the 23 nm optical skin depth)
 SKIN_T = 0.070
 SKIN_SEGMENTS = [(0.0, 5.0, 1.0), (5.0, 10.0, 1.6), (10.0, 20.0, 2.5)]
@@ -58,8 +62,16 @@ SKIN_LEN = SKIN_SEGMENTS[-1][1]
 
 # Buffer mesh scale MUST track BUFFER_H, otherwise a thickness sweep silently
 # sweeps mesh quality too (1 element across at 20 nm, 8 at 100 nm).
-N_BUF_LAYERS = 4
-h_buf = BUFFER_H / N_BUF_LAYERS
+#
+# BUFFER_H = 0 is supported: the buffer regions are dropped entirely and the
+# electrodes sit directly on the LN slab (the original no-buffer geometry).
+HAS_BUF = BUFFER_H > 1e-9
+N_BUF_LAYERS = 4                    # converge in THIS at one thickness, then keep it fixed
+h_buf = BUFFER_H / N_BUF_LAYERS if HAS_BUF else h_skin
+
+# The buffer is graded far harder than the skin: its size is set by the layer
+# THICKNESS, so a long fine strip is ruinously expensive. Cost ~ N^2 / BUFFER_H.
+BUF_SEGMENTS = [(0.0, 3.0, 1.0), (3.0, 10.0, 3.0), (10.0, 20.0, 9.0)]
 
 MATERIALS = {
     "LN":     {"color": "#2ecc71", "eps_dc": (28.0, 44.0), "eps_opt": (ne**2, no**2, no**2), "desc": "LN Core / Slab"},
@@ -115,11 +127,16 @@ def build_polygons():
     # 2. Central SiO2 Cap (enlarged to GAP_BOT, flush with top of bottom electrode)
     cap_poly = box(-xg_bot, y_slab_top, xg_bot, y_bot_el_top).difference(core_poly)
 
-    # 3. SiO2 Buffer Layer under electrodes, graded like the skin
-    buf_segs_r = [box(xg_bot + a, y_slab_top, xg_bot + b, y_buf_top)
-                  for (a, b, _f) in SKIN_SEGMENTS]
-    buf_far_r  = box(x_near, y_slab_top, x_dev_max, y_buf_top)
-    buf_far_l  = mirror(buf_far_r)
+    # 3. SiO2 Buffer Layer under electrodes, graded by its own (harder) schedule.
+    #    Empty when BUFFER_H == 0, in which case the electrodes rest on the slab.
+    if HAS_BUF:
+        buf_segs_r = [box(xg_bot + a, y_slab_top, xg_bot + b, y_buf_top)
+                      for (a, b, _f) in BUF_SEGMENTS]
+        buf_far_r = box(x_near, y_slab_top, x_dev_max, y_buf_top)
+        buf_far_l = mirror(buf_far_r)
+        buf_all = [*buf_segs_r, *[mirror(sg) for sg in buf_segs_r], buf_far_r, buf_far_l]
+    else:
+        buf_segs_r, buf_far_r, buf_far_l, buf_all = [], None, None, []
 
     # 4. Right Bottom Electrode (0.5 um thick, gap = 3.0 um)
     el_r_bot = box(xg_bot, y_buf_top, x_el_outer, y_bot_el_top)
@@ -153,7 +170,7 @@ def build_polygons():
     # 9. Air Cladding
     all_solid = unary_union([
         core_poly, cap_poly,
-        *buf_segs_r, *[mirror(s) for s in buf_segs_r], buf_far_r, buf_far_l,
+        *buf_all,
         el_r_bot, el_r_top, mirror(el_r_bot), mirror(el_r_top)
     ])
     clad_all = box(-x_dev_max, y_slab_top, x_dev_max, y_clad_top).difference(all_solid)
@@ -166,8 +183,9 @@ def build_polygons():
     for i, sg in enumerate(buf_segs_r):
         polys[f"bufR_{i}"] = sg
         polys[f"bufL_{i}"] = mirror(sg)
-    polys["buf_far_r"] = buf_far_r
-    polys["buf_far_l"] = buf_far_l
+    if HAS_BUF:
+        polys["buf_far_r"] = buf_far_r
+        polys["buf_far_l"] = buf_far_l
 
     for i, sk in enumerate(skins_r_bot):
         polys[f"elR_bot_skin{i}"] = sk
@@ -192,18 +210,11 @@ def build_polygons():
 # ============================================================
 # 3. MESH GENERATION & RESOLUTION SETUP
 # ============================================================
-h_core = 0.040
-h_skin = 0.025
-
 polygons, DEV_W = build_polygons()
 
 resolutions = {
     "core":           {"resolution": h_core,        "distance": 0.30},
     "cap":            {"resolution": 1.5 * h_core,  "distance": 0.30},
-    # >21.5 um from the gap the buffer carries no field: floor the size so a very
-    # thin BUFFER_H does not explode the element count out here.
-    "buf_far_r":      {"resolution": max(4.0 * h_buf, 0.10), "distance": 0.50},
-    "buf_far_l":      {"resolution": max(4.0 * h_buf, 0.10), "distance": 0.50},
     "clad_gap":       {"resolution": 2.0 * h_core,  "distance": 0.40},
     "slab_near":      {"resolution": 0.050,         "distance": 0.30},
     "box_near":       {"resolution": 0.080,         "distance": 0.50},
@@ -220,8 +231,16 @@ resolutions = {
 
 for _i, (_a, _b, _f) in enumerate(SKIN_SEGMENTS):
     for _s in ("R", "L"):
-        resolutions[f"buf{_s}_{_i}"]        = {"resolution": _f * h_buf,  "distance": 0.20}
         resolutions[f"el{_s}_bot_skin{_i}"] = {"resolution": _f * h_skin, "distance": 0.20}
+
+if HAS_BUF:
+    for _i, (_a, _b, _f) in enumerate(BUF_SEGMENTS):
+        for _s in ("R", "L"):
+            resolutions[f"buf{_s}_{_i}"] = {"resolution": _f * h_buf, "distance": 0.20}
+    # >21.5 um from the gap the buffer carries no field: floor the size there so a
+    # very thin BUFFER_H does not explode the element count.
+    for _s in ("_r", "_l"):
+        resolutions[f"buf_far{_s}"] = {"resolution": max(9.0 * h_buf, 0.10), "distance": 0.50}
 
 assert set(resolutions) == set(polygons), (
     f"resolution/polygon mismatch: {set(resolutions) ^ set(polygons)}")
@@ -234,8 +253,21 @@ for _i in range(len(_names)):
         assert _ov < 1e-10, f"overlap {_names[_i]} & {_names[_j]}: {_ov:.2e}"
 _tot = sum(p.area for p in polygons.values())
 assert abs(_tot - DEV_W * (BOX_H + SLAB_H + CLAD_H)) < 1e-8, "tiling gap"
-print(f"[geometry OK] {len(polygons)} regions tile exactly | BUFFER_H={BUFFER_H*1e3:.0f} nm, "
-      f"h_buf={h_buf*1e3:.1f} nm ({N_BUF_LAYERS} layers across)")
+if HAS_BUF:
+    _est = sum(2 * 2 * (b - a) * BUFFER_H / (f * h_buf) ** 2 for (a, b, f) in BUF_SEGMENTS)
+    print(f"[geometry OK] {len(polygons)} regions tile exactly | BUFFER_H={BUFFER_H*1e3:.1f} nm, "
+          f"h_buf={h_buf*1e3:.2f} nm ({N_BUF_LAYERS} layers across)")
+    print(f"              buffer costs ~{_est:,.0f} triangles (cost ~ N_BUF_LAYERS^2 / BUFFER_H)")
+    if _est > 40000:
+        print("  *** WARNING: buffer mesh is very expensive at this thickness. Either accept the")
+        print("      cost, or lower N_BUF_LAYERS after checking that IL is converged in it.")
+    if BUFFER_H < 0.025:
+        print(f"  *** NOTE: BUFFER_H={BUFFER_H*1e3:.0f} nm << the {1000/(2*4.848):.0f} nm power decay length;")
+        print("      the expected effect on IL is only "
+              f"{100*(1-np.exp(-2*4.848*BUFFER_H)):.1f}%. Resolve it properly or skip it.")
+else:
+    print(f"[geometry OK] {len(polygons)} regions tile exactly | NO BUFFER "
+          "(electrodes rest directly on the LN slab)")
 
 raw_mesh = mesh_from_OrderedDict(
     polygons,
