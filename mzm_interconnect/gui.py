@@ -33,8 +33,9 @@ from tkinter import filedialog, messagebox, ttk
 
 from . import parameters as P
 from . import sweep as SW
-from .extractor import (DARK as FIG_DARK, LIGHT as FIG_LIGHT, diagnostic_figure,
-                        eo_figure, export_lumerical_tables)
+from .extractor import (DARK as FIG_DARK, LIGHT as FIG_LIGHT, bandwidth_spread,
+                        diagnostic_figure, eo_figure, export_lumerical_tables,
+                        extraction_warnings)
 from .physics import eo_response, link_metrics
 
 APP_TITLE = "MZM Studio  --  traveling-wave Mach-Zehnder modulator explorer"
@@ -188,6 +189,7 @@ class KpiStrip(ttk.Frame):
         super().__init__(master, style="Panel.TFrame")
         self.theme = theme
         self.values = {}
+        self.units = {}
         for i, (key, label, unit, color) in enumerate(self.FIELDS):
             card = tk.Frame(self, bg=theme["card"], bd=0,
                             highlightbackground=theme["border"], highlightthickness=1)
@@ -198,9 +200,15 @@ class KpiStrip(ttk.Frame):
             v = tk.Label(card, text="--", bg=theme["card"], fg=theme[color],
                          font=("Segoe UI", 16, "bold"))
             v.pack(anchor="w", padx=9)
-            tk.Label(card, text=unit, bg=theme["card"], fg=theme["muted"],
-                     font=("Segoe UI", 7)).pack(anchor="w", padx=9, pady=(0, 6))
+            u = tk.Label(card, text=unit, bg=theme["card"], fg=theme["muted"],
+                         font=("Segoe UI", 7))
+            u.pack(anchor="w", padx=9, pady=(0, 6))
             self.values[key] = v
+            self.units[key] = u
+
+    def set_unit(self, key, text):
+        if key in self.units:
+            self.units[key].config(text=text)
 
     def update_values(self, res, lm, clipped=False):
         def fmt(x, n=2):
@@ -852,10 +860,24 @@ class MZMStudio(tk.Tk):
                 self.log(f"EO bandwidth = {res.bw_GHz:.2f} GHz "
                          f"({p['bw_level_dB']:.0f} dB), V_pi,eff = {lm.vpi_eff_V:.2f} V, "
                          f"chirp = {lm.chirp_alpha:.3f}", "ok")
-            if res.bw_GHz > fit.f_max_sim_GHz:
-                self.log(f"NOTE: the -3 dB point ({res.bw_GHz:.1f} GHz) sits above the end of "
-                         f"the S-parameter data ({fit.f_max_sim_GHz:.1f} GHz); everything past "
-                         f"that is the physical fit extrapolating.", "warn")
+            for w in extraction_warnings(fit, res):
+                self.log("NOTE: " + w, "warn")
+
+            spread = bandwidth_spread(fit, p)
+            sub = "GHz"
+            if spread:
+                self.log(f"Bandwidth across every defensible fit of the same data: "
+                         f"{spread['min']:.0f} - {spread['max']:.0f} GHz "
+                         f"(median {spread['median']:.0f}).")
+                for lbl, v in spread["rows"]:
+                    self.log(f"    {lbl:46s} {v:7.2f} GHz")
+                if spread["max"] - spread["min"] > 0.1 * max(spread["median"], 1e-9):
+                    self.log("    The spread is the honest uncertainty: outside the measured "
+                             "band the number is set by the fitting form, not by the data.",
+                             "warn")
+                    sub = f"GHz   (fit spread {spread['min']:.0f}-{spread['max']:.0f})"
+            self._ui(lambda: self.kpi.set_unit("bw", sub))
+
             fig_theme = self.theme["fig"]
             f_eo = eo_figure(fit, res, p, fig_theme, lumerical=self.lumerical_overlay)
             f_dg = diagnostic_figure(fit, p, fig_theme)

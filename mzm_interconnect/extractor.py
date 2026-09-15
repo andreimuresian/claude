@@ -25,7 +25,8 @@ from matplotlib.figure import Figure
 from scipy.optimize import curve_fit
 
 from .physics import (C0, EOResult, LineFit, eo_response, fit_alpha_scaled,
-                      fit_beta, fit_impedance_imag, fit_impedance_physical)
+                      fit_beta, fit_impedance_imag, fit_impedance_physical,
+                      fit_nm_saturating)
 
 warnings.filterwarnings("ignore")
 
@@ -33,8 +34,54 @@ warnings.filterwarnings("ignore")
 # =====================================================================
 # 1. De-embedding + fitting
 # =====================================================================
+NM_MODELS = ("saturating", "cubic-beta")
+
+
+def _robust_fit(fn, x, y, p0=None, bounds=None, maxfev=40000):
+    """
+    Least-squares fit, then refit with a soft-L1 loss scaled to the residual
+    spread.
+
+    De-embedded parameters carry outliers -- mismatch resonances, the ends of
+    the band, numerical noise where the inversion is ill-conditioned -- and a
+    plain least-squares fit lets a handful of them steer the extrapolation. On
+    a real CST file the Im(Zc) fit came out as two large cancelling terms
+    (-31.1/sqrt(f) + 30.2/f) that overstated the reactance by up to 10x and
+    produced a badly exaggerated ripple in the EO response.
+
+    The residual scale is measured from the data (MAD of the first fit), so
+    there is no magic constant, and a fit that is already clean -- synthetic
+    data, or a well-conditioned measurement -- skips the refit entirely and
+    returns exactly what plain least squares gave.
+
+    Returns (popt, refitted).
+    """
+    kw = {}
+    if p0 is not None:
+        kw["p0"] = p0
+    if bounds is not None:
+        kw["bounds"] = bounds
+    popt, _ = curve_fit(fn, x, y, maxfev=maxfev, **kw)
+
+    resid = fn(x, *popt) - y
+    scale = 1.4826 * float(np.median(np.abs(resid - np.median(resid))))
+    floor = 1e-6 * max(float(np.max(np.abs(y))), 1e-12)
+    if not np.isfinite(scale) or scale <= floor:
+        return popt, False
+
+    try:
+        popt_r, _ = curve_fit(fn, x, y, p0=popt, method="trf", loss="soft_l1",
+                              f_scale=scale, max_nfev=maxfev,
+                              bounds=bounds if bounds is not None
+                              else (-np.inf, np.inf))
+        return popt_r, True
+    except Exception:
+        return popt, False
+
+
 def extract_line_fit(filepath: str, L_meas_mm: float, z0_sys: float = 50.0,
-                     f_fit_min_GHz: float = 0.5) -> LineFit:
+                     f_fit_min_GHz: float = 0.5,
+                     nm_model: str = "saturating") -> LineFit:
     """
     ABCD de-embedding of a 2-port electrode measurement into per-unit-length
     alpha(f), beta(f) and Zc(f), followed by a physically-motivated fit of each.
@@ -72,20 +119,141 @@ def extract_line_fit(filepath: str, L_meas_mm: float, z0_sys: float = 50.0,
     beta_raw = np.unwrap(np.angle(exp_gammad)) / L_meas
     alpha_raw_dB_cm = alpha_raw_Np_m * 8.686 / 100
 
+    nm_raw = (C0 * beta_raw) / omega
+    f_max = float(f_GHz.max())
+
     # --- physical regression, so every quantity extrapolates sensibly ---
-    popt_a, _ = curve_fit(fit_alpha_scaled, f_GHz, alpha_raw_dB_cm, maxfev=20000)
-    popt_z, _ = curve_fit(fit_impedance_physical, f_GHz, np.real(Zc_raw), maxfev=20000)
-    popt_zi, _ = curve_fit(fit_impedance_imag, f_GHz, np.imag(Zc_raw), maxfev=20000)
-    popt_b, _ = curve_fit(fit_beta, f_Hz, beta_raw, maxfev=20000)
+    # alpha: try the free fit first (so results that were already physical are
+    # reproduced exactly), and only fall back to a sign-constrained fit if the
+    # free one lands somewhere unphysical. A negative sqrt(f) coefficient means
+    # the conductor-loss term is being used to cancel the dielectric one, and
+    # the two then diverge from each other outside the measured band.
+    popt_a, robust_a = _robust_fit(fit_alpha_scaled, f_GHz, alpha_raw_dB_cm)
+    alpha_constrained = bool(popt_a[0] < 0 or popt_a[1] < 0)
+    if alpha_constrained:
+        popt_a, _ = _robust_fit(fit_alpha_scaled, f_GHz, alpha_raw_dB_cm,
+                                bounds=([0.0, 0.0, -np.inf], [np.inf, np.inf, np.inf]))
+
+    popt_z, _ = _robust_fit(fit_impedance_physical, f_GHz, np.real(Zc_raw))
+    popt_zi, robust_zi = _robust_fit(fit_impedance_imag, f_GHz, np.imag(Zc_raw))
+    popt_b, _ = curve_fit(fit_beta, f_Hz, beta_raw, maxfev=20000)   # legacy model
+
+    # n_m: bounded dispersion, with the corner pinned inside the measured range
+    # so the model cannot claim dispersion the data never resolved.
+    try:
+        popt_nm, _ = _robust_fit(
+            fit_nm_saturating, f_GHz, nm_raw,
+            p0=(float(np.median(nm_raw)), 0.01, min(30.0, f_max)),
+            bounds=([1.0, -1.0, 1e-3], [10.0, 1.0, f_max]), maxfev=80000)
+    except Exception:
+        popt_nm = np.array([float(np.median(nm_raw)), 0.0, f_max])
+
+    # --- how trustworthy is this extraction? ---
+    top = f_GHz >= 0.75 * f_max
+    resid_a = fit_alpha_scaled(f_GHz, *popt_a) - alpha_raw_dB_cm
+    quality = {
+        "alpha_rms_dB_cm": float(np.sqrt(np.mean(resid_a ** 2))),
+        "alpha_mean_top_dB_cm": float(alpha_raw_dB_cm[top].mean()) if top.any() else float("nan"),
+        "alpha_std_top_dB_cm": float(alpha_raw_dB_cm[top].std()) if top.any() else float("nan"),
+        "nm_spread": float(nm_raw.max() - nm_raw.min()),
+        "total_IL_dB": float(-20 * np.log10(np.abs(S21)).min()),
+        "robust_refit": bool(robust_a or robust_zi),
+    }
+    m, sd = quality["alpha_mean_top_dB_cm"], quality["alpha_std_top_dB_cm"]
+    quality["alpha_scatter"] = float(sd / m) if m else float("nan")
 
     return LineFit(
         popt_alpha=popt_a, popt_zre=popt_z, popt_zim=popt_zi, popt_beta=popt_b,
         L_meas_m=L_meas, z0_sys=z0_sys,
-        f_min_sim_GHz=float(f_GHz.min()), f_max_sim_GHz=float(f_GHz.max()),
+        f_min_sim_GHz=float(f_GHz.min()), f_max_sim_GHz=f_max,
         source_file=os.path.basename(filepath),
+        nm_model=nm_model, popt_nm=popt_nm, alpha_constrained=alpha_constrained,
+        quality=quality,
         raw_f_GHz=f_GHz, raw_alpha_dB_cm=alpha_raw_dB_cm, raw_Zc=Zc_raw,
-        raw_nm=(C0 * beta_raw) / omega,
+        raw_nm=nm_raw,
     )
+
+
+def extraction_warnings(fit: LineFit, res: EOResult | None = None) -> list[str]:
+    """Plain-language warnings about how far this result is being trusted."""
+    w = []
+    q = fit.quality
+    if fit.alpha_constrained:
+        w.append("The free alpha fit came out unphysical (negative conductor- or "
+                 "dielectric-loss coefficient) and was refitted with both constrained "
+                 "to be non-negative. That usually means the de-embedded loss is noisy.")
+    if q.get("alpha_scatter", 0) > 0.15:
+        w.append(f"The de-embedded loss scatters by {100*q['alpha_scatter']:.0f}% of its "
+                 f"own mean over the top quarter of the band "
+                 f"({q['alpha_mean_top_dB_cm']:.2f} +/- {q['alpha_std_top_dB_cm']:.2f} dB/cm). "
+                 f"The test pattern only shows {q.get('total_IL_dB', float('nan')):.2f} dB of "
+                 f"insertion loss in total, so alpha is poorly determined and every "
+                 f"bandwidth below inherits that.")
+    if res is not None and res.bw_GHz > 1.15 * fit.f_max_sim_GHz:
+        w.append(f"The -3 dB point ({res.bw_GHz:.0f} GHz) sits {res.bw_GHz/fit.f_max_sim_GHz:.1f}x "
+                 f"beyond the end of the S-parameter data ({fit.f_max_sim_GHz:.0f} GHz). "
+                 f"It is set entirely by how the fits extrapolate, not by the data.")
+    return w
+
+
+def fit_family(fit: LineFit) -> list:
+    """
+    Every defensible way to fit the same de-embedded data.
+
+    When the -3 dB point lands well outside the measured band its value is set
+    by the choice of fitting form, not by the data. Rather than pretend one
+    choice is the truth, evaluate them all and quote the spread: that spread is
+    the real uncertainty of the number.
+    """
+    from dataclasses import replace
+    fG, a_raw, nm_raw = fit.raw_f_GHz, fit.raw_alpha_dB_cm, fit.raw_nm
+    f_max = fit.f_max_sim_GHz
+
+    alphas = {"fitted": fit.popt_alpha}
+    try:
+        p_rob, _ = curve_fit(fit_alpha_scaled, fG, a_raw,
+                             bounds=([0.0, 0.0, -np.inf], [np.inf, np.inf, np.inf]),
+                             loss="soft_l1", f_scale=0.3, max_nfev=20000)
+        alphas["outlier-robust"] = p_rob
+    except Exception:
+        pass
+
+    # The legacy cubic-beta model is deliberately NOT in this family. It is not a
+    # defensible alternative -- it is unbounded outside the measured band and
+    # fits worse inside it -- so including it would inflate the quoted
+    # uncertainty with a form we know to be wrong. It stays reachable through
+    # the nm_model parameter only, for reproducing older numbers.
+    nms = {"saturating": ("saturating", fit.popt_nm),
+           "constant n_m": ("saturating", np.array([float(np.median(nm_raw)), 0.0, f_max]))}
+    try:
+        p_free, _ = curve_fit(fit_nm_saturating, fG, nm_raw,
+                              p0=tuple(fit.popt_nm), maxfev=80000,
+                              bounds=([1.0, -1.0, 1e-3], [10.0, 1.0, 1e6]))
+        nms["saturating, free corner"] = ("saturating", p_free)
+    except Exception:
+        pass
+
+    out = []
+    for a_lbl, a_par in alphas.items():
+        for n_lbl, (model, n_par) in nms.items():
+            out.append((f"alpha={a_lbl}, n_m={n_lbl}",
+                        replace(fit, popt_alpha=a_par, nm_model=model, popt_nm=n_par)))
+    return out
+
+
+def bandwidth_spread(fit: LineFit, p: dict) -> dict:
+    """Bandwidth over the whole fit family -- min, median, max and per-variant."""
+    rows = []
+    for label, variant in fit_family(fit):
+        try:
+            rows.append((label, float(eo_response(variant, p).bw_GHz)))
+        except Exception:
+            continue
+    if not rows:
+        return {}
+    vals = np.array([v for _, v in rows])
+    return {"rows": rows, "min": float(vals.min()), "max": float(vals.max()),
+            "median": float(np.median(vals))}
 
 
 # =====================================================================

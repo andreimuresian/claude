@@ -106,9 +106,41 @@ INTERCONNECT will not fan one electrical output out to two modulation ports,
 the builder falls back to a lumped equivalent that preserves |S21| and V_pi
 exactly (only the chirp asymmetry is lost) and says so in the log.
 
+## Extrapolation and the honest uncertainty
+
+A test pattern is measured over a limited band and is usually much shorter than
+the device. When the -3 dB point lands outside the measured band, its value is
+decided by the *form* of the fit, not by the data. The tool says so:
+
+* **n_m** is fitted with a bounded, saturating form whose corner is pinned
+  inside the measured range, so the model can never claim dispersion it did not
+  resolve. The older polynomial `beta(f)` fit is kept as `nm_model="cubic-beta"`
+  only for reproducing earlier numbers -- on a real 0-80 GHz dataset it reached
+  n_m = 3.2 at 300 GHz and 6.7 at 600 GHz, inventing a velocity walk-off that
+  does not exist.
+* **alpha** is refitted with non-negative conductor- and dielectric-loss
+  coefficients if the free fit lands somewhere unphysical.
+* Every fit is **outlier-robust**: a soft-L1 refit scaled to the measured
+  residual spread, which is skipped entirely when the data is already clean.
+* `bandwidth_spread()` reports the bandwidth over the whole family of
+  defensible fits. Quote the range, not the midpoint.
+* `extraction_warnings()` says plainly when the loss is poorly determined, when
+  the alpha fit had to be constrained, and how far past the data the answer sits.
+
+On a real 2.5 mm test pattern measured to 80 GHz and scaled to 16.5 mm, that
+family spans 105-113 GHz. Any single number quoted to better than that is false
+precision.
+
 ## Validation
 
 `physics.eo_response` with every perturbation knob at its default (scales 1.0,
 offsets 0.0, purely resistive source and load) is bit-for-bit the expression
-from the original extractor. Regression-checked against it on a synthetic
-uniform line: identical to within 1e-6 GHz.
+from the original extractor -- checked directly on identical inputs, agreeing to
+8e-15 dB across the curve. With `nm_model="cubic-beta"` the whole pipeline
+reproduces the original extractor's bandwidth to within 1e-6 GHz, so older
+results stay reachable.
+
+On a synthetic line with known truth (`n_m = 2.34 - 0.10 exp(-f/25)`), the
+saturating model gives n_m(300 GHz) = 2.363 against a true 2.340, where the
+cubic gives 1.441; and the robust fits recover the exact synthetic coefficients
+for alpha, Re(Zc) and Im(Zc).

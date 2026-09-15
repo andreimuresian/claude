@@ -56,6 +56,22 @@ def fit_impedance_imag(f_GHz, k1, k2):
     return k1 / np.sqrt(f_GHz) + k2 / f_GHz
 
 
+def fit_nm_saturating(f_GHz, n0, dn, fc):
+    """
+    Microwave index with bounded dispersion: n_m rises from its quasi-static
+    value n0 towards n0+dn with a corner at fc.
+
+    Bounded is the whole point. Fitting beta(f) with a polynomial and dividing
+    by omega gives an n_m that keeps climbing outside the measured band -- on a
+    real 0-80 GHz dataset the cubic form reached n_m = 3.2 at 300 GHz and 6.7 at
+    600 GHz, inventing a velocity walk-off that does not exist and destroying
+    the extrapolated bandwidth. This form cannot do that: it saturates, and the
+    extractor additionally pins fc inside the measured range so the model never
+    claims dispersion it has not seen.
+    """
+    return n0 + dn * f_GHz / (fc + f_GHz)
+
+
 # =====================================================================
 # 2. The fitted line
 # =====================================================================
@@ -66,12 +82,16 @@ class LineFit:
     popt_alpha: np.ndarray
     popt_zre: np.ndarray
     popt_zim: np.ndarray
-    popt_beta: np.ndarray
+    popt_beta: np.ndarray            # legacy cubic beta(f), kept for nm_model="cubic-beta"
     L_meas_m: float
     z0_sys: float
     f_min_sim_GHz: float
     f_max_sim_GHz: float
     source_file: str = ""
+    nm_model: str = "saturating"
+    popt_nm: Optional[np.ndarray] = None    # (n0, dn, fc) for the saturating model
+    alpha_constrained: bool = False         # True if the free alpha fit was unphysical
+    quality: dict = field(default_factory=dict)
     # raw de-embedded points, kept for the diagnostic plots
     raw_f_GHz: np.ndarray = field(default_factory=lambda: np.empty(0))
     raw_alpha_dB_cm: np.ndarray = field(default_factory=lambda: np.empty(0))
@@ -91,9 +111,11 @@ class LineFit:
         return re + 1j * im
 
     def nm(self, f_GHz, offset=0.0):
-        f_Hz = np.asarray(f_GHz, dtype=float) * 1e9
-        omega = 2 * np.pi * f_Hz
-        return (C0 * fit_beta(f_Hz, *self.popt_beta)) / omega + offset
+        f = np.asarray(f_GHz, dtype=float)
+        if self.nm_model == "cubic-beta" or self.popt_nm is None:
+            f_Hz = f * 1e9
+            return (C0 * fit_beta(f_Hz, *self.popt_beta)) / (2 * np.pi * f_Hz) + offset
+        return fit_nm_saturating(f, *self.popt_nm) + offset
 
     # -- convenience ---------------------------------------------------
     def summary_at(self, f_GHz: float, **pert) -> dict:

@@ -23,7 +23,8 @@ import numpy as np
 
 from . import parameters as P
 from . import sweep as SW
-from .extractor import DARK, LIGHT, diagnostic_figure, eo_figure, export_lumerical_tables
+from .extractor import (DARK, LIGHT, bandwidth_spread, diagnostic_figure, eo_figure,
+                        export_lumerical_tables, extraction_warnings)
 from .physics import eo_response, link_metrics
 
 
@@ -77,6 +78,20 @@ def cmd_analyse(args):
     print(f"V_pi (device)       {lm.vpi_eff_V:.3f} V   (V_pi.L = {lm.vpi_L_Vcm:.3f} V.cm)")
     print(f"extinction ratio    {lm.er_dB:.1f} dB")
     print(f"chirp parameter     {lm.chirp_alpha:.4f}")
+
+    spread = bandwidth_spread(fit, p)
+    if spread:
+        print("-" * 56)
+        print("Bandwidth across every defensible fit of the same data:")
+        for lbl, v in spread["rows"]:
+            print(f"  {lbl:46s} {v:7.2f} GHz")
+        print(f"  --> {spread['min']:.0f} - {spread['max']:.0f} GHz "
+              f"(median {spread['median']:.0f})")
+    warns = extraction_warnings(fit, res)
+    if warns:
+        print("-" * 56)
+        for w in warns:
+            print(f"  ! {w}")
 
     if args.plot:
         out = str(p["out_dir"])

@@ -58,6 +58,13 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("z0_sys_ohm", "S-param reference Z0", 50.0, "Line under test", "ohm",
               affects="extract",
               help="Reference impedance of the .s2p file (almost always 50 ohm)."),
+    ParamSpec("nm_model", "Microwave index model", "saturating", "Line under test",
+              kind="choice", choices=("saturating", "cubic-beta"), affects="extract",
+              help="How n_m(f) is extrapolated past the measured band. 'saturating' "
+                   "is bounded and pins its corner inside the data. 'cubic-beta' is "
+                   "the older polynomial fit, which keeps climbing outside the data "
+                   "and can invent a large fake velocity mismatch -- kept only to "
+                   "reproduce earlier numbers."),
     ParamSpec("f_fit_min_GHz", "Fit lower cut-off", 0.5, "Line under test", "GHz",
               affects="extract",
               help="Points below this are discarded before de-embedding; the "

@@ -74,9 +74,10 @@ _FIT_CACHE: dict[tuple, LineFit] = {}
 def get_fit(p: dict, force: bool = False) -> LineFit:
     """Fitted line physics for *p*, memoised on the extraction inputs."""
     key = (os.path.abspath(str(p["s2p_path"])), float(p["L_meas_mm"]),
-           float(p["z0_sys_ohm"]), float(p["f_fit_min_GHz"]))
+           float(p["z0_sys_ohm"]), float(p["f_fit_min_GHz"]), str(p["nm_model"]))
     if force or key not in _FIT_CACHE:
-        _FIT_CACHE[key] = extract_line_fit(key[0], key[1], key[2], key[3])
+        _FIT_CACHE[key] = extract_line_fit(key[0], key[1], key[2], key[3],
+                                           nm_model=key[4])
     return _FIT_CACHE[key]
 
 
