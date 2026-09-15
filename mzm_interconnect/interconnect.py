@@ -40,6 +40,11 @@ class LumericalUnavailable(RuntimeError):
     pass
 
 
+class _FanOutUnsupported(RuntimeError):
+    """This INTERCONNECT build will not drive two modulation ports from one
+    electrical output, so push-pull has to fall back to the lumped equivalent."""
+
+
 def load_lumapi(lumapi_path: str):
     """Import lumapi from an explicit install directory."""
     if lumapi_path and os.path.isdir(lumapi_path) and lumapi_path not in sys.path:
@@ -104,10 +109,35 @@ class InterconnectBuilder:
     def build(self, p: dict, files: dict) -> str:
         """
         Build the whole schematic from a normalised parameter dict and the
-        loss/z0/nm table paths produced by ``extractor.export_lumerical_tables``.
-        Returns the topology actually built.
+        loss/z0/nm table paths. Returns the topology actually built.
+
+        A push-pull build needs one electrical output to feed two modulation
+        ports. Not every INTERCONNECT build allows that, so if the fan-out is
+        refused we throw the half-wired schematic away and build the lumped
+        equivalent from a clean slate. Patching a partially connected
+        schematic in place is what used to leave the session wedged: the
+        repair tried to connect ports that were still occupied, the exception
+        escaped, and the GUI was left holding a broken session.
         """
         p = P.normalise(p)
+        if str(p["drive_config"]) == "push-pull":
+            try:
+                self.topology = self._build_once(p, files, pushpull=True)
+                return self.topology
+            except _FanOutUnsupported:
+                self.log("  This INTERCONNECT build will not fan one electrical "
+                         "output out to two modulation ports.")
+            except Exception as exc:
+                self.log(f"  Push-pull build failed ({type(exc).__name__}: {exc}).")
+            self.log("  Rebuilding from scratch as a lumped push-pull equivalent.")
+            self.topology = self._build_once(p, files, pushpull=False, lumped_pp=True)
+            return self.topology
+
+        self.topology = self._build_once(p, files, pushpull=False)
+        return self.topology
+
+    def _build_once(self, p: dict, files: dict, pushpull: bool,
+                    lumped_pp: bool = False) -> str:
         sim = self.sim
         sim.new()
         sim.switchtodesign()
@@ -115,7 +145,6 @@ class InterconnectBuilder:
         sim.set("sample rate", float(p["ic_sample_rate_GHz"]) * 1e9)
 
         f_opt = 299792458.0 / (float(p["lambda_nm"]) * 1e-9)
-        want_pp = str(p["drive_config"]) == "push-pull"
 
         # ---- 1. optical source ----
         self.add(['CW Laser'], 'CWL_1', 115, 195)
@@ -156,13 +185,16 @@ class InterconnectBuilder:
                 self.log(f"  arm-2 attenuator not available ({exc}); "
                          f"loss imbalance applied in the Python model only.")
 
-        # ---- 5. modulator(s) ----
+        # ---- 5. modulator coefficients ----
         L_OM = 1e-6
         vpi = float(p["Vpi_V"])
         d = float(p["vpi_imbalance_frac"])
+        c1 = -np.pi / (vpi * L_OM)
+        c2 = +np.pi / (vpi * (1.0 + d) * L_OM)
 
         def add_modulator(name, x, y, coeff):
-            self.add(['Optical Modulator Measured', 'Optical Modulator (Measured)'], name, x, y)
+            self.add(['Optical Modulator Measured', 'Optical Modulator (Measured)'],
+                     name, x, y)
             self.setp(name, ['configuration'], 'bidirectional')
             self.setp(name, ['length'], L_OM)
             self.setp(name, ['electrode type'], 'lumped')
@@ -173,9 +205,6 @@ class InterconnectBuilder:
             for k in ('a', 'b', 'c', 'd'):
                 self.setp(name, [f'absorption coefficient {k}', f'absorption {k}'],
                           0.0, required=False)
-
-        c1 = -np.pi / (vpi * L_OM)
-        c2 = +np.pi / (vpi * (1.0 + d) * L_OM)
 
         # ---- 6. traveling-wave electrode ----
         self.add(['Traveling Wave Electrode'], 'TW_1', 420, -45)
@@ -249,45 +278,48 @@ class InterconnectBuilder:
         self.setp('ENA_1', ['remove dc', 'remove DC'], True, required=False)
         self.setp('ENA_1', ['peak analysis', 'peak_analysis'], 'disable', required=False)
 
-        # ---- 9. optical wiring ----
+        # ---- 9. wiring common to every topology ----
         sim.connect('CWL_1', 'output', 'SPLT_1', 'input')
+        sim.connect('SPLT_2', 'output', 'PIN_1', 'input')
         sim.connect('PIN_1', 'output', 'ENA_1', 'input 1')
         sim.connect('ENA_1', 'output', 'TW_1', 'input')
-        sim.connect('SPLT_2', 'output', 'PIN_1', 'input')
 
-        if want_pp:
+        if pushpull:
             add_modulator('OM_1', 560, 120, c1)
             add_modulator('OM_2', 560, 300, c2)
             sim.connect('SPLT_1', 'output 1', 'OM_1', 'port 1')
             sim.connect('OM_1', 'port 2', 'SPLT_2', 'input 1')
             sim.connect('SPLT_1', 'output 2', 'OM_2', 'port 1')
             sim.connect('OM_2', 'port 2', 'PHS_1', 'port 1')
-            tail = self._wire_arm2_tail()
-            sim.connect(*tail, 'SPLT_2', 'input 2')
+            sim.connect(*self._wire_arm2_tail(), 'SPLT_2', 'input 2')
 
-            ok = (self._try_connect('TW_1', 'output', 'OM_1', 'modulation') and
-                  self._try_connect('TW_1', 'output', 'OM_2', 'modulation'))
-            if ok:
-                self.topology = "push-pull"
-                self.log("  Topology: TRUE PUSH-PULL -- one electrode driving both arms "
-                         "with opposite-sign phase coefficients.")
-            else:
-                self.log("  This INTERCONNECT build will not fan one electrical output "
-                         "out to two modulation ports.")
-                self.topology = self._rebuild_lumped_pushpull(p, c1, c2, L_OM)
-        else:
-            add_modulator('OM_1', 560, 120, c1)
-            sim.connect('SPLT_1', 'output 1', 'OM_1', 'port 1')
-            sim.connect('OM_1', 'port 2', 'SPLT_2', 'input 1')
-            sim.connect('SPLT_1', 'output 2', 'PHS_1', 'port 1')
-            tail = self._wire_arm2_tail()
-            sim.connect(*tail, 'SPLT_2', 'input 2')
+            # The fan-out is the one step that can legitimately be refused.
             sim.connect('TW_1', 'output', 'OM_1', 'modulation')
-            self.topology = "single-arm"
-            self.log("  Topology: SINGLE-ARM drive (one modulated arm, static phase in "
-                     "the other). Chirp parameter = 1, V_pi is the full single-arm V_pi.")
+            if not self._try_connect('TW_1', 'output', 'OM_2', 'modulation'):
+                raise _FanOutUnsupported(
+                    "one electrical output cannot drive two modulation ports")
+            self.log("  Topology: TRUE PUSH-PULL -- one electrode driving both arms "
+                     "with opposite-sign phase coefficients.")
+            return "push-pull"
 
-        return self.topology
+        c_drive = (c1 - c2) if lumped_pp else c1
+        add_modulator('OM_1', 560, 120, c_drive)
+        sim.connect('SPLT_1', 'output 1', 'OM_1', 'port 1')
+        sim.connect('OM_1', 'port 2', 'SPLT_2', 'input 1')
+        sim.connect('SPLT_1', 'output 2', 'PHS_1', 'port 1')
+        sim.connect(*self._wire_arm2_tail(), 'SPLT_2', 'input 2')
+        sim.connect('TW_1', 'output', 'OM_1', 'modulation')
+
+        if lumped_pp:
+            vpi_eff = np.pi / (abs(c_drive) * L_OM)
+            self.log(f"  Topology: LUMPED PUSH-PULL EQUIVALENT -- one modulator with "
+                     f"c = {c_drive:.4g} (= |c1|+|c2|). Same EO |S21| and same "
+                     f"effective V_pi ({vpi_eff:.3f} V); chirp is NOT modelled.")
+            return "push-pull (lumped equivalent)"
+
+        self.log("  Topology: SINGLE-ARM drive (one modulated arm, static phase in "
+                 "the other). Chirp parameter = 1, V_pi is the full single-arm V_pi.")
+        return "single-arm"
 
     def _wire_arm2_tail(self):
         """Insert the arm-2 attenuator if present; return the element/port feeding
@@ -296,26 +328,6 @@ class InterconnectBuilder:
             self.sim.connect('PHS_1', 'port 2', 'ATT_1', 'input')
             return ('ATT_1', 'output')
         return ('PHS_1', 'port 2')
-
-    def _rebuild_lumped_pushpull(self, p, c1, c2, L_OM) -> str:
-        """
-        Fallback: collapse push-pull onto the single driven modulator by summing
-        the two arms' efficiencies. |S21| and V_pi_eff are preserved exactly;
-        the chirp asymmetry is not represented.
-        """
-        sim = self.sim
-        try:
-            sim.deleteelement('OM_2')
-        except Exception:
-            pass
-        c_eff = c1 - c2                      # |c1| + |c2| since the signs oppose
-        self.setp('OM_1', ['phase coefficient c', 'c'], c_eff)
-        sim.connect('SPLT_1', 'output 2', 'PHS_1', 'port 1')
-        sim.connect('TW_1', 'output', 'OM_1', 'modulation')
-        self.log(f"  Falling back to a LUMPED push-pull equivalent: one modulator with "
-                 f"c = {c_eff:.4g} (= |c1|+|c2|). Same EO |S21| and same effective V_pi "
-                 f"({1.0 / abs(c_eff) * np.pi / L_OM:.3f} V); chirp is NOT modelled.")
-        return "push-pull (lumped equivalent)"
 
     # ---------------- run & read back -----------------------------------
     def run(self, save_path: Optional[str] = None):

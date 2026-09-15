@@ -55,11 +55,32 @@ THEMES = {
 class Tooltip:
     """Hover help, so every parameter can carry its physical meaning."""
 
+    DELAY_MS = 550
+
     def __init__(self, widget, text: str, theme: dict):
         self.widget, self.text, self.theme = widget, text, theme
         self.tip = None
-        widget.bind("<Enter>", self._show, add="+")
+        self._job = None
+        widget.bind("<Enter>", self._schedule, add="+")
         widget.bind("<Leave>", self._hide, add="+")
+        widget.bind("<Button>", self._hide, add="+")
+
+    def _schedule(self, _evt=None):
+        # A hover delay keeps a pointer sweeping across the sidebar from
+        # creating (and tearing down) dozens of override-redirect Toplevels.
+        self._cancel()
+        try:
+            self._job = self.widget.after(self.DELAY_MS, self._show)
+        except tk.TclError:
+            pass
+
+    def _cancel(self):
+        if self._job is not None:
+            try:
+                self.widget.after_cancel(self._job)
+            except Exception:
+                pass
+            self._job = None
 
     def _show(self, _evt=None):
         if self.tip or not self.text:
@@ -75,8 +96,12 @@ class Tooltip:
                  font=("Segoe UI", 8)).pack()
 
     def _hide(self, _evt=None):
+        self._cancel()
         if self.tip:
-            self.tip.destroy()
+            try:
+                self.tip.destroy()
+            except tk.TclError:
+                pass
             self.tip = None
 
 
@@ -194,7 +219,21 @@ class KpiStrip(ttk.Frame):
 
 
 class FigurePane(ttk.Frame):
-    """Holds one matplotlib figure and swaps it out cleanly on redraw."""
+    """
+    Holds one matplotlib figure and swaps it out cleanly on redraw.
+
+    Matplotlib binds <Configure> straight to a full Agg re-render, and a single
+    redraw of these figures costs ~90 ms. A window-manager resize drag emits
+    Configure continuously, so the events arrive faster than they can be served
+    and the whole application stops responding. We therefore take over the
+    <Configure> binding and coalesce a storm of them into one redraw once the
+    resize has settled, skipping panes on notebook tabs that are not visible.
+    """
+
+    RESIZE_DEBOUNCE_MS = 120
+
+    class _SizeEvent:
+        __slots__ = ("width", "height")
 
     def __init__(self, master, theme, toolbar=True):
         super().__init__(master, style="Panel.TFrame")
@@ -202,12 +241,15 @@ class FigurePane(ttk.Frame):
         self.canvas = None
         self.tb = None
         self.figure = None
+        self._resize_job = None
+        self._pending_size = None
         self.placeholder = tk.Label(
             self, text="Load a Touchstone file and press  Extract + analyse",
             bg=theme["panel"], fg=theme["muted"], font=("Segoe UI", 10))
         self.placeholder.pack(expand=True)
 
     def show(self, fig):
+        self._cancel_resize()
         if self.placeholder is not None:
             self.placeholder.destroy()
             self.placeholder = None
@@ -225,7 +267,50 @@ class FigurePane(ttk.Frame):
             self.tb = NavigationToolbar2Tk(self.canvas, self, pack_toolbar=False)
             self.tb.update()
             self.tb.pack(side="bottom", fill="x")
-        self.canvas.get_tk_widget().pack(side="top", fill="both", expand=True)
+        widget = self.canvas.get_tk_widget()
+        widget.pack(side="top", fill="both", expand=True)
+        # Replace matplotlib's own <Configure> -> resize binding with ours.
+        widget.bind("<Configure>", self._queue_resize)
+        widget.bind("<Map>", self._on_map, add="+")
+
+    def _cancel_resize(self):
+        if self._resize_job is not None:
+            try:
+                self.after_cancel(self._resize_job)
+            except Exception:
+                pass
+            self._resize_job = None
+
+    def _queue_resize(self, event):
+        self._pending_size = (event.width, event.height)
+        self._cancel_resize()
+        try:
+            self._resize_job = self.after(self.RESIZE_DEBOUNCE_MS, self._apply_resize)
+        except tk.TclError:
+            pass
+
+    def _apply_resize(self):
+        self._resize_job = None
+        if self.canvas is None or self._pending_size is None:
+            return
+        widget = self.canvas.get_tk_widget()
+        try:
+            if not widget.winfo_ismapped():
+                return            # hidden tab: keep the size, redraw on <Map>
+        except tk.TclError:
+            return
+        w, h = self._pending_size
+        self._pending_size = None
+        evt = self._SizeEvent()
+        evt.width, evt.height = w, h
+        try:
+            self.canvas.resize(evt)
+        except Exception:
+            pass
+
+    def _on_map(self, _evt=None):
+        if self._pending_size is not None:
+            self._apply_resize()
 
 
 # =====================================================================
@@ -247,6 +332,11 @@ class MZMStudio(tk.Tk):
         self.result = None
         self.sweep_result = None
         self.lumerical_overlay = None
+        # The lumapi session object owns the INTERCONNECT process: if nothing
+        # holds a reference it is garbage-collected and the window closes by
+        # itself. Keep it on the app, not in a local variable.
+        self.ic_builder = None
+        self._closing = False
         self._busy = False
         self._cancel = threading.Event()
         self._q: queue.Queue = queue.Queue()
@@ -263,7 +353,18 @@ class MZMStudio(tk.Tk):
 
         self.bind("<F5>", lambda e: self.action_analyse())
         self.bind("<Control-s>", lambda e: self.action_save_session())
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
         self.after(80, self._pump)
+
+    def _on_close(self):
+        self._closing = True
+        if self.ic_builder is not None:
+            try:
+                self.ic_builder.close()
+            except Exception:
+                pass
+            self.ic_builder = None
+        self.destroy()
 
     # ---------------- styling ----------------------------------------
     def _init_style(self):
@@ -322,11 +423,42 @@ class MZMStudio(tk.Tk):
         ttk.Button(bar, text=("Light theme" if self.theme_name == "dark" else "Dark theme"),
                    command=self.action_toggle_theme).pack(side="right", padx=3)
 
+        # A non-modal banner. Errors must never be reported with a modal dialog
+        # from a background job: INTERCONNECT takes focus when it launches, the
+        # dialog ends up behind it, and its grab makes the app look frozen.
+        self.banner = tk.Frame(self, bg=t["err"])
+        self.banner_text = tk.Label(self.banner, text="", bg=t["err"], fg="#ffffff",
+                                    anchor="w", justify="left", padx=12, pady=7,
+                                    font=("Segoe UI", 9))
+        self.banner_text.pack(side="left", fill="x", expand=True)
+        tk.Button(self.banner, text="Show log", bg=t["err"], fg="#ffffff", bd=0,
+                  activebackground=t["err"], cursor="hand2",
+                  font=("Segoe UI", 8, "bold"),
+                  command=lambda: self.nb.select(self.tab_log)).pack(side="right", padx=4)
+        tk.Button(self.banner, text="X", bg=t["err"], fg="#ffffff", bd=0,
+                  activebackground=t["err"], cursor="hand2",
+                  font=("Segoe UI", 9, "bold"),
+                  command=self.hide_banner).pack(side="right", padx=(4, 10))
+
+    def show_banner(self, message: str):
+        try:
+            self.banner_text.config(text=message)
+            self.banner.pack(fill="x", padx=12, pady=(0, 2), before=self._body_pane)
+        except tk.TclError:
+            pass
+
+    def hide_banner(self):
+        try:
+            self.banner.pack_forget()
+        except tk.TclError:
+            pass
+
     # ---------------- body ---------------------------------------------
     def _build_body(self):
         t = self.theme
         pane = ttk.Panedwindow(self, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=12, pady=6)
+        self._body_pane = pane
 
         # ---- left: parameters ----
         left = ttk.Frame(pane, style="Panel.TFrame")
@@ -534,6 +666,8 @@ class MZMStudio(tk.Tk):
         self.lum_keep = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl, text="Leave INTERCONNECT open afterwards",
                         variable=self.lum_keep).pack(side="left", padx=14)
+        ttk.Button(ctrl, text="Close INTERCONNECT session",
+                   command=self.action_close_interconnect).pack(side="left", padx=3)
 
         info = tk.Text(self.tab_lum, height=9, bg=t["card"], fg=t["muted"],
                        insertbackground=t["fg"], relief="flat", wrap="word",
@@ -602,25 +736,62 @@ class MZMStudio(tk.Tk):
     def log(self, msg, tag=None):
         self._q.put(("log", (str(msg), tag)))
 
+    def _write_log(self, msg, tag=None):
+        try:
+            self.log_text.insert("end", msg + "\n", tag or ())
+            self.log_text.see("end")
+        except tk.TclError:
+            pass
+
+    def _dispatch(self, kind, payload):
+        if kind == "log":
+            msg, tag = payload
+            self._write_log(msg, tag)
+        elif kind == "status":
+            self.status.config(text=payload)
+        elif kind == "progress":
+            done, total = payload
+            self.progress["maximum"] = max(total, 1)
+            self.progress["value"] = done
+        elif kind == "call":
+            payload()
+        elif kind == "banner":
+            self.show_banner(payload)
+
     def _pump(self):
+        """
+        Drain the worker queue.
+
+        Every step is defended, and the next tick is scheduled in a finally
+        block, because a single exception escaping here used to kill the
+        rescheduling chain for good: after that no log line, status update,
+        figure or error ever reached the window again and the application
+        looked frozen while its widgets were still technically alive.
+        """
+        if self._closing:
+            return
         try:
             while True:
-                kind, payload = self._q.get_nowait()
-                if kind == "log":
-                    msg, tag = payload
-                    self.log_text.insert("end", msg + "\n", tag or ())
-                    self.log_text.see("end")
-                elif kind == "status":
-                    self.status.config(text=payload)
-                elif kind == "progress":
-                    done, total = payload
-                    self.progress["maximum"] = max(total, 1)
-                    self.progress["value"] = done
-                elif kind == "call":
-                    payload()
-        except queue.Empty:
-            pass
-        self.after(80, self._pump)
+                try:
+                    kind, payload = self._q.get_nowait()
+                except queue.Empty:
+                    break
+                try:
+                    self._dispatch(kind, payload)
+                except Exception:
+                    self._write_log("UI update failed (the interface stays "
+                                    "usable):\n" + traceback.format_exc(), "err")
+        except Exception:
+            try:
+                self._write_log("pump error:\n" + traceback.format_exc(), "err")
+            except Exception:
+                pass
+        finally:
+            if not self._closing:
+                try:
+                    self.after(80, self._pump)
+                except tk.TclError:
+                    pass
 
     def _set_status(self, msg):
         self._q.put(("status", msg))
@@ -634,6 +805,7 @@ class MZMStudio(tk.Tk):
             return
         self._busy = True
         self._cancel.clear()
+        self.hide_banner()
         self._set_status(f"{name}...")
 
         def runner():
@@ -644,7 +816,7 @@ class MZMStudio(tk.Tk):
                 self.log(f"[{name}] {type(exc).__name__}: {exc}", "err")
                 self.log(traceback.format_exc(), "err")
                 self._set_status(f"{name}: failed -- see the Log tab")
-                self._ui(lambda: messagebox.showerror(name, f"{type(exc).__name__}: {exc}"))
+                self._q.put(("banner", f"{name} failed -- {type(exc).__name__}: {exc}"))
             finally:
                 self._busy = False
                 self._q.put(("progress", (0, 1)))
@@ -810,8 +982,17 @@ class MZMStudio(tk.Tk):
             out = self._resolve_out_dir(p)
             files = export_lumerical_tables(self.fit, p, self.result, out)
             self.log(f"Tables exported to {out}")
+            # Close a previous session before opening another, otherwise each
+            # build leaks an INTERCONNECT process.
+            if self.ic_builder is not None:
+                try:
+                    self.ic_builder.close()
+                except Exception:
+                    pass
+                self.ic_builder = None
             b = InterconnectBuilder(str(p["lumapi_path"]), hide=bool(p["ic_hide"]),
                                     log=lambda m: self.log(m))
+            self.ic_builder = b            # keeps the process alive
             topo = b.build(p, files)
             self.log(f"Schematic built ({topo}).")
             b.run(os.path.join(out, "TWMZM_EO_response.icp"))
@@ -828,9 +1009,26 @@ class MZMStudio(tk.Tk):
                              lumerical=self.lumerical_overlay)
             self._ui(lambda: (self.fig_lum.show(fig), self.fig_response.show(fig2),
                               self.nb.select(self.tab_lum)))
-            if not self.lum_keep.get():
+            if self.lum_keep.get():
+                self.log("  INTERCONNECT is left open. Use 'Close INTERCONNECT "
+                         "session' when you are done with it, or it closes with "
+                         "this window.")
+            else:
                 b.close()
+                self.ic_builder = None
         self._run_async(work, "INTERCONNECT")
+
+    def action_close_interconnect(self):
+        if self.ic_builder is None:
+            self.log("No INTERCONNECT session is open.", "warn")
+            return
+        try:
+            self.ic_builder.close()
+            self.log("INTERCONNECT session closed.", "ok")
+        except Exception as exc:
+            self.log(f"Could not close the session cleanly: {exc}", "warn")
+        finally:
+            self.ic_builder = None
 
     # ---------------- session save/load ---------------------------------
     def action_save_session(self):
@@ -856,10 +1054,24 @@ class MZMStudio(tk.Tk):
         self.action_analyse()
 
     def action_toggle_theme(self):
+        # Tearing the root down from inside a callback while the pump's own
+        # after() is still pending leaves Tk trying to run a command that no
+        # longer exists ("invalid command name ..._pump"). Stop the chain and
+        # hand the Lumerical session over before destroying anything.
         params = {k: v.get() for k, v in self.vars.items()}
-        new = "light" if self.theme_name == "dark" else "dark"
-        self.destroy()
-        app = MZMStudio(theme_name=new, initial=params)
+        new_theme = "light" if self.theme_name == "dark" else "dark"
+        builder = self.ic_builder
+        self.ic_builder = None
+        self._closing = True
+        self.after(1, lambda: self._restart(new_theme, params, builder))
+
+    def _restart(self, theme_name, params, builder):
+        try:
+            self.destroy()
+        except tk.TclError:
+            pass
+        app = MZMStudio(theme_name=theme_name, initial=params)
+        app.ic_builder = builder
         app.mainloop()
 
 
