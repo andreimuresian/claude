@@ -18,13 +18,14 @@ from __future__ import annotations
 import json
 import os
 import warnings
+from datetime import datetime
 
 import numpy as np
 import skrf as rf
 from matplotlib.figure import Figure
 from scipy.optimize import curve_fit
 
-from .physics import (C0, EOResult, LineFit, eo_response, fit_alpha_scaled,
+from .physics import (C0, EOResult, LineFit, eo_response, fit_alpha_scaled, link_metrics,
                       fit_beta, fit_impedance_imag, fit_impedance_physical,
                       fit_nm_saturating)
 
@@ -407,6 +408,151 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
     paths["n_points"] = n_table
     paths["extrapolated"] = extrapolated
     return paths
+
+
+def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
+    """
+    Write the two Response-tab traces to a Touchstone-style file.
+
+    Column 1/2 is the electrical input match S11 of the loaded electrode;
+    column 3/4 is the electro-optic S21. The EO phase is a genuine model
+    output, not a placeholder: ``eo_transfer`` is complex throughout, and the
+    group delay of that phase comes out at the optical transit time n_g.L/c.
+
+    The whole parameter set that produced the file is written into the header,
+    so a file can always be traced back to the settings behind it.
+    """
+    fmt = str(p.get("ts_format", "DB")).upper()
+    ports = str(p.get("ts_ports", "4-column"))
+    normalised = bool(p.get("ts_normalised", True))
+    z_ref = float(p["z0_sys_ohm"])
+
+    f_Hz = res.f_GHz * 1e9
+    s11 = res.gamma_in
+    s21 = res.H / (10 ** (res.ref_dB / 20.0)) if normalised else res.H
+
+    def pair(z):
+        if fmt == "RI":
+            return np.real(z), np.imag(z)
+        ang = np.degrees(np.angle(z))
+        if fmt == "MA":
+            return np.abs(z), ang
+        return 20.0 * np.log10(np.clip(np.abs(z), 1e-300, None)), ang
+
+    a1, a2 = pair(s11)
+    b1, b2 = pair(s21)
+    zero1, zero2 = pair(np.zeros_like(s21))
+
+    lm = link_metrics(p)
+    lo, hi = res.norm_window_GHz
+    H = []
+    A = H.append
+    A("Traveling-wave Mach-Zehnder modulator - modelled response")
+    A(f"generated  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  by mzm_interconnect")
+    A("")
+    pair_name = {"DB": "dB(mag), angle[deg]", "MA": "mag(linear), angle[deg]",
+                 "RI": "real, imag"}[fmt]
+    A("COLUMNS")
+    if ports == "4-column":
+        A(f"  1 frequency[Hz]   2-3 S11 as {pair_name}   4-5 EO-S21 as {pair_name}")
+        A("  NOTE: 4 data columns is NOT a valid 2-port Touchstone file. A strict")
+        A("  reader (scikit-rf, ADS, CST) will reject it. Use 'full 2-port' for those.")
+    else:
+        A(f"  frequency[Hz], then S11, S21(EO), S12(=0), S22(=0), each as {pair_name}")
+        A("  S12 = 0 because the electro-optic path is unidirectional: the detected")
+        A("  photocurrent does not feed back into the RF port. S22 is not modelled.")
+    A(f"  S11 is referenced to {z_ref:g} ohm. EO S21 is a mixed-domain transfer")
+    A("  (RF drive in, detected photocurrent out); its reference impedance is nominal.")
+    A(f"  EO magnitude is {'NORMALISED to the low-frequency reference' if normalised else 'the RAW transfer function'}.")
+    A(f"  EO phase is the model phase; its group delay is the optical transit n_g.L/c.")
+    A("")
+    A("SOURCE DATA")
+    A(f"  touchstone          {fit.source_file}")
+    A(f"  measured range      {fit.f_min_sim_GHz:.3f} - {fit.f_max_sim_GHz:.3f} GHz")
+    A(f"  length in the file  {fit.L_meas_m * 1e3:.4f} mm")
+    A(f"  S-param reference   {fit.z0_sys:g} ohm")
+    A("")
+    A("DEVICE AND CIRCUIT")
+    A(f"  electrode length L  {float(p['L_target_mm']):.4f} mm")
+    A(f"  source impedance    R = {float(p['Zs_R']):g} ohm, L = {float(p['Zs_L_pH']):g} pH, "
+      f"C = {float(p['Zs_C_fF']):g} fF")
+    A(f"  termination         R = {float(p['Rt_R']):g} ohm, L = {float(p['Rt_L_pH']):g} pH, "
+      f"C = {float(p['Rt_C_fF']):g} fF")
+    A(f"  optical group index {float(p['ng']):.5f}")
+    A(f"  wavelength          {float(p['lambda_nm']):g} nm")
+    A(f"  laser power         {float(p['P_laser_dBm']):g} dBm")
+    A(f"  V_pi (single arm)   {float(p['Vpi_V']):g} V")
+    A(f"  drive configuration {p['drive_config']}")
+    A(f"  bias point          {float(p['bias_phase_deg']):g} deg")
+    A("")
+    A("ARM IMBALANCE")
+    A(f"  loss imbalance      {float(p['arm_loss_imbalance_dB']):g} dB")
+    A(f"  phase imbalance     {float(p['arm_phase_imbalance_deg']):g} deg")
+    A(f"  V_pi imbalance      {float(p['vpi_imbalance_frac']):g}")
+    A(f"  splitter imbalance  {float(p['split_err']):g}")
+    A("")
+    A("LINE MODEL")
+    A(f"  n_m model           {fit.nm_model}")
+    A(f"  alpha scales        total {float(p['alpha_scale']):g}, conductor "
+      f"{float(p['alpha_skin_scale']):g}, dielectric {float(p['alpha_diel_scale']):g}")
+    A(f"  alpha offset        {float(p['alpha_offset_dB_cm']):g} dB/cm")
+    A(f"  n_m offset          {float(p['nm_offset']):g}")
+    A(f"  Zc offset           {float(p['zc_offset_ohm']):g} ohm")
+    A(f"  alpha refitted      {'yes (free fit was unphysical)' if fit.alpha_constrained else 'no'}")
+    A("")
+    A("ANALYSIS")
+    A(f"  normalisation       {res.norm_mode}"
+      + (f", mean over {lo:.3f} - {hi:.3f} GHz" if hi > lo else f", point at {lo:.3f} GHz"))
+    A(f"  reference level     {res.ref_dB:.6f} dB  (add this to column 3 for the raw value)")
+    A(f"  ripple averaged out {res.ripple_pp_dB:.3f} dB p-p, period {res.ripple_period_GHz:.3f} GHz")
+    A(f"  criterion           {float(p['bw_level_dB']):g} dB")
+    A(f"  grid                0 - {float(p['f_max_GHz']):g} GHz, {int(p['n_points'])} points")
+    A("")
+    A("RESULTS")
+    A(f"  EO bandwidth        {res.bw_GHz:.3f} GHz"
+      + ("  (LOWER BOUND: never crossed the criterion)" if res.bw_clipped else ""))
+    A(f"  EO S21 at {float(p['f_probe_GHz']):g} GHz    {res.s21_at_probe_dB:+.3f} dB")
+    A(f"  worst S11           {res.s11_worst_dB:.3f} dB")
+    A(f"  V_pi (device)       {lm.vpi_eff_V:.4f} V   (V_pi.L = {lm.vpi_L_Vcm:.4f} V.cm)")
+    A(f"  extinction ratio    {lm.er_dB:.2f} dB")
+    A(f"  chirp parameter     {lm.chirp_alpha:.5f}")
+    for w in extraction_warnings(fit, res):
+        A("")
+        A("WARNING")
+        for line in _wrap(w, 74):
+            A("  " + line)
+
+    with open(path, "w") as fh:
+        for line in H:
+            fh.write(("! " + line).rstrip() + "\n")
+        fh.write(f"# HZ S {fmt} R {z_ref:g}\n")
+        if ports == "4-column":
+            fh.write("! freq          S11            EO-S21\n")
+            for i in range(len(f_Hz)):
+                fh.write(f"{f_Hz[i]:.9e} {a1[i]:+.9e} {a2[i]:+.9e} "
+                         f"{b1[i]:+.9e} {b2[i]:+.9e}\n")
+        else:
+            fh.write("! freq          S11            S21(EO)        S12            S22\n")
+            for i in range(len(f_Hz)):
+                fh.write(f"{f_Hz[i]:.9e} {a1[i]:+.9e} {a2[i]:+.9e} "
+                         f"{b1[i]:+.9e} {b2[i]:+.9e} "
+                         f"{zero1[i]:+.9e} {zero2[i]:+.9e} "
+                         f"{zero1[i]:+.9e} {zero2[i]:+.9e}\n")
+    return {"path": path, "points": len(f_Hz), "format": fmt, "ports": ports,
+            "normalised": normalised}
+
+
+def _wrap(text: str, width: int) -> list:
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        if cur and len(cur) + 1 + len(w) > width:
+            lines.append(cur)
+            cur = w
+        else:
+            cur = f"{cur} {w}".strip()
+    if cur:
+        lines.append(cur)
+    return lines
 
 
 # =====================================================================

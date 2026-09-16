@@ -35,7 +35,7 @@ from . import parameters as P
 from . import sweep as SW
 from .extractor import (DARK as FIG_DARK, LIGHT as FIG_LIGHT, bandwidth_spread,
                         diagnostic_figure, eo_figure, export_lumerical_tables,
-                        extraction_warnings)
+                        export_touchstone, extraction_warnings)
 from .physics import eo_response, link_metrics
 
 APP_TITLE = "MZM Studio  --  traveling-wave Mach-Zehnder modulator explorer"
@@ -504,6 +504,14 @@ class MZMStudio(tk.Tk):
                      (self.tab_log, "Log")):
             self.nb.add(f, text=n)
 
+        rbar = ttk.Frame(self.tab_response, style="Panel.TFrame")
+        rbar.pack(fill="x", padx=8, pady=(8, 0))
+        ttk.Button(rbar, text="Export Touchstone", style="Accent.TButton",
+                   command=self.action_export_touchstone).pack(side="left")
+        ttk.Label(rbar, text="writes both traces on this tab -- S11 and EO S21, "
+                            "magnitude and phase -- at the settings currently in the "
+                            "sidebar, with every one of them recorded in the header",
+                  style="Muted.TLabel", wraplength=740, justify="left").pack(side="left", padx=12)
         self.fig_response = FigurePane(self.tab_response, t)
         self.fig_response.pack(fill="both", expand=True)
         self.fig_diag = FigurePane(self.tab_diag, t)
@@ -977,6 +985,30 @@ class MZMStudio(tk.Tk):
         out = str(p["out_dir"]).strip() or os.path.dirname(str(p["s2p_path"]))
         os.makedirs(out, exist_ok=True)
         return out
+
+    def action_export_touchstone(self):
+        p = self._get_params()
+        if self.result is None or self.fit is None:
+            self.log("Run 'Extract + analyse' first.", "warn")
+            return
+        stem = os.path.splitext(os.path.basename(str(p["s2p_path"])))[0]
+        path = filedialog.asksaveasfilename(
+            defaultextension=".s2p", initialdir=self._resolve_out_dir(p),
+            initialfile=f"{stem}_L{float(p['L_target_mm']):g}mm_Rt{float(p['Rt_R']):g}.s2p",
+            filetypes=[("Touchstone", "*.s2p"), ("All files", "*.*")])
+        if not path:
+            return
+
+        def work():
+            info = export_touchstone(self.fit, self.result, p, path)
+            self.log(f"Touchstone written to {path}", "ok")
+            self.log(f"  {info['points']} points, {info['format']} format, {info['ports']}, "
+                     f"EO magnitude {'normalised' if info['normalised'] else 'raw'}.")
+            if info["ports"] == "4-column":
+                self.log("  4 data columns is not a valid 2-port .s2p -- fine for numpy, "
+                         "Excel or MATLAB, but set 'Touchstone columns' to 'full 2-port' "
+                         "for scikit-rf, ADS or CST.", "warn")
+        self._run_async(work, "Touchstone export")
 
     def action_export_tables(self):
         p = self._get_params()

@@ -298,6 +298,13 @@ class EOResult:
     nm: np.ndarray
     Zc: np.ndarray
     walkoff_at_bw: float          # |n_m - n_g| evaluated at the -3 dB point
+    # Complex, un-normalised. eo_transfer is complex throughout -- both the
+    # reflection term p1 and the walk-off term p2 carry phase -- so the EO phase
+    # is a real result of the model, not something the maths threw away. Its
+    # group delay comes out at the optical transit time n_g.L/c.
+    H: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=complex))
+    gamma_in: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=complex))
+    ref_dB: float = 0.0            # what was subtracted to normalise the magnitude
     norm_mode: str = "plateau"
     norm_window_GHz: tuple = (0.0, 0.0)
     ripple_period_GHz: float = 0.0
@@ -389,6 +396,7 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
         s21_at_probe_dB=float(s21_dB[i_probe]),
         s11_dB=s11_dB, s11_worst_dB=float(np.max(s11_dB)),
         zin=zin, alpha_dB_cm=alpha, nm=nm, Zc=Zc, walkoff_at_bw=walkoff,
+        H=H, gamma_in=gamma_in, ref_dB=float(ref),
         norm_mode=norm_mode, norm_window_GHz=norm_window,
         ripple_period_GHz=float(period), ripple_pp_dB=ripple_pp,
     )

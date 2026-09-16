@@ -183,6 +183,25 @@ PARAMS: list[ParamSpec] = [
               help="The 'EO S21 at f_probe' metric is evaluated here -- useful when "
                    "the -3 dB point runs off the top of the sweep."),
 
+    # ---------------- Touchstone export -----------------------------------
+    ParamSpec("ts_format", "Touchstone data format", "DB", "Export",
+              kind="choice", choices=("DB", "MA", "RI"), affects="circuit",
+              help="DB = dB magnitude + angle in degrees (matches the two plots). "
+                   "MA = linear magnitude + angle. RI = real + imaginary."),
+    ParamSpec("ts_ports", "Touchstone columns", "4-column", "Export",
+              kind="choice", choices=("4-column", "full 2-port"), affects="circuit",
+              help="'4-column' writes exactly frequency + S11 pair + EO S21 pair. "
+                   "It is not a valid 2-port .s2p, so a strict Touchstone reader "
+                   "(scikit-rf, ADS, CST) will reject it -- use it for numpy, "
+                   "Excel or MATLAB. 'full 2-port' pads S12 and S22 with zeros so "
+                   "the file parses everywhere; the EO path really is "
+                   "unidirectional, so S12 = 0 is honest."),
+    ParamSpec("ts_normalised", "Export normalised EO S21", True, "Export",
+              kind="bool", affects="circuit",
+              help="On: the EO magnitude matches the plot (0 dB at the low-frequency "
+                   "reference). Off: the raw transfer function. The header records "
+                   "the reference either way, so the two are interconvertible."),
+
     # ---------------- Lumerical -------------------------------------------
     ParamSpec("lumapi_path", "lumapi directory", r"C:\Program Files\Lumerical\v242\api\python",
               "Lumerical", kind="dirpath", affects="lumerical"),

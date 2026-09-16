@@ -24,7 +24,8 @@ import numpy as np
 from . import parameters as P
 from . import sweep as SW
 from .extractor import (DARK, LIGHT, bandwidth_spread, diagnostic_figure, eo_figure,
-                        export_lumerical_tables, extraction_warnings)
+                        export_lumerical_tables, export_touchstone,
+                        extraction_warnings)
 from .physics import eo_response, link_metrics
 
 
@@ -98,6 +99,16 @@ def cmd_analyse(args):
         print("-" * 56)
         for w in warns:
             print(f"  ! {w}")
+
+    if getattr(args, "touchstone", False):
+        out = str(p["out_dir"])
+        os.makedirs(out, exist_ok=True)
+        stem = os.path.splitext(os.path.basename(str(p["s2p_path"])))[0]
+        ts = os.path.join(out, f"{stem}_L{float(p['L_target_mm']):g}mm_"
+                               f"Rt{float(p['Rt_R']):g}.s2p")
+        info = export_touchstone(fit, res, p, ts)
+        print(f"\ntouchstone  {ts}  ({info['points']} points, {info['format']}, "
+              f"{info['ports']})")
 
     if args.plot:
         out = str(p["out_dir"])
@@ -200,6 +211,8 @@ def main(argv=None):
     a = sub.add_parser("analyse", help="fit one .s2p and report the EO figures")
     a.add_argument("s2p")
     a.add_argument("--plot", action="store_true")
+    a.add_argument("--touchstone", action="store_true",
+                   help="also write the S11 and EO S21 traces as a Touchstone file")
     _add_param_args(a)
     a.set_defaults(func=cmd_analyse)
 

@@ -172,6 +172,36 @@ extrapolating into that singularity used to give Zc = 282 + 610j ohm at 10 MHz
 and infinity at f = 0, which turned the whole curve into NaN. Normalising at
 DC now works.
 
+## Exporting the response as Touchstone
+
+**Export Touchstone** on the Response tab writes both traces on that tab at
+whatever is currently in the sidebar: S11 of the loaded electrode, and the
+electro-optic S21, each as magnitude and phase. The full parameter set that
+produced the file goes into the header as `!` comments, so a file can always be
+traced back to the settings behind it.
+
+The EO phase is a real model output, not a placeholder. ``eo_transfer`` is
+complex throughout -- both the reflection term and the velocity walk-off term
+carry phase -- and the magnitude-only plot simply discards it at the last step.
+Its group delay comes out at 125.3 ps against an optical transit n_g.L/c of
+124.9 ps for a 16.5 mm device, which is a quantity nothing in the fit was aimed
+at reproducing.
+
+Three settings control the file, under **Export**:
+
+* `ts_format` -- `DB` (dB + degrees, matching the plots), `MA` (linear + degrees)
+  or `RI` (real + imaginary).
+* `ts_ports` -- `4-column` writes exactly frequency + S11 pair + EO S21 pair, as
+  four data columns. That is *not* a valid 2-port Touchstone file and a strict
+  reader will reject it, so `full 2-port` pads S12 and S22 with zeros. S12 = 0
+  is honest rather than a fudge: the electro-optic path is unidirectional, and
+  the detected photocurrent does not feed back into the RF port.
+* `ts_normalised` -- whether the EO magnitude matches the plot (0 dB at the
+  low-frequency reference) or is the raw transfer function. The header records
+  the reference level either way, so the two are interconvertible.
+
+From the CLI, add `--touchstone` to `analyse`.
+
 ## Extrapolation and the honest uncertainty
 
 A test pattern is measured over a limited band and is usually much shorter than
