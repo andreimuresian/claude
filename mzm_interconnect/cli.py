@@ -70,6 +70,12 @@ def cmd_analyse(args):
     print(f"alpha @ 60 GHz      {float(a60):.3f} dB/cm")
     print(f"Zc @ 60 GHz         {z60.real:.2f}{z60.imag:+.2f}j ohm")
     print("-" * 56)
+    if res.norm_window_GHz[1] > res.norm_window_GHz[0]:
+        print(f"0 dB reference      mean over {res.norm_window_GHz[0]:.2f}-"
+              f"{res.norm_window_GHz[1]:.2f} GHz  (ripple {res.ripple_pp_dB:.2f} dB p-p, "
+              f"period {res.ripple_period_GHz:.2f} GHz)")
+    else:
+        print(f"0 dB reference      single point at {res.norm_window_GHz[0]:.2f} GHz")
     print(f"EO bandwidth        {res.bw_GHz:.2f} GHz"
           + ("  (lower bound: never crossed the criterion)" if res.bw_clipped else ""))
     print(f"EO S21 @ {float(p['f_probe_GHz']):.0f} GHz    {res.s21_at_probe_dB:+.2f} dB")

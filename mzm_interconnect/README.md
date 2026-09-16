@@ -106,6 +106,31 @@ INTERCONNECT will not fan one electrical output out to two modulation ports,
 the builder falls back to a lumped equivalent that preserves |S21| and V_pi
 exactly (only the chirp asymmetry is lost) and says so in the log.
 
+## Normalisation: why the 0 dB reference is averaged, not a point
+
+A mismatched electrode rings. Forward and backward microwave waves interfere,
+so the response carries a standing-wave ripple of period `c/(2 n_m L)` -- on a
+16.5 mm line at n_m = 2.29 that is 3.96 GHz, about half a dB peak to peak. Take
+the 0 dB reference at one frequency and you are anchoring on a random phase of
+that ripple: on a real file the same device came out anywhere from 94 to 110 GHz
+depending only on whether the anchor sat at 0, 1, 2 or 5 GHz.
+
+`norm_mode = "plateau"` (the default) averages the response over a whole number
+of ripple periods, which cancels it. The window is also capped at a fraction of
+the roll-off so it can never reach into the skirt and flatter the result; if not
+even one period fits below that cap -- a short line whose ripple period is
+comparable to its bandwidth -- it falls back to the lowest measured frequency
+and says so. The reported bandwidth is then identical for any `f_norm`.
+
+`norm_mode = "point"` keeps the older single-frequency behaviour (and the usual
+textbook convention) for when you need to match someone else's number.
+
+The fits are also held at their lowest measured value below the measured band:
+the `1/sqrt(f)` and `1/f` terms in the Zc form are singular at DC, and
+extrapolating into that singularity used to give Zc = 282 + 610j ohm at 10 MHz
+and infinity at f = 0, which turned the whole curve into NaN. Normalising at
+DC now works.
+
 ## Extrapolation and the honest uncertainty
 
 A test pattern is measured over a limited band and is usually much shorter than

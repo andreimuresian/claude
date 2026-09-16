@@ -158,9 +158,18 @@ PARAMS: list[ParamSpec] = [
               help="Power split deviation from 0.5 (0.02 = 52:48). Caps the ER."),
 
     # ---------------- Analysis --------------------------------------------
-    ParamSpec("f_norm_GHz", "Normalisation frequency", 1.0, "Analysis", "GHz",
+    ParamSpec("norm_mode", "Normalisation", "plateau", "Analysis",
+              kind="choice", choices=("plateau", "point"), affects="circuit",
+              help="'plateau' averages the low-frequency response over a whole "
+                   "number of standing-wave periods, so the 0 dB reference does "
+                   "not land on a random phase of the mismatch ripple. 'point' "
+                   "anchors on a single frequency (the older behaviour, and the "
+                   "usual textbook convention) -- on a mismatched line that makes "
+                   "the bandwidth swing by 15 GHz depending on the frequency you "
+                   "happen to pick."),
+    ParamSpec("f_norm_GHz", "Anchor frequency (point mode)", 1.0, "Analysis", "GHz",
               affects="circuit",
-              help="EO S21 is reported relative to this frequency."),
+              help="Only used when Normalisation = 'point'. 0 means DC."),
     ParamSpec("f_max_GHz", "Sweep ceiling", 150.0, "Analysis", "GHz",
               affects="circuit"),
     ParamSpec("n_points", "Frequency points", 1000, "Analysis", "-", kind="int",

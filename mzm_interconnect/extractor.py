@@ -189,6 +189,12 @@ def extraction_warnings(fit: LineFit, res: EOResult | None = None) -> list[str]:
                  f"The test pattern only shows {q.get('total_IL_dB', float('nan')):.2f} dB of "
                  f"insertion loss in total, so alpha is poorly determined and every "
                  f"bandwidth below inherits that.")
+    if res is not None and res.ripple_pp_dB > 0.25:
+        w.append(f"The low-frequency response ripples {res.ripple_pp_dB:.2f} dB "
+                 f"peak-to-peak with a period of {res.ripple_period_GHz:.2f} GHz "
+                 f"(= c/2.n_m.L), because Zc is not matched to the source and load. "
+                 f"Normalisation = 'plateau' averages that out; switching to 'point' "
+                 f"makes the answer depend on which frequency you anchor at.")
     if res is not None and res.bw_GHz > 1.15 * fit.f_max_sim_GHz:
         w.append(f"The -3 dB point ({res.bw_GHz:.0f} GHz) sits {res.bw_GHz/fit.f_max_sim_GHz:.1f}x "
                  f"beyond the end of the S-parameter data ({fit.f_max_sim_GHz:.0f} GHz). "
@@ -277,7 +283,10 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
     extrapolated = res.bw_GHz > fit.f_max_sim_GHz
     table_f_max = float(p["f_max_GHz"]) if extrapolated else fit.f_max_sim_GHz
     n_table = max(int(table_f_max * points_per_GHz), 200)
-    f_table = np.linspace(float(p["f_norm_GHz"]), table_f_max, n_table)
+    # Start at the lowest measured frequency: the fitted 1/sqrt(f) and 1/f terms
+    # are singular below it, so extending the table down to DC would export
+    # nonsense for Zc.
+    f_table = np.linspace(max(fit.f_min_sim_GHz, 1e-3), table_f_max, n_table)
 
     alpha = fit.alpha_dB_cm(f_table,
                             scale=float(p["alpha_scale"]),
@@ -419,6 +428,14 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
     ax.axvline(res.bw_GHz, color="#4fae7c", ls=":", lw=1.4)
     ax.axvline(fit.f_max_sim_GHz, color=theme["grid"], ls=":", lw=1.2,
                label=f"end of S-param data ({fit.f_max_sim_GHz:.0f} GHz)")
+    lo, hi = res.norm_window_GHz
+    if hi > lo:
+        ax.axvspan(lo, hi, color="#4fae7c", alpha=0.12, lw=0,
+                   label=f"0 dB reference: mean over {lo:.1f}-{hi:.1f} GHz "
+                         f"({res.ripple_pp_dB:.2f} dB ripple averaged out)")
+    else:
+        ax.axvline(lo, color="#4fae7c", ls="-.", lw=1.2,
+                   label=f"0 dB reference: single point at {lo:.2f} GHz")
     ax.set_ylabel("Normalised EO S21 (dB)")
     ax.set_ylim(min(-40, level - 10), 3)
     ax.set_title(f"EO response  |  {fit.source_file}  |  L = {float(p['L_target_mm']):.2f} mm, "

@@ -208,9 +208,19 @@ def eo_transfer(f_GHz, alpha_dB_cm, nm, Zc, L_device_m, ng, Zs, Zt):
 # =====================================================================
 # 5. Bandwidth extraction
 # =====================================================================
-def first_crossing(f, y, level):
-    """First frequency at which *y* drops to *level*, linearly interpolated."""
-    below = np.where(y <= level)[0]
+def first_crossing(f, y, level, f_start=0.0):
+    """
+    First frequency at which *y* drops to *level*, linearly interpolated.
+
+    The search starts at *f_start*. Bandwidth means the roll-off crossing, so
+    the search has to begin above the reference region: a strongly
+    under-terminated line peaks with frequency, which leaves its own DC value
+    more than 3 dB below the reference and would otherwise be reported as a
+    bandwidth of 0 GHz.
+    """
+    y = np.where(np.isfinite(y), y, np.inf)     # a NaN is not a crossing
+    mask = np.asarray(f) >= f_start
+    below = np.where((y <= level) & mask)[0]
     if below.size == 0:
         return None
     i = below[0]
@@ -226,10 +236,58 @@ def first_crossing(f, y, level):
 # =====================================================================
 # 6. The single entry point the rest of the toolkit uses
 # =====================================================================
+def ripple_period_GHz(nm_ref: float, L_m: float) -> float:
+    """
+    Spacing of the standing-wave resonances of a mismatched electrode.
+
+    The forward and backward microwave waves interfere, so a line whose Zc does
+    not match the source and load rings with period c/(2 n_m L). On a 16.5 mm
+    line at n_m = 2.29 that is 3.96 GHz, with about half a dB peak-to-peak at
+    low frequency -- which is why picking one frequency as the 0 dB reference
+    is picking a random phase of that ripple.
+    """
+    return C0 / (2.0 * nm_ref * L_m) / 1e9
+
+
+PLATEAU_MAX_PERIODS = 3
+PLATEAU_ROLLOFF_FRACTION = 0.15
+
+
+def plateau_window(fit: "LineFit", p: dict, bw_hint: float) -> tuple:
+    """
+    Low-frequency averaging window, spanning whole standing-wave periods.
+
+    Averaging over an integer number of periods cancels the ripple instead of
+    sampling it, which is what makes the reported bandwidth independent of
+    where the reference is taken.
+
+    The window must also stay inside the flat part of the response: a window
+    that reaches into the roll-off drags the reference down and inflates the
+    bandwidth. So it is capped at a fraction of the bandwidth itself (hence the
+    *bw_hint* from a first pass), and if not even one whole period fits below
+    that cap -- a short line, whose ripple period is comparable to its
+    bandwidth -- this returns n_per = 0 and the caller falls back to anchoring
+    on the lowest measured frequency.
+
+    Returns (f_lo, f_hi, period_GHz, n_periods).
+    """
+    L_m = float(p["L_target_mm"]) * 1e-3
+    nm_ref = float(np.atleast_1d(fit.nm(np.array([min(60.0, fit.f_max_sim_GHz)])))[0])
+    period = ripple_period_GHz(nm_ref, L_m)
+    f_lo = max(fit.f_min_sim_GHz, 0.0)
+    ceiling = PLATEAU_ROLLOFF_FRACTION * float(bw_hint)
+    if period <= 0 or ceiling <= f_lo:
+        return f_lo, f_lo, period, 0
+    n_per = min(PLATEAU_MAX_PERIODS, int((ceiling - f_lo) / period))
+    if n_per < 1:
+        return f_lo, f_lo, period, 0
+    return f_lo, f_lo + n_per * period, period, n_per
+
+
 @dataclass
 class EOResult:
     f_GHz: np.ndarray
-    s21_dB: np.ndarray            # normalised to f_norm
+    s21_dB: np.ndarray            # normalised to the low-frequency reference
     bw_GHz: float                 # -3 dB (or whatever level was asked for)
     bw_clipped: bool              # True if the response never crossed the level
     s21_at_probe_dB: float
@@ -240,6 +298,10 @@ class EOResult:
     nm: np.ndarray
     Zc: np.ndarray
     walkoff_at_bw: float          # |n_m - n_g| evaluated at the -3 dB point
+    norm_mode: str = "plateau"
+    norm_window_GHz: tuple = (0.0, 0.0)
+    ripple_period_GHz: float = 0.0
+    ripple_pp_dB: float = 0.0     # peak-to-peak of the low-frequency ripple
 
 
 def eo_response(fit: LineFit, p: dict) -> EOResult:
@@ -254,19 +316,26 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     f_max = float(p["f_max_GHz"])
     n_pts = int(p["n_points"])
     level = float(p["bw_level_dB"])
+    norm_mode = str(p.get("norm_mode", "plateau"))
 
-    f = np.linspace(f_norm, f_max, n_pts)
+    # The grid runs from DC. The fitted forms carry 1/sqrt(f) and 1/f terms that
+    # blow up below the measured band -- Zc reached 282 + 610j ohm at 10 MHz and
+    # was infinite at f = 0, which turned the whole curve into NaN -- so the fits
+    # are held at their lowest measured value below that point rather than being
+    # extrapolated into a singularity.
+    f = np.linspace(0.0, f_max, n_pts)
+    f_eval = np.maximum(f, fit.f_min_sim_GHz)
 
-    alpha = fit.alpha_dB_cm(f,
+    alpha = fit.alpha_dB_cm(f_eval,
                             scale=float(p["alpha_scale"]),
                             skin_scale=float(p["alpha_skin_scale"]),
                             diel_scale=float(p["alpha_diel_scale"]),
                             offset=float(p["alpha_offset_dB_cm"]))
-    nm = fit.nm(f, offset=float(p["nm_offset"]))
-    Zc = fit.Zc(f, offset=float(p["zc_offset_ohm"]))
+    nm = fit.nm(f_eval, offset=float(p["nm_offset"]))
+    Zc = fit.Zc(f_eval, offset=float(p["zc_offset_ohm"]))
 
-    Zs = rlc_impedance(f, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
-    Zt = rlc_impedance(f, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
+    Zs = rlc_impedance(f_eval, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
+    Zt = rlc_impedance(f_eval, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
 
     L_m = float(p["L_target_mm"]) * 1e-3
     ng = float(p["ng"])
@@ -274,11 +343,32 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     H, zin = eo_transfer(f, alpha, nm, Zc, L_m, ng, Zs, Zt)
 
     mag = np.abs(H)
-    mag = np.where(mag <= 0, 1e-300, mag)
-    i_norm = int(np.argmin(np.abs(f - f_norm)))
-    s21_dB = 20.0 * np.log10(mag / mag[i_norm])
+    mag = np.where(np.isfinite(mag) & (mag > 0), mag, 1e-300)
+    raw_dB = 20.0 * np.log10(mag)
 
-    bw = first_crossing(f, s21_dB, level)
+    # First pass: anchor on the lowest measured frequency just to locate the
+    # roll-off, so the averaging window can be kept inside the flat region.
+    i_lo = int(np.argmin(np.abs(f - max(fit.f_min_sim_GHz, 0.0))))
+    bw_hint = first_crossing(f, raw_dB - raw_dB[i_lo], level,
+                             f_start=float(f[i_lo])) or float(f[-1])
+
+    f_lo, f_hi, period, n_per = plateau_window(fit, p, bw_hint)
+    win = (f >= f_lo) & (f <= f_hi) & np.isfinite(raw_dB)
+    ripple_pp = float(raw_dB[win].max() - raw_dB[win].min()) if win.any() else 0.0
+
+    if norm_mode == "plateau" and n_per >= 1 and win.any():
+        ref = float(np.mean(raw_dB[win]))
+        norm_window = (float(f_lo), float(f_hi))
+    elif norm_mode == "plateau":
+        ref = float(raw_dB[i_lo])           # no room to average a whole period
+        norm_window = (float(f[i_lo]), float(f[i_lo]))
+    else:
+        i_norm = int(np.argmin(np.abs(f - f_norm)))
+        ref = float(raw_dB[i_norm])
+        norm_window = (float(f[i_norm]), float(f[i_norm]))
+    s21_dB = raw_dB - ref
+
+    bw = first_crossing(f, s21_dB, level, f_start=float(norm_window[1]))
     clipped = bw is None
     if clipped:
         bw = float(f[-1])
@@ -299,6 +389,8 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
         s21_at_probe_dB=float(s21_dB[i_probe]),
         s11_dB=s11_dB, s11_worst_dB=float(np.max(s11_dB)),
         zin=zin, alpha_dB_cm=alpha, nm=nm, Zc=Zc, walkoff_at_bw=walkoff,
+        norm_mode=norm_mode, norm_window_GHz=norm_window,
+        ripple_period_GHz=float(period), ripple_pp_dB=ripple_pp,
     )
 
 
