@@ -174,6 +174,50 @@ def extract_line_fit(filepath: str, L_meas_mm: float, z0_sys: float = 50.0,
     )
 
 
+def dispersion_check(fit: LineFit) -> dict:
+    """
+    Is the apparent n_m dispersion real, or is it noise?
+
+    Fit each n_m model on the lower half of the measured band and score it on
+    the upper half, which it has never seen. A model that is chasing ripple
+    scores badly out of sample; one that is tracking real dispersion scores
+    well. This is the only way to separate the two without more data.
+
+    Returns the out-of-sample RMS for each model plus how far n_m actually
+    moved between the halves.
+    """
+    fG, nm = fit.raw_f_GHz, fit.raw_nm
+    if fG.size < 20:
+        return {}
+    split = 0.5 * (fG.min() + fG.max())
+    lo, hi = fG <= split, fG > split
+    if lo.sum() < 8 or hi.sum() < 8:
+        return {}
+
+    out = {"split_GHz": float(split),
+           "nm_shift": float(nm[hi].mean() - nm[lo].mean()),
+           "rms": {}}
+    out["rms"]["constant"] = float(np.sqrt(np.mean((np.median(nm[lo]) - nm[hi]) ** 2)))
+    try:
+        ps, _ = curve_fit(fit_nm_saturating, fG[lo], nm[lo],
+                          p0=(float(np.median(nm[lo])), 0.01, min(30.0, split)),
+                          bounds=([1.0, -1.0, 1e-3], [10.0, 1.0, split]), maxfev=80000)
+        out["rms"]["saturating"] = float(np.sqrt(np.mean(
+            (fit_nm_saturating(fG[hi], *ps) - nm[hi]) ** 2)))
+    except Exception:
+        pass
+    try:
+        beta_lo = nm[lo] * 2 * np.pi * fG[lo] * 1e9 / C0
+        pb, _ = curve_fit(fit_beta, fG[lo] * 1e9, beta_lo, maxfev=40000)
+        pred = C0 * fit_beta(fG[hi] * 1e9, *pb) / (2 * np.pi * fG[hi] * 1e9)
+        out["rms"]["cubic-beta"] = float(np.sqrt(np.mean((pred - nm[hi]) ** 2)))
+    except Exception:
+        pass
+    if out["rms"]:
+        out["best"] = min(out["rms"], key=out["rms"].get)
+    return out
+
+
 def extraction_warnings(fit: LineFit, res: EOResult | None = None) -> list[str]:
     """Plain-language warnings about how far this result is being trusted."""
     w = []
@@ -189,6 +233,24 @@ def extraction_warnings(fit: LineFit, res: EOResult | None = None) -> list[str]:
                  f"The test pattern only shows {q.get('total_IL_dB', float('nan')):.2f} dB of "
                  f"insertion loss in total, so alpha is poorly determined and every "
                  f"bandwidth below inherits that.")
+    dc = dispersion_check(fit)
+    if dc and "saturating" in dc["rms"] and "constant" in dc["rms"]:
+        sat, con = dc["rms"]["saturating"], dc["rms"]["constant"]
+        if sat < 0.8 * con:
+            w.append(f"n_m dispersion looks REAL: fitted on the lower half of the band, "
+                     f"the saturating model predicts the upper half {con/sat:.1f}x better "
+                     f"than a constant (RMS {sat:.5f} vs {con:.5f}). Keep nm_model="
+                     f"'saturating'.")
+        elif sat > 1.25 * con:
+            w.append(f"n_m dispersion looks like NOISE: a constant predicts the unseen "
+                     f"upper half {sat/con:.1f}x better than the saturating fit "
+                     f"(RMS {con:.5f} vs {sat:.5f}). The 'constant n_m' variant in the "
+                     f"spread below is the more trustworthy one here.")
+        else:
+            w.append(f"n_m moves only {dc['nm_shift']:+.4f} across the band and constant vs "
+                     f"saturating predict the unseen upper half about equally well "
+                     f"(RMS {con:.5f} vs {sat:.5f}). Any dispersion here is comparable to "
+                     f"the noise; trust the spread between them, not either one alone.")
     if res is not None and res.ripple_pp_dB > 0.25:
         w.append(f"The low-frequency response ripples {res.ripple_pp_dB:.2f} dB "
                  f"peak-to-peak with a period of {res.ripple_period_GHz:.2f} GHz "

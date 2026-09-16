@@ -147,6 +147,12 @@ decided by the *form* of the fit, not by the data. The tool says so:
   coefficients if the free fit lands somewhere unphysical.
 * Every fit is **outlier-robust**: a soft-L1 refit scaled to the measured
   residual spread, which is skipped entirely when the data is already clean.
+* `dispersion_check()` answers "is the n_m dispersion real, or is it noise?"
+  by fitting each model on the lower half of the measured band and scoring it
+  on the upper half, which it has never seen. On a line with genuine dispersion
+  the saturating model predicts the unseen half 11x better than a constant; on
+  a noisy file where n_m barely moves, the two score alike and the honest
+  answer is the spread between them.
 * `bandwidth_spread()` reports the bandwidth over the whole family of
   defensible fits. Quote the range, not the midpoint.
 * `extraction_warnings()` says plainly when the loss is poorly determined, when
