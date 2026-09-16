@@ -22,6 +22,47 @@ It merges the two scripts that used to run separately (`EXTRACTOR_NEW.py` and
    Lumerical INTERCONNECT schematic + solver cross-check  (interconnect.py)
 ```
 
+## Getting the code, and keeping it up to date
+
+Clone once, then pull. Downloading files individually from the GitHub web page
+is the slow path and it is easy to miss one.
+
+```bat
+cd /d "T:\Personal_Folders\Muresian\0 INTERCONNECTS\MZM BLOCK\INTERFACE"
+git clone -b Lumerical-Interconnect https://github.com/andreimuresian/claude.git
+```
+
+After that, one command picks up every change:
+
+```bat
+cd /d "T:\...\INTERFACE\claude"
+git pull
+```
+
+Or just double-click **`update_and_run.bat`** in the repo root: it pulls the
+latest code and launches the GUI. It also accepts a Touchstone path:
+
+```bat
+update_and_run.bat "D:\data\lab_5NK0050_line_7.s2p"
+```
+
+Keep your `.s2p` files and outputs **outside** the clone, so a pull can never
+collide with your data:
+
+```
+INTERFACE\
+├── claude\          <- the clone; never edit by hand, just pull
+│   ├── update_and_run.bat
+│   ├── run_mzm_studio.py
+│   └── mzm_interconnect\
+└── data\            <- your Touchstone files and exported tables
+```
+
+In VS Code the same thing is Ctrl+Shift+P -> "Git: Clone", then the refresh
+arrows in the Source Control panel to pull. No git at all? The whole branch as
+one ZIP:
+`https://github.com/andreimuresian/claude/archive/refs/heads/Lumerical-Interconnect.zip`
+
 ## Running it
 
 ```bash
