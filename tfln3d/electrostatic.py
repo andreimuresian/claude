@@ -6,6 +6,8 @@ volumes stay in the mesh and are pinned to a constant potential, which makes
 their interior energy identically zero.
 """
 
+import contextlib
+import logging
 import time
 from dataclasses import dataclass
 
@@ -23,6 +25,24 @@ C0 = 299792458.0
 EPS_RF = {"ln": 28.0, "ox": 3.9, "si": 11.7, "air": 1.0,
           "signal": 1.0, "ground": 1.0}
 EPS_VACUUM = {k: 1.0 for k in EPS_RF}
+
+
+@contextlib.contextmanager
+def _quiet_meshio():
+    """Silence one benign skfem warning.
+
+    Our cells carry physical groups on volumes only, never on facets, so
+    skfem's attempt to parse facet tags always fails and logs
+    "Failure to parse tags from meshio."  Subdomains still load correctly and
+    that is all this module needs, so the message is noise.
+    """
+    log = logging.getLogger("skfem.io.meshio")
+    previous = log.level
+    log.setLevel(logging.ERROR)
+    try:
+        yield
+    finally:
+        log.setLevel(previous)
 
 
 @BilinearForm
@@ -49,7 +69,8 @@ class Penalties:
 
 def capacitance(mshfile, eps_map, pitch=200.0, tol=1e-10, verbose=False):
     """Capacitance per metre of a unit cell mesh (mesh in micrometres)."""
-    mesh = from_meshio(meshio.read(mshfile))
+    with _quiet_meshio():
+        mesh = from_meshio(meshio.read(mshfile))
     basis = Basis(mesh, ElementTetP1())
     basis0 = basis.with_element(ElementTetP0())
 
