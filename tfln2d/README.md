@@ -112,3 +112,73 @@ the weak form, not a new solver.
 6. Only then tackle the 2.5D half. See the project notes for why the
    recommended route is a 3D Floquet unit cell rather than reimplementing a
    layered-media MoM.
+
+---
+
+# Update: the 2.5D half
+
+The four CST Multilayer runs per geometry are replaced by quasi-static solves
+on a single 200 um unit cell (`tfln3d/`). The T-stub is centred in the cell, so
+both z-faces are mirror planes of the static problem and natural conditions
+there are exact.
+
+**There are no ports in this formulation.** The N+1 minus N difference exists
+only to cancel port mismatch and transition radiation; with no ports there is
+nothing to cancel, so the per-cell penalties come straight out of one cell
+instead of out of a 600 um minus 400 um difference.
+
+    dC  from the real dielectric stack
+    dL  from the same cells with every dielectric replaced by vacuum,
+        using L = 1 / (c0^2 C_air)
+
+## Meshing is the hard part, not the solver
+
+Free tetrahedral meshing of the cell fails: with a 0.46 um LiNbO3 film inside
+a 387 x 200 um footprint, gmsh produces slivers and **95% of the electrostatic
+energy lands inside the film**, giving C = 3070 pF/m against a 2D reference
+near 200 pF/m.
+
+The fix is to mesh by **extrusion through the layer stack** rather than freely.
+Each base face is extruded individually so that the map from base face to
+volume is exact at every layer; anisotropy then becomes deliberate and
+field-aligned. With that, the unetched cell returns C = 190.99 pF/m,
+n_m = 1.9479, Z0 = 34.02 ohm, matching the 2D cross-section.
+
+## Measured penalties and convergence
+
+Nominal stub (L1=20, L2=60, W1=15, W2=25 um), pitch 200 um:
+
+| lc_gap | nodes | C_unetched | dC (fF/cell) | dL (pH/cell) | 4 solves |
+|---|---|---|---|---|---|
+| 2.5 | 229 986 | 188.44 | -0.9161 | +1.2370 | 91 s |
+| 1.5 | 575 274 | 186.60 | -0.9315 | +1.2850 | 265 s |
+| 1.2 (larger box) | 985 307 | 190.99 | -0.9599 | +1.3111 | ~360 s |
+
+Signs are physically right: notching the ground removes metal beside the gap,
+so dC < 0, and forces the surface current to detour, so dL > 0. That is the
+inductive slow-wave loading.
+
+dC and dL hold to about 5% across a 2.5x mesh change **and** a change of
+domain size. Since dL/L is ~3% and dC/C is ~-2.5% for this stub, a 5% error on
+the penalty is ~0.08% on n_m and Z0 — well inside the 1.48% / 2.56% MAPE the
+composite method achieves against the 3D benchmark.
+
+## Cost
+
+229 986 nodes, four solves, **91 s at ~5 GB peak on a 4-core / 15 GB machine**.
+Laptop-feasible. AMG-preconditioned CG on a scalar Laplacian; no full-wave 3D
+solve is involved anywhere.
+
+## Still open: the attenuation perturbation
+
+dL and dC are done. `dalpha` is **not** yet implemented. The intended route is a
+surface current-flow solve on the conductor boundaries (a 2D problem embedded
+in 3D, so cheap), giving the current crowding around the notch corners, then
+alpha_c = Rs * closed_int |Js|^2 / (2 P). That captures the ohmic relief, which
+is one of the two mechanisms the thesis attributes to dalpha.
+
+It does not capture radiation. The MoM was blind to free-space radiation too and
+still matched the 3D benchmark to 0.09 dB/cm on the sanity-check geometry,
+though only to 0.33-0.52 dB/cm on the deliberately radiative extremes. Whether
+the ohmic term alone is sufficient is an empirical question, and the 500-geometry
+CST dataset settles it.
