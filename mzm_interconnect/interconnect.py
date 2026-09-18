@@ -33,7 +33,7 @@ from typing import Callable, Optional, Sequence
 import numpy as np
 
 from . import parameters as P
-from .physics import rlc_impedance
+from .physics import normalise_and_measure, rlc_impedance
 
 
 class LumericalUnavailable(RuntimeError):
@@ -278,6 +278,20 @@ class InterconnectBuilder:
         self.setp('ENA_1', ['remove dc', 'remove DC'], True, required=False)
         self.setp('ENA_1', ['peak analysis', 'peak_analysis'], 'disable', required=False)
 
+        # Impulse-response analysis is a time-domain method, so the sweep
+        # ceiling has to stay well inside the Nyquist frequency of the circuit
+        # sample rate or the top of the band is reconstructed from too few
+        # samples per cycle and rolls off for numerical rather than physical
+        # reasons. Half the sample rate is the hard limit; 40 % is a working one.
+        f_nyq = 0.5 * float(p["ic_sample_rate_GHz"])
+        if float(p["f_max_GHz"]) > 0.8 * f_nyq:
+            self.log(f"  WARNING: sweep ceiling {float(p['f_max_GHz']):.0f} GHz is "
+                     f"{100*float(p['f_max_GHz'])/f_nyq:.0f} % of the Nyquist "
+                     f"frequency ({f_nyq:.0f} GHz at a {float(p['ic_sample_rate_GHz']):.0f} "
+                     f"GHz sample rate). Raise the sample rate to at least "
+                     f"{2.5*float(p['f_max_GHz']):.0f} GHz or the top of the "
+                     f"INTERCONNECT trace is a sampling artifact, not physics.")
+
         # ---- 9. wiring common to every topology ----
         sim.connect('CWL_1', 'output', 'SPLT_1', 'input')
         sim.connect('SPLT_2', 'output', 'PIN_1', 'input')
@@ -371,16 +385,27 @@ class InterconnectBuilder:
                 out.append((f"{prefix}{k}", f, d))
         return out
 
-    def ena_trace(self, p: dict, element: str = 'ENA_1'):
+    def ena_trace(self, p: dict, element: str = 'ENA_1', norm_window=None):
         """
         Returns (f_GHz, S21_normalised_dB, bw_GHz).
 
         The ENA exposes several similarly-named datasets depending on version;
         this probes all of them and picks the one that actually rolls off,
         exactly as the original launcher did.
+
+        *norm_window* is the (f_lo, f_hi) GHz reference window the closed-form
+        model used, and passing it is what makes the two numbers comparable.
+        The physics on the two sides already agreed to ~1e-14 dB; what used to
+        differ was only this -- the reference level and where the -3 dB search
+        was allowed to start. Anchoring INTERCONNECT on f_norm_GHz while the
+        model averaged a plateau shifted the reference by a few tenths of a dB,
+        and on a shallow roll-off a few tenths of a dB is tens of GHz. Omitting
+        it falls back to the old point-anchored behaviour.
         """
-        f_norm = float(p["f_norm_GHz"]) * 1e9
         level = float(p["bw_level_dB"])
+        if norm_window is None:
+            f_n = float(p["f_norm_GHz"])
+            norm_window = (f_n, f_n)
 
         cands = []
         try:
@@ -407,19 +432,11 @@ class InterconnectBuilder:
                 mag[mag == 0] = 1e-300
                 interps.append(('lin', 20 * np.log10(mag)))
                 for tag, s_dB in interps:
-                    i0 = int(np.argmin(np.abs(f - f_norm)))
-                    s = s_dB - s_dB[i0]
-                    below = np.where(s <= level)[0]
-                    bw = None
-                    if below.size:
-                        i = below[0]
-                        if i > 0:
-                            f1, f2 = f[i - 1] / 1e9, f[i] / 1e9
-                            bw = f1 + (f2 - f1) * (level - s[i - 1]) / (s[i] - s[i - 1])
-                        else:
-                            bw = f[0] / 1e9
+                    s, bw, _ref, clipped = normalise_and_measure(
+                        f / 1e9, s_dB, norm_window, level)
                     rows.append({'label': f"{label} [{tag}]", 'f': f, 's': s,
-                                 'bw': bw, 'min': float(s.min())})
+                                 'bw': None if clipped else bw,
+                                 'min': float(np.min(s))})
 
         if not rows:
             raise RuntimeError(f"No frequency-domain dataset could be read from {element}.")
@@ -445,7 +462,8 @@ LUMERICAL_SWEEPABLE = {
 
 def verify_points(builder: InterconnectBuilder, p: dict, key: str,
                   values: Sequence[float],
-                  progress: Optional[Callable[[int, int, str], None]] = None) -> dict:
+                  progress: Optional[Callable[[int, int, str], None]] = None,
+                  norm_window=None) -> dict:
     """
     Re-run INTERCONNECT at a handful of points of an already-built schematic so
     the fast Python sweep can be spot-checked against the solver.
@@ -461,7 +479,7 @@ def verify_points(builder: InterconnectBuilder, p: dict, key: str,
         builder.sim.switchtodesign()
         builder.setp(element, props, conv(v))
         builder.run()
-        _, _, bw = builder.ena_trace(p)
+        _, _, bw = builder.ena_trace(p, norm_window=norm_window)
         out["bw_GHz"].append(float(bw))
         if progress:
             progress(i + 1, len(values), f"{key} = {v:g} -> {bw:.2f} GHz")

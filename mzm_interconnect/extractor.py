@@ -343,8 +343,16 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
     if points_per_GHz is None:
         points_per_GHz = int(p["n_points"]) / float(p["f_max_GHz"])
 
-    extrapolated = res.bw_GHz > fit.f_max_sim_GHz
-    table_f_max = float(p["f_max_GHz"]) if extrapolated else fit.f_max_sim_GHz
+    # The table has to span the whole range the ENA will sweep. It used to stop
+    # at the last measured frequency unless the -3 dB point fell beyond it,
+    # which meant INTERCONNECT was left holding the last tabulated alpha while
+    # the closed-form model went on evaluating the fit -- the two curves then
+    # separated above f_max_sim for no physical reason, and the separation
+    # switched on and off depending on where the bandwidth happened to land.
+    # Whether a given frequency is data or fit is recorded in the header and in
+    # sim_params.json instead of being expressed by truncating the file.
+    extrapolated = float(p["f_max_GHz"]) > fit.f_max_sim_GHz
+    table_f_max = float(p["f_max_GHz"])
     n_table = max(int(table_f_max * points_per_GHz), 200)
     # Start at the lowest measured frequency: the fitted 1/sqrt(f) and 1/f terms
     # are singular below it, so extending the table down to DC would export
@@ -366,15 +374,17 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
         "json": os.path.join(out_dir, "sim_params.json"),
     }
 
+    prov = (f"measured range {fit.f_min_sim_GHz:.2f}-{fit.f_max_sim_GHz:.2f} GHz; "
+            f"beyond that this table is the fitted model, not data")
     np.savetxt(paths["loss"], np.column_stack([f_table * 1e9, alpha * 100.0]),
                fmt="%.6e", delimiter="\t",
-               header="Frequency (Hz)\tLoss (dB/m)", comments="# ")
+               header=f"Frequency (Hz)\tLoss (dB/m)\n# {prov}", comments="# ")
     np.savetxt(paths["z0"], np.column_stack([f_table * 1e9, np.real(Zc), np.imag(Zc)]),
                fmt="%.6e", delimiter="\t",
-               header="Frequency (Hz)\tReal(Z0)\tImag(Z0)", comments="# ")
+               header=f"Frequency (Hz)\tReal(Z0)\tImag(Z0)\n# {prov}", comments="# ")
     np.savetxt(paths["nm"], np.column_stack([f_table * 1e9, nm]),
                fmt="%.6e", delimiter="\t",
-               header="Frequency (Hz)\tnm", comments="# ")
+               header=f"Frequency (Hz)\tnm\n# {prov}", comments="# ")
 
     meta = {
         "source_file": fit.source_file,
@@ -386,6 +396,9 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
         "f_norm_GHz": float(p["f_norm_GHz"]),
         "f_max_GHz": float(p["f_max_GHz"]),
         "table_f_max_GHz": float(table_f_max),
+        "f_measured_max_GHz": float(fit.f_max_sim_GHz),
+        "norm_mode": str(p.get("norm_mode", "plateau")),
+        "norm_window_GHz": [float(res.norm_window_GHz[0]), float(res.norm_window_GHz[1])],
         "eo_bw_GHz_python": float(res.bw_GHz),
         "bw_level_dB": float(p["bw_level_dB"]),
         "nm_at_60GHz": float(fit.nm(np.array([60.0]), offset=float(p["nm_offset"]))[0]),
@@ -405,6 +418,7 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
         json.dump(meta, fh, indent=2)
 
     paths["table_f_max_GHz"] = table_f_max
+    paths["f_measured_max_GHz"] = float(fit.f_max_sim_GHz)
     paths["n_points"] = n_table
     paths["extrapolated"] = extrapolated
     return paths

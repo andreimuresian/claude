@@ -233,6 +233,50 @@ def first_crossing(f, y, level, f_start=0.0):
     return float(f1 + (f2 - f1) * (level - y1) / (y2 - y1))
 
 
+def reference_dB(f_GHz, raw_dB, window) -> float:
+    """
+    The 0 dB reference of a response curve, given a frequency window.
+
+    A window with f_hi > f_lo is averaged (that is plateau normalisation --
+    spanning whole standing-wave periods cancels the mismatch ripple instead of
+    sampling a random phase of it). A degenerate window is read as a single
+    point. Both the closed-form model and the INTERCONNECT read-back go through
+    here, which is the only way to guarantee they cannot drift apart.
+    """
+    f = np.asarray(f_GHz, dtype=float)
+    raw = np.asarray(raw_dB, dtype=float)
+    f_lo, f_hi = float(window[0]), float(window[1])
+    if f_hi > f_lo:
+        win = (f >= f_lo) & (f <= f_hi) & np.isfinite(raw)
+        if win.any():
+            return float(np.mean(raw[win]))
+    i = int(np.argmin(np.abs(f - f_lo)))
+    return float(raw[i])
+
+
+def normalise_and_measure(f_GHz, raw_dB, window, level):
+    """
+    Normalise a raw response and read its bandwidth off, one single way.
+
+    Returns (s21_dB, bw_GHz, ref_dB, clipped).
+
+    This exists because the two halves of the toolkit used to disagree here
+    while agreeing perfectly on the physics. The closed-form model averaged
+    over a plateau and searched for the crossing above the reference window;
+    the INTERCONNECT read-back anchored on one frequency and took the first
+    sample below the threshold anywhere in the sweep. On identical transfer
+    functions that is worth a few tenths of a dB of reference, which on a
+    shallow roll-off is worth tens of GHz of "bandwidth" -- the divergence was
+    entirely in the book-keeping.
+    """
+    f = np.asarray(f_GHz, dtype=float)
+    ref = reference_dB(f, raw_dB, window)
+    s21 = np.asarray(raw_dB, dtype=float) - ref
+    bw = first_crossing(f, s21, float(level), f_start=float(window[1]))
+    clipped = bw is None
+    return s21, (float(f[-1]) if clipped else float(bw)), ref, clipped
+
+
 # =====================================================================
 # 6. The single entry point the rest of the toolkit uses
 # =====================================================================
@@ -364,21 +408,14 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     ripple_pp = float(raw_dB[win].max() - raw_dB[win].min()) if win.any() else 0.0
 
     if norm_mode == "plateau" and n_per >= 1 and win.any():
-        ref = float(np.mean(raw_dB[win]))
         norm_window = (float(f_lo), float(f_hi))
     elif norm_mode == "plateau":
-        ref = float(raw_dB[i_lo])           # no room to average a whole period
-        norm_window = (float(f[i_lo]), float(f[i_lo]))
+        norm_window = (float(f[i_lo]), float(f[i_lo]))   # no room for a whole period
     else:
         i_norm = int(np.argmin(np.abs(f - f_norm)))
-        ref = float(raw_dB[i_norm])
         norm_window = (float(f[i_norm]), float(f[i_norm]))
-    s21_dB = raw_dB - ref
 
-    bw = first_crossing(f, s21_dB, level, f_start=float(norm_window[1]))
-    clipped = bw is None
-    if clipped:
-        bw = float(f[-1])
+    s21_dB, bw, ref, clipped = normalise_and_measure(f, raw_dB, norm_window, level)
 
     # electrical input match, referenced to the system impedance
     z_ref = float(p["z0_sys_ohm"])

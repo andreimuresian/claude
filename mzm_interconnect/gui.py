@@ -1020,8 +1020,10 @@ class MZMStudio(tk.Tk):
             out = self._resolve_out_dir(p)
             paths = export_lumerical_tables(self.fit, p, self.result, out)
             self.log(f"Tables written to {out} "
-                     f"(1.0-{paths['table_f_max_GHz']:.1f} GHz, {paths['n_points']} pts"
-                     + (", extrapolated past the measured range" if paths["extrapolated"] else "")
+                     f"(up to {paths['table_f_max_GHz']:.1f} GHz, {paths['n_points']} pts"
+                     + (f"; data ends at {paths['f_measured_max_GHz']:.1f} GHz, "
+                        f"above that the tables are the fitted model"
+                        if paths["extrapolated"] else "")
                      + ")", "ok")
         self._run_async(work, "export")
 
@@ -1050,7 +1052,10 @@ class MZMStudio(tk.Tk):
             topo = b.build(p, files)
             self.log(f"Schematic built ({topo}).")
             b.run(os.path.join(out, "TWMZM_EO_response.icp"))
-            f_GHz, s_dB, bw = b.ena_trace(p)
+            # Same reference window the closed-form curve used -- without this
+            # the two are normalised differently and the bandwidths disagree
+            # even though the underlying physics is identical.
+            f_GHz, s_dB, bw = b.ena_trace(p, norm_window=self.result.norm_window_GHz)
             self.lumerical_overlay = (f_GHz, s_dB, bw)
             py = self.result.bw_GHz
             self.log(f"Python  {py:.2f} GHz  |  INTERCONNECT  {bw:.2f} GHz  |  "
