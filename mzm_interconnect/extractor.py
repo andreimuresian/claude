@@ -676,3 +676,85 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
             t.set_color(theme["fg"])
     fig.tight_layout()
     return fig
+
+
+def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
+    """
+    The eye, next to the static transfer curve that explains its shape.
+
+    The second panel is there because most surprising eyes are explained by
+    where the drive sits on P(V) rather than by anything dynamic: an eye that
+    will not open is usually being over-driven past the null or biased off
+    quadrature, and both are obvious the moment the swing is drawn on the
+    curve.
+    """
+    from .physics import arm_models
+
+    fig = Figure(figsize=(10.5, 4.6), dpi=100)
+    fig.patch.set_facecolor(theme["bg"])
+    ax = fig.add_subplot(1, 2, 1)
+    axt = fig.add_subplot(1, 2, 2)
+
+    # ---- eye density -------------------------------------------------
+    t, tr = eye.t_ps, eye.traces * 1e3                      # mA
+    h, xe, ye = np.histogram2d(
+        np.tile(t, tr.shape[0]), tr.ravel(), bins=(len(t), 150))
+    ax.pcolormesh(xe, ye, np.sqrt(h.T), cmap="viridis", shading="auto")
+    ax.axvline(t[eye.sample_index], color="#ffd166", ls=":", lw=1.4)
+    ax.set_xlabel("Time (ps)")
+    ax.set_ylabel("Photocurrent (mA)")
+    fmt = "PAM4" if eye.levels == 4 else "NRZ"
+    ax.set_title(f"{eye.bitrate_Gbps:.0f} Gb/s {fmt} "
+                 f"({eye.symbol_rate_GBd:.0f} GBd)  |  "
+                 f"L = {float(p['L_target_mm']):.2f} mm", fontsize=9)
+
+    txt = (f"ER          {eye.er_dB:6.2f} dB\n"
+           f"OMA         {eye.oma_A * 1e3:6.3f} mA\n"
+           f"eye height  {eye.eye_height_A * 1e3:6.3f} mA\n"
+           f"Q (worst)   {eye.q_factor:6.2f}\n"
+           f"crossing    {eye.crossing_pct:6.1f} %\n"
+           f"jitter rms  {eye.jitter_rms_ps:6.3f} ps")
+    ax.text(0.02, 0.98, txt, transform=ax.transAxes, va="top", ha="left",
+            fontsize=7.5, family="monospace", color="#ffffff",
+            bbox=dict(facecolor="#000000", alpha=0.45, edgecolor="none", pad=4))
+
+    # ---- static transfer curve with the operating point --------------
+    arm1, arm2 = arm_models(p)
+    # Span the drive swing and a little over one period of the effective
+    # transfer function, so over-driving past a null is visible but the plot
+    # does not turn into a wall of fringes.
+    g_eff = abs(arm1.g - arm2.g) or (np.pi / float(p["Vpi_V"]))
+    vpi_eff = np.pi / g_eff
+    v_span = max(1.6 * float(p["drive_Vpp_V"]), 2.4 * vpi_eff)
+    v = np.linspace(-v_span / 2, v_span / 2, 800)
+    P_of_v = (arm1.a ** 2 + arm2.a ** 2
+              + 2 * arm1.a * arm2.a
+              * np.cos((arm1.phi0 + arm1.g * v) - (arm2.phi0 + arm2.g * v)))
+    P_of_v /= (arm1.a + arm2.a) ** 2
+    axt.plot(v, P_of_v, "-", lw=2, color="#3f7fd0", label="static $P(V)$")
+
+    vpp = float(p["drive_Vpp_V"])
+    axt.axvspan(-vpp / 2, vpp / 2, color="#4fae7c", alpha=0.15, lw=0,
+                label=f"drive swing {vpp:.2f} Vpp")
+    axt.axvline(0.0, color="#ffd166", ls=":", lw=1.4,
+                label=f"bias {float(p['bias_phase_deg']):.0f}$\\degree$"
+                      + (f" {float(p['arm_phase_imbalance_deg']):+.0f}$\\degree$ arm error"
+                         if float(p["arm_phase_imbalance_deg"]) else ""))
+    hi, lo = float(P_of_v.max()), float(P_of_v.min())
+    er_static = 10 * np.log10(hi / lo) if lo > 1e-12 else float("inf")
+    axt.set_xlabel("Drive voltage (V)")
+    axt.set_ylabel("Normalised output power")
+    axt.set_ylim(-0.03, 1.03)
+    bw_txt = ""
+    if lk is not None:
+        bw_txt = (f"  |  link BW {lk.bw_GHz:.2f} GHz "
+                  f"(electrode {lk.bw_electrode_GHz:.2f})")
+    axt.set_title(f"static ER ceiling {er_static:.1f} dB{bw_txt}", fontsize=9)
+
+    _style(ax, theme)
+    _style(axt, theme)
+    leg = axt.legend(fontsize=7, framealpha=0.25, loc="lower left")
+    for tl in leg.get_texts():
+        tl.set_color(theme["fg"])
+    fig.tight_layout()
+    return fig

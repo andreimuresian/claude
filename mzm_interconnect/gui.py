@@ -35,7 +35,7 @@ from . import parameters as P
 from . import sweep as SW
 from .extractor import (DARK as FIG_DARK, LIGHT as FIG_LIGHT, bandwidth_spread,
                         diagnostic_figure, eo_figure, export_lumerical_tables,
-                        export_touchstone, extraction_warnings)
+                        export_touchstone, extraction_warnings, eye_figure)
 from .physics import eo_response, link_metrics
 
 APP_TITLE = "MZM Studio  --  traveling-wave Mach-Zehnder modulator explorer"
@@ -340,6 +340,7 @@ class MZMStudio(tk.Tk):
         self.result = None
         self.sweep_result = None
         self.lumerical_overlay = None
+        self.eye_result = None
         # The lumapi session object owns the INTERCONNECT process: if nothing
         # holds a reference it is garbage-collected and the window closes by
         # itself. Keep it on the app, not in a local variable.
@@ -496,12 +497,13 @@ class MZMStudio(tk.Tk):
 
         self.tab_response = ttk.Frame(self.nb, style="Panel.TFrame")
         self.tab_diag = ttk.Frame(self.nb, style="Panel.TFrame")
+        self.tab_eye = ttk.Frame(self.nb, style="Panel.TFrame")
         self.tab_sweep = ttk.Frame(self.nb, style="Panel.TFrame")
         self.tab_lum = ttk.Frame(self.nb, style="Panel.TFrame")
         self.tab_log = ttk.Frame(self.nb, style="Panel.TFrame")
         for f, n in ((self.tab_response, "Response"), (self.tab_diag, "Line diagnostics"),
-                     (self.tab_sweep, "Sweep"), (self.tab_lum, "INTERCONNECT"),
-                     (self.tab_log, "Log")):
+                     (self.tab_eye, "Eye diagram"), (self.tab_sweep, "Sweep"),
+                     (self.tab_lum, "INTERCONNECT"), (self.tab_log, "Log")):
             self.nb.add(f, text=n)
 
         rbar = ttk.Frame(self.tab_response, style="Panel.TFrame")
@@ -517,6 +519,7 @@ class MZMStudio(tk.Tk):
         self.fig_diag = FigurePane(self.tab_diag, t)
         self.fig_diag.pack(fill="both", expand=True)
 
+        self._build_eye_tab()
         self._build_sweep_tab()
         self._build_lumerical_tab()
         self._build_log_tab()
@@ -584,6 +587,32 @@ class MZMStudio(tk.Tk):
                 self.action_analyse()
 
     # ---------------- sweep tab ----------------------------------------
+    def _build_eye_tab(self):
+        t = self.theme
+        bar = ttk.Frame(self.tab_eye, style="Panel.TFrame")
+        bar.pack(fill="x", padx=8, pady=8)
+        ttk.Button(bar, text="Compute eye", style="Accent.TButton",
+                   command=self.action_eye).pack(side="left", padx=3)
+        self.eye_auto = tk.BooleanVar(value=False)
+        ttk.Checkbutton(bar, text="Recompute with every analysis",
+                        variable=self.eye_auto).pack(side="left", padx=14)
+        ttk.Button(bar, text="Save PNG",
+                   command=self.action_save_eye_png).pack(side="left", padx=3)
+
+        self.eye_note = ttk.Label(
+            self.tab_eye, style="Muted.TLabel", justify="left", wraplength=980,
+            text="The eye is driven by the same transfer function as the Response "
+                 "tab, so the two always describe the same device. Of the arm "
+                 "imbalances, only a group-index mismatch can move the -3 dB "
+                 "point; loss, splitter and V_pi imbalance and bias error are "
+                 "frequency-flat, so they close the eye without touching the "
+                 "bandwidth. Set the drive swing near V_pi,eff -- over-driving "
+                 "past the null is the usual reason an eye will not open.")
+        self.eye_note.pack(fill="x", padx=12, pady=(0, 4))
+
+        self.fig_eye = FigurePane(self.tab_eye, t)
+        self.fig_eye.pack(fill="both", expand=True, padx=4, pady=4)
+
     def _build_sweep_tab(self):
         t = self.theme
         ctrl = ttk.Frame(self.tab_sweep, style="Panel.TFrame")
@@ -679,6 +708,8 @@ class MZMStudio(tk.Tk):
                    command=self.action_export_tables).pack(side="left", padx=3)
         ttk.Button(ctrl, text="Build + run in INTERCONNECT", style="Accent.TButton",
                    command=self.action_build_interconnect).pack(side="left", padx=3)
+        ttk.Button(ctrl, text="Build eye in INTERCONNECT",
+                   command=self.action_build_interconnect_eye).pack(side="left", padx=3)
         self.lum_keep = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl, text="Leave INTERCONNECT open afterwards",
                         variable=self.lum_keep).pack(side="left", padx=14)
@@ -892,8 +923,57 @@ class MZMStudio(tk.Tk):
             self._ui(lambda: (self.kpi.update_values(res, lm, res.bw_clipped),
                               self.fig_response.show(f_eo),
                               self.fig_diag.show(f_dg)))
+            if bool(self.eye_auto.get()):
+                self._ui(self.action_eye)
 
         self._run_async(work, "analyse")
+
+    def action_eye(self):
+        p = self._get_params()
+        if self.fit is None:
+            self.log("Run 'Extract + analyse' first.", "warn")
+            return
+
+        def work():
+            from .eye import simulate_eye
+            from .physics import link_response
+            res = self.result if self.result is not None else eo_response(self.fit, p)
+            lk = link_response(self.fit, p, res)
+            ey = simulate_eye(self.fit, p)
+            self.eye_result = ey
+            fmt = "PAM4" if ey.levels == 4 else "NRZ"
+            self.log(f"Eye: {ey.bitrate_Gbps:.0f} Gb/s {fmt} "
+                     f"({ey.symbol_rate_GBd:.0f} GBd), PRBS-{int(p['prbs_order'])}, "
+                     f"driver {ey.drive_bw_GHz:.0f} GHz, receiver {ey.rx_bw_GHz:.0f} GHz"
+                     + (f", {ey.fibre_km:.1f} km SSMF" if ey.fibre_km else ""))
+            self.log(f"  ER {ey.er_dB:.2f} dB | OMA {ey.oma_A*1e3:.3f} mA | "
+                     f"eye height {ey.eye_height_A*1e3:.3f} mA | Q {ey.q_factor:.2f} | "
+                     f"crossing {ey.crossing_pct:.1f} % | jitter {ey.jitter_rms_ps:.3f} ps",
+                     "ok")
+            if abs(lk.bw_GHz - lk.bw_electrode_GHz) > 0.01:
+                self.log(f"  Link bandwidth {lk.bw_GHz:.2f} GHz vs bare electrode "
+                         f"{lk.bw_electrode_GHz:.2f} GHz -- the difference is the "
+                         f"group-index imbalance between the arms, which is the only "
+                         f"imbalance that can reshape the response.", "warn")
+            for n in ey.notes:
+                self.log("  NOTE: " + n, "warn")
+            fig = eye_figure(self.fit, p, ey, lk, self.theme["fig"])
+            self._ui(lambda: (self.fig_eye.show(fig), self.nb.select(self.tab_eye)))
+
+        self._run_async(work, "eye")
+
+    def action_save_eye_png(self):
+        if getattr(self, "eye_result", None) is None:
+            self.log("Compute an eye first.", "warn")
+            return
+        path = filedialog.asksaveasfilename(defaultextension=".png",
+                                            filetypes=[("PNG", "*.png")])
+        if not path:
+            return
+        fig = self.fig_eye.figure
+        if fig is not None:
+            fig.savefig(path, dpi=160, facecolor=fig.get_facecolor())
+            self.log(f"Eye saved: {path}", "ok")
 
     def action_sweep(self):
         p = self._get_params()
@@ -1027,7 +1107,10 @@ class MZMStudio(tk.Tk):
                      + ")", "ok")
         self._run_async(work, "export")
 
-    def action_build_interconnect(self):
+    def action_build_interconnect_eye(self):
+        self.action_build_interconnect(mode="eye")
+
+    def action_build_interconnect(self, mode: str = "ena"):
         p = self._get_params()
         if self.result is None or self.fit is None:
             self.log("Run 'Extract + analyse' first.", "warn")
@@ -1049,9 +1132,30 @@ class MZMStudio(tk.Tk):
             b = InterconnectBuilder(str(p["lumapi_path"]), hide=bool(p["ic_hide"]),
                                     log=lambda m: self.log(m))
             self.ic_builder = b            # keeps the process alive
-            topo = b.build(p, files)
-            self.log(f"Schematic built ({topo}).")
-            b.run(os.path.join(out, "TWMZM_EO_response.icp"))
+            topo = b.build(p, files, mode=mode)
+            self.log(f"Schematic built ({topo}, {mode} mode).")
+            name = "TWMZM_eye.icp" if mode == "eye" else "TWMZM_EO_response.icp"
+            b.run(os.path.join(out, name))
+            if mode == "eye":
+                m = b.eye_metrics()
+                if m:
+                    self.log("INTERCONNECT eye: " + "  ".join(
+                        f"{k} {v:.4g}" for k, v in m.items()), "ok")
+                else:
+                    self.log("The eye was built and run, but this INTERCONNECT "
+                             "build exposed no scalar eye metrics to read back. "
+                             "Open the saved .icp and look at EYE_1 directly.",
+                             "warn")
+                self.log("The Python eye on the Eye diagram tab and this one are "
+                         "driven from the same fitted line, the same V_pi and the "
+                         "same imbalances, so a real difference between them is a "
+                         "modelling difference and not a bookkeeping one.")
+                if self.lum_keep.get():
+                    self.log("  INTERCONNECT is left open.")
+                else:
+                    b.close()
+                    self.ic_builder = None
+                return
             # Same reference window the closed-form curve used -- without this
             # the two are normalised differently and the bandwidths disagree
             # even though the underlying physics is identical.

@@ -23,7 +23,7 @@ import numpy as np
 
 from . import parameters as P
 from .extractor import extract_line_fit
-from .physics import LineFit, eo_response, link_metrics
+from .physics import LineFit, eo_response, link_metrics, link_response
 
 
 # =====================================================================
@@ -59,6 +59,22 @@ METRICS: list[MetricSpec] = [
                "Ceiling set by arm loss and splitter imbalance."),
     MetricSpec("chirp_alpha", "Chirp parameter", "-",
                "0 for ideal push-pull, 1 for single-arm drive."),
+    MetricSpec("link_bw_GHz", "Link EO bandwidth", "GHz",
+               "The -3 dB point of the whole interferometer rather than of the "
+               "bare electrode. The two differ only through a group-index "
+               "mismatch between the arms; every other imbalance is "
+               "frequency-flat and cannot move the bandwidth."),
+    MetricSpec("eye_er_dB", "Eye extinction ratio", "dB",
+               "Measured on the eye, so unlike the static ER it includes "
+               "intersymbol interference. Needs 'Sweep the eye too'."),
+    MetricSpec("eye_q", "Eye Q factor", "-",
+               "Worst sub-eye. Needs 'Sweep the eye too'."),
+    MetricSpec("eye_height_mA", "Eye height", "mA",
+               "Worst sub-eye, 3-sigma. Needs 'Sweep the eye too'."),
+    MetricSpec("eye_oma_mA", "Optical modulation amplitude", "mA",
+               "Needs 'Sweep the eye too'."),
+    MetricSpec("eye_jitter_ps", "Eye jitter (rms)", "ps",
+               "Needs 'Sweep the eye too'."),
 ]
 
 METRIC_BY_KEY = {m.key: m for m in METRICS}
@@ -88,14 +104,33 @@ def clear_fit_cache() -> None:
 # =====================================================================
 # Evaluating one point
 # =====================================================================
-def evaluate_point(p: dict, fit: Optional[LineFit] = None) -> dict:
-    """All metrics for a single parameter set."""
+def evaluate_point(p: dict, fit: Optional[LineFit] = None,
+                   with_eye: bool = False) -> dict:
+    """
+    All metrics for a single parameter set.
+
+    The eye is optional and off by default because it costs a few hundred
+    milliseconds against the circuit evaluation's ~1 ms, and a 40 x 5 sweep
+    with the eye on is a minute rather than a second. Turn it on when the
+    question is about the eye.
+    """
     if fit is None:
         fit = get_fit(p)
     res = eo_response(fit, p)
     lm = link_metrics(p)
     i_bw = int(np.argmin(np.abs(res.f_GHz - res.bw_GHz)))
+    extra = {k: float("nan") for k in
+             ("eye_er_dB", "eye_q", "eye_height_mA", "eye_oma_mA", "eye_jitter_ps")}
+    lk = link_response(fit, p, res)
+    if with_eye:
+        from .eye import simulate_eye
+        ey = simulate_eye(fit, p)
+        extra = {"eye_er_dB": ey.er_dB, "eye_q": ey.q_factor,
+                 "eye_height_mA": ey.eye_height_A * 1e3,
+                 "eye_oma_mA": ey.oma_A * 1e3, "eye_jitter_ps": ey.jitter_rms_ps}
     return {
+        "link_bw_GHz": lk.bw_GHz,
+        **extra,
         "bw_GHz": res.bw_GHz,
         "bw_clipped": res.bw_clipped,
         "s21_at_probe_dB": res.s21_at_probe_dB,
@@ -189,6 +224,7 @@ def run_sweep(base: dict,
     total = n_s * n_x
     metrics = {m.key: np.full((n_s, n_x), np.nan) for m in METRICS}
     clipped = np.zeros((n_s, n_x), dtype=bool)
+    with_eye = bool(base.get("sweep_eye", False))
 
     needs_refit = (P.BY_KEY.get(x_key, None) and P.BY_KEY[x_key].affects == "extract") or \
                   (series_key and P.BY_KEY.get(series_key, None)
@@ -211,7 +247,8 @@ def run_sweep(base: dict,
                 p[series_key] = sv
             p = P.normalise(p)
             try:
-                vals = evaluate_point(p, fit if not needs_refit else None)
+                vals = evaluate_point(p, fit if not needs_refit else None,
+                                      with_eye=with_eye)
                 for k, arr in metrics.items():
                     arr[si, xi] = vals[k]
                 clipped[si, xi] = bool(vals["bw_clipped"])

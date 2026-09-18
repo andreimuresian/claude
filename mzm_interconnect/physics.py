@@ -501,3 +501,154 @@ def link_metrics(p: dict) -> LinkMetrics:
         chirp_alpha=float(chirp),
         imbalance_note=note,
     )
+
+
+# =====================================================================
+# 8. Per-arm interferometer model
+# =====================================================================
+@dataclass
+class ArmModel:
+    """Everything that can differ between the two arms of the interferometer.
+
+    ``a``    field amplitude weight: splitter ratio and propagation loss.
+    ``phi0`` static phase: bias point plus any optical path-length error.
+    ``g``    phase-modulation efficiency in rad/V, *signed*. Push-pull means
+             the two arms have opposite signs because the two waveguides sit
+             in the two gaps of the G-S-G and see opposite E-field.
+    ``ng``   optical group index of this arm, which sets its own walk-off
+             against the microwave.
+    """
+    a: float
+    phi0: float
+    g: float
+    ng: float
+
+
+def arm_models(p: dict) -> tuple:
+    """
+    Turn the imbalance knobs into two concrete arms.
+
+    The four mechanisms are independent and physically distinct, even though a
+    single fabrication error (an asymmetric rib over-etch, say) drives several
+    of them at once:
+
+      split_err               power split away from 50:50      -> amplitude
+      arm_loss_imbalance_dB   excess propagation loss of arm 2 -> amplitude
+      arm_phase_imbalance_deg static optical path error        -> bias offset
+      vpi_imbalance_frac      overlap-integral mismatch        -> efficiency
+      ng_imbalance            group-index mismatch             -> walk-off
+
+    Only the last of these can change the *shape* of the electro-optic
+    response; the first four are frequency-flat and therefore move the eye
+    around without moving the bandwidth. See ``link_response``.
+    """
+    rho = min(max(0.5 + float(p["split_err"]), 1e-6), 1 - 1e-6)
+    a1 = np.sqrt(rho)
+    a2 = np.sqrt(1.0 - rho) * 10 ** (-float(p["arm_loss_imbalance_dB"]) / 20.0)
+
+    phi0_1 = 0.0
+    phi0_2 = np.deg2rad(float(p["bias_phase_deg"]) + float(p["arm_phase_imbalance_deg"]))
+
+    vpi = float(p["Vpi_V"])
+    d = float(p["vpi_imbalance_frac"])
+    g1 = np.pi / vpi
+    g2 = -np.pi / (vpi * (1.0 + d)) if str(p["drive_config"]) == "push-pull" else 0.0
+
+    ng = float(p["ng"])
+    dn = float(p.get("ng_imbalance", 0.0))
+    return (ArmModel(a1, phi0_1, g1, ng * (1.0 + dn / 2.0)),
+            ArmModel(a2, phi0_2, g2, ng * (1.0 - dn / 2.0)))
+
+
+def electrode_transfer(fit: LineFit, p: dict, f_GHz, ng: float):
+    """The electrode's complex EO transfer function on an arbitrary grid.
+
+    Shared by the small-signal response and the time-domain eye so the two can
+    never be driven by different physics. The fits carry 1/sqrt(f) and 1/f
+    terms that are singular below the measured band, so they are held at their
+    lowest measured value there -- the same clamp ``eo_response`` uses.
+    """
+    f = np.asarray(f_GHz, dtype=float)
+    f_eval = np.maximum(f, fit.f_min_sim_GHz)
+    alpha = fit.alpha_dB_cm(f_eval,
+                            scale=float(p["alpha_scale"]),
+                            skin_scale=float(p["alpha_skin_scale"]),
+                            diel_scale=float(p["alpha_diel_scale"]),
+                            offset=float(p["alpha_offset_dB_cm"]))
+    nm = fit.nm(f_eval, offset=float(p["nm_offset"]))
+    Zc = fit.Zc(f_eval, offset=float(p["zc_offset_ohm"]))
+    Zs = rlc_impedance(f_eval, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
+    Zt = rlc_impedance(f_eval, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
+    H, _ = eo_transfer(f, alpha, nm, Zc, float(p["L_target_mm"]) * 1e-3, ng, Zs, Zt)
+    return H
+
+
+@dataclass
+class LinkResult:
+    """Small-signal response of the whole interferometer, not just the electrode."""
+    f_GHz: np.ndarray
+    s21_dB: np.ndarray            # normalised, the curve you would measure
+    bw_GHz: float
+    bw_clipped: bool
+    bw_electrode_GHz: float       # the same electrode with balanced arms
+    H: np.ndarray                 # complex link response, un-normalised
+    slope_efficiency: float       # |dP/dV| at the bias point, relative to ideal
+    ref_dB: float = 0.0
+    norm_window_GHz: tuple = (0.0, 0.0)
+
+
+def link_response(fit: LineFit, p: dict, res: Optional[EOResult] = None) -> LinkResult:
+    """
+    Electro-optic response of the two-arm interferometer, arm by arm.
+
+    Starting from the two-beam interference at the output combiner,
+
+        P  = a1^2 + a2^2 + 2 a1 a2 cos(dphi0 + m1 - m2)
+
+    a small drive v gives
+
+        dP = -2 a1 a2 sin(dphi0) [ g1 H1(f) - g2 H2(f) ] V(f)
+
+    with H_i the travelling-wave transfer function seen by arm i. Everything
+    outside the bracket is frequency-flat, so it scales the response without
+    reshaping it. That is the whole story of arm imbalance and bandwidth:
+
+      * amplitude imbalance (loss, splitter) enters only through 2 a1 a2,
+      * bias error enters only through sin(dphi0),
+      * V_pi imbalance enters only through the weights g1 and g2,
+
+    and none of the three can move the -3 dB point. Only a group-index
+    mismatch does, because that makes H1 and H2 genuinely different functions
+    of frequency -- and for any realistic over-etch it is a very small effect.
+    This is a prediction worth checking rather than a claim to take on trust,
+    which is why ``bw_electrode_GHz`` is reported alongside.
+    """
+    arm1, arm2 = arm_models(p)
+    f = np.linspace(0.0, float(p["f_max_GHz"]), int(p["n_points"]))
+    level = float(p["bw_level_dB"])
+
+    H1 = electrode_transfer(fit, p, f, arm1.ng)
+    H2 = H1 if arm1.ng == arm2.ng else electrode_transfer(fit, p, f, arm2.ng)
+
+    dphi0 = arm2.phi0 - arm1.phi0
+    prefactor = -2.0 * arm1.a * arm2.a * np.sin(dphi0)
+    H = prefactor * (arm1.g * H1 - arm2.g * H2)
+
+    if res is None:
+        res = eo_response(fit, p)
+    window = res.norm_window_GHz
+
+    mag = np.abs(H)
+    mag = np.where(np.isfinite(mag) & (mag > 0), mag, 1e-300)
+    s21, bw, ref, clipped = normalise_and_measure(f, 20.0 * np.log10(mag), window, level)
+
+    # How much modulation slope survives, against a perfectly balanced device
+    # biased at quadrature and driven with the same single-arm V_pi.
+    ideal = 2.0 * 0.5 * (2.0 * np.pi / float(p["Vpi_V"]))
+    slope = abs(prefactor * (arm1.g - arm2.g)) / ideal if ideal else float("nan")
+
+    return LinkResult(
+        f_GHz=f, s21_dB=s21, bw_GHz=bw, bw_clipped=clipped,
+        bw_electrode_GHz=float(res.bw_GHz), H=H, slope_efficiency=float(slope),
+        ref_dB=float(ref), norm_window_GHz=window,
+    )

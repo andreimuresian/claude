@@ -72,6 +72,7 @@ class InterconnectBuilder:
         self._lumapi = load_lumapi(lumapi_path)
         self.sim = self._lumapi.INTERCONNECT(hide=bool(hide))
         self.topology = None
+        self.mode = "ena"
 
     # ---------------- low level helpers (from the original launcher) ----
     def setp(self, el, candidates, value, required=True):
@@ -106,7 +107,7 @@ class InterconnectBuilder:
             return False
 
     # ---------------- build --------------------------------------------
-    def build(self, p: dict, files: dict) -> str:
+    def build(self, p: dict, files: dict, mode: str = "ena") -> str:
         """
         Build the whole schematic from a normalised parameter dict and the
         loss/z0/nm table paths. Returns the topology actually built.
@@ -120,9 +121,10 @@ class InterconnectBuilder:
         escaped, and the GUI was left holding a broken session.
         """
         p = P.normalise(p)
+        self.mode = mode
         if str(p["drive_config"]) == "push-pull":
             try:
-                self.topology = self._build_once(p, files, pushpull=True)
+                self.topology = self._build_once(p, files, pushpull=True, mode=mode)
                 return self.topology
             except _FanOutUnsupported:
                 self.log("  This INTERCONNECT build will not fan one electrical "
@@ -130,14 +132,15 @@ class InterconnectBuilder:
             except Exception as exc:
                 self.log(f"  Push-pull build failed ({type(exc).__name__}: {exc}).")
             self.log("  Rebuilding from scratch as a lumped push-pull equivalent.")
-            self.topology = self._build_once(p, files, pushpull=False, lumped_pp=True)
+            self.topology = self._build_once(p, files, pushpull=False,
+                                             lumped_pp=True, mode=mode)
             return self.topology
 
-        self.topology = self._build_once(p, files, pushpull=False)
+        self.topology = self._build_once(p, files, pushpull=False, mode=mode)
         return self.topology
 
     def _build_once(self, p: dict, files: dict, pushpull: bool,
-                    lumped_pp: bool = False) -> str:
+                    lumped_pp: bool = False, mode: str = "ena") -> str:
         sim = self.sim
         sim.new()
         sim.switchtodesign()
@@ -159,7 +162,25 @@ class InterconnectBuilder:
         self.add(['Optical Splitter', 'Optical Splitter/Coupler'], 'SPLT_1', 280, 195)
         self.setp('SPLT_1', ['configuration'], 'splitter', required=False)
         self.setp('SPLT_1', ['number of ports', 'number of output ports'], 2, required=False)
-        self.setp('SPLT_1', ['split ratio'], 'even')
+        # An imperfect splitter is one of the four things that cap the static
+        # extinction ratio, so it has to reach the schematic and not just the
+        # Python link metrics. If this build only understands 'even', the split
+        # error is reported as unmodelled rather than silently dropped.
+        split_err = float(p["split_err"])
+        if split_err == 0.0:
+            self.setp('SPLT_1', ['split ratio'], 'even')
+        else:
+            rho = min(max(0.5 + split_err, 1e-6), 1 - 1e-6)
+            ok = (self.setp('SPLT_1', ['split ratio'], 'custom', required=False) and
+                  self.setp('SPLT_1', ['ratios', 'split ratios', 'power ratios'],
+                            np.array([[rho], [1.0 - rho]]), required=False))
+            if ok:
+                self.log(f"  SPLT_1: split ratio {100*rho:.1f}:{100*(1-rho):.1f}")
+            else:
+                self.setp('SPLT_1', ['split ratio'], 'even')
+                self.log(f"  SPLT_1: this build takes only an even split; the "
+                         f"{100*rho:.1f}:{100*(1-rho):.1f} imbalance is in the "
+                         f"Python link metrics only.")
 
         self.add(['Optical Combiner', 'Optical Splitter/Coupler', 'Optical Splitter'],
                  'SPLT_2', 780, 210)
@@ -264,7 +285,30 @@ class InterconnectBuilder:
         for q in ('thermal noise', 'shot noise', 'power saturation'):
             self.setp('PIN_1', [f'enable {q}', f'{q} enable'], False, required=False)
 
-        # ---- 8. network analyser ----
+        # ---- 8. electrical drive and sink ----
+        # The optical half of the schematic is identical in both modes. What
+        # changes is what drives the electrode and what reads the detector: a
+        # network analyser for the small-signal response, a PRBS/NRZ pair and an
+        # eye analyser for the time domain. Building them from the same code
+        # path is the point -- an eye and a bandwidth then describe the same
+        # device by construction.
+        if mode == "eye":
+            self._add_eye_chain(p)
+        else:
+            self._add_ena(p)
+
+        # ---- 9. wiring common to every topology ----
+        sim.connect('CWL_1', 'output', 'SPLT_1', 'input')
+        sim.connect('SPLT_2', 'output', 'PIN_1', 'input')
+        if mode == "eye":
+            sim.connect('PIN_1', 'output', 'EYE_1', 'input')
+            sim.connect('NRZ_1', 'output', 'TW_1', 'input')
+        else:
+            sim.connect('PIN_1', 'output', 'ENA_1', 'input 1')
+            sim.connect('ENA_1', 'output', 'TW_1', 'input')
+        return self._wire_arms(p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM)
+
+    def _add_ena(self, p: dict):
         self.add(['Network Analyzer'], 'ENA_1', 340, -350)
         self.setp('ENA_1', ['analysis type'], 'impulse response')
         self.setp('ENA_1', ['signal source', 'source'], 'internal', required=False)
@@ -292,12 +336,64 @@ class InterconnectBuilder:
                      f"{2.5*float(p['f_max_GHz']):.0f} GHz or the top of the "
                      f"INTERCONNECT trace is a sampling artifact, not physics.")
 
-        # ---- 9. wiring common to every topology ----
-        sim.connect('CWL_1', 'output', 'SPLT_1', 'input')
-        sim.connect('SPLT_2', 'output', 'PIN_1', 'input')
-        sim.connect('PIN_1', 'output', 'ENA_1', 'input 1')
-        sim.connect('ENA_1', 'output', 'TW_1', 'input')
+    def _add_eye_chain(self, p: dict):
+        """PRBS -> NRZ -> (electrode) and photodiode -> eye analyser.
 
+        The bit rate lives on the root element so every element that needs it
+        can inherit rather than be told separately, which is how the Ansys
+        examples do it and the only way to keep a long schematic consistent.
+        The NRZ generator is centred on zero volts -- amplitude Vpp with a bias
+        of -Vpp/2 -- because the modulator coefficients are referenced to the
+        bias point set by PHS_1, not to the pulse generator's own zero.
+        """
+        sim = self.sim
+        levels = 4 if str(p["mod_format"]).upper() == "PAM4" else 2
+        sym_rate = float(p["bitrate_Gbps"]) / (1 if levels == 2 else 2)
+        try:
+            sim.set("bitrate", sym_rate * 1e9)
+        except Exception:
+            self.log("  root 'bitrate' not settable; setting it per element instead.")
+
+        n_bits = (1 << int(p["prbs_order"])) - 1
+        self.add(['PRBS Generator'], 'PRBS_1', 115, -120)
+        self.setp('PRBS_1', ['bit rate'], sym_rate * 1e9, required=False)
+        self.setp('PRBS_1', ['order'], int(p["prbs_order"]), required=False)
+        self.setp('PRBS_1', ['generation type', 'sequence type'], 'PRBS', required=False)
+
+        vpp = float(p["drive_Vpp_V"])
+        self.add(['NRZ Pulse Generator', 'Pulse Generator'], 'NRZ_1', 265, -120)
+        self.setp('NRZ_1', ['amplitude'], vpp, required=False)
+        self.setp('NRZ_1', ['bias'], -vpp / 2.0, required=False)
+        self.setp('NRZ_1', ['bit rate'], sym_rate * 1e9, required=False)
+        # Rise/fall as a fraction of the bit period, matched to the driver
+        # bandwidth the Python eye uses so the two are describing one driver.
+        drive_bw = float(p["drive_bw_GHz"]) or 0.7 * sym_rate
+        rise_frac = min(0.9, max(0.05, 0.35 * sym_rate / drive_bw))
+        for k in ('rise time', 'fall time'):
+            self.setp('NRZ_1', [k], rise_frac, required=False)
+        sim.connect('PRBS_1', 'output', 'NRZ_1', 'input')
+        if levels == 4:
+            self.log("  NOTE: PAM4 is simulated in the Python eye but this build "
+                     "wires a two-level NRZ drive. Add a 4-level coder between "
+                     "PRBS_1 and NRZ_1 in INTERCONNECT if you need PAM4 here.")
+
+        self.add(['Eye Diagram', 'Eye Diagram Analyzer'], 'EYE_1', 1100, 210)
+        self.setp('EYE_1', ['bit rate'], sym_rate * 1e9, required=False)
+        self.setp('EYE_1', ['ignore start periods', 'ignore start'], 4, required=False)
+
+        # A time window of a whole PRBS period, so the pattern closes on itself
+        # and the eye is not a partial sample of it.
+        try:
+            sim.set("time window", n_bits / (sym_rate * 1e9))
+        except Exception:
+            pass
+        self.log(f"  Eye drive: PRBS-{int(p['prbs_order'])} at {sym_rate:.1f} GBd, "
+                 f"{vpp:.2f} Vpp centred on the bias point, "
+                 f"rise/fall {rise_frac:.2f} of a bit period.")
+
+    def _wire_arms(self, p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM) -> str:
+        """Wire the interferometer and report the topology actually built."""
+        sim = self.sim
         if pushpull:
             add_modulator('OM_1', 560, 120, c1)
             add_modulator('OM_2', 560, 300, c2)
@@ -345,7 +441,9 @@ class InterconnectBuilder:
 
     # ---------------- run & read back -----------------------------------
     def run(self, save_path: Optional[str] = None):
-        self.log("  Running impulse-response sweep in INTERCONNECT...")
+        what = ("time-domain eye simulation" if self.mode == "eye"
+                else "impulse-response sweep")
+        self.log(f"  Running {what} in INTERCONNECT...")
         self.sim.run()
         if save_path:
             self.sim.save(save_path)
@@ -446,6 +544,53 @@ class InterconnectBuilder:
         best = min(crossing, key=lambda r: r['min']) if crossing else min(rows, key=lambda r: r['min'])
         self.log(f"  ENA dataset selected: {best['label']}")
         return best['f'] / 1e9, best['s'], (best['bw'] if best['bw'] else f_max_GHz)
+
+
+    # -- eye read-back ------------------------------------------------
+    EYE_METRICS = {
+        'extinction ratio': 'er_dB',
+        'eye height': 'eye_height',
+        'eye opening': 'eye_opening',
+        'eye amplitude': 'eye_amplitude',
+        'Q factor': 'q_factor',
+        'jitter': 'jitter',
+        'crossing': 'crossing',
+        'BER': 'ber',
+    }
+
+    def eye_metrics(self, element: str = 'EYE_1') -> dict:
+        """
+        Whatever scalar metrics this build's eye analyser exposes.
+
+        Element result names move around between INTERCONNECT versions, so this
+        asks the element what it has rather than assuming, and returns only what
+        came back. An empty dict means the eye was drawn but no scalars could be
+        read -- look at it in INTERCONNECT rather than trusting a guess.
+        """
+        out = {}
+        try:
+            names = [str(n) for n in self.sim.getresultnames(element)]
+        except Exception:
+            return out
+        for n in names:
+            key = None
+            for pat, short in self.EYE_METRICS.items():
+                if pat.lower() in n.lower():
+                    key = short
+                    break
+            if key is None or key in out:
+                continue
+            try:
+                v = self.sim.getresult(element, n)
+            except Exception:
+                continue
+            if isinstance(v, dict):
+                v = next((x for x in v.values() if np.isscalar(x)), None)
+            try:
+                out[key] = float(np.asarray(v).ravel()[0])
+            except Exception:
+                continue
+        return out
 
 
 # ---------------------------------------------------------------------------

@@ -156,6 +156,62 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("split_err", "Splitter imbalance", 0.0, "Arm imbalance", "-",
               sweepable=True, sweep_default=(0.0, 0.10, 21), affects="link",
               help="Power split deviation from 0.5 (0.02 = 52:48). Caps the ER."),
+    ParamSpec("ng_imbalance", "Group-index imbalance", 0.0, "Arm imbalance", "-",
+              sweepable=True, sweep_default=(0.0, 0.02, 21), affects="link",
+              help="Fractional n_g mismatch between the arms (arm 1 gets "
+                   "+dn/2, arm 2 -dn/2). This is the ONLY imbalance that can "
+                   "change the -3 dB bandwidth, because it is the only one "
+                   "that makes the two arms see different walk-off. The other "
+                   "four are frequency-flat and move the eye without moving "
+                   "the bandwidth."),
+
+    # ---------------- Eye diagram / time domain ---------------------------
+    ParamSpec("bitrate_Gbps", "Bit rate", 100.0, "Eye diagram", "Gb/s",
+              sweepable=True, sweep_default=(25.0, 250.0, 19), affects="link",
+              help="Symbol rate is this divided by the bits per symbol "
+                   "(1 for NRZ, 2 for PAM4)."),
+    ParamSpec("mod_format", "Modulation format", "NRZ", "Eye diagram",
+              kind="choice", choices=("NRZ", "PAM4"), affects="link"),
+    ParamSpec("prbs_order", "PRBS order", 9, "Eye diagram", "-", kind="int",
+              affects="link",
+              help="Maximal-length LFSR of this order, so the pattern is a "
+                   "genuine PRBS-N and the run lengths stress the low-frequency "
+                   "response the way a real BERT does."),
+    ParamSpec("drive_Vpp_V", "Drive amplitude", 2.0, "Eye diagram", "Vpp",
+              sweepable=True, sweep_default=(0.5, 6.0, 23), affects="link",
+              help="Peak-to-peak drive swing at the electrode input."),
+    ParamSpec("drive_bw_GHz", "Driver bandwidth", 0.0, "Eye diagram", "GHz",
+              sweepable=True, sweep_default=(20.0, 150.0, 27), affects="link",
+              help="4th-order Bessel low-pass standing in for the driver's own "
+                   "response and finite rise time. 0 means auto (0.7 x symbol "
+                   "rate), which is the usual design point."),
+    ParamSpec("rx_bw_GHz", "Receiver bandwidth", 0.0, "Eye diagram", "GHz",
+              sweepable=True, sweep_default=(20.0, 150.0, 27), affects="link",
+              help="4th-order Bessel low-pass after the photodiode. 0 means "
+                   "auto (0.75 x symbol rate), the usual eye-mask convention."),
+    ParamSpec("samples_per_symbol", "Samples per symbol", 32, "Eye diagram", "-",
+              kind="int", affects="link"),
+    ParamSpec("fibre_km", "Fibre length", 0.0, "Eye diagram", "km",
+              sweepable=True, sweep_default=(0.0, 80.0, 17), affects="link",
+              help="Standard single-mode fibre after the modulator. Chirp is "
+                   "invisible in a back-to-back eye -- it only turns into "
+                   "distortion once dispersion converts phase into amplitude, "
+                   "so leave this at 0 to see the modulator alone and raise it "
+                   "to make V_pi imbalance visible."),
+    ParamSpec("fibre_D_ps_nm_km", "Fibre dispersion", 17.0, "Eye diagram",
+              "ps/nm/km", affects="link"),
+    ParamSpec("eye_noise", "Include receiver noise", True, "Eye diagram",
+              kind="bool", affects="link",
+              help="Shot noise on the photocurrent plus a thermal term. Turn "
+                   "off for a clean look at the modulator's own distortion."),
+    ParamSpec("rx_thermal_pA_rtHz", "Receiver noise density", 10.0, "Eye diagram",
+              "pA/rtHz", affects="link"),
+    ParamSpec("sweep_eye", "Sweep the eye too", False, "Eye diagram", kind="bool",
+              affects="link",
+              help="Adds the eye metrics to the Sweep tab. Off by default "
+                   "because one eye costs a few hundred milliseconds against "
+                   "the circuit evaluation's millisecond, so a large sweep goes "
+                   "from a second to a minute."),
 
     # ---------------- Analysis --------------------------------------------
     ParamSpec("norm_mode", "Normalisation", "plateau", "Analysis",
