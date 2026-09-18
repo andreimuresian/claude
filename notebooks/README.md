@@ -1,3 +1,17 @@
+# RF notebooks
+
+| notebook | what it is |
+|---|---|
+| `RF_interface_optimized.ipynb` | the 2D RF baseline — the Python twin of the COMSOL mode analysis |
+| `RF_perturbation_unitcell.ipynb` | what the CST multilayer tee perturbation actually is, and how to translate it |
+
+`data/cst_multilayer_500.csv` holds the 500-LHS reference both notebooks are
+checked against: the 8 CST design variables, the COMSOL 2D baseline
+(`n_m`, `Z0`, `alpha`), and the three multilayer numbers from the `N+1 - N`
+differential extraction (`alpha_ML_unetched`, `alpha_ML_etched`, `delta_ML`).
+
+---
+
 # `RF_interface_optimized.ipynb` — 2D RF baseline
 
 Python twin of the COMSOL *Electromagnetic Waves, Frequency Domain* mode
@@ -101,8 +115,9 @@ five design variables, which is the real test that the mechanism is right:
 | COMSOL `Attenuation` | -0.105 | -0.628 | -0.046 | +0.009 | -0.029 |
 | this code, ohmic | -0.142 | -0.693 | -0.045 | +0.008 | -0.025 |
 
-So the recorded attenuation is ohmic: there is no missing radiation or
-substrate-leakage channel, and none is modelled. That is consistent with the
+So the recorded attenuation of the **uniform** line is ohmic: there is no
+missing radiation or substrate-leakage channel, and none is modelled. The
+etched line is a different matter — see the second notebook. That is consistent with the
 `.mph` materials, where every dielectric is lossless to within rounding
 (`Si` 1e-12 S/m, `SiO2` 1e-13 S/m, `LN` 1e-3 S/m, i.e. `tan d = 6.8e-6`, worth
 0.01 dB/cm), leaving the gold IBC as the only loss mechanism in the model.
@@ -114,3 +129,86 @@ The `.mph` carries two gold material nodes with different conductivities,
 Since `Rs` goes as `1/sqrt(sigma)`, picking the other one would raise the
 conductor loss by 5.5%. Worth confirming which node is bound to the electrode
 boundaries before the last percent of the attenuation is argued over.
+
+
+---
+
+# `RF_perturbation_unitcell.ipynb` — the tee perturbation
+
+Does not merge the baseline with the perturbation. It answers two questions
+about the perturbation itself: why the composite
+`alpha = alpha_2D + [alpha_ML(etched) - alpha_ML(unetched)]` works, and whether
+that differential can be reproduced by a unit cell in code.
+
+| cell | what it does |
+|---|---|
+| `[0]` | the CST multilayer model as built, the T-slot geometry, the z-sections it cuts the period into, and the generalised cross-section mesher |
+| `[1]` | Floquet harmonics, the Bragg and grating-lobe pitches, and the surface-wave modes of the layer stack from a 1D transfer matrix |
+| `[2]` | the periodic quasi-static unit cell: per-section 2D extraction, the homogenised line, the exact ABCD Bloch cascade, and the orthogonality check |
+| `[3]` | the ohmic ceiling — sheet conduction on the slotted ground, solved for all 498 footprints |
+| `[4]` | confrontation with the 500-row multilayer sweep |
+| `[5]` | verdict, and the four routes to a code perturbation |
+
+Runs end to end in about 130 s; cell `[2]` is 110 s of that (five geometries,
+four 2D meshes each).
+
+## What it establishes
+
+**The multilayer solver carries three loss channels, the 2D FEM two.** CST's
+`HF Multilayer` is a surface-integral method whose Green's function is the one
+of the whole stack, laterally infinite and open. That puts the lossy-metal
+surface impedance, the `Silicon (lossy)` conduction loss *and* radiation /
+substrate leakage in it at once — the last one because the layered Green's
+function carries the surface-wave poles. The 2D FEM solves for a bound
+eigenmode in a closed box and structurally cannot return a leaky one.
+
+**That does not matter for the baseline, and the data proves it.** Over all 498
+rows the multilayer unetched number sits *below* COMSOL, by **7.04 ± 1.71 %**,
+on every single geometry, and the shortfall tracks `GAP` (-0.41) and `MTX`
+(+0.30). An extra loss channel would push it *up*; a first-order surface mesh
+under-resolving the `r^(-1/3)` edge singularity pushes it down. So leakage on
+the uniform line is below the 7 % meshing residual.
+
+**Which is why the composite is additive.** The baseline supplies the uniform
+line's ohmic loss where it is computed best; the differential is identically
+zero when the tee is absent, so it cannot double count; and it carries both the
+channel the baseline lacks and — as a bonus — cancels the multilayer solver's
+own -7 % ohmic bias, which is present in both of its runs.
+
+**The perturbation itself is a mixture.** At `p = 200 µm` every Floquet harmonic
+but `m = 0` is evanescent (the `m = -1` lobe needs `p > 1064 µm`) and
+`beta_0 p = 0.54 rad`, so the period homogenises. But `n_m = 1.51..2.15` sits
+*below* the TE0 surface wave of the 550 µm silicon slab at `n = 2.5414`, so
+exactly one radiative channel is open — and it is open for every geometry.
+
+| channel | what it gives | how it was closed |
+|---|---|---|
+| cross-section change | `delta` in `[-0.40, -0.08]` dB/cm on rows spanning `[-1.07, +17.22]` | homogenised cell, cell `[2]`; the exact ABCD cascade agrees with it to a few % |
+| longitudinal current detour | covers the median penalty row (1.05x) then saturates | sheet conduction, cell `[3]`; **73 of 286** penalty rows demand more squares of gold per period than the surviving ground rim physically has |
+| leakage into the Si TE0 surface wave | the remainder | not modelled anywhere in this repo |
+
+The worst rows sit at an equivalent `tan d = 0.185`, a Q of about 5. Nothing in
+this stack dissipates like that: HR silicon at 2.5e-4 S/m is `tan d = 6.4e-6`,
+and the gold itself only reaches 0.017 on the unetched line.
+
+The ohmic shortfall ranks with the slot **depth** (`MTX`, rho = +0.44 — a slot
+through thicker gold is a longer below-cutoff channel, so it leaks less) and
+with its length (`L2/p`, rho = -0.35), and not at all with the surviving rim
+(rho = -0.06). That is an aperture signature. The attribution still rests on
+elimination rather than on that ranking.
+
+## Routes to a code perturbation
+
+| route | 1:1? | additive? | cost |
+|---|---|---|---|
+| **A** periodic quasi-static unit cell | no — no radiation channel exists in a static formulation | yes, proved to machine zero | ~20 s/geometry, built |
+| **A+** A + a layered-medium reciprocity integral for the TE0 coupling | first order only; at the top of the sweep 8 % of the power goes per period | yes | seconds; days to build |
+| **B** 3D Floquet full-wave cell with PML | yes | yes | the leakage wave has a 3.0 mm lateral wavelength, so the PML must absorb a 3 mm wave while the mesh resolves a 0.1 µm slot rim — millions of DOF, hours |
+| **C** layered-medium MoM (MPIE + Sommerfeld Green's function + RWG) | yes, by construction | yes | **recommended**; all metal is coplanar so the Green's function is a 1D table in rho, and one period is ~2.5 k unknowns |
+
+Route **C** is fast for the same reason CST's is: the substrate, the 3 mm
+lateral reach and the open boundary all live in the Green's function and cost
+nothing, because unknowns exist only on the gold. Built periodic it needs no
+ports and no `N+1 - N` subtraction at all; built as finite `N` and `N+1` lines
+it reproduces the existing reference numbers port artifact included, which
+makes it directly checkable against the 500 rows already in hand.
