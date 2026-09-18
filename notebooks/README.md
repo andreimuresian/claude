@@ -55,35 +55,62 @@ To sweep a geometry, edit the parameter block at the top of cell `[0]`
   that gives `R'` also gives the IBC surface inductance `L_int = R'/omega`, and
   `n_m` and `Z0` both scale with `sqrt(L_ext + L_int)`. For thick electrodes
   over a narrow gap this is a 3-5% effect, applied in cell `[4]` as `kappa`.
+* Wheeler's incremental-inductance rule is **not** an independent check on the
+  contour integral. The shape derivative of `C_air` under a uniform recession of
+  every conductor wall reduces exactly to `Rs * closed-integral |E|^2 dl / S^2`,
+  which is the contour formula itself. Evaluating it by finite differences only
+  adds remeshing noise, so cell `[1]` uses the contour form directly.
+* At a 90 degree metal wedge the surface charge goes as `r^(-1/3)`, so the loss
+  integral converges as `h^(1/3)` and a naive refinement never looks converged.
+  It does converge: extrapolating `R'(h) = R'_inf - C h^(1/3)` for row 1 gives
+  2406 ohm/m with P1 and 2409 ohm/m with P2 -- two element orders agreeing to
+  0.1%. That limit is *not* the answer to use. An impedance boundary cannot
+  support the full PEC singularity, because the field penetrates about a skin
+  depth into the metal, so the physical cutoff is `delta/2 = 152 nm` rather than
+  the mesh size. `CORNER_RES = 0.05 um` sits in that range and is where COMSOL's
+  own IBC lands; refining past it overshoots by ~10%.
 
 ## Status against the recorded COMSOL rows
 
-`L = Z0 * n_m / c` reproduces COMSOL to **0.1-0.3%** on all five recorded rows,
-and `Z0_voltage_IBC` to better than 1%. The residual sits in `C`: 2.9-5.2% low,
-growing with `gap`, which leaves `n_m` 1.4-2.5% low and `Z0` 1.5-2.9% high.
-Every single-parameter change that fixes `n_m` (`box_h`, `tfln`, `eps_SiO2`, a
-gap-spanning cap) degrades `Z0` by a comparable amount, so they cannot be
-told apart from these five rows and none is applied.
+Reference: the corrected 500-LHS export (`FINAL_DATASET_nmZ0_alpha_new.xlsx`).
+An earlier export of the same sweep carried an attenuation column roughly 2x
+too large, together with `n_m` 1.8% high, `Z0` 1.5% low and `Mode_Score` above
+0.5 instead of below. Numbers quoted against that older table elsewhere in the
+repo history are superseded.
 
-`Attenuation` is 20-45% low, and this is *not* a discretisation artefact. The
-conductor loss has been checked three independent ways:
+Row 1 (`auc_w 60.952, gap 4.448, au_h 13.336, cap_w 3.340, wg_h 0.267`):
 
-| | contour FEM | Wheeler incremental inductance | Ghione | COMSOL |
-|---|---|---|---|---|
-| row 1 | 4.43 | 4.91 | 2.24 | 5.66 |
-| row 5 | 2.97 | 3.20 | 1.65 | 5.42 |
+| quantity | this code | COMSOL | delta |
+|---|---|---|---|
+| `n_m` | 1.65178 | 1.65277 | **-0.06%** |
+| `Z0_IBC` | 21.6505 | 21.5855 | +0.30% |
+| `Z0_voltage_IBC` | 21.4109 | 21.4999 | -0.41% |
+| `Mode_Score` | 0.49520 | 0.49823 | -0.61% |
+| `Attenuation` | 4.43008 | 4.39295 | **+0.85%** |
+| `L = Z0 n_m / c` | 119.289 | 119.002 | +0.24% |
+| `C = n_m / (Z0 c)` | 254.486 | 255.406 | -0.36% |
 
-Wheeler's rule uses only `C_air` for slightly receded conductors and shares no
-machinery with the contour integral; its derivative is linear across step
-sizes, so it is converged. Corner refinement with P2 elements moves the loss
-integral by 5-9% and then plateaus at 0.83 (row 1) and 0.56 (row 5) of the
-value COMSOL's attenuation implies. All three methods agree the ohmic loss
-*falls* as the gap widens; COMSOL's attenuation is flat at 5.4-5.7 dB/cm
-across rows whose ohmic loss varies by 35%. A mesh error shrinks under
-refinement and does not invert a trend, so the missing loss is not ohmic.
+Across all 500 geometries, the quasi-static extraction of cell `[1]` (run at a
+coarser preset than the notebook default) gives `C` **+0.86% +/- 0.14%**,
+`n_m` **-1.12% +/- 0.30%** and a conductor loss correlating with COMSOL's
+attenuation at **0.9977**. The two attenuations obey the same power law in the
+five design variables, which is the real test that the mechanism is right:
 
-A stretched-coordinate PML was implemented to test substrate leakage (the
-eigensolver supports the full `mu` tensor, so a PML is only a material change).
-It does not converge for this problem: `Im(n_eff)` spans 0.06-1.75 dB/cm across
-PML thickness and strength, and `Mode_Score` drifts away from 0.5, meaning the
-PML contaminates the mode. No leakage number from it is trustworthy.
+| exponent of | `auc_w` | `gap` | `au_h` | `cap_w` | `wg_h` |
+|---|---|---|---|---|---|
+| COMSOL `Attenuation` | -0.105 | -0.628 | -0.046 | +0.009 | -0.029 |
+| this code, ohmic | -0.142 | -0.693 | -0.045 | +0.008 | -0.025 |
+
+So the recorded attenuation is ohmic: there is no missing radiation or
+substrate-leakage channel, and none is modelled. That is consistent with the
+`.mph` materials, where every dielectric is lossless to within rounding
+(`Si` 1e-12 S/m, `SiO2` 1e-13 S/m, `LN` 1e-3 S/m, i.e. `tan d = 6.8e-6`, worth
+0.01 dB/cm), leaving the gold IBC as the only loss mechanism in the model.
+
+## Open point
+
+The `.mph` carries two gold material nodes with different conductivities,
+`4.1e7 S/m` (`mat3`) and `4.56e7 S/m` (`mat6`). The notebook uses `4.56e7`.
+Since `Rs` goes as `1/sqrt(sigma)`, picking the other one would raise the
+conductor loss by 5.5%. Worth confirming which node is bound to the electrode
+boundaries before the last percent of the attenuation is argued over.
