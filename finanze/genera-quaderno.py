@@ -33,9 +33,7 @@ ER   = 103   # ultima riga dati in Entrate (4..103)
 MR   = 300   # ultima riga dati in Movimenti (15..300)
 
 PIANO = [
-    (date(2026, 9, 1), 0), (date(2026, 9, 30), 446), (date(2026, 10, 31), 1442),
-    (date(2026, 11, 30), 2188), (date(2026, 12, 31), 4094), (date(2027, 1, 31), 4355),
-    (date(2027, 2, 28), 4616), (date(2027, 3, 31), 4877), (date(2027, 4, 30), 5138),
+    (date(2026, 9, 1), 0), (date(2026, 9, 20), 470), (date(2026, 10, 31), 1020),
 ]
 P0, P1 = 12, 12 + len(PIANO) - 1          # righe della curva sul foglio Piano
 PA = "Piano!$A${}:$A${}".format(P0, P1)
@@ -137,7 +135,7 @@ sp.freeze_panes = "A4"
 SPESE_RIGHE = [
     (date(2026, 9, 20), "Revisione caldaia + controllo fumi (100 € contanti + 40 € carta)", 140, BLACK),
     (date(2026, 10, 3), "Assicurazione auto — rinnovo Prima/Triglav, pagamento unico", 467.76, BLACK),
-    (date(2026, 10, 5), "Lotta Club Seggiano — abbonamento semestrale 35×6 + quota iscrizione (previsto, ~20-30 €)", 235, GREENIT),
+    (date(2026, 10, 5), "Lotta Club Seggiano — abbonamento SEMESTRALE 35×6 + quota iscrizione, una tantum: NIENTE rate mensili fino a marzo (previsto, ~20-30 €)", 235, GREENIT),
 ]
 for i, (d, voce, imp, font) in enumerate(SPESE_RIGHE):
     r = 4 + i
@@ -307,27 +305,26 @@ for i, (lab, val, fmt, nota) in enumerate(par):
     c.font, c.number_format, c.fill = BLUE, fmt, YELLOW
     pl.cell(row=r, column=3, value=nota).font = NOTE
 
-pl.cell(row=7, column=1, value="Impegni noti non ancora nel piano mensile qui sotto").font = LBL
+pl.cell(row=7, column=1, value="Impegni noti, pagati dal conto corrente (non dal fondo)").font = LBL
 impegni = [
     "Assicurazione auto: 467,76 € a inizio ottobre (confermato, vedi foglio Spese).",
-    "Lotta Club Seggiano: ~235 € una tantum a ottobre + 35 €/mese da novembre (previsto, vedi foglio Spese).",
-    "Rimborso 730: 1.481 € netti attesi nov/dic, più preciso dei ~1.160 € stimati prima (vedi foglio Entrate).",
+    "Lotta Club Seggiano: ~235 € una tantum a ottobre (semestrale + quota iscrizione). Nessuna rata "
+    "mensile fino a marzo 2027 — il corso è già pagato per il semestre.",
+    "Rimborso 730: 1.481 € netti attesi nov/dic (vedi foglio Entrate). Non ancora nella curva sotto: "
+    "la aggiungo quando arriva davvero.",
 ]
 for i, t in enumerate(impegni):
     pl.cell(row=8 + i, column=3, value="• " + t).font = NOTE
 
-pl.cell(row=11, column=1, value="Curva del piano — fondo cumulato atteso").font = LBL
+pl.cell(row=12, column=1, value="Curva del piano — solo punti confermati o decisi").font = LBL
 pl.cell(row=P0 - 1, column=1, value="Data").font = LBL
 pl.cell(row=P0 - 1, column=2, value="Fondo (€)").font = LBL
 pl.cell(row=P0 - 1, column=3, value="Da dove viene").font = LBL
 origini = [
     "Punto di partenza.",
-    "446 € versati a settembre — oggi (20/09) sei già a 470 € di fondo: leggermente avanti.",
-    "446 + 550 € dai tuoi (affitto a 700 e 250 € da tuo padre), al netto di assicurazione e lotta.",
-    "446 + 300 € dai tuoi.",
-    "446 + 300 € dai tuoi + 1.481 € di rimborso 730 (di cui parte tenuta da parte per i regali).",
-    "Netto sceso a ~2.005 €: al fondo restano ~261 €/mese, da ricontrollare con la rata lotta da 35 €.",
-    "", "", "Traguardo raggiunto — data da confermare con i dati reali di ottobre.",
+    "Saldo reale letto dal foglio Settimane il 20/09.",
+    "470 + 550 € versati a ottobre (deciso il 20/09). Assicurazione e lotta escono dal conto corrente, "
+    "non dal fondo: non riducono questo numero.",
 ]
 for i, (d, v) in enumerate(PIANO):
     r = P0 + i
@@ -336,13 +333,22 @@ for i, (d, v) in enumerate(PIANO):
     if origini[i]:
         pl.cell(row=r, column=3, value=origini[i]).font = NOTE
 
-pl.cell(row=P1 + 2, column=1, value="Fonte dei numeri").font = LBL
+pl.cell(row=P1 + 2, column=1, value="Da novembre in poi").font = LBL
 pl.cell(row=P1 + 2, column=3,
-        value="Piano concordato il 13/09/2026, aggiornato il 20/09/2026 con i dati reali di assicurazione, "
-              "730 e caldaia. Questa curva mensile resta una stima: ricalcolala a fine ottobre con i "
-              "numeri veri del primo mese di lotta e assicurazione pagati.").font = NOTE
+        value="Non ancora stimato: manca la conferma se il tuo stipendio netto \"a regime\" e i 250 € "
+              "di tuo padre sono ricorrenti o solo di ottobre, e quando arriva davvero il rimborso 730. "
+              "Appena hai il primo dato reale di novembre (foglio Settimane), aggiungo il punto qui "
+              "invece di indovinarlo adesso.").font = NOTE
 pl.cell(row=P1 + 2, column=3).alignment = Alignment(wrap_text=True, vertical="top")
-pl.row_dimensions[P1 + 2].height = 40
+pl.row_dimensions[P1 + 2].height = 50
+
+pl.cell(row=P1 + 4, column=1, value="Fonte dei numeri").font = LBL
+pl.cell(row=P1 + 4, column=3,
+        value="Piano concordato il 13/09/2026. Curva rifatta il 20/09/2026 dopo un errore: la versione "
+              "precedente non era stata ricalcolata con i costi reali di caldaia, assicurazione e lotta, "
+              "e contava la lotta come rata mensile mentre è un pagamento semestrale unico.").font = NOTE
+pl.cell(row=P1 + 4, column=3).alignment = Alignment(wrap_text=True, vertical="top")
+pl.row_dimensions[P1 + 4].height = 40
 
 # ============================================================ CRUSCOTTO
 cr = wb.create_sheet("Cruscotto", 0)
