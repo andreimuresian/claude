@@ -2,7 +2,7 @@
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
-from datetime import date
+from datetime import date, timedelta
 
 OUT = "/home/user/claude/finanze/quaderno-5000.xlsx"
 
@@ -11,9 +11,11 @@ BLUE    = Font(name=ARIAL, size=11, color="0000FF")           # celle da compila
 BLACK   = Font(name=ARIAL, size=11)
 GREY    = Font(name=ARIAL, size=11, color="7C8A91")
 ITAL    = Font(name=ARIAL, size=11, color="0000FF", italic=True)
+GREENIT = Font(name=ARIAL, size=11, color="0000FF", italic=True)   # righe "previsto"
 H1      = Font(name=ARIAL, size=15, bold=True, color="141C22")
 H2      = Font(name=ARIAL, size=11, bold=True, color="FFFFFF")
 LBL     = Font(name=ARIAL, size=11, bold=True)
+LBLBOLD = Font(name=ARIAL, size=11, bold=True)
 NOTE    = Font(name=ARIAL, size=10, color="4A565E", italic=True)
 HEADFIL = PatternFill("solid", fgColor="0E6E5E")
 YELLOW  = PatternFill("solid", fgColor="FFFF00")
@@ -23,16 +25,19 @@ THIN    = Border(bottom=Side(style="thin", color="D3D0C7"))
 EUR  = '#,##0" €";(#,##0)" €";"–"'
 EUR2 = '#,##0.00" €";(#,##0.00)" €";"–"'
 DATA = "dd/mm/yyyy"
+DATABREVE = "dd/mm"
 
 NR   = 203   # ultima riga dati in Settimane (4..203)
 SR   = 103   # ultima riga dati in Spese   (4..103)
+ER   = 103   # ultima riga dati in Entrate (4..103)
+MR   = 300   # ultima riga dati in Movimenti (15..300)
 
 PIANO = [
     (date(2026, 9, 1), 0), (date(2026, 9, 30), 446), (date(2026, 10, 31), 1442),
     (date(2026, 11, 30), 2188), (date(2026, 12, 31), 4094), (date(2027, 1, 31), 4355),
     (date(2027, 2, 28), 4616), (date(2027, 3, 31), 4877), (date(2027, 4, 30), 5138),
 ]
-P0, P1 = 10, 10 + len(PIANO) - 1          # righe della curva sul foglio Piano
+P0, P1 = 12, 12 + len(PIANO) - 1          # righe della curva sul foglio Piano
 PA = "Piano!$A${}:$A${}".format(P0, P1)
 PB = "Piano!$B${}:$B${}".format(P0, P1)
 N  = len(PIANO)
@@ -45,9 +50,10 @@ ws.title = "Settimane"
 
 ws["A1"] = "Il quaderno dei 5.000 — registro settimanale"
 ws["A1"].font = H1
-ws["A2"] = ("Ogni domenica scrivi solo le colonne in blu: i due saldi letti dall'app della banca, "
-            "le entrate della settimana e le uscite grosse (affitto, bollette, spese annuali). "
-            "Tutto il resto si calcola da solo. Le tre righe in corsivo sono un esempio: cancellale.")
+ws["A2"] = ("Ogni domenica scrivi solo le colonne in blu: i saldi letti dalle app (banca, contanti "
+            "contati a mente, buoni pasto residui) e le entrate della settimana. Tutto il resto si "
+            "calcola da solo. Budget previsto: scrivi prima quanto pensi di spendere, così a fine "
+            "settimana vedi lo scarto reale. La prima riga in corsivo è un esempio: cancellala.")
 ws["A2"].font = NOTE
 ws["A2"].alignment = Alignment(wrap_text=True, vertical="top")
 ws.merge_cells("A2:K2")
@@ -55,9 +61,10 @@ ws.row_dimensions[2].height = 42
 
 heads = [
     ("Domenica", 12), ("Conto corrente (€)", 17), ("Conto risparmio (€)", 18),
-    ("Entrate (€)", 12), ("Uscite grosse (€)", 16), ("Nota", 26),
+    ("Contanti (€)", 13), ("Buoni pasto (€)", 15),
+    ("Entrate (€)", 12), ("Nota", 30),
     ("Patrimonio (€)", 15), ("Speso in settimana (€)", 20),
-    ("Scarto vs budget (€)", 18), ("Piano a quella data (€)", 19), ("Fondo vs piano (€)", 17),
+    ("Budget previsto (€)", 18), ("Scarto vs budget (€)", 18),
 ]
 for i, (h, w) in enumerate(heads, start=1):
     c = ws.cell(row=3, column=i, value=h)
@@ -67,50 +74,45 @@ for i, (h, w) in enumerate(heads, start=1):
 ws.row_dimensions[3].height = 30
 ws.freeze_panes = "A4"
 
-ESEMPI = [
-    (date(2026, 8, 30), 2190, 0,   2190, 0,    "ESEMPIO — stipendio di agosto"),
-    (date(2026, 9, 6),  624,  446, 0,    1000, "ESEMPIO — affitto"),
-    (date(2026, 9, 13), 479,  446, 0,    0,    "ESEMPIO — cancella queste tre righe"),
-]
-
-def piano_interp(r):
-    """Valore del piano alla data in A{r}, interpolato fra i punti mensili."""
-    m = "MATCH($A{r},{PA},1)".format(r=r, PA=PA)
-    return (
-        '=IF(NOT(ISNUMBER($A{r})),"",'
-        'IF($A{r}<=INDEX({PA},1),0,'
-        'IF($A{r}>=INDEX({PA},{N}),INDEX({PB},{N}),'
-        'INDEX({PB},{m})+($A{r}-INDEX({PA},{m}))'
-        '/(INDEX({PA},{m}+1)-INDEX({PA},{m}))'
-        '*(INDEX({PB},{m}+1)-INDEX({PB},{m})))))'
-    ).format(r=r, PA=PA, PB=PB, N=N, m=m)
+# riga 4: esempio da cancellare — riga 5: prima settimana reale (20/09/2026, quella già compilata)
+ESEMPIO = (date(2026, 8, 30), 2190, 0, 0, 0, 2190, "ESEMPIO — stipendio di agosto (cancella questa riga)")
+REALE_20_09 = (date(2026, 9, 20), 74, 470, 350, 81, 0, "Rinnovo caldaia (140 € — vedi foglio Spese)")
 
 for r in range(4, NR + 1):
-    idx = r - 4
-    if idx < len(ESEMPI):
-        d, cc, rp, en, fi, nt = ESEMPI[idx]
-        ws.cell(row=r, column=1, value=d).font = ITAL
-        for col, val in ((2, cc), (3, rp), (4, en), (5, fi)):
-            ws.cell(row=r, column=col, value=val).font = ITAL
-        ws.cell(row=r, column=6, value=nt).font = ITAL
+    if r == 4:
+        d, cc, rp, ct, bp, en, nt = ESEMPIO
+        font = ITAL
+    elif r == 5:
+        d, cc, rp, ct, bp, en, nt = REALE_20_09
+        font = BLACK
+    else:
+        d = cc = rp = ct = bp = en = nt = None
+        font = BLUE
+
+    if r <= 5:
+        ws.cell(row=r, column=1, value=d).font = font
+        for col, val in ((2, cc), (3, rp), (4, ct), (5, bp), (6, en)):
+            ws.cell(row=r, column=col, value=val).font = font
+        ws.cell(row=r, column=7, value=nt).font = font
     else:
         for col in range(1, 6):
             ws.cell(row=r, column=col).font = BLUE
-        ws.cell(row=r, column=6).font = BLUE
-        ws.cell(row=r, column=4, value=0).font = BLUE
-        ws.cell(row=r, column=5, value=0).font = BLUE
+        ws.cell(row=r, column=6, value=0).font = BLUE
+        ws.cell(row=r, column=7).font = BLUE
+        ws.cell(row=r, column=10).font = BLUE
+
+    if r >= 4:
+        ws.cell(row=r, column=10).font = BLUE  # budget previsto: sempre da compilare a mano
 
     ws.cell(row=r, column=1).number_format = DATA
-    for col in (2, 3, 4, 5):
+    for col in (2, 3, 4, 5, 6, 10):
         ws.cell(row=r, column=col).number_format = EUR
 
-    ws.cell(row=r, column=7,  value='=IF(NOT(ISNUMBER($A{r})),"",$B{r}+$C{r})'.format(r=r))
-    ws.cell(row=r, column=8,  value=('=IF(OR(NOT(ISNUMBER($A{r})),NOT(ISNUMBER($A{p}))),"",'
-                                     '$G{p}+$D{r}-$G{r}-$E{r})').format(r=r, p=r - 1))
-    ws.cell(row=r, column=9,  value='=IF($H{r}="","",$H{r}-Piano!$B$4)'.format(r=r))
-    ws.cell(row=r, column=10, value=piano_interp(r))
-    ws.cell(row=r, column=11, value='=IF($J{r}="","",$C{r}-$J{r})'.format(r=r))
-    for col in range(7, 12):
+    ws.cell(row=r, column=8, value='=IF(NOT(ISNUMBER($A{r})),"",$B{r}+$C{r}+$D{r}+$E{r})'.format(r=r))
+    ws.cell(row=r, column=9, value=('=IF(OR(NOT(ISNUMBER($A{r})),NOT(ISNUMBER($A{p}))),"",'
+                                     '$H{p}+$F{r}-$H{r})').format(r=r, p=r - 1))
+    ws.cell(row=r, column=11, value='=IF(OR($I{r}="",$J{r}=""),"",$I{r}-$J{r})'.format(r=r))
+    for col in (8, 9, 11):
         c = ws.cell(row=r, column=col)
         c.font, c.number_format, c.border = BLACK, EUR, THIN
 
@@ -118,30 +120,223 @@ for r in range(4, NR + 1):
 sp = wb.create_sheet("Spese")
 sp["A1"] = "Spese annuali — quello che esce dal buffer"
 sp["A1"].font = H1
-sp["A2"] = ("Il buffer si riempie da solo di 150 € al mese. Qui registri solo le uscite: "
-            "assicurazione, freni, bollo, gomme, revisione, tagliando.")
+sp["A2"] = ("Il buffer si riempie da solo di 150 € al mese. Qui registri solo le uscite grosse: "
+            "assicurazione, caldaia, bollo, gomme, revisione, tagliando. Le righe in corsivo blu "
+            "sono previsioni (non ancora accadute): correggile o cancellale quando la spesa è reale.")
 sp["A2"].font = NOTE
+sp["A2"].alignment = Alignment(wrap_text=True, vertical="top")
 sp.merge_cells("A2:C2")
+sp.row_dimensions[2].height = 28
 
-for i, (h, w) in enumerate([("Data", 12), ("Voce", 34), ("Importo (€)", 14)], start=1):
+for i, (h, w) in enumerate([("Data", 12), ("Voce", 44), ("Importo (€)", 14)], start=1):
     c = sp.cell(row=3, column=i, value=h)
     c.font, c.fill = H2, HEADFIL
     sp.column_dimensions[get_column_letter(i)].width = w
 sp.freeze_panes = "A4"
 
-sp.cell(row=4, column=1, value=date(2026, 10, 15)).font = ITAL
-sp.cell(row=4, column=2, value="ESEMPIO — assicurazione auto (cancella questa riga)").font = ITAL
-sp.cell(row=4, column=3, value=550).font = ITAL
+SPESE_RIGHE = [
+    (date(2026, 9, 20), "Revisione caldaia + controllo fumi (100 € contanti + 40 € carta)", 140, BLACK),
+    (date(2026, 10, 3), "Assicurazione auto — rinnovo Prima/Triglav, pagamento unico", 467.76, BLACK),
+    (date(2026, 10, 5), "Lotta Club Seggiano — abbonamento semestrale 35×6 + quota iscrizione (previsto, ~20-30 €)", 235, GREENIT),
+]
+for i, (d, voce, imp, font) in enumerate(SPESE_RIGHE):
+    r = 4 + i
+    sp.cell(row=r, column=1, value=d).font = font
+    sp.cell(row=r, column=2, value=voce).font = font
+    sp.cell(row=r, column=3, value=imp).font = font
+
 for r in range(4, SR + 1):
     sp.cell(row=r, column=1).number_format = DATA
     sp.cell(row=r, column=3).number_format = EUR
-    if r > 4:
+    if r > 4 + len(SPESE_RIGHE) - 1:
         for col in (1, 2, 3):
             sp.cell(row=r, column=col).font = BLUE
 
 sp.cell(row=SR + 2, column=2, value="Totale speso dal buffer").font = LBL
 tot = sp.cell(row=SR + 2, column=3, value="=SUM($C$4:$C${})".format(SR))
 tot.font, tot.number_format = LBL, EUR
+
+# ============================================================ ENTRATE
+en_sh = wb.create_sheet("Entrate")
+en_sh["A1"] = "Entrate — stipendi, contributi, rimborsi"
+en_sh["A1"].font = H1
+en_sh["A2"] = ("Registra qui ogni entrata importante, per sapere sempre da dove viene ogni euro. "
+               "Le righe in corsivo blu sono previsioni (non ancora arrivate): correggile con "
+               "l'importo vero appena arrivano, o cancellale se saltano.")
+en_sh["A2"].font = NOTE
+en_sh["A2"].alignment = Alignment(wrap_text=True, vertical="top")
+en_sh.merge_cells("A2:C2")
+en_sh.row_dimensions[2].height = 28
+
+for i, (h, w) in enumerate([("Data", 12), ("Voce", 44), ("Importo (€)", 14)], start=1):
+    c = en_sh.cell(row=3, column=i, value=h)
+    c.font, c.fill = H2, HEADFIL
+    en_sh.column_dimensions[get_column_letter(i)].width = w
+en_sh.freeze_panes = "A4"
+
+ENTRATE_RIGHE = [
+    (date(2026, 10, 1), "Stipendio di settembre (previsto, ~2.190 €)", 2190, GREENIT),
+    (date(2026, 10, 1), "Bonifico da papà (previsto)", 250, GREENIT),
+    (date(2026, 10, 1), "Ricarica buoni pasto — 22 giorni lavorativi × 9 € (previsto)", 198, GREENIT),
+    (date(2026, 11, 15), "Rimborso 730 — accredito su carta (atteso nov/dic, importo confermato dal 730-3)", 1481, GREENIT),
+]
+for i, (d, voce, imp, font) in enumerate(ENTRATE_RIGHE):
+    r = 4 + i
+    en_sh.cell(row=r, column=1, value=d).font = font
+    en_sh.cell(row=r, column=2, value=voce).font = font
+    en_sh.cell(row=r, column=3, value=imp).font = font
+
+for r in range(4, ER + 1):
+    en_sh.cell(row=r, column=1).number_format = DATA
+    en_sh.cell(row=r, column=3).number_format = EUR
+    if r > 4 + len(ENTRATE_RIGHE) - 1:
+        for col in (1, 2, 3):
+            en_sh.cell(row=r, column=col).font = BLUE
+
+en_sh.cell(row=ER + 2, column=2, value="Totale entrate registrate").font = LBL
+tot2 = en_sh.cell(row=ER + 2, column=3, value="=SUM($C$4:$C${})".format(ER))
+tot2.font, tot2.number_format = LBL, EUR
+
+# ============================================================ MOVIMENTI
+mv = wb.create_sheet("Movimenti")
+mv["A1"] = "Movimenti PostePay + buoni pasto — spese per categoria"
+mv["A1"].font = H1
+mv["A2"] = ("Ogni settimana (o ogni mese, come preferisci) esporta i movimenti da PostePay e incollali "
+            "qui sotto; le due colonne EdenRed dei buoni pasto vanno aggiunte a mano. La categoria la "
+            "scrivo io leggendo la descrizione. Il riepilogo qui sopra si aggiorna da solo.")
+mv["A2"].font = NOTE
+mv["A2"].alignment = Alignment(wrap_text=True, vertical="top")
+mv.merge_cells("A2:D2")
+mv.row_dimensions[2].height = 42
+
+# layout: 4=titolo riepilogo, 5=header, 6..9=categorie spesa, 10=totale,
+# 12..13=entrata/trasferimento, 15=titolo tabella, 16=header tabella, 17..=dati
+CATEGORIE_SPESA = ["Cibo", "Bollette", "Abbonamenti", "Da verificare"]
+INFO_CATS = ["Entrata", "Trasferimento"]
+rtot  = 6 + len(CATEGORIE_SPESA)
+DHEAD = rtot + 2 + len(INFO_CATS) + 1
+hr    = DHEAD + 1
+DSTART = hr + 1
+
+DATA_R = "$A${}:$A${}".format(DSTART, MR)
+IMP_R  = "$C${}:$C${}".format(DSTART, MR)
+CAT_R  = "$D${}:$D${}".format(DSTART, MR)
+
+mv.cell(row=4, column=1, value="Riepilogo per categoria e settimana").font = LBL
+
+WSTART = [date(2026, 9, 7), date(2026, 9, 14)]
+mv.cell(row=5, column=1, value="Categoria").font = H2
+mv.cell(row=5, column=1).fill = HEADFIL
+for i, w in enumerate(WSTART):
+    c = mv.cell(row=5, column=2 + i, value=w)
+    c.font, c.fill, c.number_format = H2, HEADFIL, "\"Sett. dal\" dd/mm"
+mv.cell(row=5, column=2 + len(WSTART), value="Totale").font = H2
+mv.cell(row=5, column=2 + len(WSTART)).fill = HEADFIL
+mv.column_dimensions["A"].width = 34
+for i in range(len(WSTART) + 1):
+    mv.column_dimensions[get_column_letter(2 + i)].width = 16
+
+for i, cat in enumerate(CATEGORIE_SPESA):
+    r = 6 + i
+    mv.cell(row=r, column=1, value=cat).font = BLACK
+    for j, wstart in enumerate(WSTART):
+        col = 2 + j
+        L = get_column_letter(col)
+        f = ('=SUMIFS({imp},{dat},">="&{L}$5,{dat},"<="&({L}$5+6),{cat},$A{r})'
+             ).format(imp=IMP_R, dat=DATA_R, L=L, cat=CAT_R, r=r)
+        cc = mv.cell(row=r, column=col, value=f)
+        cc.font, cc.number_format, cc.border = BLACK, EUR2, THIN
+    totcol = 2 + len(WSTART)
+    L1, L2 = get_column_letter(2), get_column_letter(totcol - 1)
+    tf = mv.cell(row=r, column=totcol, value="=SUM({L1}{r}:{L2}{r})".format(L1=L1, L2=L2, r=r))
+    tf.font, tf.number_format, tf.border = LBL, EUR2, THIN
+
+mv.cell(row=rtot, column=1, value="Totale spese reali (esclude entrate e trasferimenti)").font = LBLBOLD
+for j in range(len(WSTART) + 1):
+    col = 2 + j
+    L = get_column_letter(col)
+    f = "=SUM({L}{r1}:{L}{r2})".format(L=L, r1=6, r2=rtot - 1)
+    cc = mv.cell(row=rtot, column=col, value=f)
+    cc.font, cc.number_format, cc.border = LBLBOLD, EUR2, THIN
+
+for i, cat in enumerate(INFO_CATS):
+    r = rtot + 2 + i
+    mv.cell(row=r, column=1, value=cat + " (informativo, escluso dal totale)").font = NOTE
+    for j, wstart in enumerate(WSTART):
+        col = 2 + j
+        L = get_column_letter(col)
+        f = ('=SUMIFS({imp},{dat},">="&{L}$5,{dat},"<="&({L}$5+6),{cat},"{val}")'
+             ).format(imp=IMP_R, dat=DATA_R, L=L, cat=CAT_R, val=cat)
+        cc = mv.cell(row=r, column=col, value=f)
+        cc.font, cc.number_format = NOTE, EUR2
+    totcol = 2 + len(WSTART)
+    L1, L2 = get_column_letter(2), get_column_letter(totcol - 1)
+    tf = mv.cell(row=r, column=totcol, value="=SUM({L1}{r}:{L2}{r})".format(L1=L1, L2=L2, r=r))
+    tf.font, tf.number_format = NOTE, EUR2
+
+# --- tabella dati dettagliata ---
+mv.cell(row=DHEAD, column=1, value="Movimenti dettagliati").font = LBL
+for i, (h, w) in enumerate([("Data", 12), ("Descrizione", 58), ("Importo (€)", 13), ("Categoria", 16)], start=1):
+    c = mv.cell(row=hr, column=i, value=h)
+    c.font, c.fill = H2, HEADFIL
+    mv.column_dimensions[get_column_letter(i)].width = max(mv.column_dimensions[get_column_letter(i)].width or 0, w)
+mv.freeze_panes = "A{}".format(DSTART)
+
+MOVIMENTI = [
+    (date(2026, 9, 7),  "PostePay — ricarica per attivazione nuova carta (saldo trasferito dalla vecchia)", 980.10, "Trasferimento"),
+    (date(2026, 9, 7),  "EdenRed — ricarica 21 buoni pasto", 189.00, "Entrata"),
+    (date(2026, 9, 10), "PostePay — POS 46084 San Donato (esercizio non identificato)", -26.30, "Da verificare"),
+    (date(2026, 9, 12), "PostePay — POS Market San Donato", -4.14, "Cibo"),
+    (date(2026, 9, 12), "PostePay — POS Ipercoop Peschiera Borromeo", -7.57, "Cibo"),
+    (date(2026, 9, 13), "PostePay — POS Scotti Andrea, Mediglia (non identificato)", -46.00, "Da verificare"),
+    (date(2026, 9, 13), "PostePay — commissioni PagoPA", -1.50, "Bollette"),
+    (date(2026, 9, 13), "PostePay — avviso PagoPA, Ente 06655971007", -137.49, "Bollette"),
+    (date(2026, 9, 14), "PostePay — commissioni PagoPA", -1.50, "Bollette"),
+    (date(2026, 9, 14), "PostePay — avviso PagoPA, Ente 06655971007", -84.76, "Bollette"),
+    (date(2026, 9, 14), "PostePay — POS Esselunga San Giuliano Milanese", -1.95, "Cibo"),
+    (date(2026, 9, 14), "EdenRed — Essselunga (buono pasto)", -9.00, "Cibo"),
+    (date(2026, 9, 14), "EdenRed — Essselunga (2 buoni pasto)", -18.00, "Cibo"),
+    (date(2026, 9, 15), "EdenRed — Meriggi (buono pasto)", -9.00, "Cibo"),
+    (date(2026, 9, 15), "PostePay — versamento sul Salvadanaio", -470.00, "Trasferimento"),
+    (date(2026, 9, 15), "PostePay — commissioni bonifico, estinzione conto BCC Caravaggio", -1.00, "Trasferimento"),
+    (date(2026, 9, 15), "PostePay — bonifico SEPA istantaneo, estinzione conto BCC Caravaggio", -25.00, "Trasferimento"),
+    (date(2026, 9, 16), "PostePay — POS PV1375, Milano (non identificato)", -27.84, "Da verificare"),
+    (date(2026, 9, 16), "PostePay — POS Esselunga Monza", -1.73, "Cibo"),
+    (date(2026, 9, 16), "EdenRed — Esselunga (buono pasto)", -9.00, "Cibo"),
+    (date(2026, 9, 17), "PostePay — bonifico SEPA, residuo estinzione conto BCC Caravaggio", 0.01, "Trasferimento"),
+    (date(2026, 9, 16), "Anthropic — abbonamento Claude", -21.96, "Abbonamenti"),
+    (date(2026, 9, 19), "EdenRed — Tigros (3 buoni pasto)", -27.00, "Cibo"),
+    (date(2026, 9, 19), "EdenRed — 2 movimenti non dettagliati (4 buoni pasto)", -36.00, "Cibo"),
+]
+MOVIMENTI.sort(key=lambda x: x[0])
+
+for i, (d, desc, imp, cat) in enumerate(MOVIMENTI):
+    r = hr + 1 + i
+    mv.cell(row=r, column=1, value=d).font = BLACK
+    mv.cell(row=r, column=1).number_format = DATA
+    mv.cell(row=r, column=2, value=desc).font = BLACK
+    c3 = mv.cell(row=r, column=3, value=imp)
+    c3.font, c3.number_format = BLACK, EUR2
+    mv.cell(row=r, column=4, value=cat).font = BLACK
+
+for r in range(hr + 1 + len(MOVIMENTI), MR + 1):
+    mv.cell(row=r, column=1).font = BLUE
+    mv.cell(row=r, column=1).number_format = DATA
+    mv.cell(row=r, column=2).font = BLUE
+    mv.cell(row=r, column=3).font = BLUE
+    mv.cell(row=r, column=3).number_format = EUR2
+    mv.cell(row=r, column=4).font = BLUE
+
+rnote = hr + 2 + len(MOVIMENTI)
+mv.cell(row=rnote, column=1, value="Note").font = LBL
+note_txt = ("«Da verificare» = esercizio non riconosciuto dalla descrizione: chiedi conferma prima di "
+            "riclassificarlo. «Trasferimento» = spostamenti fra tuoi conti/chiusura BCC Caravaggio: non "
+            "sono spesa reale, per questo restano fuori dal totale. Le 4 ricariche buoni pasto del 19/09 "
+            "non erano nello screenshot: importo dedotto da 21 caricati − 9 rimasti − gli 8 già visti = 4.")
+mv.cell(row=rnote, column=2, value=note_txt).font = NOTE
+mv.cell(row=rnote, column=2).alignment = Alignment(wrap_text=True, vertical="top")
+mv.merge_cells(start_row=rnote, start_column=2, end_row=rnote, end_column=4)
+mv.row_dimensions[rnote].height = 50
 
 # ============================================================ PIANO
 pl = wb.create_sheet("Piano")
@@ -151,11 +346,10 @@ pl["A2"] = "Le celle gialle sono i parametri: cambiali se cambia il piano."
 pl["A2"].font = NOTE
 pl.column_dimensions["A"].width = 34
 pl.column_dimensions["B"].width = 16
-pl.column_dimensions["C"].width = 56
+pl.column_dimensions["C"].width = 60
 
 par = [
     ("Obiettivo del fondo (€)", 5000, EUR, "Fondo di emergenza: circa 3 mesi di spese essenziali."),
-    ("Budget settimanale (€)", 130, EUR, "Spesa, benzina, vita, casa e utenze. Affitto escluso."),
     ("Accantonamento buffer al mese (€)", 150, EUR, "Assicurazione, bollo, freni, gomme, revisione."),
     ("Inizio accantonamento buffer", date(2026, 9, 1), DATA, "Primo mese in cui hai messo via i 150 €."),
 ]
@@ -166,18 +360,27 @@ for i, (lab, val, fmt, nota) in enumerate(par):
     c.font, c.number_format, c.fill = BLUE, fmt, YELLOW
     pl.cell(row=r, column=3, value=nota).font = NOTE
 
-pl.cell(row=8, column=1, value="Curva del piano — fondo cumulato atteso").font = LBL
-pl.cell(row=9, column=1, value="Data").font = LBL
-pl.cell(row=9, column=2, value="Fondo (€)").font = LBL
-pl.cell(row=9, column=3, value="Da dove viene").font = LBL
+pl.cell(row=7, column=1, value="Impegni noti non ancora nel piano mensile qui sotto").font = LBL
+impegni = [
+    "Assicurazione auto: 467,76 € a inizio ottobre (confermato, vedi foglio Spese).",
+    "Lotta Club Seggiano: ~235 € una tantum a ottobre + 35 €/mese da novembre (previsto, vedi foglio Spese).",
+    "Rimborso 730: 1.481 € netti attesi nov/dic, più preciso dei ~1.160 € stimati prima (vedi foglio Entrate).",
+]
+for i, t in enumerate(impegni):
+    pl.cell(row=8 + i, column=3, value="• " + t).font = NOTE
+
+pl.cell(row=11, column=1, value="Curva del piano — fondo cumulato atteso").font = LBL
+pl.cell(row=P0 - 1, column=1, value="Data").font = LBL
+pl.cell(row=P0 - 1, column=2, value="Fondo (€)").font = LBL
+pl.cell(row=P0 - 1, column=3, value="Da dove viene").font = LBL
 origini = [
     "Punto di partenza.",
-    "446 € versati a settembre.",
-    "446 + 550 € dai tuoi (affitto a 700 e 250 € da tuo padre).",
+    "446 € versati a settembre — oggi (20/09) sei già a 470 € di fondo: leggermente avanti.",
+    "446 + 550 € dai tuoi (affitto a 700 e 250 € da tuo padre), al netto di assicurazione e lotta.",
     "446 + 300 € dai tuoi.",
-    "446 + 300 € dai tuoi + ~1.160 € fra tredicesima e conguaglio.",
-    "Netto sceso a ~2.005 €: al fondo restano ~261 €/mese.",
-    "", "", "Traguardo raggiunto.",
+    "446 + 300 € dai tuoi + 1.481 € di rimborso 730 (di cui parte tenuta da parte per i regali).",
+    "Netto sceso a ~2.005 €: al fondo restano ~261 €/mese, da ricontrollare con la rata lotta da 35 €.",
+    "", "", "Traguardo raggiunto — data da confermare con i dati reali di ottobre.",
 ]
 for i, (d, v) in enumerate(PIANO):
     r = P0 + i
@@ -188,13 +391,17 @@ for i, (d, v) in enumerate(PIANO):
 
 pl.cell(row=P1 + 2, column=1, value="Fonte dei numeri").font = LBL
 pl.cell(row=P1 + 2, column=3,
-        value="Piano concordato il 13/09/2026, sezione «Quando arrivi davvero a 5.000».").font = NOTE
+        value="Piano concordato il 13/09/2026, aggiornato il 20/09/2026 con i dati reali di assicurazione, "
+              "730 e caldaia. Questa curva mensile resta una stima: ricalcolala a fine ottobre con i "
+              "numeri veri del primo mese di lotta e assicurazione pagati.").font = NOTE
+pl.cell(row=P1 + 2, column=3).alignment = Alignment(wrap_text=True, vertical="top")
+pl.row_dimensions[P1 + 2].height = 40
 
 # ============================================================ CRUSCOTTO
 cr = wb.create_sheet("Cruscotto", 0)
 cr["A1"] = "Come stai andando"
 cr["A1"].font = H1
-cr["A2"] = "Tutto qui dentro si calcola dai fogli Settimane e Spese. Non c'è niente da scrivere."
+cr["A2"] = "Tutto qui dentro si calcola dai fogli Settimane, Spese e Piano. Non c'è niente da scrivere."
 cr["A2"].font = NOTE
 cr.column_dimensions["A"].width = 34
 cr.column_dimensions["B"].width = 17
@@ -207,16 +414,25 @@ def col(letter):
 def ultima(letter):
     return "INDEX({c},MATCH(MAX({a}),{a},0))".format(c=col(letter), a=SA)
 
-# Le righe sono indirizzate per nome: i riferimenti si costruiscono dopo,
-# così spostare una riga non rompe le formule.
 ETICHETTE = [
-    "n_settimane", "ultima", "fondo", "obiettivo", "mancano", "piano", "scarto_piano",
-    "cc", "buf_acc", "buf_speso", "buf_disp", "cassa", "speso_ult", "media4",
-    "budget", "scarto_ritmo",
+    "n_settimane", "ultima", "fondo", "obiettivo", "mancano",
+    "cc", "contanti", "buoni_pasto", "buf_acc", "buf_speso", "buf_disp", "cassa",
+    "piano", "scarto_piano", "speso_ult", "media4", "scarto_budget_ult",
 ]
 R = {k: 4 + i for i, k in enumerate(ETICHETTE)}
 def B(k):
     return "$B${}".format(R[k])
+
+def piano_interp(cellref):
+    m = "MATCH({d},{PA},1)".format(d=cellref, PA=PA)
+    return (
+        '=IF(NOT(ISNUMBER({d})),0,'
+        'IF({d}<=INDEX({PA},1),0,'
+        'IF({d}>=INDEX({PA},{N}),INDEX({PB},{N}),'
+        'INDEX({PB},{m})+({d}-INDEX({PA},{m}))'
+        '/(INDEX({PA},{m}+1)-INDEX({PA},{m}))'
+        '*(INDEX({PB},{m}+1)-INDEX({PB},{m})))))'
+    ).format(d=cellref, PA=PA, PB=PB, N=N, m=m)
 
 righe = [
     ("n_settimane", "Settimane registrate", "=COUNT({})".format(SA), "0",
@@ -228,31 +444,33 @@ righe = [
     ("obiettivo", "Obiettivo", "=Piano!$B$3", EUR, "Il traguardo."),
     ("mancano", "Mancano al traguardo", "=MAX(0,{o}-{f})".format(o=B("obiettivo"), f=B("fondo")), EUR,
      "Quanto resta da mettere via."),
-    ("piano", "Il piano a quella data", '=IF({n}=0,0,{u})'.format(n=B("n_settimane"), u=ultima("J")), EUR,
-     "Dove dovresti essere secondo il piano."),
-    ("scarto_piano", "Avanti (+) o indietro (−)", "={f}-{p}".format(f=B("fondo"), p=B("piano")), EUR,
-     "Positivo: sei in anticipo. Negativo: recupera."),
     ("cc", "Conto corrente", '=IF({n}=0,0,{u})'.format(n=B("n_settimane"), u=ultima("B")), EUR,
      "L'ultimo saldo del conto operativo."),
+    ("contanti", "Contanti", '=IF({n}=0,0,{u})'.format(n=B("n_settimane"), u=ultima("D")), EUR,
+     "L'ultimo contante dichiarato."),
+    ("buoni_pasto", "Buoni pasto residui", '=IF({n}=0,0,{u})'.format(n=B("n_settimane"), u=ultima("E")), EUR,
+     "L'ultimo saldo EdenRed dichiarato."),
     ("buf_acc", "Buffer accantonato",
-     '=IF({d}="",0,Piano!$B$5*MAX(0,(YEAR({d})-YEAR(Piano!$B$6))*12+MONTH({d})-MONTH(Piano!$B$6)+1))'
+     '=IF({d}="",0,Piano!$B$4*MAX(0,(YEAR({d})-YEAR(Piano!$B$5))*12+MONTH({d})-MONTH(Piano!$B$5)+1))'
      .format(d=B("ultima")), EUR,
      "150 € per ogni mese trascorso dall'inizio."),
     ("buf_speso", "Già speso dal buffer", "=Spese!$C${}".format(SR + 2), EUR,
-     "Somma del foglio Spese."),
+     "Somma del foglio Spese, incluse le righe previsto."),
     ("buf_disp", "Buffer disponibile", "={a}-{s}".format(a=B("buf_acc"), s=B("buf_speso")), EUR,
-     "Se va sotto zero lo sta finanziando il fondo: normale il primo inverno."),
+     "Se va sotto zero lo sta finanziando il fondo: normale con assicurazione e lotta insieme."),
     ("cassa", "Cassa libera", "={c}-MAX(0,{b})".format(c=B("cc"), b=B("buf_disp")), EUR,
      "Sul conto corrente, tolto il buffer. È quello che puoi spendere davvero."),
-    ("speso_ult", "Speso l'ultima settimana", '=IF({n}<2,"",{u})'.format(n=B("n_settimane"), u=ultima("H")), EUR,
+    ("piano", "Il piano a quella data", piano_interp(B("ultima")), EUR,
+     "Dove dovresti essere secondo la curva del foglio Piano."),
+    ("scarto_piano", "Avanti (+) o indietro (−) sul piano", "={f}-{p}".format(f=B("fondo"), p=B("piano")), EUR,
+     "Positivo: sei in anticipo. Negativo: recupera."),
+    ("speso_ult", "Speso l'ultima settimana", '=IF({n}<2,"",{u})'.format(n=B("n_settimane"), u=ultima("I")), EUR,
      "Calcolato dai saldi, non dagli scontrini."),
     ("media4", "Media delle ultime 4 settimane",
-     '=IFERROR(AVERAGEIFS({h},{a},">="&({d}-21),{a},"<="&{d}),"")'.format(h=col("H"), a=SA, d=B("ultima")), EUR,
+     '=IFERROR(AVERAGEIFS({h},{a},">="&({d}-21),{a},"<="&{d}),"")'.format(h=col("I"), a=SA, d=B("ultima")), EUR,
      "Il numero da guardare: una settimana storta non vuol dire niente."),
-    ("budget", "Budget settimanale", "=Piano!$B$4", EUR, "Il ritmo di piano."),
-    ("scarto_ritmo", "Scarto sul ritmo",
-     '=IF({s}="","",{s}-{b})'.format(s=B("speso_ult"), b=B("budget")), EUR,
-     "Negativo è buono: stai spendendo meno del previsto."),
+    ("scarto_budget_ult", "Scarto vs budget, ultima settimana", '=IF({n}<1,"",{u})'.format(n=B("n_settimane"), u=ultima("K")), EUR,
+     "Dal foglio Settimane: negativo è buono, hai speso meno del previsto."),
 ]
 assert [x[0] for x in righe] == ETICHETTE, "ordine delle righe non allineato"
 
@@ -268,29 +486,33 @@ for i, (key, lab, formula, fmt, nota) in enumerate(righe):
 r = 4 + len(righe) + 2
 cr.cell(row=r, column=1, value="Come si usa").font = LBL
 istr = [
-    "Domenica sera apri l'app della banca e leggi i due saldi.",
-    "Vai sul foglio Settimane, prima riga vuota, e scrivi data e saldi (le celle blu).",
-    "Se in settimana è entrato qualcosa — stipendio, ripetizioni, i soldi dei tuoi — scrivilo in «Entrate».",
-    "Se hai pagato affitto, bollette o una spesa annuale, scrivilo in «Uscite grosse».",
-    "Torna qui. Novanta secondi in tutto.",
+    "Domenica sera apri l'app della banca, conta i contanti e leggi il saldo EdenRed.",
+    "Vai sul foglio Settimane, prima riga vuota, e scrivi data e i quattro saldi (celle blu).",
+    "Prima di chiudere la settimana, scrivi in «Budget previsto» quanto pensavi di spendere.",
+    "Se in settimana è entrato qualcosa — stipendio, ripetizioni, i soldi dei tuoi — scrivilo in «Entrate» "
+    "e, se vuoi tenerne memoria precisa, anche nel foglio Entrate.",
+    "Ogni settimana (o mese) incolla i movimenti PostePay nel foglio Movimenti, aggiungendo a mano quelli EdenRed.",
+    "Torna qui. Due minuti in tutto.",
 ]
 for i, t in enumerate(istr):
     cr.cell(row=r + 1 + i, column=1, value="{}.".format(i + 1)).font = LBL
-    cr.cell(row=r + 1 + i, column=3, value=t).font = BLACK
-    cr.cell(row=r + 1 + i, column=3).font = Font(name=ARIAL, size=11)
+    cr.cell(row=r + 1 + i, column=3, value=t).font = Font(name=ARIAL, size=11)
+    cr.cell(row=r + 1 + i, column=3).alignment = Alignment(wrap_text=True, vertical="top")
 
 r2 = r + len(istr) + 2
 cr.cell(row=r2, column=1, value="Perché funziona").font = LBL
 cr.cell(row=r2, column=3, value=("Non misura le spese ma il patrimonio: patrimonio di domenica scorsa "
-                                 "+ entrate − patrimonio di oggi = quanto è uscito, contanti compresi. "
-                                 "Per lo stesso motivo il bonifico al conto risparmio non risulta come "
-                                 "spesa: sposta i soldi da una tasca all'altra.")).font = NOTE
+                                 "+ entrate − patrimonio di oggi = quanto è uscito, contanti e buoni "
+                                 "pasto compresi. Per lo stesso motivo il bonifico al conto risparmio non "
+                                 "risulta come spesa: sposta i soldi da una tasca all'altra.")).font = NOTE
 cr.cell(row=r2, column=3).alignment = Alignment(wrap_text=True, vertical="top")
 cr.row_dimensions[r2].height = 58
 
 cr.cell(row=r2 + 2, column=1, value="Legenda").font = LBL
-cr.cell(row=r2 + 2, column=3, value="Blu = celle che scrivi tu.  Nero = formule, non toccarle.  "
-                                    "Giallo (foglio Piano) = parametri da rivedere se cambia il piano.").font = NOTE
+cr.cell(row=r2 + 2, column=3, value="Blu = celle che scrivi tu.  Nero = formule, non toccarle.  Corsivo blu "
+                                    "= previsione non ancora confermata (fogli Spese/Entrate).  Giallo "
+                                    "(foglio Piano) = parametri da rivedere se cambia il piano.").font = NOTE
+cr.cell(row=r2 + 2, column=3).alignment = Alignment(wrap_text=True, vertical="top")
 
 cr.sheet_view.showGridLines = False
 pl.sheet_view.showGridLines = False
