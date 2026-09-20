@@ -198,97 +198,39 @@ tot2 = en_sh.cell(row=ER + 2, column=3, value="=SUM($C$4:$C${})".format(ER))
 tot2.font, tot2.number_format = LBL, EUR
 
 # ============================================================ MOVIMENTI
+# Tabella piatta, senza formule di riepilogo: le incollo io già raggruppate
+# in chat come tabella pronta da incollare, i totali e le somme li fai tu
+# come preferisci (SUM su un intervallo, filtro, come vuoi). Aggiungere una
+# categoria nuova (es. "Benzina") è solo scrivere testo in una cella: niente
+# formula da capire o da rompere.
 mv = wb.create_sheet("Movimenti")
-mv["A1"] = "Movimenti PostePay + buoni pasto — spese per categoria"
+mv["A1"] = "Movimenti PostePay + buoni pasto — dati grezzi"
 mv["A1"].font = H1
-mv["A2"] = ("Ogni settimana (o ogni mese, come preferisci) esporta i movimenti da PostePay e incollali "
-            "qui sotto; le due colonne EdenRed dei buoni pasto vanno aggiunte a mano. La categoria la "
-            "scrivo io leggendo la descrizione. Il riepilogo qui sopra si aggiorna da solo.")
+mv["A2"] = ("Nessuna formula qui dentro: è solo un elenco. Le somme e i confronti li fai tu, come "
+            "vuoi. Per aggiungere una categoria nuova basta scriverla nella colonna Categoria — non "
+            "c'è nulla da rompere. Il raggruppamento per data e categoria te lo preparo io in chat "
+            "ogni volta che incolli i movimenti nuovi: tu li copi qui sotto così come sono.")
 mv["A2"].font = NOTE
 mv["A2"].alignment = Alignment(wrap_text=True, vertical="top")
 mv.merge_cells("A2:D2")
 mv.row_dimensions[2].height = 42
 
-# layout: 4=titolo riepilogo, 5=header, 6..9=categorie spesa, 10=totale,
-# 12..13=entrata/trasferimento, 15=titolo tabella, 16=header tabella, 17..=dati
-CATEGORIE_SPESA = ["Cibo", "Bollette", "Abbonamenti", "Da verificare"]
-INFO_CATS = ["Entrata", "Trasferimento"]
-rtot  = 6 + len(CATEGORIE_SPESA)
-DHEAD = rtot + 2 + len(INFO_CATS) + 1
-hr    = DHEAD + 1
+hr = 4
 DSTART = hr + 1
-
-DATA_R = "$A${}:$A${}".format(DSTART, MR)
-IMP_R  = "$C${}:$C${}".format(DSTART, MR)
-CAT_R  = "$D${}:$D${}".format(DSTART, MR)
-
-mv.cell(row=4, column=1, value="Riepilogo per categoria e settimana").font = LBL
-
-WSTART = [date(2026, 9, 7), date(2026, 9, 14)]
-mv.cell(row=5, column=1, value="Categoria").font = H2
-mv.cell(row=5, column=1).fill = HEADFIL
-for i, w in enumerate(WSTART):
-    c = mv.cell(row=5, column=2 + i, value=w)
-    c.font, c.fill, c.number_format = H2, HEADFIL, "\"Sett. dal\" dd/mm"
-mv.cell(row=5, column=2 + len(WSTART), value="Totale").font = H2
-mv.cell(row=5, column=2 + len(WSTART)).fill = HEADFIL
-mv.column_dimensions["A"].width = 34
-for i in range(len(WSTART) + 1):
-    mv.column_dimensions[get_column_letter(2 + i)].width = 16
-
-for i, cat in enumerate(CATEGORIE_SPESA):
-    r = 6 + i
-    mv.cell(row=r, column=1, value=cat).font = BLACK
-    for j, wstart in enumerate(WSTART):
-        col = 2 + j
-        L = get_column_letter(col)
-        f = ('=SUMIFS({imp},{dat},">="&{L}$5,{dat},"<="&({L}$5+6),{cat},$A{r})'
-             ).format(imp=IMP_R, dat=DATA_R, L=L, cat=CAT_R, r=r)
-        cc = mv.cell(row=r, column=col, value=f)
-        cc.font, cc.number_format, cc.border = BLACK, EUR2, THIN
-    totcol = 2 + len(WSTART)
-    L1, L2 = get_column_letter(2), get_column_letter(totcol - 1)
-    tf = mv.cell(row=r, column=totcol, value="=SUM({L1}{r}:{L2}{r})".format(L1=L1, L2=L2, r=r))
-    tf.font, tf.number_format, tf.border = LBL, EUR2, THIN
-
-mv.cell(row=rtot, column=1, value="Totale spese reali (esclude entrate e trasferimenti)").font = LBLBOLD
-for j in range(len(WSTART) + 1):
-    col = 2 + j
-    L = get_column_letter(col)
-    f = "=SUM({L}{r1}:{L}{r2})".format(L=L, r1=6, r2=rtot - 1)
-    cc = mv.cell(row=rtot, column=col, value=f)
-    cc.font, cc.number_format, cc.border = LBLBOLD, EUR2, THIN
-
-for i, cat in enumerate(INFO_CATS):
-    r = rtot + 2 + i
-    mv.cell(row=r, column=1, value=cat + " (informativo, escluso dal totale)").font = NOTE
-    for j, wstart in enumerate(WSTART):
-        col = 2 + j
-        L = get_column_letter(col)
-        f = ('=SUMIFS({imp},{dat},">="&{L}$5,{dat},"<="&({L}$5+6),{cat},"{val}")'
-             ).format(imp=IMP_R, dat=DATA_R, L=L, cat=CAT_R, val=cat)
-        cc = mv.cell(row=r, column=col, value=f)
-        cc.font, cc.number_format = NOTE, EUR2
-    totcol = 2 + len(WSTART)
-    L1, L2 = get_column_letter(2), get_column_letter(totcol - 1)
-    tf = mv.cell(row=r, column=totcol, value="=SUM({L1}{r}:{L2}{r})".format(L1=L1, L2=L2, r=r))
-    tf.font, tf.number_format = NOTE, EUR2
-
-# --- tabella dati dettagliata ---
-mv.cell(row=DHEAD, column=1, value="Movimenti dettagliati").font = LBL
+mv.cell(row=hr, column=1, value="Movimenti").font = LBL
 for i, (h, w) in enumerate([("Data", 12), ("Descrizione", 58), ("Importo (€)", 13), ("Categoria", 16)], start=1):
     c = mv.cell(row=hr, column=i, value=h)
     c.font, c.fill = H2, HEADFIL
-    mv.column_dimensions[get_column_letter(i)].width = max(mv.column_dimensions[get_column_letter(i)].width or 0, w)
+    mv.column_dimensions[get_column_letter(i)].width = w
 mv.freeze_panes = "A{}".format(DSTART)
 
 MOVIMENTI = [
     (date(2026, 9, 7),  "PostePay — ricarica per attivazione nuova carta (saldo trasferito dalla vecchia)", 980.10, "Trasferimento"),
     (date(2026, 9, 7),  "EdenRed — ricarica 21 buoni pasto", 189.00, "Entrata"),
-    (date(2026, 9, 10), "PostePay — POS 46084 San Donato (esercizio non identificato)", -26.30, "Da verificare"),
+    (date(2026, 9, 10), "PostePay — POS 46084 San Donato (benzina)", -26.30, "Benzina"),
     (date(2026, 9, 12), "PostePay — POS Market San Donato", -4.14, "Cibo"),
     (date(2026, 9, 12), "PostePay — POS Ipercoop Peschiera Borromeo", -7.57, "Cibo"),
-    (date(2026, 9, 13), "PostePay — POS Scotti Andrea, Mediglia (non identificato)", -46.00, "Da verificare"),
+    (date(2026, 9, 13), "PostePay — POS Scotti Andrea, Mediglia (Cascina de Lassi, Landriano — carne)", -46.00, "Cibo"),
     (date(2026, 9, 13), "PostePay — commissioni PagoPA", -1.50, "Bollette"),
     (date(2026, 9, 13), "PostePay — avviso PagoPA, Ente 06655971007", -137.49, "Bollette"),
     (date(2026, 9, 14), "PostePay — commissioni PagoPA", -1.50, "Bollette"),
@@ -300,7 +242,7 @@ MOVIMENTI = [
     (date(2026, 9, 15), "PostePay — versamento sul Salvadanaio", -470.00, "Trasferimento"),
     (date(2026, 9, 15), "PostePay — commissioni bonifico, estinzione conto BCC Caravaggio", -1.00, "Trasferimento"),
     (date(2026, 9, 15), "PostePay — bonifico SEPA istantaneo, estinzione conto BCC Caravaggio", -25.00, "Trasferimento"),
-    (date(2026, 9, 16), "PostePay — POS PV1375, Milano (non identificato)", -27.84, "Da verificare"),
+    (date(2026, 9, 16), "PostePay — POS PV1375, Milano (benzina)", -27.84, "Benzina"),
     (date(2026, 9, 16), "PostePay — POS Esselunga Monza", -1.73, "Cibo"),
     (date(2026, 9, 16), "EdenRed — Esselunga (buono pasto)", -9.00, "Cibo"),
     (date(2026, 9, 17), "PostePay — bonifico SEPA, residuo estinzione conto BCC Caravaggio", 0.01, "Trasferimento"),
@@ -329,10 +271,9 @@ for r in range(hr + 1 + len(MOVIMENTI), MR + 1):
 
 rnote = hr + 2 + len(MOVIMENTI)
 mv.cell(row=rnote, column=1, value="Note").font = LBL
-note_txt = ("«Da verificare» = esercizio non riconosciuto dalla descrizione: chiedi conferma prima di "
-            "riclassificarlo. «Trasferimento» = spostamenti fra tuoi conti/chiusura BCC Caravaggio: non "
-            "sono spesa reale, per questo restano fuori dal totale. Le 4 ricariche buoni pasto del 19/09 "
-            "non erano nello screenshot: importo dedotto da 21 caricati − 9 rimasti − gli 8 già visti = 4.")
+note_txt = ("«Trasferimento» = spostamenti fra tuoi conti/chiusura BCC Caravaggio: non sono spesa reale, "
+            "tienile fuori dai tuoi conteggi di spesa. Le 4 ricariche buoni pasto del 19/09 non erano "
+            "nello screenshot: importo dedotto da 21 caricati − 9 rimasti − gli 8 già visti = 4.")
 mv.cell(row=rnote, column=2, value=note_txt).font = NOTE
 mv.cell(row=rnote, column=2).alignment = Alignment(wrap_text=True, vertical="top")
 mv.merge_cells(start_row=rnote, start_column=2, end_row=rnote, end_column=4)
