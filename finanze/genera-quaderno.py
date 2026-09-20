@@ -177,6 +177,7 @@ ENTRATE_RIGHE = [
     (date(2026, 10, 1), "Bonifico da papà (previsto)", 250, GREENIT),
     (date(2026, 10, 1), "Ricarica buoni pasto — 22 giorni lavorativi × 9 € (previsto)", 198, GREENIT),
     (date(2026, 11, 15), "Rimborso 730 — accredito su carta (atteso nov/dic, importo confermato dal 730-3)", 1481, GREENIT),
+    (date(2026, 12, 1), "Tredicesima 2026 — 5/12 da assunzione 03/08/2026, netto stimato dal cedolino di agosto (previsto)", 800, GREENIT),
 ]
 for i, (d, voce, imp, font) in enumerate(ENTRATE_RIGHE):
     r = 4 + i
