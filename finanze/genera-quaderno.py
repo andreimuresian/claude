@@ -207,59 +207,64 @@ mv = wb.create_sheet("Movimenti")
 mv["A1"] = "Movimenti PostePay + buoni pasto — dati grezzi"
 mv["A1"].font = H1
 mv["A2"] = ("Nessuna formula qui dentro: è solo un elenco. Le somme e i confronti li fai tu, come "
-            "vuoi. Per aggiungere una categoria nuova basta scriverla nella colonna Categoria — non "
-            "c'è nulla da rompere. Il raggruppamento per data e categoria te lo preparo io in chat "
-            "ogni volta che incolli i movimenti nuovi: tu li copi qui sotto così come sono.")
+            "vuoi. Importo è sempre positivo: la direzione (spesa o accredito) è nella colonna Tipo, "
+            "così non ti tocca fare i conti con il segno meno. Per aggiungere una categoria nuova "
+            "basta scriverla — non c'è nulla da rompere. Il raggruppamento per data e categoria te lo "
+            "preparo io in chat ogni volta che incolli i movimenti nuovi: tu li copi qui sotto così "
+            "come sono.")
 mv["A2"].font = NOTE
 mv["A2"].alignment = Alignment(wrap_text=True, vertical="top")
-mv.merge_cells("A2:D2")
-mv.row_dimensions[2].height = 42
+mv.merge_cells("A2:E2")
+mv.row_dimensions[2].height = 50
 
 hr = 4
 DSTART = hr + 1
 mv.cell(row=hr, column=1, value="Movimenti").font = LBL
-for i, (h, w) in enumerate([("Data", 12), ("Descrizione", 58), ("Importo (€)", 13), ("Categoria", 16)], start=1):
+MVHEAD = [("Data", 12), ("Descrizione", 58), ("Importo (€)", 13), ("Tipo", 13), ("Categoria", 16)]
+for i, (h, w) in enumerate(MVHEAD, start=1):
     c = mv.cell(row=hr, column=i, value=h)
     c.font, c.fill = H2, HEADFIL
     mv.column_dimensions[get_column_letter(i)].width = w
 mv.freeze_panes = "A{}".format(DSTART)
 
+SPESA, ACCR = "Spesa", "Accredito"
 MOVIMENTI = [
-    (date(2026, 9, 7),  "PostePay — ricarica per attivazione nuova carta (saldo trasferito dalla vecchia)", 980.10, "Trasferimento"),
-    (date(2026, 9, 7),  "EdenRed — ricarica 21 buoni pasto", 189.00, "Entrata"),
-    (date(2026, 9, 10), "PostePay — POS 46084 San Donato (benzina)", -26.30, "Benzina"),
-    (date(2026, 9, 12), "PostePay — POS Market San Donato", -4.14, "Cibo"),
-    (date(2026, 9, 12), "PostePay — POS Ipercoop Peschiera Borromeo", -7.57, "Cibo"),
-    (date(2026, 9, 13), "PostePay — POS Scotti Andrea, Mediglia (Cascina de Lassi, Landriano — carne)", -46.00, "Cibo"),
-    (date(2026, 9, 13), "PostePay — commissioni PagoPA", -1.50, "Bollette"),
-    (date(2026, 9, 13), "PostePay — avviso PagoPA, Ente 06655971007", -137.49, "Bollette"),
-    (date(2026, 9, 14), "PostePay — commissioni PagoPA", -1.50, "Bollette"),
-    (date(2026, 9, 14), "PostePay — avviso PagoPA, Ente 06655971007", -84.76, "Bollette"),
-    (date(2026, 9, 14), "PostePay — POS Esselunga San Giuliano Milanese", -1.95, "Cibo"),
-    (date(2026, 9, 14), "EdenRed — Essselunga (buono pasto)", -9.00, "Cibo"),
-    (date(2026, 9, 14), "EdenRed — Essselunga (2 buoni pasto)", -18.00, "Cibo"),
-    (date(2026, 9, 15), "EdenRed — Meriggi (buono pasto)", -9.00, "Cibo"),
-    (date(2026, 9, 15), "PostePay — versamento sul Salvadanaio", -470.00, "Trasferimento"),
-    (date(2026, 9, 15), "PostePay — commissioni bonifico, estinzione conto BCC Caravaggio", -1.00, "Trasferimento"),
-    (date(2026, 9, 15), "PostePay — bonifico SEPA istantaneo, estinzione conto BCC Caravaggio", -25.00, "Trasferimento"),
-    (date(2026, 9, 16), "PostePay — POS PV1375, Milano (benzina)", -27.84, "Benzina"),
-    (date(2026, 9, 16), "PostePay — POS Esselunga Monza", -1.73, "Cibo"),
-    (date(2026, 9, 16), "EdenRed — Esselunga (buono pasto)", -9.00, "Cibo"),
-    (date(2026, 9, 17), "PostePay — bonifico SEPA, residuo estinzione conto BCC Caravaggio", 0.01, "Trasferimento"),
-    (date(2026, 9, 16), "Anthropic — abbonamento Claude", -21.96, "Abbonamenti"),
-    (date(2026, 9, 19), "EdenRed — Tigros (3 buoni pasto)", -27.00, "Cibo"),
-    (date(2026, 9, 19), "EdenRed — 2 movimenti non dettagliati (4 buoni pasto)", -36.00, "Cibo"),
+    (date(2026, 9, 7),  "PostePay — ricarica per attivazione nuova carta (saldo trasferito dalla vecchia)", 980.10, ACCR, "Trasferimento"),
+    (date(2026, 9, 7),  "EdenRed — ricarica 21 buoni pasto", 189.00, ACCR, "Entrata"),
+    (date(2026, 9, 10), "PostePay — POS 46084 San Donato (benzina)", 26.30, SPESA, "Benzina"),
+    (date(2026, 9, 12), "PostePay — POS Market San Donato", 4.14, SPESA, "Cibo"),
+    (date(2026, 9, 12), "PostePay — POS Ipercoop Peschiera Borromeo", 7.57, SPESA, "Cibo"),
+    (date(2026, 9, 13), "PostePay — POS Scotti Andrea, Mediglia (Cascina de Lassi, Landriano — carne)", 46.00, SPESA, "Cibo"),
+    (date(2026, 9, 13), "PostePay — commissioni PagoPA", 1.50, SPESA, "Bollette"),
+    (date(2026, 9, 13), "PostePay — avviso PagoPA, Ente 06655971007", 137.49, SPESA, "Bollette"),
+    (date(2026, 9, 14), "PostePay — commissioni PagoPA", 1.50, SPESA, "Bollette"),
+    (date(2026, 9, 14), "PostePay — avviso PagoPA, Ente 06655971007", 84.76, SPESA, "Bollette"),
+    (date(2026, 9, 14), "PostePay — POS Esselunga San Giuliano Milanese", 1.95, SPESA, "Cibo"),
+    (date(2026, 9, 14), "EdenRed — Essselunga (buono pasto)", 9.00, SPESA, "Cibo"),
+    (date(2026, 9, 14), "EdenRed — Essselunga (2 buoni pasto)", 18.00, SPESA, "Cibo"),
+    (date(2026, 9, 15), "EdenRed — Meriggi (buono pasto)", 9.00, SPESA, "Cibo"),
+    (date(2026, 9, 15), "PostePay — versamento sul Salvadanaio", 470.00, SPESA, "Trasferimento"),
+    (date(2026, 9, 15), "PostePay — commissioni bonifico, estinzione conto BCC Caravaggio", 1.00, SPESA, "Trasferimento"),
+    (date(2026, 9, 15), "PostePay — bonifico SEPA istantaneo, estinzione conto BCC Caravaggio", 25.00, SPESA, "Trasferimento"),
+    (date(2026, 9, 16), "PostePay — POS PV1375, Milano (benzina)", 27.84, SPESA, "Benzina"),
+    (date(2026, 9, 16), "PostePay — POS Esselunga Monza", 1.73, SPESA, "Cibo"),
+    (date(2026, 9, 16), "EdenRed — Esselunga (buono pasto)", 9.00, SPESA, "Cibo"),
+    (date(2026, 9, 17), "PostePay — bonifico SEPA, residuo estinzione conto BCC Caravaggio", 0.01, ACCR, "Trasferimento"),
+    (date(2026, 9, 16), "Anthropic — abbonamento Claude", 21.96, SPESA, "Abbonamenti"),
+    (date(2026, 9, 19), "EdenRed — Tigros (3 buoni pasto)", 27.00, SPESA, "Cibo"),
+    (date(2026, 9, 19), "EdenRed — 2 movimenti non dettagliati (4 buoni pasto)", 36.00, SPESA, "Cibo"),
 ]
 MOVIMENTI.sort(key=lambda x: x[0])
 
-for i, (d, desc, imp, cat) in enumerate(MOVIMENTI):
+for i, (d, desc, imp, tipo, cat) in enumerate(MOVIMENTI):
     r = hr + 1 + i
     mv.cell(row=r, column=1, value=d).font = BLACK
     mv.cell(row=r, column=1).number_format = DATA
     mv.cell(row=r, column=2, value=desc).font = BLACK
     c3 = mv.cell(row=r, column=3, value=imp)
     c3.font, c3.number_format = BLACK, EUR2
-    mv.cell(row=r, column=4, value=cat).font = BLACK
+    mv.cell(row=r, column=4, value=tipo).font = BLACK
+    mv.cell(row=r, column=5, value=cat).font = BLACK
 
 for r in range(hr + 1 + len(MOVIMENTI), MR + 1):
     mv.cell(row=r, column=1).font = BLUE
@@ -268,6 +273,7 @@ for r in range(hr + 1 + len(MOVIMENTI), MR + 1):
     mv.cell(row=r, column=3).font = BLUE
     mv.cell(row=r, column=3).number_format = EUR2
     mv.cell(row=r, column=4).font = BLUE
+    mv.cell(row=r, column=5).font = BLUE
 
 rnote = hr + 2 + len(MOVIMENTI)
 mv.cell(row=rnote, column=1, value="Note").font = LBL
@@ -276,7 +282,7 @@ note_txt = ("«Trasferimento» = spostamenti fra tuoi conti/chiusura BCC Caravag
             "nello screenshot: importo dedotto da 21 caricati − 9 rimasti − gli 8 già visti = 4.")
 mv.cell(row=rnote, column=2, value=note_txt).font = NOTE
 mv.cell(row=rnote, column=2).alignment = Alignment(wrap_text=True, vertical="top")
-mv.merge_cells(start_row=rnote, start_column=2, end_row=rnote, end_column=4)
+mv.merge_cells(start_row=rnote, start_column=2, end_row=rnote, end_column=5)
 mv.row_dimensions[rnote].height = 50
 
 # ============================================================ PIANO
