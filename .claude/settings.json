@@ -1,0 +1,29 @@
+{
+  "hooks": {
+    "PreCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/precompact-backup.sh",
+            "timeout": 15,
+            "statusMessage": "Salvando backup prima della compattazione..."
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "manual|auto",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/postcompact-log.sh",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
