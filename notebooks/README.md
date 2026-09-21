@@ -3,10 +3,10 @@
 | notebook | what it is |
 |---|---|
 | `RF_interface_optimized.ipynb` | the 2D RF baseline — the Python twin of the COMSOL mode analysis |
-| `RF_perturbation_unitcell.ipynb` | what the CST multilayer tee perturbation actually is, and how to translate it |
+| `RF_perturbation_unitcell.ipynb` | the tee perturbation: `delta n_m`, `delta Z0`, `delta alpha` for one etched period |
 
-`data/cst_multilayer_500.csv` holds the 500-LHS reference both notebooks are
-checked against: the 8 CST design variables, the COMSOL 2D baseline
+`data/cst_multilayer_500.csv` is reference data only -- neither notebook reads
+it. It holds the 500-LHS sweep: the 8 CST design variables, the COMSOL 2D baseline
 (`n_m`, `Z0`, `alpha`), and the three multilayer numbers from the `N+1 - N`
 differential extraction (`alpha_ML_unetched`, `alpha_ML_etched`, `delta_ML`).
 
@@ -132,95 +132,69 @@ boundaries before the last percent of the attenuation is argued over.
 
 
 
+
 ---
 
-# `RF_perturbation_unitcell.ipynb` — the tee perturbation, simulated
+# `RF_perturbation_unitcell.ipynb` — the tee perturbation
 
-A **self-contained simulator**. Nothing in cells `[0]`–`[4]` reads a dataset:
-you type a cross-section and a tee into cell `[0]`, re-run, and it solves for
-
-    delta C', delta L', delta R', delta Z0, delta n_m, delta alpha
-
-of one period of the etched line against its own unetched reference. Cell `[5]`
-puts that number next to the recorded CST sweep **if** it finds
-`data/cst_multilayer_500.csv`, and prints one line and stops if it does not.
+Four cells, about 26 s, one figure. Same cross-section as the baseline
+notebook, with a T-shaped slot cut through the ground electrodes every
+`PITCH` micrometres. Edit the parameter block at the top of cell `[0]` and
+re-run; cell `[3]` prints what the tee does to the line.
 
 | cell | what it does |
 |---|---|
-| `[0]` | **your geometry** — layer stack, metal blocks, tee, mesh controls; plan view and the cross-sections the period decomposes into |
-| `[1]` | can this stack carry a wave slower than the mode? Floquet harmonics, Bragg and grating-lobe pitches, surface waves from a 1D transfer matrix |
-| `[2]` | the periodic unit cell: per-section 2D quasi-static extraction, the homogenised line, the exact ABCD Bloch cascade as the check that averaging was allowed |
-| `[3]` | the longitudinal current detour — sheet conduction on the ground footprint, on the *developed* surface so multi-level electrodes work |
-| `[4]` | the result table, how to carry it across to the baseline, and what is not in it |
-| `[5]` | optional context against the recorded CST sweep |
+| `[0]` | parameter block, materials, mesh; cross-section at the gap to scale, and the same period from above |
+| `[1]` | quasi-static extraction (`C`, `C_air`, `L`, `R'`, `n_m`, `Z0`, `alpha`), run on the unetched cross-section |
+| `[2]` | the etched line: the cross-sections one period splits into, averaged by length, plus the current detour |
+| `[3]` | `delta C'`, `delta L'`, `delta R'`, `delta Z0`, `delta n_m`, `delta alpha` — and what they do not contain |
 
-About 66 s end to end for one geometry (four cross-sections at `MF = 2.5`).
+Nothing reads a dataset. Cell `[1]`'s unetched numbers are directly comparable
+with `RF_interface_optimized.ipynb`, which is the check to run before trusting
+anything below it. `MESH_FACTOR` in cell `[0]` scales every mesh size; the
+default 2.5 is about five times faster than the baseline notebook's setting
+and puts `alpha` a couple of percent low, a bias that cancels in every delta.
 
-## Entering a geometry
+## Why the period splits into sections
 
-Cell `[0]` takes rectangles. Metal blocks may sit at **any height and any
-number of levels** — the solver only ever sees polygons, so a conformal or
-stepped electrode is expressible without touching the formulation:
+The slot is two rectangles of different lengths along the line, so walking one
+period you meet a small number of distinct cross-sections — with `L2 > L1`:
+both rectangles open for `L1`, the cap alone for `L2 - L1`, solid ground for
+the rest. The pitch is 13x shorter than the guided wavelength, so the line
+homogenises: charge adds in parallel along z, flux and dissipation in series.
+Cell `[2]` solves each section and averages by length.
 
-```python
-signal = [(x_lo, x_hi, y_lo, y_hi), ...]   # given in full, straddling x = 0
-ground = [(x_lo, x_hi, y_lo, y_hi), ...]   # one ground, x > 0, mirrored for you
-blocks = [(material, x_lo, x_hi, y_lo, y_hi), ...]   # oxide pedestals, caps
-layers = [(material, y_lo, y_hi), ...]     # full-width background
-```
+Averaging cross-sections leaves each section's current in its own 2D pattern,
+which misses one ohmic effect: the slot interrupts the inner ground, so once
+per period the return current has to travel out to the surviving rim and back.
+Cell `[2]` adds that as a sheet-conduction problem on the ground seen from
+above. It is charged at the full `Rs` on one face and at the unetched `Z0`,
+both of which overstate it, so that term is an upper bound.
 
-`flat_cpw()` reproduces the COMSOL cross-section; `stepped_cpw()` is a template
-for a multi-level electrode (low inner tongue, riser, raised outer body on an
-oxide pedestal). The tee is given as slot bands measured outwards from the
-innermost ground metal edge, and is cut through the full metal thickness at
-whatever height that metal sits.
+## Sanity checks
 
-## What it computes, and what it does not
+* Set `W1 = W2 = 0`. Every delta must come out exactly zero — the etched cell
+  is then its own unetched reference on the same mesh. Run this first.
+* Compare cell `[1]` against `RF_interface_optimized.ipynb` on the same
+  cross-section.
+* `delta n_m` and `delta Z0` are reactive and complete; check them against a
+  CST run of the same geometry.
 
-The perturbation is **additive by construction**: set `W1 = W2 = 0` and every
-delta collapses to zero identically, because the etched cell is then its own
-unetched reference on the same mesh. So it cannot double count anything the 2D
-FEM baseline already carries.
+## What `delta alpha` does not contain
 
-It covers two channels — the cross-section change (`delta C'`, `delta L'`,
-`delta Z0`, `delta n_m`, and the loss that follows) and the longitudinal
-current detour. It does **not** cover radiation, and a quasi-static cell never
-can: there is no radiation channel in a static formulation. Cell `[1]` plus the
-`n_m` from cell `[2]` decide whether that matters for your stack — if no
-background wave is slower than the mode, nothing can carry power away and the
-ohmic answer is the whole answer. For the silicon-handle stack it is not: the
-Si slab TE0 surface wave sits at `n = 2.54` against `n_m = 1.51..2.15`, so the
-channel is open and `delta alpha` is a **lower bound**.
+A line can also lose power by launching a wave that leaves. That needs a wave
+the layer stack can carry more slowly than the mode, and cell `[3]` settles it
+with one transfer-matrix solve of the stack. With a silicon handle the answer
+is yes: the substrate's TE0 surface wave sits at `n = 2.54` against
+`n_m = 1.5..2.15`, so the channel is open for every geometry, the slot is an
+aperture into it, and a quasi-static cell has no radiation channel at all.
+`delta n_m` and `delta Z0` are unaffected. `delta alpha` is the ohmic part
+only, and a lower bound.
 
-Cell `[4]` prints the gauge that says how much that costs you: what fraction of
-the *topological* ohmic ceiling the detour is already using. At 93 % of the
-ceiling, on the worst tee in the recorded sweep, the ohmic account reaches
-`+3.39` of a recorded `+17.22` dB/cm.
+Cell `[3]` prints the gauge for how much that costs: what fraction of the
+topological ohmic ceiling the detour is already using. Near 100 % means most
+of the real penalty has to be coming from somewhere other than gold.
 
-## Evidence behind that split
-
-Established against the 498-row reference and reproducible from
-`data/cst_multilayer_500.csv`:
-
-* The multilayer solver's unetched differential sits **below** COMSOL by
-  **7.04 ± 1.71 %**, on every single row, and the shortfall tracks `GAP`
-  (-0.41) and `MTX` (+0.30). An extra loss channel would push it *up*; an
-  under-resolved `r^(-1/3)` edge singularity pushes it down. So leakage on the
-  **uniform** line is below the meshing residual — which is exactly why the 2D
-  FEM baseline is free to be a purely ohmic + dielectric calculation, and why
-  the composite is additive.
-* Across the sweep the ohmic detour covers the median penalty row and then
-  saturates: **73 of 286** penalty rows demand more squares of gold per period
-  than the surviving ground rim physically has.
-* The worst rows imply an equivalent `tan d = 0.185`, a Q of about 5. HR
-  silicon at 2.5e-4 S/m is `6.4e-6`; the gold itself reaches 0.017 on the
-  unetched line.
-
-## Routes to closing the gap
-
-| route | 1:1? | cost |
-|---|---|---|
-| **A** this notebook | no — ohmic and reactive only | ~66 s/geometry, built |
-| **A+** A + a layered-medium reciprocity integral for the surface-wave coupling | first order only; at the top of the sweep 8 % of the power goes per period | seconds; days to build |
-| **B** 3D Floquet full-wave cell with PML | yes | the leakage wave has a 3.0 mm lateral wavelength, so the PML must absorb a 3 mm wave while the mesh resolves a 0.1 µm slot rim — millions of DOF, hours |
-| **C** layered-medium MoM (MPIE + Sommerfeld Green's function + RWG) | yes, by construction | **recommended**; unknowns live only on the gold, all metal is coplanar in the flat design so the Green's function is a 1D table, one period is ~2.5 k unknowns |
+Closing that gap needs either a layered-medium reciprocity integral for the
+surface-wave coupling (cheap, first order) or a layered-medium MoM (the real
+translation of CST's multilayer solver). Neither is in the repo.
