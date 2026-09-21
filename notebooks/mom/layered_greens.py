@@ -171,40 +171,33 @@ class Stack:
     def GA(self, rho):
         return self._sommerfeld(rho, self.GA_spectral, self._asym("TE"))
 
-    # ---- TE0 surface-wave pole -------------------------------------------
-    def _stack_td(self):
-        """(eps, thickness) top->bottom incl. both semi-infinite claddings."""
-        return [(self.top_eps, np.inf)] + self.layers + [(self.bot_eps, np.inf)]
+    # ---- surface-wave poles ----------------------------------------------
+    # A bound surface wave is a pole of the SAME-INTERFACE kernel, i.e. a zero
+    # of its denominator  (eta_up + eta_dn) [TM]  or  (zeta_up + zeta_dn) [TE].
+    # We locate poles as minima of |denominator| over real n in (1, n_max) and
+    # refine each one -- this is exactly the transverse-resonance condition the
+    # Sommerfeld contour needs, and it is self-consistent with the kernel the
+    # integrator evaluates (a separate transfer-matrix determinant is not).
+    def _sw_den(self, n, pol):
+        kind = "TE" if pol == "TE" else "TM"
+        kr = n * self.k0
+        return self._eta_up(kr, kind) + self._eta_dn(kr, kind)
 
-    def _sw_det(self, n, pol):
-        """Guided-mode determinant of the layered slab (reflection transfer
-        matrix); a bound surface wave is a real-n zero for a lossless stack."""
-        st = self._stack_td()
-        k0 = self.k0
-        kzs = [np.sqrt(complex(e) * k0 * k0 - (n * k0) ** 2) for e, _ in st]
-        M = np.eye(2, dtype=complex)
-        for i in range(len(st) - 1):
-            e1, e2 = st[i][0], st[i + 1][0]
-            r = (kzs[i] / kzs[i + 1]) if pol == "TE" else (kzs[i] * e2) / (kzs[i + 1] * e1)
-            M = M @ (0.5 * np.array([[1 + r, 1 - r], [1 - r, 1 + r]], dtype=complex))
-            if i + 1 < len(st) - 1:
-                ph = kzs[i + 1] * st[i + 1][1]
-                M = M @ np.array([[np.exp(-1j * ph), 0], [0, np.exp(1j * ph)]])
-        return M[0, 0]
-
-    def surface_waves(self, pol="TE", n_scan=6000):
-        lo, hi = 1.0 + 1e-6, self.n_max - 1e-6
+    def surface_waves(self, pol="TE", n_scan=4000):
+        lo, hi = 1.0 + 1e-4, self.n_max - 1e-4
+        if hi <= lo:                      # no guiding range (e.g. free space)
+            return []
         ns = np.linspace(lo, hi, n_scan)
-        v = np.abs([self._sw_det(x, pol) for x in ns])
+        a = np.abs([self._sw_den(x, pol) for x in ns])
+        med = np.median(a)
         out = []
         for i in range(1, n_scan - 1):
-            if v[i] < v[i - 1] and v[i] < v[i + 1] and v[i] < 0.1 * v.max():
-                f = lambda x: self._sw_det(x, pol).real
-                try:
-                    out.append(optimize.brentq(f, ns[i - 1], ns[i + 1], xtol=1e-12)
-                               if f(ns[i - 1]) * f(ns[i + 1]) < 0 else ns[i])
-                except Exception:
-                    out.append(ns[i])
+            if a[i] < a[i - 1] and a[i] < a[i + 1] and a[i] < 0.2 * med:
+                res = optimize.minimize_scalar(
+                    lambda x: abs(self._sw_den(x, pol)),
+                    bounds=(ns[i - 1], ns[i + 1]), method="bounded",
+                    options={"xatol": 1e-10})
+                out.append(res.x)
         return out
 
     def te0_pole(self):

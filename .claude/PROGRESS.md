@@ -125,6 +125,36 @@ the ground electrodes every 200 um. Branch: `2D-+-2.5D`.
 
 ## Log
 
+### 2026-09-21T14:30Z — Phase 1 corrections (external review)
+Addressed four points from a review of the Phase 1 deliverable; all six gates
+still PASS and the fixes are verified, not assumed.
+- **Stack LN thickness (was the full 0.46 um film).** The RF electrodes sit on
+  the *etched* LiNbO3 slab; CST's own HF Multilayer background uses SLAB_H =
+  0.46 - ETCH_DEPTH. `stack_params.device_layers` is now parametrised by
+  `t_LN`; the table is built at the dataset-median etched slab 0.225 um.
+- **TM surface-wave pole was MISLABELED.** The old reflection transfer-matrix
+  `_sw_det` reported a spurious TM0 = 1.1506 (a zero of the determinant, not a
+  pole of the kernel) and missed the real one. Replaced the pole finder with
+  direct zeros of the kernel denominator (eta_up+eta_dn) — the transverse
+  resonance the Sommerfeld contour actually needs. Correct poles: TE0 = 2.54141
+  (unetched, matches ref 2.5414), TM0 = 3.31373. Panel (c) now shows both as
+  peaks over the full spectral range (old plot only scanned to 2.67 and never
+  showed the TM peak).
+- **Vacuous V1.5 replaced.** Old V1.5 compared Gq(r) to Gq(|-r|) — a tautology.
+  New V1.5 is an independent-integrator cross-check: production Hankel-split
+  contour vs an independent real-axis partition + Mosig weighted-averages tail;
+  agree to 1e-13. V1.6 relabelled honestly as interpolation self-consistency.
+  Report now states V1.1-V1.4 are the only independent physics checks.
+- **New V1.7 (informational).** LN-thickness sensitivity: G_A insensitive
+  (<0.1 %), G_q ~36 % at rho=1 um, ~4 % at 10 um. So Phase 2 must use the
+  per-geometry t_LN for near-field terms — though the integrated line params are
+  weakly ETCH-sensitive empirically (|r|<0.07 vs n_m, z0 over the 500 rows).
+- **Isotropic LN reframed** from "refinement" to a Phase-2 validation risk:
+  34.7 = sqrt(28*43) is a geometric-mean proxy, NOT pinned by the (Si-dominated)
+  TE0 pole; CST's anisotropic (43,28,43) is the first thing to check if Phase 2
+  delta_alpha misses by 10-20 %.
+- Still STOPPED before Phase 2, per spec, awaiting user approval.
+
 ### 2026-09-21T13:45Z
 - Direction reset by the user: the section-average perturbation was never the
   agreed method and is wrong (C right, L ~30 % low -- a stack of 2D slices
