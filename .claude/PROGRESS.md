@@ -125,6 +125,25 @@ the ground electrodes every 200 um. Branch: `2D-+-2.5D`.
 
 ## Log
 
+### 2026-09-21T13:45Z
+- Direction reset by the user: the section-average perturbation was never the
+  agreed method and is wrong (C right, L ~30 % low -- a stack of 2D slices
+  cannot see the return current meandering around the slot in z).  Removed the
+  unit-cell notebook entirely (commit eab79e3).
+- Adopted the agreed method: layered-medium MoM (Route C), the 1:1 translation
+  of CST HF Multilayer, built in 4 validated phases under notebooks/mom/.
+- PHASE 1 COMPLETE, all six gates PASS: layered-medium mixed-potential Green's
+  function.  Scalar G_q and vector G_A from the transmission-line spectral form,
+  inverted by a Sommerfeld integral with quasi-static singularity extraction and
+  a Hankel-split deformed contour (real head past the poles + two exponentially-
+  decaying rays).  V1.1 free space 8e-14, V1.2 PEC image 9e-8, V1.3 single
+  interface 3e-4, V1.4 TE0 pole n=2.54141 (=2.5414), V1.5 symmetry 0, V1.6
+  interpolation 5e-5.  Table 10 nm-10 mm built in ~17 s.
+- Deliverables in notebooks/mom/: layered_greens.py, stack_params.py,
+  phase1_greens_function.ipynb, green_function_table.npz, te0_pole.json,
+  phase1_report.md, phase1_greens.png.
+- STOPPED per the spec: awaiting user approval before Phase 2 (MPIE MoM).
+
 ### 2026-09-21T10:05Z
 - Created this file.
 - Verified the zero-tee sanity check on the rebuilt notebook by actually
