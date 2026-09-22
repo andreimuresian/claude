@@ -1,0 +1,160 @@
+"""Periodic (Floquet) MPIE assembly and Bloch-eigenvalue extraction.
+
+One unit cell of the T-slot line, periodic along v with period P.  The unknowns
+are the RWG coefficients in the cell (mesh_generator.rwg_basis_cell); edges on
+the v = 0 / v = P boundary are single wrapped basis functions whose minus half
+lives one period up (shift = 1).
+
+Because the periodic kernel is quasi-periodic,
+        G_p(du, dv + kP) = exp(j beta k P) G_p(du, dv),
+a half that sits one period up can be kept at its in-cell position provided its
+interaction is multiplied by exp(j beta sigma P).  That phase is folded into the
+basis weights: the row side carries exp(+j beta sigma P) and the column side
+exp(-j beta sigma P), so Z = A^T G Bc.  Z(beta) is not symmetric for beta != 0
+(reciprocity is Z(beta)^T = Z(-beta)).
+
+The kernel is Ewald-split (floquet_greens.FloquetKernel):
+  * sharp part -- real-space lattice sum over a few images; the m = 0 term
+    carries the 1/rho singularity and is integrated with the Phase-2 analytic
+    coplanar triangle integrals (reused verbatim from mom_solver).
+  * soft part  -- smooth, evaluated at centroids for every pair.
+
+A Bloch mode is a beta with Z(beta) singular; we root-find on
+    g(beta) = 1 / (x^H Z(beta)^{-1} y)
+which is zero exactly at the eigenvalues, using one LU solve per evaluation.
+"""
+import numpy as np
+from mom_solver import _Ipot, _Ivec, _G3, _W3, _edges_of, _gram
+from layered_greens import EPS0, MU0, C0
+
+
+def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=4):
+    """Dense complex Floquet MoM matrix Z(beta) for one unit cell."""
+    nodes = cell["nodes"]; tris = cell["tris"]
+    cent = cell["cent"]; area = cell["area"]
+    tp = cell["tp"]; tm = cell["tm"]; vp = cell["vp"]; vm = cell["vm"]
+    Le = cell["L"]; sh_p = cell["shift_p"]; sh_m = cell["shift_m"]
+    P = cell["Lz"]
+    Ne = len(Le); Nt = len(tris)
+    w = fk.w
+    jwe = 1j*w*EPS0
+    jwm = 1j*w*MU0
+    fk.set_beta(beta)
+
+    # ---- pairwise centroid offsets (in-cell) -----------------------------
+    du = cent[:, 0][:, None] - cent[:, 0][None, :]
+    dv = cent[:, 1][:, None] - cent[:, 1][None, :]
+    D = np.hypot(du, dv)
+    hh = np.sqrt(area)
+    near = D <= near_fac*(hh[:, None] + hh[None, :])
+
+    # sharp lattice sum at centroids (near/self zeroed: done analytically)
+    GqS = np.zeros((Nt, Nt), complex)
+    GaS = np.zeros((Nt, Nt), complex)
+    for m in range(-n_sharp, n_sharp+1):
+        R = np.hypot(du, dv - m*P)
+        if m == 0:
+            R = np.where(near, 1.0, R)
+        ph = np.exp(1j*beta*m*P)
+        gq = fk.Gq_sharp(R)*ph
+        ga = fk.GA_sharp(R)*ph
+        if m == 0:
+            gq[near] = 0.0; ga[near] = 0.0
+        GqS += gq; GaS += ga
+    # soft part: smooth everywhere, centroid is fine
+    gqs, gas = fk.soft_p(du.ravel(), dv.ravel())
+    GqS += gqs.reshape(Nt, Nt)
+    GaS += gas.reshape(Nt, Nt)
+
+    # ---- basis weights with the Bloch phase ------------------------------
+    eP = np.exp(1j*beta*P)
+    A_b = np.zeros((Nt, Ne), complex); C_b = np.zeros((Nt, Ne), complex)
+    A_x = np.zeros((Nt, Ne), complex); C_x = np.zeros((Nt, Ne), complex)
+    A_y = np.zeros((Nt, Ne), complex); C_y = np.zeros((Nt, Ne), complex)
+    for e in range(Ne):
+        for (t, vv, s, sg) in ((tp[e], vp[e], +1.0, sh_p[e]),
+                               (tm[e], vm[e], -1.0, sh_m[e])):
+            pr = eP**sg
+            rc = cent[t] - nodes[vv]
+            A_b[t, e] += s*Le[e]*pr;      C_b[t, e] += s*Le[e]/pr
+            A_x[t, e] += s*Le[e]/2*rc[0]*pr; C_x[t, e] += s*Le[e]/2*rc[0]/pr
+            A_y[t, e] += s*Le[e]/2*rc[1]*pr; C_y[t, e] += s*Le[e]/2*rc[1]/pr
+
+    Phi = A_b.T @ GqS @ C_b
+    Av = A_x.T @ GaS @ C_x + A_y.T @ GaS @ C_y
+    Z = jwm*Av - (1.0/jwe)*Phi
+
+    # ---- near / self: accurate m=0 sharp singular integrals ---------------
+    tri_pts = nodes[tris]
+    ii, jj = np.where(np.triu(near))
+    for i, j in zip(ii, jj):
+        Ti = tri_pts[i]; Tj = tri_pts[j]
+        Ai = area[i]; Aj = area[j]
+        ro = (_G3[:, 0][:, None]*(Ti[1]-Ti[0]) + _G3[:, 1][:, None]*(Ti[2]-Ti[0])
+              + Ti[0])
+        Ip = np.array([_Ipot(r, Tj) for r in ro])
+        Iv = np.array([_Ivec(r, Tj) for r in ro])
+        SPsing = Ai*np.sum(_W3*Ip)
+        reff = max(D[i, j], 0.35*np.sqrt(Ai+Aj))
+        gq = complex(fk.Gq_sharp(reff)) - fk.Kq/reff
+        gA = complex(fk.GA_sharp(reff)) - fk.KA/reff
+        SP = fk.Kq*SPsing + Ai*Aj*gq
+        em = _edges_of(cell, i); en = _edges_of(cell, j)
+        for (me, mv, ms) in em:
+            rmv = ro - nodes[mv]
+            cmv = cent[i] - nodes[mv]
+            pm = eP**(sh_p[me] if ms > 0 else sh_m[me])
+            for (ne, nv, ns) in en:
+                pn = eP**(sh_p[ne] if ns > 0 else sh_m[ne])
+                inner = Iv + (ro-nodes[nv])*Ip[:, None]
+                vs = Ai*np.sum(_W3*np.sum(rmv*inner, axis=1))
+                VP = fk.KA*vs + Ai*Aj*np.dot(cmv, cent[j]-nodes[nv])*gA
+                base = (jwm*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP
+                        - (1.0/jwe)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP)
+                Z[me, ne] += base*pm/pn
+                if i != j:
+                    Z[ne, me] += base*pn/pm
+    Z += Zs*_gram(cell)
+    return Z
+
+
+# ---------------------------------------------------------------- eigenvalue
+def bloch_mode(cell, fk, Zs, beta0, tol=1e-9, maxit=25, seed=0, **kw):
+    """Find the complex Bloch wavenumber near beta0 with Z(beta) singular.
+
+    g(beta) = 1/(x^H Z^{-1} y) is analytic with zeros at the eigenvalues; we
+    drive it to zero with a secant (Muller-free) iteration.  One LU per step."""
+    rng = np.random.default_rng(seed)
+    Ne = len(cell["L"])
+    x = rng.standard_normal(Ne) + 1j*rng.standard_normal(Ne)
+    y = rng.standard_normal(Ne) + 1j*rng.standard_normal(Ne)
+
+    def g(b):
+        Z = assemble_periodic(cell, fk, Zs, b, **kw)
+        return 1.0/(x.conj() @ np.linalg.solve(Z, y))
+
+    b0 = complex(beta0)
+    b1 = b0*(1 + 1e-3)
+    g0, g1 = g(b0), g(b1)
+    hist = [(b0, g0), (b1, g1)]
+    for _ in range(maxit):
+        if abs(g1 - g0) < 1e-300:
+            break
+        b2 = b1 - g1*(b1 - b0)/(g1 - g0)          # secant
+        if not np.isfinite(b2):
+            break
+        g2 = g(b2)
+        hist.append((b2, g2))
+        if abs(b2 - b1) < tol*abs(b2):
+            b1, g1 = b2, g2
+            break
+        b0, g0, b1, g1 = b1, g1, b2, g2
+    return b1, hist
+
+
+def mode_quantities(beta, P, f):
+    """n_m and alpha[dB/cm] from the complex Bloch wavenumber."""
+    w = 2*np.pi*f
+    nm = beta.real*C0/w
+    alpha_dBcm = abs(beta.imag)*8.686/100.0
+    return nm, alpha_dBcm

@@ -178,3 +178,127 @@ def rwg_basis(mesh):
                 vp=np.array(vp), vm=np.array(vm), L=np.array(L),
                 area=area, cent=cent, nodes=nodes, tris=tris,
                 region=region, Lz=Lz, geom=mesh["geom"])
+
+
+# ==========================================================================
+# Phase 3: Floquet periodic unit cell (one period, Bloch-wrapping RWG edges)
+# ==========================================================================
+def build_unit_cell(g, h, etched=True, h_coarse=None, grade=0.55):
+    """One period (v in [0,P]) with the T-slot centred at v=P/2, meshed so the
+    v=0 and v=P boundaries are node-for-node periodic (gmsh setPeriodic).  The
+    returned dict matches build_mesh() plus 'periodic'=True."""
+    if h_coarse is None:
+        h_coarse = 3.6*h
+    if max(g["L1"], g["L2"]) >= PITCH:
+        raise ValueError("tee longer than the period; unit cell would wrap")
+    fp = footprint(g, 1, etched)          # tee already centred at 0.5*PITCH
+    polys = list(fp.geoms) if fp.geom_type == "MultiPolygon" else [fp]
+    x_gi = g["WS"]/2 + g["GAP"]
+    yf = x_gi + max(g["W1"]+g["W2"], g["GAP"]) + 12e-6
+
+    gmsh.initialize()
+    gmsh.option.setNumber("General.Terminal", 0)
+    gmsh.model.add("cell")
+    for p in polys:
+        _add_poly(p, lambda x, y: h_coarse)
+    gmsh.model.occ.synchronize()
+    # pair the v=0 and v=P boundary curves of each conductor
+    bot, top = [], []
+    for d, t in gmsh.model.getEntities(1):
+        com = gmsh.model.occ.getCenterOfMass(d, t)
+        if abs(com[1]) < 1e-12:
+            bot.append((com[0], t))
+        elif abs(com[1]-PITCH) < 1e-12:
+            top.append((com[0], t))
+    bot.sort(); top.sort()
+    if len(bot) != len(top):
+        gmsh.finalize()
+        raise RuntimeError("unit-cell boundary curves do not pair up")
+    aff = [1, 0, 0, 0,  0, 1, 0, PITCH,  0, 0, 1, 0,  0, 0, 0, 1]
+    gmsh.model.mesh.setPeriodic(1, [t for _, t in top], [t for _, t in bot], aff)
+
+    me = gmsh.model.mesh.field.add("MathEval")
+    gmsh.model.mesh.field.setString(
+        me, "F", f"({h}) + ({grade})*max(0, fabs(y) - ({yf}))")
+    cap = gmsh.model.mesh.field.add("MathEval")
+    gmsh.model.mesh.field.setString(cap, "F", f"{h_coarse}")
+    mn = gmsh.model.mesh.field.add("Min")
+    gmsh.model.mesh.field.setNumbers(mn, "FieldsList", [me, cap])
+    gmsh.model.mesh.field.setAsBackgroundMesh(mn)
+    gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+    gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+    gmsh.model.mesh.generate(2)
+    nt, nc, _ = gmsh.model.mesh.getNodes()
+    nodes = nc.reshape(-1, 3)[:, :2]
+    idmap = {int(t): i for i, t in enumerate(nt)}
+    et, _, enodes = gmsh.model.mesh.getElements(2)
+    tris = None
+    for typ, conn in zip(et, enodes):
+        if typ == 2:
+            tris = np.array([idmap[int(v)] for v in conn]).reshape(-1, 3)
+    gmsh.finalize()
+
+    v = nodes[tris]
+    sa = ((v[:, 1, 0]-v[:, 0, 0])*(v[:, 2, 1]-v[:, 0, 1])
+          - (v[:, 2, 0]-v[:, 0, 0])*(v[:, 1, 1]-v[:, 0, 1]))
+    tris[sa < 0] = tris[sa < 0][:, ::-1]
+    x_si = g["WS"]/2
+    cen = nodes[tris].mean(axis=1)
+    reg = np.where(np.abs(cen[:, 0]) <= x_si, "sig",
+                   np.where(cen[:, 0] > 0, "gR", "gL"))
+    return dict(nodes=nodes, tris=tris, region=reg, geom=g,
+                n_periods=1, Lz=PITCH, etched=etched, periodic=True)
+
+
+def rwg_basis_cell(mesh, tol=1e-9):
+    """RWG basis on a periodic unit cell.  Interior edges are ordinary RWG.  An
+    edge on v=0 is matched to its partner on v=P and becomes ONE wrapped basis
+    function whose minus half lives in the next cell: shift[j]=+1 marks a half
+    that sits at v+P, so its interactions pick up exp(j*beta*P) (handled in the
+    assembly).  Edges on the outer metal rim carry no unknown."""
+    nodes, tris = mesh["nodes"], mesh["tris"]
+    region = mesh["region"]; P = mesh["Lz"]
+    v = nodes[tris]
+    area = 0.5*np.abs((v[:, 1, 0]-v[:, 0, 0])*(v[:, 2, 1]-v[:, 0, 1])
+                      - (v[:, 2, 0]-v[:, 0, 0])*(v[:, 1, 1]-v[:, 0, 1]))
+    cent = v.mean(axis=1)
+    emap = {}
+    for ti, tri in enumerate(tris):
+        for a, b, opp in ((0, 1, 2), (1, 2, 0), (2, 0, 1)):
+            key = tuple(sorted((int(tri[a]), int(tri[b]))))
+            emap.setdefault(key, []).append((ti, int(tri[opp])))
+    edges, tp, tm, vp, vm, L, sp_, sm_ = [], [], [], [], [], [], [], []
+    bot, top = {}, {}
+    for key, lst in emap.items():
+        n0, n1 = key
+        ln = float(np.hypot(*(nodes[n0]-nodes[n1])))
+        if len(lst) == 2:
+            edges.append((n0, n1))
+            tp.append(lst[0][0]); vp.append(lst[0][1]); sp_.append(0)
+            tm.append(lst[1][0]); vm.append(lst[1][1]); sm_.append(0)
+            L.append(ln)
+        else:
+            y0, y1 = nodes[n0, 1], nodes[n1, 1]
+            k = (round(min(nodes[n0, 0], nodes[n1, 0]), 12),
+                 round(max(nodes[n0, 0], nodes[n1, 0]), 12))
+            if abs(y0) < tol and abs(y1) < tol:
+                bot[k] = (lst[0][0], lst[0][1], ln)
+            elif abs(y0-P) < tol and abs(y1-P) < tol:
+                top[k] = (lst[0][0], lst[0][1], ln)
+    nwrap = 0
+    for k, (tb, vb, ln) in bot.items():
+        if k not in top:
+            continue
+        tt, vt, _ = top[k]
+        # plus half: the v=P-side triangle (in this cell); minus half: the
+        # v=0-side triangle, which for this basis sits one period up (shift +1)
+        edges.append((-1, -1))
+        tp.append(tt); vp.append(vt); sp_.append(0)
+        tm.append(tb); vm.append(vb); sm_.append(1)
+        L.append(ln); nwrap += 1
+    return dict(edges=np.array(edges), tp=np.array(tp), tm=np.array(tm),
+                vp=np.array(vp), vm=np.array(vm), L=np.array(L),
+                shift_p=np.array(sp_), shift_m=np.array(sm_),
+                area=area, cent=cent, nodes=nodes, tris=tris,
+                region=region, Lz=P, geom=mesh["geom"], n_wrapped=nwrap)
