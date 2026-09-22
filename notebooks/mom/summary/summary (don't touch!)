@@ -354,3 +354,80 @@ Bugs found and fixed: 2 (both structural, both would have caused subtle sign err
 Assembly validated: C to 4–10 % across 3 rows; MPIE reciprocal to 1e-16.
 
 Net outcome: the physics core is sound; the extraction method was the wrong choice for finite lines, and this is now known with certainty.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Phase 3 Technical Summary — Status as of This Stop
+3.1 Purpose of Phase 3
+Replace the finite-line extraction (abandoned in Phase 2) with the periodic Floquet unit cell: one period of the geometry, periodic boundary conditions along z, Bloch eigenvalue extraction. From β = β_r + jβ_i, compute α, n_m, Z₀, and the per-period perturbations ΔL, ΔC. Validate against the dataset's alpha_delta_val, deltaL lumped, deltaC lumped.
+
+3.2 What Has Been Built
+file	status
+floquet_greens.py	partial — spectral Ewald split implemented, sharp-part convergence not achieved
+bloch_solver.py	complete — periodic MPIE assembly, Bloch eigenvalue by secant iteration
+mesh_generator.py	extended — build_unit_cell(), rwg_basis_cell() with Bloch-wrapped edges
+phase3_floquet.ipynb	not yet assembled
+phase3_report.md	not yet written
+3.3 What Is Validated
+3.3.1 — Periodic mesh with Bloch wrapping.
+The mesh generator now produces unit cells where nodes and edges on the z = 0 boundary match those on z = P node-for-node (verified to 1e-21). RWG basis functions that span the z-boundary carry the Bloch phase factor e^{j k_z P} correctly. Cell sizes: row 1 has 1346 triangles, 1920 RWG, 31 Bloch-wrapped edges; row 0 has 3040 triangles, 44 Bloch-wrapped edges.
+
+3.3.2 — Spectral Floquet sum is exactly converged.
+The sensitivity sweep showed doubling the harmonic count produces exactly zero change in the kernel. The du-grid interpolation contributes 1e-6. The spectral sum is fully converged.
+
+3.3.3 — One major bug found and fixed.
+The surface-wave poles in the spectral kernel are extremely sharp — the TM₀ pole at k_ρ = 4163.6 has FWHM = 0.05 in k_ρ (relative width 1.2×10⁻⁵, because the silicon loss σ_Si = 2.5×10⁻⁴ is tiny). The initial quadrature grid had spacing 200 — not a single quadrature point hit the pole. This was silently dropping ~40 % of the spectral integral, and because the grid spacing scales with the Ewald splitting parameter, the miss masqueraded as fake E-dependence. Fixing the grid to cluster on the pole improved Ewald invariance from 2.8 to ~1×10⁻³ — a 3000× improvement. A separate rework cut kernel build time from 56 s to 0.2 s (280×).
+
+3.4 What Fails and Why
+V3.1b (Ewald invariance) fails at ~1×10⁻³ vs the 1e-4 target. But the sensitivity sweep reveals the failure is structural, not just a small numerical error:
+
+knob varied	ΔG_q	ΔG_A
+harmonics ×2	0.00	0.00
+du grid ×2	2e-7	1e-6
+n_sharp 4→8	1.1e-2	1.04e+01
+nk ×2	1.7e-3	2.8e-2
+n_rad ×2	5e-4	7.7e-4
+The sharp part of the Ewald split does not converge. Doubling the number of images in the sharp sum changes G_A by 1040 %. The kernel currently in the code has an unbounded error, not a bounded ~1e-3 error.
+
+Why (structural): the Ewald split is G = G·f(k) + G·(1−f(k)) with f(k) = exp(−k²/(4E²)). At the surface-wave pole k_pole ≈ 3194 rad/m, and with E ≈ 8000 (a typical choice), the Gaussian suppresses the pole by only ~200×. That is not enough — a residual surface wave stays in the sharp part and restores the slow 1/√ρ tail. The sharp part's image sum then converges as slowly as the naive lattice sum did in the first place.
+
+Why the obvious fixes don't work:
+
+Larger E suppresses the pole more in the sharp part but broadens the soft part, requiring more harmonics.
+
+Smaller E narrows the soft part but leaves the pole fully in the sharp part.
+
+Rebuilding the sharp part from its high-k asymptote is invalid: the LN film is 0.3 μm, so the kernel doesn't reach its C/k asymptote until k ≫ 3×10⁶, more than 10× past the current k_max.
+
+The known fix is to extract the pole residues before the split, sum the pole contributions over the Floquet lattice in closed form, and Ewald-split only the regularized (pole-free) remainder. This is the textbook treatment for periodic layered media.
+
+3.5 What Carries Forward From Phase 2
+Everything that was validated in Phase 2 survives: the mesh generator, the RWG basis construction, the singularity extraction, the analytic triangle integrals, the CCW-winding fix, the vertex-NaN fix, and the MPIE assembly structure. The Bloch solver reuses all of this verbatim; only the kernel lookup changes from G_Sommerfeld(ρ) to G_Floquet(ρ, k_z).
+
+3.6 Where We Stopped
+At sub-step 3.3.1, at the V3.1 validation gate, with the Floquet kernel not yet in a bounded-convergence state. No dataset comparison has been performed yet — that is V3.3 and V3.4, and they cannot run reliably until the kernel is trustworthy.
+
+3.7 Solver Bug Status
+bug	status
+Sharp surface-wave pole missed by quadrature grid	fixed
+Gaussian split leaves too much pole in sharp part	open — requires residue extraction
+Kernel build time 56 s	fixed — now 0.2 s
+Periodic mesh Bloch wrapping	validated
+Bloch eigenvalue solver	not yet tested (waits on kernel)
