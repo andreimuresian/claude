@@ -125,6 +125,28 @@ the ground electrodes every 200 um. Branch: `2D-+-2.5D`.
 
 ## Log
 
+### 2026-09-22 — Phase 3 (Floquet unit cell): V3.1 kernel gate FAILS
+Built the periodic route: build_unit_cell()/rwg_basis_cell() (gmsh-periodic
+mesh, Bloch-wrapped RWG), floquet_greens.py (Ewald split in the spectral
+domain) and bloch_solver.py (periodic MPIE reusing the Phase-2 singularity
+extraction; Bloch eigenvalue by secant on 1/(x^H Z^-1 y)).  Found and fixed a
+major bug: the surface-wave poles are razor sharp (TM0 FWHM 0.05, relative
+1.2e-5, because sigma_Si = 2.5e-4) and a uniform ku grid stepped straight over
+them, dropping ~40 % of the spectral integral and -- because the grid spacing
+scales with E -- masquerading as E-dependence; resolving them improved Ewald
+invariance from 2.8 to ~1e-3 (3000x).  Build cost also cut ~280x.  But V3.1b
+still FAILS: best ~1e-3 vs the 1e-4 target.  A sensitivity sweep localises it
+exactly -- harmonics x2 and du-grid x2 move the answer by 0 and 1e-6 (the
+spectral side is fully converged), while n_sharp 4->8 moves G_A by 1040 %: the
+sharp image sum does not converge.  Cause: a Gaussian split suppresses the
+surface-wave pole only ~200x (damp = 0.0048 at k_pole), so a residual surface
+wave stays in the sharp part and restores the 1/sqrt(rho) tail; computing
+G_sharp = G_full - G_soft compounds it at large rho where both are
+surface-wave dominated and nearly equal.  Known remedy: extract the
+surface-wave residues and sum that lattice contribution in closed form
+(periodic Hankel/H0 Ewald).  Committed 4da4b5d.  STOPPED per the Phase-3
+standing order; awaiting direction.
+
 ### 2026-09-22 — Phase 2 finite-line MoM (built, blocked on extraction)
 Approved to build Phase 2 (finite-line MPIE MoM validation). Built the solver
 under notebooks/mom/ (mesh_generator.py, mom_solver.py). Status: the physics
