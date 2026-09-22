@@ -125,6 +125,32 @@ the ground electrodes every 200 um. Branch: `2D-+-2.5D`.
 
 ## Log
 
+### 2026-09-22 — Phase 2 finite-line MoM (built, blocked on extraction)
+Approved to build Phase 2 (finite-line MPIE MoM validation). Built the solver
+under notebooks/mom/ (mesh_generator.py, mom_solver.py). Status: the physics
+core is verified but the RLGC/S extraction does not meet the gate tolerances.
+- Verified: geometry/mesh/RWG vs the CST history; coplanar analytic 1/rho
+  triangle integrals to ~1e-13; MPIE assembly reciprocal to 1e-16; the
+  quasi-static capacitance reproduces the dataset C_base to 4-10% (row0 1.06x,
+  row1 0.90x, row2 1.04x) -- end-to-end validation of the assembly + Phase-1
+  kernel for the scalar potential.
+- Bugs found + fixed: (1) gmsh triangles not consistently CCW -> flipped the
+  sign of the analytic integrals on ~half the triangles, corrupting the
+  capacitance self-terms; (2) _Ipot NaN when the field point hits a source
+  vertex (log of a rounding-negative).
+- Blockers (reported to user, awaiting direction):
+  * Full-wave S / modal extraction is ill-conditioned on the short (~0.14
+    lambda_g), unterminated N/N+1 lines: the field is a reactive standing wave
+    with almost no phase progression (CST gets a clean traveling wave only via
+    matched wave ports). nm/Z0 unstable.
+  * Quasi-static route (authorized fallback): C_base matches to ~10%, but
+    nm/Z0 come out 15-30% high (zero-thickness planar model vs thick metal
+    MTX~11um in the 2D-FEM baseline; C_air is the sensitive term), and the
+    differential dC has the right sign but is 2-6x too small (ratios 0.17-0.64)
+    -- fails V2.1 (3-5%) and V2.2 (factor-2).
+- CST discrete-port setup obtained from the user (S-param face port, 50 ohm,
+  signal-to-bridged-grounds at each end). Committed WIP at c290145.
+
 ### 2026-09-21T14:30Z — Phase 1 corrections (external review)
 Addressed four points from a review of the Phase 1 deliverable; all six gates
 still PASS and the fixes are verified, not assumed.
