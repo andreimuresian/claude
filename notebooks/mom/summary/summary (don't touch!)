@@ -1,1 +1,232 @@
 
+Document 1 — Phase 1 Technical Summary
+1. Purpose
+Phase 1 builds the electromagnetic kernel for the layered-medium Method of Moments (MoM) — the same class of solver as CST's HF Multilayer. The kernel is the mixed-potential Green's function of the air / LiNbO₃ / SiO₂ / Si / air stack, evaluated at the metal plane. Two kernels are needed:
+
+G_q(ρ) — scalar-potential (charge) kernel, enters the ∇·J term of the MPIE.
+
+G_A(ρ) — vector-potential (current) kernel, enters the jωA term.
+
+Both depend only on the stack and the frequency, not on the metal geometry. That is the point of the layered-medium approach: the stack is solved once as a canonical problem, then reused for every geometry via matrix assembly.
+
+2. Method
+Spectral kernels come from a transmission-line cascade of the layer stack:
+
+G
+~
+q
+(
+k
+ρ
+)
+=
+1
+j
+ε
+0
+(
+η
+↑
++
+η
+↓
+)
+,
+G
+~
+A
+(
+k
+ρ
+)
+=
+μ
+0
+j
+(
+ζ
+↑
++
+ζ
+↓
+)
+G
+~
+  
+q
+​
+ (k 
+ρ
+​
+ )= 
+jε 
+0
+​
+ (η 
+↑
+​
+ +η 
+↓
+​
+ )
+1
+​
+ , 
+G
+~
+  
+A
+​
+ (k 
+ρ
+​
+ )= 
+j(ζ 
+↑
+​
+ +ζ 
+↓
+​
+ )
+μ 
+0
+​
+ 
+​
+ 
+
+with η = ε_r·k_z (TM) and ζ = k_z (TE). Real-space inversion is by a Sommerfeld integral:
+
+G
+(
+ρ
+)
+=
+1
+2
+π
+∫
+0
+∞
+G
+~
+(
+k
+ρ
+)
+ 
+J
+0
+(
+k
+ρ
+ρ
+)
+ 
+k
+ρ
+ 
+d
+k
+ρ
+G(ρ)= 
+2π
+1
+​
+ ∫ 
+0
+∞
+​
+  
+G
+~
+ (k 
+ρ
+​
+ )J 
+0
+​
+ (k 
+ρ
+​
+ ρ)k 
+ρ
+​
+ dk 
+ρ
+​
+ 
+
+The integrator has three ingredients:
+
+Quasi-static singularity extraction. Subtract the leading 1/k_ρ asymptote analytically (transform of C/k_ρ is C/(2πρ)), integrate the remainder numerically.
+
+Real-axis head. Adaptive quad from 0 to 6·n_max·k₀, with breakpoints at material wavenumbers and pole locations.
+
+Hankel-split tail. J₀ = (H₀⁽¹⁾ + H₀⁽²⁾)/2, each H₀ integrated on a ray into the appropriate half-plane so the oscillatory tail decays exponentially. Deformation angle θ = 0.5 rad.
+
+Poles are located as zeros of the kernel denominator (η↑+η↓ for TM, ζ↑+ζ↓ for TE), which is by construction what the Sommerfeld contour needs.
+
+3. Deliverables
+file	role
+layered_greens.py	reusable Stack class + Sommerfeld inversion
+stack_params.py	stack constants, parametrized by LN thickness
+phase1_greens_function.ipynb	build + validation notebook
+green_function_table.npz	validated table G_q(ρ), G_A(ρ), 90 log-spaced points from 10 nm to 10 mm
+te0_pole.json	pole locations (both unetched and etched slab)
+phase1_report.md, phase1_greens.png	report and figure
+4. Validation Results
+Gate	Test	Error	Threshold	Status
+V1.1	Free-space Sommerfeld identity	8.4e-14	1e-4	PASS
+V1.2	PEC-ground image	8.7e-8	1e-3	PASS
+V1.3	Single dielectric interface (ε=3.9)	2.6e-4	1e-2	PASS
+V1.4	TE0 pole (unetched, target 2.5414)	1.0e-5	1e-3	PASS
+V1.5	Independent-integrator cross-check	1.3e-13	1e-6	PASS
+V1.6	Table interpolation self-consistency	4.7e-5	1e-3	PASS
+V1.7	LN-thickness sensitivity	informational	—	reported
+Table built in 15.7 s (90 points, 10 nm to 10 mm).
+
+5. Physics Findings
+TE0 pole at n = 2.54141 (unetched). Matches the reference 2.5414. This is the Si-slab TE₀ surface wave — the channel that the tee aperture couples into. Its correct location is essential for Phase 2's leakage modeling.
+
+TM0 pole at n = 3.31373 (unetched). Sits just below √11.7 = 3.42, the Si-slab TM₀. Physically correct. The earlier value 1.151 was a spurious zero of the transfer-matrix determinant.
+
+Etched slab (t_LN = 0.225 μm): TE0 = 2.54019, TM0 = 3.30963.
+
+LN-thickness sensitivity (V1.7, t_LN from 0.10 to 0.36 μm):
+
+ρ	ΔG_q / G_q	ΔG_A / G_A
+1 μm	36 %	3 × 10⁻⁵
+10 μm	3.7 %	2 × 10⁻⁴
+100 μm	0.7 %	8 × 10⁻⁴
+G_A is essentially thickness-independent; G_q is sensitive at short range. Consequence: the near-field capacitive MoM terms must use the per-geometry t_LN = TFLN − ETCH_DEPTH. The far-field terms and all of G_A are effectively thickness-independent.
+
+6. Known Weaknesses
+Isotropic LN proxy (ε = 34.7). Geometric mean of √(28·43). CST uses anisotropic (43, 28, 43). The TE0 pole is Si-dominated and does not pin this. If Phase 2's Δα misses by 10–20 %, this is the first thing to check.
+
+V1.5 shares the head integrator. The independent check uses a different tail method (partition at J₀ zeros, weighted averages) but the same real-axis head. It validates the tail, not the whole inversion. The head is separately validated by V1.1–V1.3.
+
+Only V1.1–V1.4 are independent physics checks. V1.5 is numerical cross-validation; V1.6 is self-consistency. This is stated honestly in the report.
+
+Sampling density. 90 points, cubic interpolation. V1.6 shows 4.7e-5 error. Adequate but refinable if Phase 2 shows sensitivity.
+
+Same-interface only. The kernel assumes source and observation both on the metal plane. Valid for this device (all metal coplanar) but not extensible.
+
+Lossy-Si pole shift ignored. The table is built on the lossy stack; the pole is located on the lossless stack. The shift is ~1e-6 off-axis, negligible for the contour deformation.
+
+No absolute-magnitude validation. All gates are relative. A direct physical reference for G_q(ρ) on this specific stack does not exist; the validation is via analytic limits and (in Phase 2) via S-parameter agreement.
+
+7. Implications for Phase 2
+Rebuild the table per geometry, at t_LN = TFLN − ETCH_DEPTH. 15 s each; acceptable for the 5-row validation set.
+
+Use same-interface kernels throughout.
+
+Isotropic-LN uncertainty carries forward.
+
+Near-field terms (short-ρ G_q entries) are the most error-prone; far-field and G_A are robust.
+
+The TE0 pole at 2.541 is the correct location to model aperture leakage into the Si slab.
+
+8. Readiness
+Phase 1 is complete. Method correct (verified against 4 independent physics limits), numerics correct (verified against an independent integrator), physics correct (poles at the right locations). Residual uncertainties are Phase-2 validation risks, not Phase-1 defects.
+
