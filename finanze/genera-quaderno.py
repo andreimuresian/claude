@@ -135,7 +135,7 @@ sp.freeze_panes = "A4"
 SPESE_RIGHE = [
     (date(2026, 9, 20), "Revisione caldaia + controllo fumi (100 € contanti + 40 € carta)", 140, BLACK),
     (date(2026, 10, 3), "Assicurazione auto — rinnovo Prima/Triglav, pagamento unico", 467.76, BLACK),
-    (date(2026, 10, 5), "Lotta Club Seggiano — abbonamento SEMESTRALE 35×6 + quota iscrizione, una tantum: NIENTE rate mensili fino a marzo (previsto, ~20-30 €)", 235, GREENIT),
+    (date(2026, 10, 5), "Lotta Club Seggiano — abbonamento SEMESTRALE 25×6 (corretto da 35) + quota iscrizione, una tantum: NIENTE rate mensili fino a marzo (previsto, ~20-30 €). 3 allenamenti/settimana, stesso prezzo.", 175, GREENIT),
 ]
 for i, (d, voce, imp, font) in enumerate(SPESE_RIGHE):
     r = 4 + i
