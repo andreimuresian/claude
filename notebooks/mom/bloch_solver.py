@@ -136,37 +136,65 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None,
 
 
 # ---------------------------------------------------------------- eigenvalue
-def bloch_mode(cell, fk, Zs, beta0, tol=1e-9, maxit=25, seed=0, **kw):
-    """Find the complex Bloch wavenumber near beta0 with Z(beta) singular.
+def tl_test_vector(cell):
+    """A transmission-line-shaped test vector: v-directed current on the signal
+    conductor, returning on the grounds.
 
-    g(beta) = 1/(x^H Z^{-1} y) is analytic with zeros at the eigenvalues; we
-    drive it to zero with a secant (Muller-free) iteration.  One LU per step."""
-    rng = np.random.default_rng(seed)
-    Ne = len(cell["L"])
-    x = rng.standard_normal(Ne) + 1j*rng.standard_normal(Ne)
-    y = rng.standard_normal(Ne) + 1j*rng.standard_normal(Ne)
+    A RANDOM vector does not work.  The EFIE has a large loop (divergence-free)
+    near-null space whose singular values are O(w) and almost independent of
+    beta -- with sigma_Si = 2.5e-4 it pins sigma_min at ~4.7e-11 flat from
+    n = 0.5 to n = 232, so both sigma_min and a random-vector 1/(x^H Z^-1 y)
+    are blind to the transmission-line mode.  Projecting onto a charge-carrying,
+    v-directed current exposes it."""
+    cent = cell["cent"]; tp = cell["tp"]; tm = cell["tm"]
+    dv = cent[tp][:, 1] - cent[tm][:, 1]
+    du = cent[tp][:, 0] - cent[tm][:, 0]
+    dirv = dv/np.maximum(np.hypot(du, dv), 1e-30)
+    sgn = np.where(cell["region"][tp] == "sig", 1.0, -1.0)
+    return dirv*sgn*cell["L"]
+
+
+def bloch_mode(cell, fk, Zs, beta0, tol=1e-7, maxit=25, y=None, **kw):
+    """Complex Bloch wavenumber near beta0 with Z(beta) singular.
+
+    g(beta) = 1/(y^T Z^-1 y) is analytic with zeros at the eigenvalues; a
+    secant drives it to zero, one LU per step.  beta0 should be complex: the
+    CPW mode here sits BELOW the TM0 (n = 3.31) and TE0 (n = 2.54) surface-wave
+    indices, so low Floquet harmonics are open radiation channels and the mode
+    is leaky -- its wavenumber has a real negative imaginary part and there is
+    no root on the real axis to find."""
+    if y is None:
+        y = tl_test_vector(cell)
 
     def g(b):
         Z = assemble_periodic(cell, fk, Zs, b, **kw)
-        return 1.0/(x.conj() @ np.linalg.solve(Z, y))
+        return 1.0/(y @ np.linalg.solve(Z, y))
 
     b0 = complex(beta0)
-    b1 = b0*(1 + 1e-3)
+    b1 = b0*(1 + 3e-3)
     g0, g1 = g(b0), g(b1)
     hist = [(b0, g0), (b1, g1)]
+    best = (abs(g1), b1)
     for _ in range(maxit):
         if abs(g1 - g0) < 1e-300:
             break
-        b2 = b1 - g1*(b1 - b0)/(g1 - g0)          # secant
+        b2 = b1 - g1*(b1 - b0)/(g1 - g0)
         if not np.isfinite(b2):
             break
+        # keep the search inside the physical window: a leaky CPW mode has
+        # 1 < Re(n) < n_sw and modest loss, so reject wild secant excursions
+        n2 = b2/fk.k0
+        if not (0.5 < n2.real < 6.0 and -1.0 < n2.imag <= 1e-6):
+            b2 = b1 + 0.3*(b2 - b1)/abs(b2 - b1)*abs(b1)*0.05
         g2 = g(b2)
         hist.append((b2, g2))
+        if abs(g2) < best[0]:
+            best = (abs(g2), b2)
         if abs(b2 - b1) < tol*abs(b2):
             b1, g1 = b2, g2
             break
         b0, g0, b1, g1 = b1, g1, b2, g2
-    return b1, hist
+    return best[1], hist
 
 
 def mode_quantities(beta, P, f):

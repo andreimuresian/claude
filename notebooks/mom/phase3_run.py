@@ -44,8 +44,9 @@ def solve(row, h, etched, fk=None, n0=None, verbose=True):
         fk = kernel_for(row, du_max)
     t_kern = time.time() - t0
     if n0 is None:
-        n0 = float(row["nm_baseline_val"])
-    b0 = n0*fk.k0*(1 - 1e-3j)
+        # seed above the baseline and off the real axis: the mode is leaky
+        n0 = 2.30 - 0.02j
+    b0 = complex(n0)*fk.k0
     t0 = time.time()
     b, hist = bloch_mode(cell, fk, ZS_AU, b0)
     t_eig = time.time() - t0
