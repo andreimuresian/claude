@@ -2,11 +2,30 @@
 
 Unknowns: RWG surface-current coefficients on the metal footprint (Phase-1
 same-interface kernels G_A, G_q; lossy metal via a surface impedance Z_s).
-Ports: delta-gap discrete ports (signal<->ground) at both line ends; the 2-port
-S-parameters are extracted and reduced to per-metre R,L,C and attenuation by the
-standard ABCD transform.  All source/observation points are coplanar, so the
-1/rho triangle integrals are the closed-form edge sums verified in the scratch
-core (folded in here as _Ipot / _Ivec).
+All source/observation points are coplanar, so the 1/rho triangle integrals are
+the closed-form edge sums _Ipot / _Ivec (verified to ~1e-13 against quadrature).
+
+STATUS (Phase 2, 2026-09-22)
+----------------------------
+VALIDATED and kept:
+  * assemble()  -- the MPIE matrix.  Reciprocal to 1e-16.  A quasi-static
+    capacitance solve built on it reproduces the dataset baseline C to 4-10 %.
+  * _Ipot / _Ivec analytic coplanar integrals; singularity extraction with the
+    smooth remainder that captures the thin-film transition.
+  * Two bugs were found and fixed here and in mesh_generator: gmsh triangles
+    are re-wound CCW (they were flipping the sign of the analytic integrals on
+    ~half the mesh), and _Ipot floors its log argument (NaN when the field
+    point lands on a source vertex).
+
+ABANDONED (finite-line extraction is ill-posed for this validation):
+  * series_2port / launch_extract and the S->ABCD->RLGC path below.  The
+    N/N+1 lines are electrically short (~0.14 lambda_g) and unterminated, so
+    the driven field is a nearly-pure reactive standing wave with almost no
+    phase progression -- gamma/Z0 extraction is ill-conditioned.  A clean
+    traveling wave needs matched wave ports (a 2D eigenvalue sub-project, out
+    of scope), and the zero-thickness planar model cannot match the thick metal
+    (MTX up to ~14 um) of the 2D-FEM baseline.  These routines are retained for
+    reference only; they do NOT meet the Phase-2 tolerances.  See PROGRESS.md.
 """
 import warnings
 import numpy as np

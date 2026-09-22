@@ -138,18 +138,24 @@ core is verified but the RLGC/S extraction does not meet the gate tolerances.
   sign of the analytic integrals on ~half the triangles, corrupting the
   capacitance self-terms; (2) _Ipot NaN when the field point hits a source
   vertex (log of a rounding-negative).
-- Blockers (reported to user, awaiting direction):
-  * Full-wave S / modal extraction is ill-conditioned on the short (~0.14
-    lambda_g), unterminated N/N+1 lines: the field is a reactive standing wave
-    with almost no phase progression (CST gets a clean traveling wave only via
-    matched wave ports). nm/Z0 unstable.
-  * Quasi-static route (authorized fallback): C_base matches to ~10%, but
-    nm/Z0 come out 15-30% high (zero-thickness planar model vs thick metal
-    MTX~11um in the 2D-FEM baseline; C_air is the sensitive term), and the
-    differential dC has the right sign but is 2-6x too small (ratios 0.17-0.64)
-    -- fails V2.1 (3-5%) and V2.2 (factor-2).
-- CST discrete-port setup obtained from the user (S-param face port, 50 ohm,
-  signal-to-bridged-grounds at each end). Committed WIP at c290145.
+- DECISION (user, 2026-09-22): the finite-line extraction is mathematically
+  ill-posed for this validation and is ABANDONED. Do not iterate it further.
+  Reasons confirmed: (a) full-wave S / modal extraction is ill-conditioned on
+  the short (~0.14 lambda_g), unterminated N/N+1 lines -- the driven field is
+  a reactive standing wave with almost no phase progression (a clean traveling
+  wave needs matched wave ports, a 2D eigenvalue sub-project, out of scope);
+  (b) the zero-thickness planar model cannot match the thick metal (MTX up to
+  ~14um) of the 2D-FEM baseline; so quasi-static nm/Z0 run 15-30% high and the
+  differential dC, though correctly signed, is 2-16x too small (fails V2.1 3-5%
+  and V2.2 factor-2).
+- KEPT: the validated MoM core (assemble reciprocal to 1e-16; C_base match
+  4-10%; CCW winding fix; vertex-NaN fix; verified analytic integrals). The
+  abandoned extraction routines are retained in mom_solver.py for reference
+  and flagged as not meeting tolerance.
+- The user is writing phase2_report.md themselves (do NOT generate it). CST
+  discrete-port setup on file (S-param face port, 50 ohm, signal-to-bridged-
+  grounds at each end). STOPPED, awaiting the Phase 3 prompt. Do not start
+  Phase 3.
 
 ### 2026-09-21T14:30Z — Phase 1 corrections (external review)
 Addressed four points from a review of the Phase 1 deliverable; all six gates
