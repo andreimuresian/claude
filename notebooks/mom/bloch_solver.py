@@ -24,8 +24,84 @@ A Bloch mode is a beta with Z(beta) singular; we root-find on
 which is zero exactly at the eigenvalues, using one LU solve per evaluation.
 """
 import numpy as np
+from scipy import sparse
 from mom_solver import _Ipot, _Ivec, _G3, _W3, _edges_of, _gram
 from layered_greens import EPS0, MU0, C0
+
+
+def _static_blocks(cell, fk, near_fac, n_sharp):
+    """Everything in the near/self block that does NOT depend on beta.
+
+    The analytic coplanar integrals (_Ipot/_Ivec), the areas, the edge weights
+    and the sharp radial remainders are all pure geometry + kernel, so they are
+    built once per (cell, kernel) and reused for every Bloch iterate.  Only the
+    wrapped-edge phase varies, and it enters as exp(j beta P)^d with
+    d = sigma_m - sigma_n in {-1, 0, +1}; hence three sparse matrices.
+
+    This is the whole cost of an assembly -- with near_fac = 3 each triangle has
+    ~260 near partners, so the Python pair loop is ~50 s.  Caching it takes a
+    repeat assembly to a few seconds, which is what makes a secant search (and
+    gate V3.7) affordable."""
+    c = cell.get("_asm_cache")
+    key = (id(fk), near_fac, n_sharp)
+    if c is not None and c["key"] == key:
+        return c
+    nodes = cell["nodes"]; tris = cell["tris"]
+    cent = cell["cent"]; area = cell["area"]
+    Le = cell["L"]; sh_p = cell["shift_p"]; sh_m = cell["shift_m"]
+    Ne = len(Le); Nt = len(tris)
+    w = fk.w; jw = 1j*w
+
+    du = cent[:, 0][:, None] - cent[:, 0][None, :]
+    dv = cent[:, 1][:, None] - cent[:, 1][None, :]
+    D = np.hypot(du, dv)
+    hh = np.sqrt(area)
+    near = D <= near_fac*(hh[:, None] + hh[None, :])
+
+    tri_pts = nodes[tris]
+    ii, jj = np.where(np.triu(near))
+    rows = []; cols = []; vals = []; dsh = []
+    Gpot_near = sparse.lil_matrix((Nt, Nt), dtype=complex)
+    for i, j in zip(ii, jj):
+        Ti = tri_pts[i]; Tj = tri_pts[j]
+        Ai = area[i]; Aj = area[j]
+        ro = (_G3[:, 0][:, None]*(Ti[1]-Ti[0]) + _G3[:, 1][:, None]*(Ti[2]-Ti[0])
+              + Ti[0])
+        Ip = np.array([_Ipot(r, Tj) for r in ro])
+        Iv = np.array([_Ivec(r, Tj) for r in ro])
+        SPsing = Ai*np.sum(_W3*Ip)
+        reff = max(D[i, j], 0.35*np.sqrt(Ai+Aj))
+        gq = complex(fk.Gq_sharp(reff)) - fk.Kq/reff
+        gA = complex(fk.GA_sharp(reff)) - fk.KA/reff
+        SP = fk.Kq*SPsing + Ai*Aj*gq
+        Gpot_near[i, j] = SP/(Ai*Aj)
+        Gpot_near[j, i] = SP/(Ai*Aj)
+        em = _edges_of(cell, i); en = _edges_of(cell, j)
+        for (me, mv, ms) in em:
+            rmv = ro - nodes[mv]
+            cmv = cent[i] - nodes[mv]
+            sm = sh_p[me] if ms > 0 else sh_m[me]
+            for (ne, nv, ns) in en:
+                sn = sh_p[ne] if ns > 0 else sh_m[ne]
+                inner = Iv + (ro-nodes[nv])*Ip[:, None]
+                vs = Ai*np.sum(_W3*np.sum(rmv*inner, axis=1))
+                VP = fk.KA*vs + Ai*Aj*np.dot(cmv, cent[j]-nodes[nv])*gA
+                base = (jw*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP
+                        + (1.0/jw)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP)
+                rows.append(me); cols.append(ne); vals.append(base); dsh.append(sm-sn)
+                if i != j:
+                    rows.append(ne); cols.append(me); vals.append(base); dsh.append(sn-sm)
+    rows = np.asarray(rows); cols = np.asarray(cols)
+    vals = np.asarray(vals, complex); dsh = np.asarray(dsh)
+    S = {}
+    for d in (-1, 0, 1):
+        k = dsh == d
+        S[d] = sparse.coo_matrix((vals[k], (rows[k], cols[k])),
+                                 shape=(Ne, Ne)).tocsr()
+    c = dict(key=key, du=du, dv=dv, near=near, S=S,
+             Gpot_near=Gpot_near.tocsr(), gram=_gram(cell))
+    cell["_asm_cache"] = c
+    return c
 
 
 def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None,
@@ -48,16 +124,10 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None,
     Ne = len(Le); Nt = len(tris)
     if n_sharp is None:
         n_sharp = fk.n_sharp
-    w = fk.w
-    jw = 1j*w
+    jw = 1j*fk.w
     fk.set_beta(beta)
-
-    # ---- pairwise centroid offsets (in-cell) -----------------------------
-    du = cent[:, 0][:, None] - cent[:, 0][None, :]
-    dv = cent[:, 1][:, None] - cent[:, 1][None, :]
-    D = np.hypot(du, dv)
-    hh = np.sqrt(area)
-    near = D <= near_fac*(hh[:, None] + hh[None, :])
+    ca = _static_blocks(cell, fk, near_fac, n_sharp)
+    du = ca["du"]; dv = ca["dv"]; near = ca["near"]
 
     # sharp lattice sum at centroids (near/self zeroed: done analytically)
     GqS = np.zeros((Nt, Nt), complex)
@@ -95,43 +165,12 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None,
     Av = A_x.T @ GaS @ C_x + A_y.T @ GaS @ C_y
     Z = jw*Av + (1.0/jw)*Phi
 
-    # ---- near / self: accurate m=0 sharp singular integrals ---------------
-    Gpot = GqS.copy() if want_pot else None
-    tri_pts = nodes[tris]
-    ii, jj = np.where(np.triu(near))
-    for i, j in zip(ii, jj):
-        Ti = tri_pts[i]; Tj = tri_pts[j]
-        Ai = area[i]; Aj = area[j]
-        ro = (_G3[:, 0][:, None]*(Ti[1]-Ti[0]) + _G3[:, 1][:, None]*(Ti[2]-Ti[0])
-              + Ti[0])
-        Ip = np.array([_Ipot(r, Tj) for r in ro])
-        Iv = np.array([_Ivec(r, Tj) for r in ro])
-        SPsing = Ai*np.sum(_W3*Ip)
-        reff = max(D[i, j], 0.35*np.sqrt(Ai+Aj))
-        gq = complex(fk.Gq_sharp(reff)) - fk.Kq/reff
-        gA = complex(fk.GA_sharp(reff)) - fk.KA/reff
-        SP = fk.Kq*SPsing + Ai*Aj*gq
-        if want_pot:                       # accurate near/self scalar kernel
-            Gpot[i, j] = SP/(Ai*Aj)
-            Gpot[j, i] = SP/(Ai*Aj)
-        em = _edges_of(cell, i); en = _edges_of(cell, j)
-        for (me, mv, ms) in em:
-            rmv = ro - nodes[mv]
-            cmv = cent[i] - nodes[mv]
-            pm = eP**(sh_p[me] if ms > 0 else sh_m[me])
-            for (ne, nv, ns) in en:
-                pn = eP**(sh_p[ne] if ns > 0 else sh_m[ne])
-                inner = Iv + (ro-nodes[nv])*Ip[:, None]
-                vs = Ai*np.sum(_W3*np.sum(rmv*inner, axis=1))
-                VP = fk.KA*vs + Ai*Aj*np.dot(cmv, cent[j]-nodes[nv])*gA
-                base = (jw*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP
-                        + (1.0/jw)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP)
-                Z[me, ne] += base*pm/pn
-                if i != j:
-                    Z[ne, me] += base*pn/pm
-    Z += Zs*_gram(cell)
+    # ---- cached near / self block, with only the wrap phase applied -------
+    S = ca["S"]
+    Z += (S[0] + eP*S[1] + S[-1]/eP).toarray()
+    Z += Zs*ca["gram"]
     if want_pot:
-        return Z, C_b, Gpot
+        return Z, C_b, GqS + ca["Gpot_near"].toarray()
     return Z
 
 
