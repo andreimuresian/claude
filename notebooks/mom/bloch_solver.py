@@ -28,8 +28,18 @@ from mom_solver import _Ipot, _Ivec, _G3, _W3, _edges_of, _gram
 from layered_greens import EPS0, MU0, C0
 
 
-def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None):
-    """Dense complex Floquet MoM matrix Z(beta) for one unit cell."""
+def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None,
+                      want_pot=False):
+    """Dense complex Floquet MoM matrix Z(beta) for one unit cell.
+
+    The mixed-potential EFIE, with G_A and G_q the TRUE potential kernels that
+    layered_greens returns (G_A -> mu0/(4 pi R), G_q -> 1/(4 pi eps R)), is
+
+        Z_mn = j w <f_m, Int G_A f_n> + (1/j w) <div f_m, Int G_q div f_n>
+
+    from E_scat = -j w A - grad Phi with A = Int G_A J and Phi = Int G_q rho,
+    rho = -div J/(j w).  Both terms are then in ohms, matching Z_s * Gram.
+    """
     nodes = cell["nodes"]; tris = cell["tris"]
     cent = cell["cent"]; area = cell["area"]
     tp = cell["tp"]; tm = cell["tm"]; vp = cell["vp"]; vm = cell["vm"]
@@ -39,8 +49,7 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None):
     if n_sharp is None:
         n_sharp = fk.n_sharp
     w = fk.w
-    jwe = 1j*w*EPS0
-    jwm = 1j*w*MU0
+    jw = 1j*w
     fk.set_beta(beta)
 
     # ---- pairwise centroid offsets (in-cell) -----------------------------
@@ -84,9 +93,10 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None):
 
     Phi = A_b.T @ GqS @ C_b
     Av = A_x.T @ GaS @ C_x + A_y.T @ GaS @ C_y
-    Z = jwm*Av - (1.0/jwe)*Phi
+    Z = jw*Av + (1.0/jw)*Phi
 
     # ---- near / self: accurate m=0 sharp singular integrals ---------------
+    Gpot = GqS.copy() if want_pot else None
     tri_pts = nodes[tris]
     ii, jj = np.where(np.triu(near))
     for i, j in zip(ii, jj):
@@ -101,6 +111,9 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None):
         gq = complex(fk.Gq_sharp(reff)) - fk.Kq/reff
         gA = complex(fk.GA_sharp(reff)) - fk.KA/reff
         SP = fk.Kq*SPsing + Ai*Aj*gq
+        if want_pot:                       # accurate near/self scalar kernel
+            Gpot[i, j] = SP/(Ai*Aj)
+            Gpot[j, i] = SP/(Ai*Aj)
         em = _edges_of(cell, i); en = _edges_of(cell, j)
         for (me, mv, ms) in em:
             rmv = ro - nodes[mv]
@@ -111,12 +124,14 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None):
                 inner = Iv + (ro-nodes[nv])*Ip[:, None]
                 vs = Ai*np.sum(_W3*np.sum(rmv*inner, axis=1))
                 VP = fk.KA*vs + Ai*Aj*np.dot(cmv, cent[j]-nodes[nv])*gA
-                base = (jwm*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP
-                        - (1.0/jwe)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP)
+                base = (jw*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP
+                        + (1.0/jw)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP)
                 Z[me, ne] += base*pm/pn
                 if i != j:
                     Z[ne, me] += base*pn/pm
     Z += Zs*_gram(cell)
+    if want_pot:
+        return Z, C_b, Gpot
     return Z
 
 
@@ -160,3 +175,30 @@ def mode_quantities(beta, P, f):
     nm = beta.real*C0/w
     alpha_dBcm = abs(beta.imag)*8.686/100.0
     return nm, alpha_dBcm
+
+
+# ------------------------------------------------------------------ RLGC
+def line_rlgc(cell, fk, Zs, beta, **kw):
+    """Quasi-TEM (L, C, Z0) of the Bloch mode from its own eigenvector.
+
+    The charge per triangle is  q_t = A_t div J_t = (C_b x)_t  (up to the
+    common -1/(j w) that cancels in Q/V), the potential is Phi = G_q,per q with
+    the near/self block replaced by the analytic double integral, and
+        C = Q'/V,   Q' = sum_signal q_t / P,   V = <Phi>_sig - <Phi>_gnd.
+    Continuity (-j beta I = -j w Q') then fixes Z0 = beta/(w C) and
+    L = Z0 beta/w, so only one extraction is needed, not two."""
+    Z, C_b, Gpot = assemble_periodic(cell, fk, Zs, beta, want_pot=True, **kw)
+    # eigenvector: smallest singular vector of Z(beta)
+    _, _, Vh = np.linalg.svd(Z)
+    x = Vh[-1].conj()
+    q = C_b @ x
+    phi = Gpot @ q
+    reg = cell["region"]; A = cell["area"]
+    sig = reg == "sig"; gnd = ~sig
+    V = (phi[sig] @ A[sig])/A[sig].sum() - (phi[gnd] @ A[gnd])/A[gnd].sum()
+    Qp = q[sig].sum()/cell["Lz"]
+    C = Qp/V
+    w = fk.w
+    Z0 = beta/(w*C)
+    L = Z0*beta/w
+    return dict(C=C, L=L, Z0=Z0, x=x)

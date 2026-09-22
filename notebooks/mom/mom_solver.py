@@ -99,14 +99,23 @@ class Kernel:
 
 # ---------- MPIE matrix -----------------------------------------------------
 def assemble(rwg, kern, Zs, near_fac=3.0):
-    """Dense complex MoM matrix Z (Ne x Ne)."""
+    """Dense complex MoM matrix Z (Ne x Ne).
+
+    The mixed-potential EFIE, with G_A and G_q the TRUE potential kernels that
+    layered_greens returns (G_A -> mu0/(4 pi R), G_q -> 1/(4 pi eps R)), is
+
+        Z_mn = j w <f_m, Int G_A f_n> + (1/j w) <div f_m, Int G_q div f_n>
+
+    from E_scat = -j w A - grad Phi with A = Int G_A J and Phi = Int G_q rho,
+    rho = -div J/(j w).  Both terms are then in ohms, matching Z_s * Gram.
+    """
     nodes = rwg["nodes"]; tris = rwg["tris"]
     cent = rwg["cent"]; area = rwg["area"]
     edges = rwg["edges"]; tp = rwg["tp"]; tm = rwg["tm"]
     vp = rwg["vp"]; vm = rwg["vm"]; Le = rwg["L"]
     Ne = len(edges); Nt = len(tris)
     w = kern.w
-    jwe = 1j*w*EPS0; jwm = 1j*w*MU0
+    jw = 1j*w
 
     # --- centroid interaction matrices (far), self/near zeroed -------------
     dx = cent[:, 0][:, None]-cent[:, 0][None, :]
@@ -134,7 +143,7 @@ def assemble(rwg, kern, Zs, near_fac=3.0):
     # far matrix
     Phi = Bp.T @ Gq_cc @ Bp                      # scalar-potential (charge)
     Av = Wx.T @ GA_cc @ Wx + Wy.T @ GA_cc @ Wy   # vector-potential
-    Z = jwm*Av - (1.0/jwe)*Phi
+    Z = jw*Av + (1.0/jw)*Phi
 
     # --- near / self full accurate value (these pairs were zeroed above) ---
     # SP_full  = Kq * int_Ti int_Tj 1/rho  +  Ai Aj * g_q(rho_eff)   (g = G-K/rho)
@@ -161,8 +170,8 @@ def assemble(rwg, kern, Zs, near_fac=3.0):
                 inner = Iv + (ro-nodes[nv])*Ip[:, None]
                 vsing = Ai*np.sum(_W3*np.sum(rmv*inner, axis=1))
                 VP_full = kern.KA*vsing + Ai*Aj*np.dot(cmv, cent[j]-nodes[nv])*gA
-                addZ = (jwm*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP_full
-                        - (1.0/jwe)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP_full)
+                addZ = (jw*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP_full
+                        + (1.0/jw)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP_full)
                 Z[me, ne] += addZ
                 if i != j:
                     Z[ne, me] += addZ
