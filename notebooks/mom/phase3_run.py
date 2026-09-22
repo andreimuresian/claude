@@ -11,7 +11,7 @@ import pandas as pd
 import stack_params as sp
 import mesh_generator as mg
 from floquet_greens import FloquetKernel
-from bloch_solver import assemble_periodic, bloch_mode
+from bloch_solver import assemble_periodic, bloch_mode, tl_test_vector
 from layered_greens import C0
 
 ZS_AU = sp.RS_AU*(1 + 1j)          # good-conductor surface impedance
@@ -44,8 +44,21 @@ def solve(row, h, etched, fk=None, n0=None, verbose=True):
         fk = kernel_for(row, du_max)
     t_kern = time.time() - t0
     if n0 is None:
-        # seed above the baseline and off the real axis: the mode is leaky
-        n0 = 2.30 - 0.02j
+        # Self-contained bracketing: scan |g| along real n with the physical
+        # test vector and start the complex secant at the dip.  No dataset
+        # value is used as a seed, and the converged root does not depend on
+        # it in any case.  Cheap because the near-field block is cached after
+        # the first assembly.
+        y = tl_test_vector(cell)
+        ns = np.linspace(1.6, 3.4, 7)
+        gs = []
+        for n in ns:
+            Zt = assemble_periodic(cell, fk, ZS_AU, n*fk.k0)
+            gs.append(abs(1.0/(y @ np.linalg.solve(Zt, y))))
+        n0 = ns[int(np.argmin(gs))] - 0.02j
+        if verbose:
+            print("      scan |g|: " + " ".join(f"{n:.2f}:{g:.1e}"
+                                                for n, g in zip(ns, gs)))
     b0 = complex(n0)*fk.k0
     t0 = time.time()
     b, hist = bloch_mode(cell, fk, ZS_AU, b0)
