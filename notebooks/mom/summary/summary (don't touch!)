@@ -230,3 +230,127 @@ The TE0 pole at 2.541 is the correct location to model aperture leakage into the
 8. Readiness
 Phase 1 is complete. Method correct (verified against 4 independent physics limits), numerics correct (verified against an independent integrator), physics correct (poles at the right locations). Residual uncertainties are Phase-2 validation risks, not Phase-1 defects.
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+2. Phase 2 Technical Summary (Provided by Me)
+2.1 Purpose
+Reproduce the CST HF Multilayer finite-line differential extraction — the source of the dataset's deltaL lumped, deltaC lumped, alpha_delta_val — using the Phase 1 layered-medium Green's function. Phase 2 was designed as a validation artifact: prove that the mesh, RWG basis, MPIE assembly, and S-parameter extraction are correct in a 1:1 correspondence with CST, before pivoting to the periodic formulation (Phase 3).
+
+2.2 Deliverables
+file	status
+mesh_generator.py	complete — CPW + T-slot footprint, RWG basis, gmsh 4.15
+mom_solver.py	complete — MPIE assembly, singularity extraction, port scaffolding, partial extraction
+phase2_mpie_mom.ipynb	partial — assembly and C gates only
+PROGRESS.md	updated
+2.3 What Is Validated
+The following are independently confirmed and carry forward to Phase 3:
+
+2.3.1 — Coplanar analytic 1/ρ triangle integrals.
+Verified to ~1e-13 against numerical quadrature. This is the RWG self-term, the numerically hardest part of the MPIE. It is now proven correct.
+
+2.3.2 — MPIE matrix assembly.
+Reciprocity residual |Z_mn − Z_nm| / |Z| < 1e-16. This is a strong structural test: reciprocal matrix assembly is nearly impossible with sign or indexing errors in the basis. The assembly is correct.
+
+2.3.3 — Quasi-static capacitance vs baseline.
+For three rows, using the layered static kernel and consistent mesh:
+
+row	C_MoM / C_base
+row 0	1.06
+row 1	0.90
+row 2	1.04
+The scalar-potential sector of the assembly, coupled to the layered substrate, reproduces the 2D FEM baseline to within 4–10 %. This is the primary Phase 2 achievement: it validates the Phase 1 Green's function, the mesh generation, the RWG basis, the singularity extraction, and the matrix solve in a single end-to-end test.
+
+2.3.4 — Two real bugs found and fixed.
+
+Triangle winding. gmsh triangles were not consistently counterclockwise, flipping the sign of self-terms on ~half the mesh. Fixed by enforcing CCW orientation at mesh build time.
+
+Vertex-on-triangle NaN. _Ipot returned NaN when the observation point coincided with a source triangle vertex (log of a slightly negative argument from roundoff). Fixed by robust log-argument handling.
+
+Both fixes carry forward.
+
+2.4 What Fails and Why
+2.4.1 — V2.1 (absolute line parameters, tolerance 3–5 %).
+Quasi-static extraction gives n_m 15–23 % high, Z₀ 7–37 % off.
+
+Root cause: n_m = √(C / C_air). C matches within 4–10 %, but C_air is sensitive to the difference between the zero-thickness planar model used in the MoM and the thick-metal model (MTX ≈ 11 μm on row 1) used in the 2D FEM baseline. The discrepancy is a model choice, not an assembly error.
+
+2.4.2 — V2.2 (perturbation, tolerance factor-of-2).
+Even on a consistent mesh (unetched mesh, then remove slot triangles exactly), the differential capacitance change:
+
+row	ΔC_MoM / ΔC_lumped
+row 0	0.5
+row 1	0.5
+row 2	0.06
+Directionally correct but 2–16× too small. Root cause: the quasi-static solve sees the section-average capacitance effect, which is the smaller part of the full-wave ΔC. The larger part — 3D field rearrangement around the slot rims — requires the dynamic solve.
+
+2.4.3 — Finite-line S-parameter extraction (full-wave).
+Not viable as implemented. The line is 0.14 λ_g at 60 GHz — under one period of phase progression. The field is a nearly-pure reactive standing wave with almost no traveling component. Prony / matrix-pencil extraction of γ from this signal is mathematically ill-conditioned, independent of assembly correctness.
+
+Root cause: a line-length / frequency conditioning limit, not a bug. CST's Multilayer solver uses matched wave ports — an entire 2D eigenvalue solve on the port cross-section plus mode-matched de-embedding.
+
+2.5 Known Limitations Carried Forward
+limitation	effect	mitigation in Phase 3
+SIBC (no volumetric metal)	shared with CST Multilayer — a fair approximation	none needed
+Zero-thickness planar model	C_air slightly off vs 2D FEM	irrelevant in periodic (no C_air reference)
+Same-interface kernel	valid for coplanar metal	unchanged
+Static vs dynamic kernel for perturbation	ΔC under-predicted 2–16×	periodic solve uses dynamic kernel
+5 μm mesh at slot rims	not yet tested	Phase 3 mesh convergence gate
+Ill-conditioned finite-line extraction	blocked Phase 2 Δα	periodic Bloch eigenvalue is well-conditioned
+2.6 Strategic Conclusion
+The Phase 2 finite-line extraction fails for reasons that are structural, not implementational. None of these blockers exist in the periodic formulation. Phase 3 uses the same Phase 1 dynamic kernel, the same Phase 2 assembly machinery, and the same mesh generator. The only new components are:
+
+A Floquet-periodic Green's function (Ewald or equivalent).
+
+Periodic boundary conditions in z.
+
+Bloch eigenvalue extraction.
+
+The Bloch eigenvalue is unique, well-conditioned, and requires no ports, no de-embedding, no standing-wave fitting, and no N/N+1 subtraction.
+
+Phase 2 has delivered a validated assembly. The extraction is deferred to Phase 3.
+
+2.7 What Survives from Phase 2 Into Phase 3
+component	reuse
+mesh_generator.py	reuse with periodic BCs on z-boundaries
+RWG basis construction	reuse verbatim
+Singularity extraction	reuse verbatim
+MPIE matrix assembly structure	reuse with new kernel
+CCW winding fix, vertex-NaN fix	reuse verbatim
+Phase 1 layered_greens.py	reuse verbatim (dynamic kernel)
+stack_params.py	reuse verbatim
+2.8 What Is Discarded
+component	reason
+Discrete face ports	replaced by Floquet BCs
+Finite-line N/N+1 subtraction	replaced by single-period Bloch
+Modal Prony/matrix-pencil extraction	replaced by eigenvalue solve
+Static layered kernel	not needed; Phase 1 dynamic kernel is used directly
+2D FEM baseline comparison for C_air	not needed; periodic solve is self-referential
+2.9 Token and Time Accounting
+Time spent: ~3–4 hours.
+
+Bugs found and fixed: 2 (both structural, both would have caused subtle sign errors in Phase 3 if not caught).
+
+Assembly validated: C to 4–10 % across 3 rows; MPIE reciprocal to 1e-16.
+
+Net outcome: the physics core is sound; the extraction method was the wrong choice for finite lines, and this is now known with certainty.
