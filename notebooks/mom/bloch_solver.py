@@ -28,7 +28,7 @@ from mom_solver import _Ipot, _Ivec, _G3, _W3, _edges_of, _gram
 from layered_greens import EPS0, MU0, C0
 
 
-def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=4):
+def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=None):
     """Dense complex Floquet MoM matrix Z(beta) for one unit cell."""
     nodes = cell["nodes"]; tris = cell["tris"]
     cent = cell["cent"]; area = cell["area"]
@@ -36,6 +36,8 @@ def assemble_periodic(cell, fk, Zs, beta, near_fac=3.0, n_sharp=4):
     Le = cell["L"]; sh_p = cell["shift_p"]; sh_m = cell["shift_m"]
     P = cell["Lz"]
     Ne = len(Le); Nt = len(tris)
+    if n_sharp is None:
+        n_sharp = fk.n_sharp
     w = fk.w
     jwe = 1j*w*EPS0
     jwm = 1j*w*MU0

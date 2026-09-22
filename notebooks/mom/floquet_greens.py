@@ -30,6 +30,45 @@ surface waves and falls off only as 1/sqrt(rho), so the sum is still drifting at
 Choosing E*P ~ 6 puts both series at a handful of terms.  The split point E is
 arbitrary, so invariance of G_p under changing E is the primary correctness
 test (gate V3.1b).
+
+SURFACE-WAVE RESIDUE EXTRACTION
+-------------------------------
+A plain Gaussian split does NOT work here.  The sharp weight 1-exp(-k^2/4E^2)
+is ~ k_p^2/(4E^2) at the surface-wave pole -- 0.5 % for E*P = 6 -- so the sharp
+part keeps half a percent of the surface wave, hence a residual 1/sqrt(rho)
+tail, and its real-space lattice sum never converges (n_sharp 4 -> 8 moved G_A
+by 1040 %).  Raising E only trades that for an unaffordable harmonic count.
+
+So the poles are removed BEFORE splitting.  Each pole is a zero k_p of the
+kernel denominator (found in the complex plane; Im k_p < 0 from the Si loss):
+
+    G~(k) = N / D(k),   S_p = 2 k_p N / D'(k_p),
+    G~_reg(k) = G~(k) - sum_p S_p/(k^2 - k_p^2)
+
+which is numerically flat through the pole (|G-pole| constant to 5 decades of
+detuning).  G~_reg is Ewald-split as before; both halves now decay properly.
+
+The removed part is put back in closed form.  Its real-space image is
+-(j S_p/4) H0^(2)(k_p rho), and its Floquet lattice sum is the classical
+1D-periodic 2D-Helmholtz Ewald pair, derived from
+
+    I_n(u) = (1/pi) Int_0^inf cos(k_u u)/(k_u^2 + beta_n^2 - k_p^2) dk_u
+           = exp(-a_n |u|)/(2 a_n),   a_n = sqrt(beta_n^2 - k_p^2), Re a_n > 0
+
+by splitting exp(-a|u|)/(2a) = (1/2 sqrt(pi)) Int_0^inf t^-1/2 exp(-a^2 t
+- u^2/4t) dt at t = 1/(4E^2):
+
+  spectral (t > 1/4E^2)   T1 = 1/(4P) sum_n e^{j beta_n v}/a_n
+                               * [ e^{ a_n u} erfc(a_n/2E + E u)
+                                 + e^{-a_n u} erfc(a_n/2E - E u) ]
+  spatial  (t < 1/4E^2)   T2 = 1/(4 pi) sum_m e^{j beta m P}
+                               * sum_q (k_p/2E)^{2q}/q! E_{q+1}(R_m^2 E^2)
+
+T1 is Gaussian-convergent in n and T2 Gaussian-convergent in m, so both fold
+into the existing machinery at no extra cost: T1 is added to the harmonic
+coefficients I_n, T2 (radial) is added to the sharp radial table.  Verified
+against a 8e5-term brute-force harmonic sum to 1e-16, invariant over E*P in
+[3, 24].
 """
 import warnings
 import numpy as np
@@ -73,6 +112,26 @@ def _T_of(a):
     return _T_TAB(np.log(a))
 
 
+def _sqrt_rp(z):
+    """sqrt with Re >= 0 (the decaying / outgoing branch for exp(-a|u|))."""
+    r = np.sqrt(np.asarray(z, complex))
+    return np.where(r.real < 0, -r, r)
+
+
+def _wexp(a, E, u, sign):
+    """exp(+-a u) * erfc(a/(2E) +- E u), evaluated in the numerically stable
+    scaled form  exp(-a^2/4E^2 - E^2 u^2) w(j z)  (w = Faddeeva).  For sign=-1
+    and Re z < 0 the erfc saturates at 2, so use erfc(z) = 2 - erfc(-z)."""
+    z = a/(2*E) + sign*E*u
+    pre = np.exp(-(a*a)/(4*E*E) - (E*u)**2)
+    if sign > 0:
+        return pre*special.wofz(1j*z)
+    ok = z.real >= 0
+    return np.where(ok,
+                    pre*special.wofz(1j*np.where(ok, z, 0.0)),
+                    2*np.exp(-a*u) - pre*special.wofz(-1j*np.where(ok, 0.0, z)))
+
+
 class FloquetKernel:
     """Ewald-split Floquet kernel for one stack, one period, one polarisation
     pair (scalar G_q and vector G_A are built together).
@@ -85,13 +144,15 @@ class FloquetKernel:
     """
 
     def __init__(self, t_LN, P=200e-6, f=sp.F0, EP=6.0, n_rad=140,
-                 nk=1200, kfac=8.0):
+                 nk=0, kfac=8.0, du_max=1.5e-3, n_sharp_max=16):
         self.st = Stack(sp.EPS_AIR, sp.device_layers(t_LN=t_LN, lossy=True),
                         sp.EPS_AIR, f=f)
         self.f = f
         self.w = 2*np.pi*f
         self.k0 = self.w/C0
         self.P = P
+        self.du_max = du_max
+        self.n_sharp_max = n_sharp_max
         self.E = EP/P                       # Ewald splitting parameter [1/m]
         # provisional; raised in _measure_poles so the surface-wave poles
         # always sit inside the soft (spectral) part -- if they fall in the
@@ -102,50 +163,139 @@ class FloquetKernel:
         self.CA = complex(self.st._asym("TE"))
         self.Kq = self.Cq/(2*np.pi)         # G -> K/rho as rho->0
         self.KA = self.CA/(2*np.pi)
-        self.nk = nk
         self.kmax = kfac*self.E             # Gaussian kills the integrand here
-        self._measure_poles()
-        self.E = max(self.E, 3.0*max(self.pole_k))
-        self.kmax = kfac*self.E
-        # sharp part falls off only ~1/(4 E^2 rho^3): few images when E*P
-        # is large, more when it is small
-        self.n_sharp = 1 if self.E*self.P > 20 else 4
+        self._residues()
+        # with the poles extracted the sharp part is genuinely high-pass; what
+        # is left of it decays as ~1/(4 E^2 rho^3), so a few images suffice
+        self.n_sharp = 6
+        # the radial table has to reach the farthest image actually asked for,
+        # otherwise Gq_sharp clips and the image sum picks up a constant
+        self.rho_max = np.hypot(du_max, (self.n_sharp_max + 0.5)*P)
+        # set_beta's grid only has to resolve cos(ku*du) out to du_max; the
+        # radial table sizes its own (larger) grid from rho_max
+        self.nk = nk if nk else self._nk_for(du_max)
         self._build_radial(n_rad)
         self.beta = None
 
-    def _measure_poles(self):
-        """Locate the surface-wave poles on the real krho axis and measure their
-        width.  With sigma_Si = 2.5e-4 the TM0 pole is extremely sharp (relative
-        FWHM ~1e-5); any quadrature grid that does not resolve it silently drops
-        ~40 % of the spectral integral, and because a uniform grid's spacing
-        scales with the Ewald parameter that shows up as fake E-dependence."""
-        self.pole_k, self.pole_w = [], []
-        for npole in self.st._poles():
-            kp = npole*self.k0
-            ks = np.linspace(kp*0.99, kp*1.01, 40001)
-            v = np.abs(self.st.Gq_spectral(ks)) + np.abs(self.st.GA_spectral(ks))
-            i = int(v.argmax())
-            hi = np.where(v > v[i]/2)[0]
-            w = (ks[hi[-1]]-ks[hi[0]]) if len(hi) > 1 else 1e-3*kp
-            self.pole_k.append(ks[i])
-            self.pole_w.append(max(w, 1e-9*kp))
+    # ---------------- surface-wave poles: location, residue, removal -------
+    def _den(self, kr, kind):
+        return self.st._eta_up(kr, kind) + self.st._eta_dn(kr, kind)
 
-    def _ku_grid(self, bn):
-        """Quadrature grid in ku for one harmonic: a coarse base plus a
-        geometric cluster around every surface-wave pole that the path crosses
-        (krho = sqrt(ku^2+bn^2) = k_pole).  Only low harmonics cross at all."""
-        g = [np.linspace(0.0, self.kmax, self.nk)]
-        b2 = (bn*bn).real if np.iscomplexobj(bn) else bn*bn
-        for kp, wp in zip(self.pole_k, self.pole_w):
-            if kp*kp <= b2:
-                continue                      # pole not on this path
-            kup = np.sqrt(kp*kp - b2)
-            wku = wp*kp/max(kup, 1e-6)        # width mapped into ku
-            d = wku*np.concatenate([-np.logspace(4, -3, 220),
-                                    np.logspace(-3, 4, 220)])
-            g.append(np.clip(kup + d, 0.0, self.kmax))
-        ku = np.unique(np.concatenate(g))
-        return ku
+    def _refine_pole(self, n0, kind):
+        """Complex secant on the kernel denominator, started from the real-axis
+        scan value.  Loss pushes the root just below the real axis."""
+        z0 = complex(n0*self.k0)
+        z1 = z0*(1 - 1e-6j)
+        f0, f1 = self._den(z0, kind), self._den(z1, kind)
+        for _ in range(60):
+            if abs(f1 - f0) == 0.0:
+                break
+            z2 = z1 - f1*(z1 - z0)/(f1 - f0)
+            f2 = self._den(z2, kind)
+            if abs(z2 - z1) < 1e-14*abs(z2):
+                z1, f1 = z2, f2
+                break
+            z0, f0, z1, f1 = z1, f1, z2, f2
+        return z1
+
+    def _residues(self):
+        """Poles k_p and even-form residues S_p with G~ ~ S_p/(k^2 - k_p^2).
+
+        G~ = N/D, so the simple residue is R_p = N/D'(k_p) and, because the
+        kernel is even in k, the pole pair +-k_p is captured by
+        S_p/(k^2-k_p^2) with S_p = 2 k_p R_p.  D' by 5-point central
+        difference, h = 1e-4 |k_p| (the denominator is analytic, so this is
+        accurate to ~1e-12 relative)."""
+        num = {"TM": 1.0/(1j*EPS0), "TE": MU0/1j}
+        self.poles = {"TM": [], "TE": []}
+        self.pole_k, self.pole_w = [], []
+        for kind in ("TM", "TE"):
+            for n0 in self.st.surface_waves(kind):
+                kp = self._refine_pole(n0, kind)
+                h = 1e-4*abs(kp)
+                d = (-self._den(kp + 2*h, kind) + 8*self._den(kp + h, kind)
+                     - 8*self._den(kp - h, kind) + self._den(kp - 2*h, kind))/(12*h)
+                self.poles[kind].append((kp, 2*kp*num[kind]/d))
+                self.pole_k.append(kp.real)
+                self.pole_w.append(max(2*abs(kp.imag), 1e-9*abs(kp)))
+
+    def _spec_reg(self, kr, kind):
+        """Pole-free spectral kernel."""
+        g = (self.st.Gq_spectral(kr) if kind == "TM"
+             else self.st.GA_spectral(kr))
+        for kp, S in self.poles[kind]:
+            g = g - S/(kr*kr - kp*kp)
+        return g
+
+    def _reg_real(self, rho):
+        """Real-space regularised kernel, obtained by Sommerfeld-inverting
+        G~_reg DIRECTLY rather than as G_full - pole.
+
+        Two reasons.  (i) Accuracy: on the real axis the pole contributes
+        1/(k^2-k_p^2) ~ 1/(2 k_p) * 1/(k - Re k_p + j Im k_p); its real part is
+        odd about the pole and integrates as a principal value, while its whole
+        resonant content -- the surface wave -- is a Lorentzian of relative
+        width |Im k_p|/Re k_p ~ 4e-6.  Phase 1 put the pole on a quad segment
+        ENDPOINT, which captures the odd part but not the Lorentzian, so
+        G_full's far field has the right real part and a surface wave that is
+        largely missing (checked at 20/50/100 mm).  G~_reg has no pole at all,
+        so the same contour integrator is accurate on it.  (ii) Cancellation:
+        beyond ~1 mm the surface wave dominates G_full, so G_full - pole is a
+        difference of near-equal numbers.
+
+        The asymptote is unchanged: the subtracted term falls as S/k^2, faster
+        than C/k, so rem(k) = G~_reg(k) - C/k still vanishes correctly."""
+        rho = np.asarray(rho, float)
+        gq = np.array([self.st._sommerfeld(r, lambda k: self._spec_reg(k, "TM"),
+                                           self.Cq) for r in rho])
+        ga = np.array([self.st._sommerfeld(r, lambda k: self._spec_reg(k, "TE"),
+                                           self.CA) for r in rho])
+        return gq, ga
+
+    def _pole_real(self, rho, kind):
+        """Real-space image of the removed part: sum_p -(j S_p/4) H0^(2)(k_p rho)
+        (verified against a direct Hankel-transform quadrature)."""
+        out = np.zeros(np.shape(rho), complex)
+        for kp, S in self.poles[kind]:
+            out = out - 0.25j*S*special.hankel2(0, kp*rho)
+        return out
+
+    def _pole_spatial(self, rho, kind, nq=8):
+        """Ewald spatial half of the pole lattice sum, m = 0 term (radial).
+        sum_q (k_p/2E)^{2q}/q! E_{q+1}(rho^2 E^2) / (4 pi), times S_p."""
+        x = (np.asarray(rho, float)*self.E)**2
+        out = np.zeros(x.shape, complex)
+        for kp, S in self.poles[kind]:
+            s = np.zeros(x.shape, complex)
+            for q in range(nq):
+                c = (kp/(2*self.E))**(2*q)/special.factorial(q)
+                if abs(c) < 1e-18 and q > 1:
+                    break
+                s = s + c*special.expn(q + 1, x)
+            out = out + S*s/(4*np.pi)
+        return out
+
+    def _pole_harm(self, du, bn, kind):
+        """Ewald spectral half: the coefficient the pole adds to I_n(du)."""
+        u = np.abs(np.asarray(du, float))
+        out = np.zeros(u.shape, complex)
+        for kp, S in self.poles[kind]:
+            a = _sqrt_rp(bn*bn - kp*kp)
+            out = out + S*(_wexp(a, self.E, u, +1)
+                           + _wexp(a, self.E, u, -1))/(4*a)
+        return out
+
+    def _ku_grid(self, bn=0.0):
+        """Quadrature grid in ku.  The poles have been extracted, so the
+        integrand is smooth and a uniform grid is right; the only requirement
+        is that it resolve the cos(ku du) / J0(k rho) oscillation out to the
+        largest offset the kernel is evaluated at.  Trapezoid error there is
+        ~(dk rho_max)^2/12, so dk rho_max <~ 0.03 buys ~1e-4."""
+        return np.linspace(0.0, self.kmax, self.nk)
+
+    def _nk_for(self, r_max):
+        n = int(np.ceil(self.kmax*r_max/0.03)) + 1
+        return int(np.clip(n, 2000, 120000))
 
     # ---------- soft radial part (for the sharp = G - soft split) ----------
     def _soft_radial(self, rho):
@@ -172,35 +322,37 @@ class FloquetKernel:
         return out[0], out[1]
 
     def _build_radial(self, n_rad):
-        """Tabulate the SHARP radial kernels  G_sharp = G_full - G_soft.
+        """Tabulate the SHARP radial kernels.
 
-        The soft part is Gaussian-damped in krho, so it is a short, well behaved
-        integral: one pole-resolved grid applied to every rho at once.  The
-        sharp part, however, carries the whole high-krho content, and that
-        cannot be reconstructed from an asymptote here: the LN film is only
-        ~0.3 um thick, so G~ does not reach its C/krho asymptote until
-        krho >> 1/t_LN ~ 3e6, far beyond kmax = 8E.  We therefore take G_full
-        from the Phase-1 Sommerfeld routine (which handles that tail with its
-        Hankel-split contour) and subtract the soft part."""
-        rho_max = max((self.n_sharp + 1.5)*self.P, 20.0/self.E)
-        rho = np.logspace(np.log10(2e-8), np.log10(rho_max), n_rad)
-        GA_f, Gq_f = self.st.table(rho)          # Phase-1 validated full kernel
+        sharp = [G_reg(rho) - soft_reg(rho)] + pole_spatial(rho)
 
-        # --- soft radial, vectorised over rho on one pole-resolved grid ------
-        kk = self._ku_grid(0.0)
-        kk = kk[kk > 0]
+        G_reg is the full Phase-1 kernel with the surface-wave Hankel terms
+        removed, soft_reg its Gaussian-damped part, and pole_spatial the m = 0
+        term of the pole lattice sum's spatial half.  The first bracket now
+        decays as ~1/(4 E^2 rho^3) with no surface-wave tail, the second as
+        exp(-rho^2 E^2), so the real-space image sum converges.
+
+        G_reg is taken from the Phase-1 Sommerfeld routine (validated, and it
+        handles the high-krho tail with its Hankel-split contour) rather than
+        from an asymptote: the LN film is only ~0.3 um, so G~ does not reach
+        C/krho until krho >> 1/t_LN ~ 3e6, far beyond kmax = 8E."""
+        rho = np.logspace(np.log10(2e-8), np.log10(self.rho_max), n_rad)
+        Gq_r, GA_r = self._reg_real(rho)
+
+        # --- soft radial of the regularised kernel, vectorised over rho -----
+        kk = np.linspace(0.0, self.kmax, self._nk_for(self.rho_max))[1:]
         wq = np.empty_like(kk)
         wq[1:-1] = 0.5*(kk[2:]-kk[:-2])
         wq[0] = 0.5*(kk[1]-kk[0]); wq[-1] = 0.5*(kk[-1]-kk[-2])
         gauss = np.exp(-kk*kk/(4*self.E**2))
-        wq_q = self.st.Gq_spectral(kk)*gauss*kk*wq/(2*np.pi)
-        wq_a = self.st.GA_spectral(kk)*gauss*kk*wq/(2*np.pi)
+        wq_q = self._spec_reg(kk, "TM")*gauss*kk*wq/(2*np.pi)
+        wq_a = self._spec_reg(kk, "TE")*gauss*kk*wq/(2*np.pi)
         J = special.j0(np.outer(rho, kk))
         softq = J @ wq_q
         softa = J @ wq_a
 
-        shq = Gq_f - softq
-        sha = GA_f - softa
+        shq = Gq_r - softq + self._pole_spatial(rho, "TM")
+        sha = GA_r - softa + self._pole_spatial(rho, "TE")
         lr = np.log(rho)
         self.rho_tab = rho
         self._soft_rad = (softq, softa)
@@ -228,7 +380,8 @@ class FloquetKernel:
         self.nharm = nharm
         if du_grid is None:
             du_grid = np.concatenate([[0.0],
-                                      np.logspace(np.log10(2e-7), np.log10(6e-4), 180)])
+                                      np.logspace(np.log10(2e-7),
+                                                  np.log10(self.du_max), 220)])
         self.du_grid = du_grid
         ns = np.arange(-nharm, nharm+1)
         self.betan = self.beta + 2*np.pi*ns/self.P
@@ -242,12 +395,13 @@ class FloquetKernel:
             wq[-1] = 0.5*(ku[-1] - ku[-2])
             kr = np.sqrt(ku*ku + bn*bn)
             gauss = np.exp(-(ku*ku + bn*bn)/E2)
-            gq = self.st.Gq_spectral(kr)*gauss*wq
-            ga = self.st.GA_spectral(kr)*gauss*wq
+            gq = self._spec_reg(kr, "TM")*gauss*wq
+            ga = self._spec_reg(kr, "TE")*gauss*wq
             # I_n(du) = (1/2pi) Int_-inf^inf ... = (1/pi) Int_0^inf ... cos(ku du)
             cos = np.cos(np.outer(du_grid, ku))
-            Iq[i] = cos @ gq/np.pi
-            Ia[i] = cos @ ga/np.pi
+            # + the Ewald spectral half of the extracted pole lattice sum
+            Iq[i] = cos @ gq/np.pi + self._pole_harm(du_grid, bn, "TM")
+            Ia[i] = cos @ ga/np.pi + self._pole_harm(du_grid, bn, "TE")
         self._Iq, self._Ia = Iq, Ia
         self._Iq_i = [CubicSpline(du_grid, Iq[i].real) for i in range(len(ns))]
         self._Iq_j = [CubicSpline(du_grid, Iq[i].imag) for i in range(len(ns))]
