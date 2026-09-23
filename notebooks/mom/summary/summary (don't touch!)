@@ -590,3 +590,155 @@ The chain works. Three independent geometries produce ΔL within 4% of CST on me
 The remaining failures are **diagnosed**: independent meshing of etched and unetched cells. The fix is one hour of code and re-running V3.4a/V3.4c. No method pivot, no thick-metal extension, no surrogate.
 
 **Where we are: ~2.5 hours of work to a decisive answer on all three quantities.**
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Phase 3 Technical Summary — Addendum
+
+## 3.10 The Homogeneous Test — Purpose and Result
+
+Purpose: strip the layer stack out of the problem, leaving only the assembly and the periodic kernel. In a homogeneous medium a CPW is TEM, so `n_m = √ε_r` exactly. No CST reference, no tolerances.
+
+Ran on all 5 rows at ε = 1 (air) and ε = 11.7 (silicon). Results:
+
+| row | ε_r | n_m expected | n_m measured | err |
+|---|---|---|---|---|
+| 118 | 1.0 | 1.0000 | 1.0225 | +2.25% |
+| 118 | 11.7 | 3.4205 | 3.4975 | +2.25% |
+| 416 | 1.0 | 1.0000 | 1.0212 | +2.12% |
+| 416 | 11.7 | 3.4205 | 3.4930 | +2.12% |
+| 121 | 1.0 | 1.0000 | 1.0163 | +1.63% |
+| 121 | 11.7 | 3.4205 | 3.4762 | +1.63% |
+| 38 | 1.0 | 1.0000 | 1.0153 | +1.53% |
+| 38 | 11.7 | 3.4205 | 3.4729 | +1.53% |
+| 49 | 1.0 | 1.0000 | 1.0223 | +2.23% |
+| 49 | 11.7 | 3.4205 | 3.4967 | +2.23% |
+
+**Two decisive facts:**
+
+1. **The error is identical at ε = 1 and ε = 11.7 on every row** — same percentage, to three decimals. β carries a pure multiplicative bias independent of the medium, present with no layers at all.
+2. **C scales exactly as ε (11.68 vs 11.70, 0.1% error); L is ε-independent (1.0009–1.0019).** The kernel's permittivity dependence is correct in both the scalar and vector channels. Pole count is 0 in every homogeneous run, as it must be.
+
+**This is Defect A**: a ~1.5–2.3% multiplicative β bias that is geometry-dependent (spread 0.71% across the 5 rows).
+
+## 3.11 What the Bias Is Not
+
+**Not mesh discretization.** Mesh refinement shows no convergence:
+
+| h | Nt | n_m | err |
+|---|---|---|---|
+| 13 µm | 418 | 1.0241 | +2.41% |
+| 9 µm | 782 | 1.0225 | +2.25% |
+| 6 µm | 1532 | 1.0230 | +2.30% |
+
+3.7× the triangles, error flat. C over the same sweep is still drifting (+3.9%), so C is not the source — L absorbs it.
+
+**Not the pole machinery** — no poles exist in a homogeneous medium.
+
+**Not the permittivity dependence** — air vs. ε=11.7 identity rules it out.
+
+What remains: the Ewald soft/sharp split, the `n_sharp` image truncation, the `near_fac` cutoff, or the wrapped-edge Bloch phase.
+
+## 3.12 Retraction — The LC "Identity" Was a Tautology
+
+`line_rlgc` defines `L = Z0·β/ω` with `Z0 = β/(ωC)`. Therefore `L·C = β²/ω² = n_m²/c²` **identically, for any C whatsoever**. Checking it against `n_m²/c²` re-tests `n_m` and nothing else — it is an algebraic identity of the extraction, not a second measurement.
+
+Substituted with a genuinely orthogonal test:
+
+| row | C(11.7)/C(1) — exact 11.7000 | L(11.7)/L(1) — exact 1.0000 |
+|---|---|---|
+| 118 | 11.6838 | 1.0014 |
+| 416 | 11.6847 | 1.0014 |
+| 121 | 11.6781 | 1.0019 |
+| 38 | 11.6828 | 1.0015 |
+| 49 | 11.6898 | 1.0009 |
+
+Both pass at 0.1–0.2%. The permittivity dependence of the kernel is verified in both channels.
+
+## 3.13 Reframing — C Is Right, β Is Wrong
+
+Absolute C against the dataset's `C_base`:
+
+| row | C error | L error | n_m error |
+|---|---|---|---|
+| 118 | **+3.1%** | +21.5% | +12.0% |
+| 416 | **−8.7%** | +83.7% | +29.6% |
+| 121 | **+1.9%** | +20.1% | +10.6% |
+| 38 | **−2.9%** | +48.0% | +19.9% |
+| 49 | **−2.2%** | +32.7% | +13.9% |
+
+C is accurate to ±3% on 4 of 5 rows. L is 20–84% high and geometry-blind (MoM L spreads 22% across these rows where CST spreads 64%). `n_m = c√(LC)` inherits the L error directly — row 416: `√(1.837 × 0.913) = 1.295`, matching the observed 1.296.
+
+β comes from the full Z = `jωA + (1/jω)Φ`. C exercises only Φ. So **the error is in the vector-potential (G_A) channel** — the part of Z that C does not test. There is precedent: the c² relative-weighting bug was exactly there.
+
+**Retraction:** The Phase 3 remediation report stated "the remaining defect is localised to `line_rlgc`." That was inferred from ΔC/C being wrong. Absolute C is one of the healthiest numbers in the code. The inference was wrong.
+
+## 3.14 What Defect A Implies for the Layered Case
+
+The homogeneous floor of 2.3% sits **underneath** the layered 10–30% error. Decomposition:
+
+- Homogeneous contribution: 2.3%
+- Layered-specific contribution: 8–28%
+
+The layered-specific error remains the dominant target, but a fix cannot be trusted while a 2.3% unexplained bias sits underneath — any improvement would be uninterpretable.
+
+The two bugs may be the same. A mis-weighting of the vector-potential channel or the Bloch phase would be mild in air (where G_A and G_q are both smooth multiples of the same kernel) and severe in the layered case (where they have completely different structure). Air is the only place where "correct" is an exact, non-contested number, so it is the only place a fix can be *proven* rather than argued.
+
+## 3.15 Pending — Two Tests Before Any Fix
+
+**Test 1 — kernel vs. exact modal sum.** In air at n_m ≈ 1.02, every Floquet harmonic is evanescent (β₀ = 1285 > k₀ = 1257 rad/m). The 1D-periodic free-space Green's function has a closed form:
+
+```
+G_p(ρ, z) = (1/2πP) Σ_n K₀(a_n ρ) · e^{jβ_n z},    a_n = √(β_n² − k²)
+```
+
+Compare against what `assemble_periodic` actually builds (`fk.soft_p(du, dv) + Σ_m fk.Gq_sharp(R_m)·e^{jβmP}`) over `du = 1 µm → 300 µm` at `dv = 0` and `P/2`. Splits Defect A in two: kernel matches → bug is in the assembly; kernel differs → bug is in the kernel, and the exact form points at which term.
+
+**Test 1b — same at β = 0.** The homogeneous run had βP ≈ 0.257 rad. β = 0 is the simplest case (Bloch phase exactly 1, K₀ sum real). If the kernel matches at β = 0 but not at β = 1285, the bug is in the wrapped-edge Bloch phase. If it fails at both, it is in the Ewald split.
+
+**Test 2 — `near_fac` sweep in air.** `_static_blocks` zeroes the m = 0 near/self contribution in the centroid lattice sum, then adds back the analytic coplanar integral. If the boundary is inconsistent, the error is mesh-independent — because the near set scales with the mesh, so the error stays proportional. This is exactly the observed signature (flat 2.3% over 3.7× refinement). Sweep `near_fac` = 2.0 / 3.0 / 5.0. A correct near/far split must be invariant to the boundary; if n_m moves, that is the bug.
+
+## 3.16 Status Summary
+
+**Results as of this addendum:**
+
+| quantity | status |
+|---|---|
+| ΔL | median 6.4% error (was 3.8%). PASS median, FAIL worst. No regression from common-mesh. |
+| ΔC | 67.7% median. NOT mesh-driven — common-mesh made it slightly worse. |
+| Δα | 167.6% median. Same. |
+| Absolute C | ±3% on 4 of 5 rows. **Healthy.** |
+| Absolute L | 20–84% high. Unhealthy — the error lives here. |
+| Homogeneous n_m | 2.3% bias. Unhealthy. |
+
+**Two known defects:**
+
+1. **Defect A — homogeneous 2.3% multiplicative β bias.** Independent of medium, geometry-dependent, not mesh-limited, not permittivity-limited. Under investigation via Test 1, Test 1b, Test 2.
+2. **Defect B — layered geometry-blindness.** CST's baseline n_m spreads 17.8% across the 5 rows; MoM spreads 1.2%. Consistent with a ρ-independent term in the periodic G_q (possibly the n = 0 surface-wave harmonic). Will be investigated after A.
+
+**Loop-mode hypothesis refuted.** `Vh[-1]` and inverse iteration give identical C and L on all 10 cells; at the root the smallest singular vector is the transmission-line mode, not a divergence-free loop current.
+
+**Seed-lock ruled out.** Open-sweep scan (14 points, n = 1.3 → 3.15) finds a single isolated minimum at n = 2.296, 7× deeper than neighbours, |g| rising monotonically to both ends. The secant tracks the physical root. The ΔL validation is not undermined by seed-lock.
+
+**Row 49 etched remains flagged.** No interior |g| minimum in the scan window — the root ran to n = 3.1708, above the window and only 4.2% below TM₀ (3.309). Test-vector overlap drops to 0.390 vs. 0.54–0.64 on all other cells. Not a confirmed guided mode.
+
+**Nothing started beyond scope:** no `line_rlgc` change, no geometry-blindness investigation, no thick metal, no Phase 4.
+
+
