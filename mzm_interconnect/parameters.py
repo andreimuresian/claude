@@ -156,6 +156,14 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("split_err", "Splitter imbalance", 0.0, "Arm imbalance", "-",
               sweepable=True, sweep_default=(0.0, 0.10, 21), affects="link",
               help="Power split deviation from 0.5 (0.02 = 52:48). Caps the ER."),
+    ParamSpec("y_branch_loss_dB", "Y-branch excess loss", 0.0, "Arm imbalance", "dB",
+              sweepable=True, sweep_default=(0.0, 1.0, 21), affects="link",
+              help="Excess loss of ONE Y branch. A real thin-film LN Y is "
+                   "0.1-0.3 dB; there are two of them, so this is counted "
+                   "twice in the power budget. It is common-mode, so it does "
+                   "not touch the extinction ratio, the chirp or the "
+                   "bandwidth -- only the absolute received power, which is "
+                   "what decides whether the eye is noise-limited."),
     ParamSpec("ng_imbalance", "Group-index imbalance", 0.0, "Arm imbalance", "-",
               sweepable=True, sweep_default=(0.0, 0.02, 21), affects="link",
               help="Fractional n_g mismatch between the arms (arm 1 gets "

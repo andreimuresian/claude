@@ -197,6 +197,10 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
                      "is 90 deg.")
 
     P_laser = 10 ** (float(p["P_laser_dBm"]) / 10) / 1000.0
+    # Two Y branches, one at each end. Common-mode, so it touches neither the
+    # extinction ratio nor the bandwidth -- only the received power, which is
+    # what decides whether the eye is noise limited or ISI limited.
+    P_laser *= 10 ** (-2.0 * float(p.get("y_branch_loss_dB", 0.0)) / 10.0)
     E0 = np.sqrt(P_laser)
     E = E0 * (arm1.a * np.exp(1j * (arm1.phi0 + m1))
               + arm2.a * np.exp(1j * (arm2.phi0 + m2)))

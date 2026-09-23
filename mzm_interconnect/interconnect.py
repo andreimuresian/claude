@@ -79,6 +79,9 @@ P_DIGI_IN = _pin('modulation', 'input', 'in', 'port 1', 'in1')
 # ports positionally the combiner's output is 'port 1' -- not 'port 2', which
 # would silently wire the detector to one of the inputs.
 P_COMB_OUT = _pin('output', 'out', 'port 1', 'output 1', 'out1')
+# The Y branch names its ports unambiguously: 'port 1' is the single side,
+# 'port 2' and 'port 3' are the pair. No guessing which output is which.
+P_Y1, P_Y2, P_Y3 = _pin('port 1'), _pin('port 2'), _pin('port 3')
 # The eye analyser's reference input. Its documented job is "automatic delay
 # compensation of the input signal": it is the timing reference the element
 # folds the received waveform against, so without it there is no eye at all --
@@ -123,6 +126,7 @@ class InterconnectBuilder:
         self.sim = self._lumapi.INTERCONNECT(hide=bool(hide))
         self.topology = None
         self.mode = "ena"
+        self.uses_y_branch = False
         self._wiring = []
 
     # ---------------- low level helpers (from the original launcher) ----
@@ -296,25 +300,7 @@ class InterconnectBuilder:
                   'Lorentzian', required=False)
 
         # ---- 2. splitter / combiner ----
-        self.add(['Optical Splitter', 'Optical Splitter/Coupler'], 'SPLT_1', 280, 195)
-        self.setp('SPLT_1', ['configuration'], 'splitter', required=False)
-        self.setp('SPLT_1', ['number of ports', 'number of output ports'], 2, required=False)
-        # The SPLT element's 'split ratio' takes only 'even' or 'none' -- there
-        # is no ratio field on it, so a 55:45 splitter cannot be expressed this
-        # way at all. It does not have to be: an uneven split and an unequal
-        # arm loss are the same thing to the interferometer, both being a ratio
-        # of the two field amplitudes, so the split error is folded into the
-        # arm-2 attenuator below. The only thing that is not reproduced is the
-        # common-mode power, because an attenuator dissipates what an uneven
-        # splitter merely redistributes -- which changes the absolute output
-        # power and nothing about the extinction ratio or the response shape.
-        self.setp('SPLT_1', ['split ratio'], 'even')
-
-        self.add(['Optical Combiner', 'Optical Splitter/Coupler', 'Optical Splitter'],
-                 'SPLT_2', 780, 210)
-        self.setp('SPLT_2', ['configuration'], 'combiner', required=False)
-        self.setp('SPLT_2', ['number of ports', 'number of input ports'], 2, required=False)
-        self.setp('SPLT_2', ['split ratio'], 'even')
+        self.uses_y_branch = self._add_y_branches(p)
 
         # ---- 3. bias / static arm-phase error ----
         phase_rad = np.deg2rad(float(p["bias_phase_deg"]) + float(p["arm_phase_imbalance_deg"]))
@@ -327,12 +313,13 @@ class InterconnectBuilder:
         # an extra loss - 10.log10((1-rho)/rho) dB on arm 2 gives the same field
         # ratio, and the field ratio is all the interference knows about.
         rho = min(max(0.5 + float(p["split_err"]), 1e-6), 1 - 1e-6)
-        d_split = -10.0 * np.log10((1.0 - rho) / rho)
+        d_split = 0.0 if self.uses_y_branch else -10.0 * np.log10((1.0 - rho) / rho)
         d_loss = float(p["arm_loss_imbalance_dB"]) + d_split
         if abs(d_split) > 1e-9:
             self.log(f"  Splitter {100*rho:.1f}:{100*(1-rho):.1f} folded into the "
-                     f"arm-2 attenuator as {d_split:+.3f} dB (the SPLT element "
-                     f"has no ratio field); total arm-2 loss {d_loss:.3f} dB.")
+                     f"arm-2 attenuator as {d_split:+.3f} dB (this build has no "
+                     f"Y branch and the SPLT element has no ratio field); "
+                     f"total arm-2 loss {d_loss:.3f} dB.")
         self.has_attenuator = False
         if abs(d_loss) > 1e-9:
             try:
@@ -442,8 +429,8 @@ class InterconnectBuilder:
         # anything downstream refuses. The drive and the detector sink go on
         # last, so a port name this build spells differently costs one clear
         # error instead of a schematic with no modulators in it.
-        self.connect('CWL_1', P_OUT, 'SPLT_1', P_IN)
-        self.connect('SPLT_2', P_COMB_OUT, 'PIN_1', P_IN)
+        self.connect('CWL_1', P_OUT, 'SPLT_1', self.p_split_in)
+        self.connect('SPLT_2', self.p_comb_out, 'PIN_1', P_IN)
         topo = self._wire_arms(p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM)
 
         if mode == "eye":
@@ -458,6 +445,79 @@ class InterconnectBuilder:
             self.connect('ENA_1', P_OUT, 'TW_1', P_IN)
         self.log(f"  Wiring resolved: {len(self._wiring)} links.")
         return topo
+
+    def _add_y_branches(self, p: dict) -> bool:
+        """
+        Build the input splitter and output combiner, preferring Y branches.
+
+        The Y element is what a thin-film LN interferometer actually has at
+        each end, and unlike the SPLT element it takes a power coupling
+        coefficient in [0, 1], so an imperfect split is a property rather than
+        something to work around. It also conserves power the way a real Y
+        does -- T and 1-T redistribute rather than dissipate -- which the
+        attenuator workaround could not, and which matters as soon as the
+        absolute received power decides whether the eye is noise limited.
+
+        Port semantics are unambiguous: 'port 1' is the single side, 'port 2'
+        and 'port 3' are the pair, and the coupling coefficient T is the
+        port 1 <-> port 3 power transmission with port 1 <-> port 2 getting
+        1 - T. Arm 1 hangs off port 2 and arm 2 off port 3, so a fraction rho
+        of the power into arm 1 means T = 1 - rho.
+
+        Returns True if Y branches were used, False if this build only has the
+        SPLT element and the split error has to be folded into the attenuator.
+        """
+        rho = min(max(0.5 + float(p["split_err"]), 1e-6), 1 - 1e-6)
+        y_loss = float(p["y_branch_loss_dB"])
+        try:
+            for name, x, y in (('SPLT_1', 280, 195), ('SPLT_2', 780, 210)):
+                self.add(['Waveguide Y Branch'], name, x, y)
+                self.setp(name, ['configuration'], 'bidirectional', required=False)
+                self.setp(name, ['input parameter'], 'coupling coefficient')
+                self.setp(name, ['insertion loss'], y_loss, required=False)
+                # The output combiner stays at 50:50. A fabrication error
+                # affects both Y branches in a real device, but the Python
+                # model puts the whole split error at the input, and the two
+                # halves of the toolkit agreeing matters more here than the
+                # second decimal place of the extinction ratio.
+                t = (1.0 - rho) if name == 'SPLT_1' else 0.5
+                self.setp(name, ['coupling coefficient 1'], t)
+                self.setp(name, ['coupling coefficient 2'], t, required=False)
+                self.setp(name, ['phase shift'], 0.0, required=False)
+            if abs(rho - 0.5) > 1e-9:
+                self.log(f"  SPLT_1: Y branch, {100*rho:.1f}:{100*(1-rho):.1f} "
+                         f"power split (coupling coefficient {1-rho:.4f}).")
+            if y_loss > 0:
+                self.log(f"  Y branches: {y_loss:.2f} dB excess loss each "
+                         f"({2*y_loss:.2f} dB on the link).")
+            self._set_split_ports(True)
+            return True
+        except Exception as exc:
+            self.log(f"  Waveguide Y Branch not available ({exc}); "
+                     f"falling back to the Optical Splitter.")
+
+        self.add(['Optical Splitter', 'Optical Splitter/Coupler'], 'SPLT_1', 280, 195)
+        self.setp('SPLT_1', ['configuration'], 'splitter', required=False)
+        self.setp('SPLT_1', ['number of ports', 'number of output ports'], 2,
+                  required=False)
+        self.setp('SPLT_1', ['split ratio'], 'even')
+        self.add(['Optical Combiner', 'Optical Splitter/Coupler', 'Optical Splitter'],
+                 'SPLT_2', 780, 210)
+        self.setp('SPLT_2', ['configuration'], 'combiner', required=False)
+        self.setp('SPLT_2', ['number of ports', 'number of input ports'], 2,
+                  required=False)
+        self.setp('SPLT_2', ['split ratio'], 'even')
+        self._set_split_ports(False)
+        return False
+
+    def _set_split_ports(self, y: bool):
+        """Which port names the splitter and combiner answer to."""
+        if y:
+            self.p_split_in, self.p_split_a, self.p_split_b = P_Y1, P_Y2, P_Y3
+            self.p_comb_out, self.p_comb_a, self.p_comb_b = P_Y1, P_Y2, P_Y3
+        else:
+            self.p_split_in, self.p_split_a, self.p_split_b = P_IN, P_OUT1, P_OUT2
+            self.p_comb_out, self.p_comb_a, self.p_comb_b = P_COMB_OUT, P_IN1, P_IN2
 
     def _add_ena(self, p: dict):
         self.add(['Network Analyzer'], 'ENA_1', 340, -350)
@@ -696,12 +756,12 @@ class InterconnectBuilder:
         if pushpull:
             add_modulator('OM_1', 560, 120, c1)
             add_modulator('OM_2', 560, 300, c2)
-            self.connect('SPLT_1', P_OUT1, 'OM_1', P_BI1)
-            self.connect('OM_1', P_BI2, 'SPLT_2', P_IN1)
-            self.connect('SPLT_1', P_OUT2, 'OM_2', P_BI1)
+            self.connect('SPLT_1', self.p_split_a, 'OM_1', P_BI1)
+            self.connect('OM_1', P_BI2, 'SPLT_2', self.p_comb_a)
+            self.connect('SPLT_1', self.p_split_b, 'OM_2', P_BI1)
             self.connect('OM_2', P_BI2, 'PHS_1', P_BI1)
             tail, tail_port = self._wire_arm2_tail()
-            self.connect(tail, tail_port, 'SPLT_2', P_IN2)
+            self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
 
             # The fan-out is the one step that can legitimately be refused.
             tw_out, om_mod = self.connect('TW_1', P_OUT, 'OM_1', P_MOD)
@@ -714,11 +774,11 @@ class InterconnectBuilder:
 
         c_drive = (c1 - c2) if lumped_pp else c1
         add_modulator('OM_1', 560, 120, c_drive)
-        self.connect('SPLT_1', P_OUT1, 'OM_1', P_BI1)
-        self.connect('OM_1', P_BI2, 'SPLT_2', P_IN1)
-        self.connect('SPLT_1', P_OUT2, 'PHS_1', P_BI1)
+        self.connect('SPLT_1', self.p_split_a, 'OM_1', P_BI1)
+        self.connect('OM_1', P_BI2, 'SPLT_2', self.p_comb_a)
+        self.connect('SPLT_1', self.p_split_b, 'PHS_1', P_BI1)
         tail, tail_port = self._wire_arm2_tail()
-        self.connect(tail, tail_port, 'SPLT_2', P_IN2)
+        self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
         self.connect('TW_1', P_OUT, 'OM_1', P_MOD)
 
         if lumped_pp:

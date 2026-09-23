@@ -38,19 +38,35 @@ coefficient a`, the constant term of its absorption polynomial, which puts the
 loss inside the modulator where it physically belongs and saves an element.
 Either is exact.
 
-**2. Splitter imbalance -- NOT representable on the splitter, and it does not
-need to be.** The SPLT element's `split ratio` accepts only `even` or `none`;
-there is no ratio field on it. That is not a real limitation, because an uneven
-split and an unequal arm loss are the same thing to the interferometer -- both
-are a ratio of the two field amplitudes. The builder folds the split error into
-the arm-2 attenuator as `-10.log10((1-rho)/rho)` dB, which reproduces the field
-ratio to machine precision (verified: 0.806167 either way). The one thing it
-does not reproduce is common-mode power, because an attenuator dissipates what
-an uneven splitter redistributes -- so the absolute output power is slightly
-low, and the extinction ratio and the response shape are exactly right. If you
-need the power right as well, the `Waveguide Y Branch` element splits unevenly,
-and the Ansys travelling-wave example suggests going further and replacing the
-Y with an optical N-port S-parameter element fitted to a component simulation.
+**2. Splitter imbalance -- fully representable, on the Y branch rather than
+the splitter.** The SPLT element's `split ratio` accepts only `even` or `none`,
+so it genuinely cannot express a 55:45 split. The `Waveguide Y Branch` (Y)
+element can: `coupling coefficient 1` is a power transmission coefficient in
+[0, 1], and it is also the element a thin-film LN interferometer actually has
+at each end. The builder now uses Y branches by default and falls back to SPLT
+only if this build has no Y element.
+
+Port semantics are unambiguous, which is a secondary benefit: `port 1` is the
+single side, `port 2` and `port 3` are the pair, with T the port 1 <-> port 3
+power transmission and 1 - T going to port 2. Arm 1 hangs off port 2 and arm 2
+off port 3, so a fraction rho into arm 1 means `coupling coefficient = 1 - rho`.
+
+The substantive gain is the power budget. T and 1 - T *redistribute* power,
+which is what a real Y does; the old workaround folded the split error into the
+arm-2 attenuator, and an attenuator *dissipates*. Both give exactly the same
+field ratio, so the extinction ratio, the chirp and the bandwidth were already
+right -- but the absolute received power was not, and that is what decides
+whether an eye is noise limited or ISI limited. The Y element also has an
+`insertion loss` property, exposed as `y_branch_loss_dB`, for the real excess
+loss of each branch (0.1-0.3 dB is typical). It is common-mode: 0.2 dB per
+branch leaves the bandwidth at 70.511 GHz and the eye ER at 15.4 dB, and scales
+the OMA by 10^(-0.4/10) = 0.912, exactly as it should.
+
+The output combiner is left at 50:50. A fabrication error affects both Y
+branches in a real device and the two imbalances compound, but the Python model
+puts the whole split error at the input, and the two halves of the toolkit
+agreeing matters more here than the second decimal place of the extinction
+ratio. Say the word if you want the output error as its own parameter.
 
 **3. Static phase imbalance -- fully representable, with one caveat.**
 `Optical Phase Shift` (PHS), property `phase shift`, in radians. The caveat is
