@@ -26,15 +26,66 @@ separate consequences of the same defect and they do different things: loss
 imbalance caps the extinction ratio and does not produce chirp; V_pi imbalance
 produces chirp and barely touches the extinction ratio.
 
-In INTERCONNECT the five map onto four different elements, not onto one:
+### What each one costs in INTERCONNECT
 
-* 1 -> `Optical Attenuator` in arm 2 (`ATT_1`)
-* 2 -> `Optical Splitter` split ratio (`SPLT_1`)
-* 3 -> `Optical Phase Shift` (`PHS_1`)
-* 4 -> the two `Optical Modulator Measured` phase coefficients `c1`, `c2`
-* 5 -> not expressible with one shared `Traveling Wave Electrode`; it needs a
-  second `TWE` with its own `optical index`, which is also what the Ansys
-  travelling-wave example proposes for a differential drive.
+Ordered from "just set a property" to "needs a different schematic", against
+the element reference:
+
+**1. Arm loss imbalance -- fully representable, two ways.**
+`Optical Attenuator` (ATT) in arm 2, property `attenuation` in dB. This is what
+the builder does. The alternative is the OM element's own `absorption
+coefficient a`, the constant term of its absorption polynomial, which puts the
+loss inside the modulator where it physically belongs and saves an element.
+Either is exact.
+
+**2. Splitter imbalance -- NOT representable on the splitter, and it does not
+need to be.** The SPLT element's `split ratio` accepts only `even` or `none`;
+there is no ratio field on it. That is not a real limitation, because an uneven
+split and an unequal arm loss are the same thing to the interferometer -- both
+are a ratio of the two field amplitudes. The builder folds the split error into
+the arm-2 attenuator as `-10.log10((1-rho)/rho)` dB, which reproduces the field
+ratio to machine precision (verified: 0.806167 either way). The one thing it
+does not reproduce is common-mode power, because an attenuator dissipates what
+an uneven splitter redistributes -- so the absolute output power is slightly
+low, and the extinction ratio and the response shape are exactly right. If you
+need the power right as well, the `Waveguide Y Branch` element splits unevenly,
+and the Ansys travelling-wave example suggests going further and replacing the
+Y with an optical N-port S-parameter element fitted to a component simulation.
+
+**3. Static phase imbalance -- fully representable, with one caveat.**
+`Optical Phase Shift` (PHS), property `phase shift`, in radians. The caveat is
+that this is a fixed *phase*, not a fixed *path length*: a real delta-n_eff.L
+imbalance grows with optical frequency and gives the interferometer a finite
+free spectral range, and PHS will not reproduce that. For wavelength-dependent
+behaviour you need an actual length difference between the arms -- two
+waveguide elements, or two OM elements with different `length`.
+
+**4. V_pi imbalance -- fully representable.** With `input parameter` set to
+`coefficients`, the two OM elements carry different `phase coefficient c`. Only
+the product of the coefficient and `length` matters, so you can equivalently
+vary `length`; the builder varies the coefficient and keeps the length at 1 um
+in both arms.
+
+**5. Group-index imbalance -- NOT representable as currently wired.** One TW
+element feeds both modulators and carries a single `optical index`, so both
+arms necessarily see the same walk-off. There are two routes, and both cost
+something:
+
+  * give each arm its own TW element. That is the honest fix, and it is also
+    the prerequisite for a genuine differential drive, so it is the one worth
+    doing -- but it needs a second drive path (a second PRBS/NRZ pair with a
+    digital NOT between them, per the Ansys note) or an electrical splitter.
+  * switch the OM elements to `electrode type = 'traveling wave'` and give each
+    its own `optical index`. This works, but the OM's built-in electrode takes
+    scalar `microwave loss` and `microwave index` rather than the frequency
+    tables the TW element accepts, so you would be throwing away the fitted
+    alpha(f), Zc(f) and n_m(f) -- which is the whole point of the extraction.
+    Not worth it.
+
+**6. Voltage-dependent loss imbalance (residual amplitude modulation).**
+Representable through `absorption coefficient a..d`, and left at zero here
+because undoped LiNbO3 has no electro-absorption worth modelling. In a silicon
+depletion-mode modulator it would be the first thing to set.
 
 Two further knobs on the OM element are deliberately left at zero. The
 `absorption coefficient a..d` fields give voltage-dependent loss, i.e.

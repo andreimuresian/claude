@@ -72,6 +72,18 @@ P_OUT2 = _pin('output 2', 'out2', 'output2', 'port 3', 'port3')
 P_IN1 = _pin('input 1', 'in1', 'input1', 'port 1', 'port1')
 P_IN2 = _pin('input 2', 'in2', 'input2', 'port 2', 'port2')
 P_MOD = _pin('modulation', 'modulation 1', 'mod', 'electrical', 'input 2', 'in2')
+# The NRZ generator's digital input is called 'modulation', not 'input' -- it is
+# the one port in this schematic whose name gives no hint of its direction.
+P_DIGI_IN = _pin('modulation', 'input', 'in', 'port 1', 'in1')
+# A combiner's single port is its OUTPUT, so when this build names its splitter
+# ports positionally the combiner's output is 'port 1' -- not 'port 2', which
+# would silently wire the detector to one of the inputs.
+P_COMB_OUT = _pin('output', 'out', 'port 1', 'output 1', 'out1')
+# Everything worth probing when a name is refused.
+P_ALL = _pin('input', 'output', 'in', 'out', 'modulation', 'reference',
+             'port 1', 'port 2', 'port 3', 'port 4',
+             'input 1', 'input 2', 'output 1', 'output 2',
+             'in1', 'in2', 'out1', 'out2', 'electrical', 'optical')
 
 
 def load_lumapi(lumapi_path: str):
@@ -167,32 +179,37 @@ class InterconnectBuilder:
 
     def report_ports(self, *elements) -> dict:
         """
-        Ask the build what each element's ports are actually called.
+        Discover what each element's ports are really called, by probing.
 
-        There is no portable API for this, so several spellings of the query
-        are tried and whatever comes back is reported verbatim. Run it when a
-        build fails on a port name and paste the output -- it turns guessing
-        into a one-step answer.
+        INTERCONNECT has no portable "list the ports" call, and its error text
+        does not enumerate them -- it only ever says it cannot find the name
+        you asked for. So this asks a different question: connect the element
+        to *itself* on a candidate name. A port that does not exist gives "can
+        not find port"; a port that does exist gives some other complaint
+        (connecting an element to itself, a port already in use, mismatched
+        signal types). Any answer that is not "can not find port" therefore
+        means the name is real.
+
+        Run it when a build stops on a port name. The list it prints is the
+        answer, not a hint.
         """
         out = {}
         for el in elements:
-            found = None
-            for getter, arg in (("getnamed", "port"), ("getnamed", "ports"),
-                                ("getportnames", None)):
+            found = []
+            for name in P_ALL:
                 try:
-                    fn = getattr(self.sim, getter)
-                    found = fn(el) if arg is None else fn(el, arg)
-                    break
-                except Exception:
-                    continue
-            if found is None:
-                # Fall back to the error text, which normally names the ports.
-                try:
-                    self.sim.connect(el, "__no_such_port__", el, "__no_such_port__")
+                    self.sim.connect(el, name, el, name)
+                    found.append(name)          # accepted outright
                 except Exception as exc:
-                    found = f"(from error) {exc}"
+                    msg = str(exc).lower()
+                    if "find port" not in msg and "no such port" not in msg \
+                            and "does not exist" not in msg:
+                        if "find element" in msg:
+                            found = ["(element not in the schematic)"]
+                            break
+                        found.append(name)
             out[el] = found
-            self.log(f"  ports of {el}: {found}")
+            self.log(f"  ports of {el}: {', '.join(found) if found else '(none found)'}")
         return out
 
     # ---------------- build --------------------------------------------
@@ -257,25 +274,16 @@ class InterconnectBuilder:
         self.add(['Optical Splitter', 'Optical Splitter/Coupler'], 'SPLT_1', 280, 195)
         self.setp('SPLT_1', ['configuration'], 'splitter', required=False)
         self.setp('SPLT_1', ['number of ports', 'number of output ports'], 2, required=False)
-        # An imperfect splitter is one of the four things that cap the static
-        # extinction ratio, so it has to reach the schematic and not just the
-        # Python link metrics. If this build only understands 'even', the split
-        # error is reported as unmodelled rather than silently dropped.
-        split_err = float(p["split_err"])
-        if split_err == 0.0:
-            self.setp('SPLT_1', ['split ratio'], 'even')
-        else:
-            rho = min(max(0.5 + split_err, 1e-6), 1 - 1e-6)
-            ok = (self.setp('SPLT_1', ['split ratio'], 'custom', required=False) and
-                  self.setp('SPLT_1', ['ratios', 'split ratios', 'power ratios'],
-                            np.array([[rho], [1.0 - rho]]), required=False))
-            if ok:
-                self.log(f"  SPLT_1: split ratio {100*rho:.1f}:{100*(1-rho):.1f}")
-            else:
-                self.setp('SPLT_1', ['split ratio'], 'even')
-                self.log(f"  SPLT_1: this build takes only an even split; the "
-                         f"{100*rho:.1f}:{100*(1-rho):.1f} imbalance is in the "
-                         f"Python link metrics only.")
+        # The SPLT element's 'split ratio' takes only 'even' or 'none' -- there
+        # is no ratio field on it, so a 55:45 splitter cannot be expressed this
+        # way at all. It does not have to be: an uneven split and an unequal
+        # arm loss are the same thing to the interferometer, both being a ratio
+        # of the two field amplitudes, so the split error is folded into the
+        # arm-2 attenuator below. The only thing that is not reproduced is the
+        # common-mode power, because an attenuator dissipates what an uneven
+        # splitter merely redistributes -- which changes the absolute output
+        # power and nothing about the extinction ratio or the response shape.
+        self.setp('SPLT_1', ['split ratio'], 'even')
 
         self.add(['Optical Combiner', 'Optical Splitter/Coupler', 'Optical Splitter'],
                  'SPLT_2', 780, 210)
@@ -289,13 +297,29 @@ class InterconnectBuilder:
         self.setp('PHS_1', ['input parameter'], 'constant', required=False)
         self.setp('PHS_1', ['phase shift'], float(phase_rad))
 
-        # ---- 4. arm-2 excess loss (asymmetric over-etch) ----
-        d_loss = float(p["arm_loss_imbalance_dB"])
+        # ---- 4. arm-2 excess loss (asymmetric over-etch + split error) ----
+        # a1 = sqrt(rho), a2 = sqrt(1-rho).10^(-loss/20), so an even split with
+        # an extra loss - 10.log10((1-rho)/rho) dB on arm 2 gives the same field
+        # ratio, and the field ratio is all the interference knows about.
+        rho = min(max(0.5 + float(p["split_err"]), 1e-6), 1 - 1e-6)
+        d_split = -10.0 * np.log10((1.0 - rho) / rho)
+        d_loss = float(p["arm_loss_imbalance_dB"]) + d_split
+        if abs(d_split) > 1e-9:
+            self.log(f"  Splitter {100*rho:.1f}:{100*(1-rho):.1f} folded into the "
+                     f"arm-2 attenuator as {d_split:+.3f} dB (the SPLT element "
+                     f"has no ratio field); total arm-2 loss {d_loss:.3f} dB.")
         self.has_attenuator = False
-        if d_loss > 0:
+        if abs(d_loss) > 1e-9:
             try:
                 self.add(['Optical Attenuator'], 'ATT_1', 730, 285)
-                self.setp('ATT_1', ['attenuation'], d_loss)
+                # An attenuator cannot add power, so a negative imbalance is
+                # applied to the other arm instead by flipping which arm the
+                # reference is. Keep it on arm 2 and make it non-negative.
+                self.setp('ATT_1', ['attenuation'], max(d_loss, 0.0))
+                if d_loss < 0:
+                    self.log(f"  arm-2 imbalance is negative ({d_loss:.3f} dB): "
+                             f"arm 1 is the lossier one. The attenuator is held "
+                             f"at 0 dB; swap the arms to model it directly.")
                 self.has_attenuator = True
             except Exception as exc:
                 self.log(f"  arm-2 attenuator not available ({exc}); "
@@ -394,7 +418,7 @@ class InterconnectBuilder:
         # last, so a port name this build spells differently costs one clear
         # error instead of a schematic with no modulators in it.
         self.connect('CWL_1', P_OUT, 'SPLT_1', P_IN)
-        self.connect('SPLT_2', P_OUT, 'PIN_1', P_IN)
+        self.connect('SPLT_2', P_COMB_OUT, 'PIN_1', P_IN)
         topo = self._wire_arms(p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM)
 
         if mode == "eye":
@@ -437,59 +461,81 @@ class InterconnectBuilder:
                      f"INTERCONNECT trace is a sampling artifact, not physics.")
 
     def _add_eye_chain(self, p: dict):
-        """PRBS -> NRZ -> (electrode) and photodiode -> eye analyser.
-
-        The bit rate lives on the root element so every element that needs it
-        can inherit rather than be told separately, which is how the Ansys
-        examples do it and the only way to keep a long schematic consistent.
-        The NRZ generator is centred on zero volts -- amplitude Vpp with a bias
-        of -Vpp/2 -- because the modulator coefficients are referenced to the
-        bias point set by PHS_1, not to the pulse generator's own zero.
         """
-        sim = self.sim
+        PRBS -> NRZ -> (electrode) and photodiode -> eye analyser.
+
+        Port and property names here follow the element reference rather than
+        the pattern the rest of the schematic uses, because these three
+        elements do not follow it:
+
+          PRBS  one port, 'output'; property is 'bitrate', one word
+          NRZ   input port is 'modulation' (it takes a *digital* signal), and
+                the edge rates are 'rise period'/'fall period', expressed as a
+                fraction of the bit period, not as times
+          EYE   ports 'input' and an optional 'reference'; 'number of levels'
+                is what makes it read a PAM eye rather than a binary one
+
+        The NRZ generator has no bitrate of its own: it takes the rate from
+        the digital signal arriving at 'modulation', which is why the rate is
+        set on the root element and on PRBS_1 and nowhere else.
+        """
         levels = 4 if str(p["mod_format"]).upper() == "PAM4" else 2
         sym_rate = float(p["bitrate_Gbps"]) / (1 if levels == 2 else 2)
-        try:
-            sim.set("bitrate", sym_rate * 1e9)
-        except Exception:
-            self.log("  root 'bitrate' not settable; setting it per element instead.")
-
+        rate_Hz = sym_rate * 1e9
         n_bits = (1 << int(p["prbs_order"])) - 1
+
+        if not self._set_root("bitrate", rate_Hz):
+            self.log("  Root 'bitrate' not settable; each element carries its own.")
+
         self.add(['PRBS Generator'], 'PRBS_1', 115, -120)
-        self.setp('PRBS_1', ['bit rate'], sym_rate * 1e9, required=False)
+        self.setp('PRBS_1', ['bitrate', 'bit rate'], rate_Hz, required=False)
         self.setp('PRBS_1', ['order'], int(p["prbs_order"]), required=False)
-        self.setp('PRBS_1', ['generation type', 'sequence type'], 'PRBS', required=False)
+        self.setp('PRBS_1', ['automatic seed'], False, required=False)
+        # A whole PRBS period, so the pattern closes on itself and the eye is
+        # not a partial sample of it.
+        self.setp('PRBS_1', ['time window'], n_bits / rate_Hz, required=False)
+        self._set_root("time window", n_bits / rate_Hz)
 
         vpp = float(p["drive_Vpp_V"])
-        self.add(['NRZ Pulse Generator', 'Pulse Generator'], 'NRZ_1', 265, -120)
+        drive_bw = float(p["drive_bw_GHz"]) or 0.7 * sym_rate
+        # 10-90 % rise expressed as a fraction of the bit period. A 4th-order
+        # Bessel of bandwidth B has a 10-90 % rise of about 0.35/B, and the
+        # Python eye uses exactly that bandwidth, so the two drivers match.
+        rise_frac = min(0.9, max(0.05, 0.35 * sym_rate / drive_bw))
+
+        self.add(['NRZ Pulse Generator'], 'NRZ_1', 265, -120)
         self.setp('NRZ_1', ['amplitude'], vpp, required=False)
         self.setp('NRZ_1', ['bias'], -vpp / 2.0, required=False)
-        self.setp('NRZ_1', ['bit rate'], sym_rate * 1e9, required=False)
-        # Rise/fall as a fraction of the bit period, matched to the driver
-        # bandwidth the Python eye uses so the two are describing one driver.
-        drive_bw = float(p["drive_bw_GHz"]) or 0.7 * sym_rate
-        rise_frac = min(0.9, max(0.05, 0.35 * sym_rate / drive_bw))
-        for k in ('rise time', 'fall time'):
-            self.setp('NRZ_1', [k], rise_frac, required=False)
-        self.connect('PRBS_1', P_OUT, 'NRZ_1', P_IN)
+        self.setp('NRZ_1', ['rise period'], rise_frac, required=False)
+        self.setp('NRZ_1', ['fall period'], rise_frac, required=False)
+        self.connect('PRBS_1', P_OUT, 'NRZ_1', P_DIGI_IN)
+
+        self.add(['Eye Diagram'], 'EYE_1', 1100, 210)
+        self.setp('EYE_1', ['bitrate', 'bit rate'], rate_Hz, required=False)
+        self.setp('EYE_1', ['number of levels'], levels, required=False)
+        self.setp('EYE_1', ['eye period'], 2, required=False)
+        self.setp('EYE_1', ['ignore start periods'], 4, required=False)
+        self.setp('EYE_1', ['calculate measurements'], True, required=False)
+
         if levels == 4:
-            self.log("  NOTE: PAM4 is simulated in the Python eye but this build "
-                     "wires a two-level NRZ drive. Add a 4-level coder between "
-                     "PRBS_1 and NRZ_1 in INTERCONNECT if you need PAM4 here.")
-
-        self.add(['Eye Diagram', 'Eye Diagram Analyzer'], 'EYE_1', 1100, 210)
-        self.setp('EYE_1', ['bit rate'], sym_rate * 1e9, required=False)
-        self.setp('EYE_1', ['ignore start periods', 'ignore start'], 4, required=False)
-
-        # A time window of a whole PRBS period, so the pattern closes on itself
-        # and the eye is not a partial sample of it.
-        try:
-            sim.set("time window", n_bits / (sym_rate * 1e9))
-        except Exception:
-            pass
+            self.log("  NOTE: the eye analyser is set to 4 levels, but PRBS_1 "
+                     "and NRZ_1 produce a two-level drive. A real PAM4 drive "
+                     "needs a 4-level coder between them; the Python eye does "
+                     "model PAM4 properly.")
         self.log(f"  Eye drive: PRBS-{int(p['prbs_order'])} at {sym_rate:.1f} GBd, "
-                 f"{vpp:.2f} Vpp centred on the bias point, "
-                 f"rise/fall {rise_frac:.2f} of a bit period.")
+                 f"{vpp:.2f} Vpp centred on the bias point, rise/fall "
+                 f"{rise_frac:.2f} of a bit period.")
+
+    def _set_root(self, prop, value) -> bool:
+        """Set a root-element property, whichever way this build spells it."""
+        for attempt in (lambda: self.sim.setnamed("::Root Element::", prop, value),
+                        lambda: self.sim.set(prop, value)):
+            try:
+                attempt()
+                return True
+            except Exception:
+                continue
+        return False
 
     def _wire_arms(self, p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM) -> str:
         """Wire the interferometer and report the topology actually built."""
