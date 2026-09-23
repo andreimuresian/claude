@@ -742,3 +742,92 @@ Compare against what `assemble_periodic` actually builds (`fk.soft_p(du, dv) + �
 **Nothing started beyond scope:** no `line_rlgc` change, no geometry-blindness investigation, no thick metal, no Phase 4.
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.17 Sharp-Table Fix — Result
+gate	target	before	after	verdict
+kernel vs exact, β = 1285	≤ 1e-4	2.64e-2	2.82e-4	FAIL (94× better)
+kernel vs exact, β = 0	≤ 1e-4	2.53e-2	1.00e-3	FAIL (25× better)
+n_sharp 6 vs 16	≤ 1e-4	1.3e-2	~7e-5	PASS
+sharp tail ρ ∈ [1, 10] mm	~1	−4071 @ 3.2 mm	1.02 @ 1 mm, diverges past 2 mm	FAIL
+n_m(air)	1.0000 ± 1e-4	1.024099	1.024099	FAIL, unchanged
+n_m(ε = 11.7)	3.4205 ± 4e-4	3.502941	3.502941	FAIL, unchanged
+V3.1b E-invariance	< 1e-3	—	1.2e-5 / 1.4e-3	PASS / marginal
+The kernel is 94× more accurate; the solver's n_m is bit-identical. The kernel fix was necessary but orthogonal to the n_m error.
+
+3.18 The n_m "Bias" Was Largely Physical, Not Numeric
+SIBC contribution decomposed:
+
+case	n_m(air)
+Zs = R_s(1+j) (physical gold)	1.024099
+Zs = 0 (PEC)	1.013630
+exact TEM (PEC reference)	1.000000
+SIBC contribution: 1.05 points — physics, not a bug.
+
+Real solver error against PEC: 1.36%.
+
+The previously reported "2.3% homogeneous bias" was 1.05 points of physical SIBC effect plus 1.36 points of solver error. The gate as originally specified (1.0000 ± 1e-4 with lossy gold) was unachievable — I specified it wrong.
+
+3.19 The Dominant Remaining Defect — Geometry-Blindness
+This is the finding that survives the kernel fix and matters most.
+
+quantity	MoM spread across 5 rows	CST spread across 5 rows
+unetched n_m	1.2% (2.268 → 2.296)	17.8% (1.744 → 2.054)
+Across WS ∈ [56, 70] μm and GAP ∈ [8.6, 18.7] μm, CST's baseline index moves 17.8%. Ours moves 1.2%. That is a 15× sensitivity deficit and is not a small residual to tune out.
+
+This defect is:
+
+Not caused by the sharp-table bug (fixing it left n_m bit-identical).
+
+Not caused by the mesh (near_fac invariant to 1e-5; refinement flat).
+
+Not the seed-lock issue (ruled out by the open-sweep scan).
+
+Not the loop-mode issue (ruled out by comparing Vh[-1] and inverse iteration).
+
+Consistent with a geometry-independent additive term in the periodic G_q — the chatbot previously measured Im(G_q,periodic) ≈ −1.19e13 constant across the cell, matching the n = 0 surface-wave harmonic S_p / (2 |a_0| P).
+
+3.20 Retracted Earlier Claims
+"The kernel sharp-table bug explains the 2.3% n_m bias." Retracted. n_m is unchanged by the fix.
+
+"The n_m gate is 1.0000 ± 1e-4." Retracted. The correct PEC-referenced gate is 1.0000 ± 1e-4; the lossy-gold gate is 1.0136 ± tolerance, plus a 1.36% solver term.
+
+"The remaining defect is localized to line_rlgc." Already retracted in a prior addendum; C is accurate to ±3%.
+
+3.21 Current State of Every Observable
+quantity	status
+Absolute C (unetched)	±3% — healthy
+Absolute L (unetched)	20–84% high — broken
+Absolute n_m (unetched)	1.2% spread, should be 17.8% — geometry-blind
+ΔL	median 6.4% — PASS median, FAIL worst
+ΔC	67.7% — FAIL, not mesh-driven
+Δα	167.6% — FAIL, not mesh-driven
+Kernel (air)	2.82e-4 — 94× improved, still not ≤ 1e-4
+Air n_m vs PEC	+1.36% — bounded, unexplained
+3.22 Root-Cause Candidates Ranked
+Geometry-independent additive term in periodic G_q — strongest hypothesis. Would explain why MoM is nearly blind to WS/GAP while CST's baseline varies 17.8%. Consistent with the measured constant Im(G_q) offset.
+
+Isotropic LN approximation (ε = 34.7 vs. anisotropic 43/28/43) — affects absolute n_m on the layered case, but not the spread, so cannot explain the 15× sensitivity deficit alone.
+
+Zero-thickness metal (SIBC, no MTX geometry) — CST models finite thickness; ours does not. Correlates with MTX (partial r = −0.94), but the previous falsifiable-ordering prediction for ΔL failed, so this is not proven either.
+
+Residual _sommerfeld contour issue (2.8e-4 kernel error) — real but 100× too small to explain the n_m gap.
+
+
+
+
+
+
+
