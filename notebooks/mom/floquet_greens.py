@@ -286,16 +286,40 @@ class FloquetKernel:
         return out
 
     def _ku_grid(self, bn=0.0):
-        """Quadrature grid in ku.  The poles have been extracted, so the
-        integrand is smooth and a uniform grid is right; the only requirement
-        is that it resolve the cos(ku du) / J0(k rho) oscillation out to the
-        largest offset the kernel is evaluated at.  Trapezoid error there is
-        ~(dk rho_max)^2/12, so dk rho_max <~ 0.03 buys ~1e-4."""
-        return np.linspace(0.0, self.kmax, self.nk)
+        """Quadrature grid in ku.  The poles have been extracted, so away from
+        the branch point the integrand is smooth and a uniform grid is right;
+        the requirement there is that it resolve the cos(ku du) / J0(k rho)
+        oscillation out to the largest offset the kernel is evaluated at.
+        Trapezoid error is ~(dk rho_max)^2/12, so dk rho_max <~ 0.03 buys ~1e-4.
+
+        A PROPAGATING Floquet harmonic (|beta_n| < k0) needs more than that.
+        The spectral kernels carry 1/k_z with k_z = sqrt(k0^2 - k_rho^2), so at
+        k_rho = k0 -- i.e. ku* = sqrt(k0^2 - beta_n^2) -- the integrand has an
+        integrable inverse-square-root branch point that a uniform grid steps
+        straight over.  Points are clustered geometrically towards ku* from
+        both sides, which is enough for the trapezoid to resolve a 1/sqrt.
+
+        Production never reaches this branch: the CPW mode has n_m > 1, so
+        beta > k0 and every harmonic is evanescent.  It is exercised by the
+        beta = 0 leg of the free-space kernel test."""
+        g = np.linspace(0.0, self.kmax, self.nk)
+        if abs(np.real(bn)) >= self.k0 or abs(np.imag(bn)) > 1e-6*self.k0:
+            return g
+        kus = np.sqrt(max(self.k0**2 - np.real(bn)**2, 0.0))
+        if not (0.0 < kus < self.kmax):
+            return g
+        # approach ku* from both sides but never land on it: k_z = 0 there
+        d = kus*np.logspace(-10, -1.3, 80)
+        extra = np.concatenate([kus - d, kus + d])
+        extra = extra[(extra > 0.0) & (extra < self.kmax)]
+        return np.unique(np.concatenate([g, extra]))
 
     def _nk_for(self, r_max):
-        n = int(np.ceil(self.kmax*r_max/0.03)) + 1
-        return int(np.clip(n, 2000, 120000))
+        # trapezoid error ~(dk r_max)^2/12; 0.0125 targets ~1e-5, which keeps
+        # the ku quadrature clear of the 1e-4 kernel accuracy gate rather than
+        # sitting on it (0.03 buys only ~1e-4 and measured 2.8e-4).
+        n = int(np.ceil(self.kmax*r_max/0.0125)) + 1
+        return int(np.clip(n, 2000, 400000))
 
     # ---------- soft radial part (for the sharp = G - soft split) ----------
     def _soft_radial(self, rho):
@@ -321,41 +345,83 @@ class FloquetKernel:
             out.append(tot/(2*np.pi))
         return out[0], out[1]
 
+    def _sharp_real(self, rho):
+        """SHARP radial kernels, straight from their own high-pass integral.
+
+            sharp(rho) = (1/2pi) Int_0^inf G~_reg(k) [1 - exp(-k^2/4E^2)]
+                                          J0(k rho) k dk
+
+        Phase 3 built this as  G_reg(rho) - soft_reg(rho): two separately
+        quadratured Sommerfeld integrals, each O(K/rho), differenced to leave
+        the O(K/(4 E^2 rho^3)) sharp tail.  Beyond a few hundred um that
+        cancels four to five significant digits and what survives is quadrature
+        noise.  Against the analytic tail the old table ran to a ratio of -4071
+        at rho = 3.2 mm, and because the image sum adds 2 n_sharp + 1 copies of
+        that noise, RAISING n_sharp made the periodic kernel worse -- measured
+        against the exact free-space form in air, 2.6e-2 at n_sharp = 6 going
+        to 3.9e-2 at n_sharp = 16.
+
+        Evaluating the high-pass integral directly removes the cancellation:
+        every part of the integrand is O(sharp), so the answer is computed at
+        its own magnitude.  The 1/k asymptote still has to come out -- G~ does
+        not reach C/k until k >> 1/t_LN ~ 3e6, far beyond kmax = 8E -- but
+        _sommerfeld already extracts C/k and adds back C/(2 pi rho), and
+
+            Int_0^inf exp(-k^2/4E^2) J0(k rho) dk
+                = sqrt(pi) E exp(-x) I0(x),      x = E^2 rho^2 / 2,
+
+        so folding the (1 - gauss) weight into the spectral argument turns that
+        add-back into  C/(2 pi) [1/rho - sqrt(pi) E exp(-x) I0(x)]  exactly.
+        That difference is still 1/rho minus something that approaches 1/rho,
+        but it is now taken between two closed forms at machine precision
+        instead of between two quadratures -- which is the whole of the fix.
+
+        1 - exp(-k^2/4E^2) is formed with expm1 so the low-k weight (~k^2/4E^2)
+        keeps full precision instead of cancelling against 1.
+        """
+        E2 = 4*self.E**2
+
+        def spec(kind, C):
+            """G~_reg with the 1/k asymptote extracted UNDER the (1 - gauss)
+            weight, then added back bare so _sommerfeld's own C/k subtraction
+            leaves exactly  [G~_reg - C/k] (1 - gauss).
+
+            Extracting a bare C/k instead is wrong and was the first attempt at
+            this fix: at k << E the true high-pass integrand vanishes like
+            k^2/4E^2, so a bare subtraction leaves rem -> -C/k there, the head
+            integral becomes ~ -C/rho and the tail has to cancel it -- the same
+            five-digit cancellation, just moved.  Weighting the extraction
+            makes rem vanish at BOTH ends."""
+            def f(k):
+                k = np.asarray(k)
+                w = -np.expm1(-k*k/E2)          # 1 - gauss, exact at small k
+                return (self._spec_reg(k, kind) - C/k)*w + C/k
+            return f
+
+        # closed form of  (C/2pi) Int_0^inf gauss J0(k rho) dk, the piece
+        # _sommerfeld adds as C/(2 pi rho) but which the (1 - gauss) weight
+        # must remove:  Int exp(-k^2/4E^2) J0 dk = sqrt(pi) E exp(-x) I0(x).
+        # i0e IS exp(-x) I0(x), so no overflow at the x ~ 5e3 reached here.
+        x = (self.E*np.asarray(rho))**2/2.0
+        corr = np.sqrt(np.pi)*self.E*special.i0e(x)/(2*np.pi)
+        gq = np.array([self.st._sommerfeld(r, spec("TM", self.Cq), self.Cq)
+                       for r in rho]) - self.Cq*corr
+        ga = np.array([self.st._sommerfeld(r, spec("TE", self.CA), self.CA)
+                       for r in rho]) - self.CA*corr
+        return gq, ga
+
     def _build_radial(self, n_rad):
-        """Tabulate the SHARP radial kernels.
+        """Tabulate the SHARP radial kernels (see _sharp_real for the method).
 
-        sharp = [G_reg(rho) - soft_reg(rho)] + pole_spatial(rho)
-
-        G_reg is the full Phase-1 kernel with the surface-wave Hankel terms
-        removed, soft_reg its Gaussian-damped part, and pole_spatial the m = 0
-        term of the pole lattice sum's spatial half.  The first bracket now
-        decays as ~1/(4 E^2 rho^3) with no surface-wave tail, the second as
-        exp(-rho^2 E^2), so the real-space image sum converges.
-
-        G_reg is taken from the Phase-1 Sommerfeld routine (validated, and it
-        handles the high-krho tail with its Hankel-split contour) rather than
-        from an asymptote: the LN film is only ~0.3 um, so G~ does not reach
-        C/krho until krho >> 1/t_LN ~ 3e6, far beyond kmax = 8E."""
+        sharp = highpass(G~_reg) + pole_spatial, the first decaying as
+        ~K/(4 E^2 rho^3) with no surface-wave tail and the second as
+        exp(-rho^2 E^2), so the real-space image sum converges."""
         rho = np.logspace(np.log10(2e-8), np.log10(self.rho_max), n_rad)
-        Gq_r, GA_r = self._reg_real(rho)
-
-        # --- soft radial of the regularised kernel, vectorised over rho -----
-        kk = np.linspace(0.0, self.kmax, self._nk_for(self.rho_max))[1:]
-        wq = np.empty_like(kk)
-        wq[1:-1] = 0.5*(kk[2:]-kk[:-2])
-        wq[0] = 0.5*(kk[1]-kk[0]); wq[-1] = 0.5*(kk[-1]-kk[-2])
-        gauss = np.exp(-kk*kk/(4*self.E**2))
-        wq_q = self._spec_reg(kk, "TM")*gauss*kk*wq/(2*np.pi)
-        wq_a = self._spec_reg(kk, "TE")*gauss*kk*wq/(2*np.pi)
-        J = special.j0(np.outer(rho, kk))
-        softq = J @ wq_q
-        softa = J @ wq_a
-
-        shq = Gq_r - softq + self._pole_spatial(rho, "TM")
-        sha = GA_r - softa + self._pole_spatial(rho, "TE")
+        shq, sha = self._sharp_real(rho)
+        shq = shq + self._pole_spatial(rho, "TM")
+        sha = sha + self._pole_spatial(rho, "TE")
         lr = np.log(rho)
         self.rho_tab = rho
-        self._soft_rad = (softq, softa)
         self._shq = (CubicSpline(lr, shq.real), CubicSpline(lr, shq.imag))
         self._sha = (CubicSpline(lr, sha.real), CubicSpline(lr, sha.imag))
 
@@ -379,9 +445,14 @@ class FloquetKernel:
                                 * self.P/(2*np.pi))) + 2
         self.nharm = nharm
         if du_grid is None:
+            # I_n(du) decays on the scale 1/a_n ~ P/(2 pi n), i.e. ~32 um/n,
+            # so the grid has to resolve the HIGHEST retained harmonic, not
+            # just the slowest.  220 log points left ~16 um spacing near
+            # du = 400 um and a cubic-spline error of ~1.6e-4, which was the
+            # floor on the free-space kernel test; 600 takes it to ~3e-6.
             du_grid = np.concatenate([[0.0],
                                       np.logspace(np.log10(2e-7),
-                                                  np.log10(self.du_max), 220)])
+                                                  np.log10(self.du_max), 600)])
         self.du_grid = du_grid
         ns = np.arange(-nharm, nharm+1)
         self.betan = self.beta + 2*np.pi*ns/self.P
