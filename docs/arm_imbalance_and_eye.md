@@ -238,41 +238,49 @@ already most of the way to being trustworthy.
 
 ## 7. The eye analyser needs a reference, or it computes nothing
 
-The EYE element left on its own sees only the detected waveform. It will draw
-an eye and report the Gaussian-estimated Q, but the *measured* BER compares
-recovered bits against the transmitted ones, and with nothing to compare
-against the element reference is blunt about the result:
+The EYE element's `reference` port is not optional in practice. Its documented
+job is *automatic delay compensation of the input signal*: it is what tells the
+element where the bit boundaries are, so that it can fold the received waveform
+on the symbol period. With nothing connected to it there is no timing to fold
+against, and the element produces **no eye and no results at all** -- not
+merely a missing BER. It is enabled by default, which is why it appears in a
+fresh schematic as an unconnected pin waiting for something.
 
-    with only the input signal   : no information of the original bits,
-                                   BER = 0 (incorrect)
-    with only reference signal   : the bit pattern is recovered from the
-                                   reference signal
-    with bit pattern input       : BER computed against the provided
-                                   pattern (recommended)
+The builder connects it to the electrical drive from `NRZ_1`, which is what the
+Ansys transceiver examples do. If a build will not fan the NRZ output out to
+both the electrode and the analyser, a duplicate `PRBS_2`/`NRZ_2` pair with the
+same order and the same fixed seed emits an identical waveform -- the trick the
+Ansys differential-drive note uses for the same reason. After wiring, the
+builder checks that `EYE_1` has both the detected signal and the reference and
+says so, rather than leaving an empty results window to deliver the news.
 
-A reported BER of 0 therefore means "unknown", not "perfect". The builder wires
-one of three references, in the order Ansys recommends:
+The element also has a `bit pattern input` port, off by default, which takes
+the transmitted bits directly and makes the *measured* BER exact rather than
+recovered. It is deliberately left disabled: the tutorials do not use it, it
+needs a fan-out of its own, and an enabled port with nothing plugged into it is
+worse than no port.
 
-1. `PRBS_1` output into the eye's bit-pattern port, after setting
-   `bit pattern input = true`. The exact transmitted bits, nothing recovered.
-2. `NRZ_1` output into `reference` (`signal reference input` is already true by
-   default, which is why that port is sitting there unconnected). The element
-   recovers the pattern from the drive.
-3. A second PRBS with the same `order` and the same fixed `seed`, for a build
-   that will not fan one generator output out to two destinations. Identical
-   sequence, no fan-out needed -- the same trick the Ansys differential-drive
-   note uses.
+### Sample rate
 
-**One consequence worth knowing about.** Once a reference is connected the
-element labels levels by the transmitted bit rather than by power order. An MZM
-biased on the falling side of its transfer curve then legitimately decodes
-level one *below* level zero, and the element says so in language that reads
-like a failure ("level zero mean greater than level one mean", "eye considered
-closed"). It is the labelling, not the device. The sign is known in advance
-from dP/dV at the bias, so the builder predicts it and says which way round the
-eye will come out; add 180 degrees to the bias to flip it.
+An eye needs the sample rate to resolve a *symbol*, not just the top of the
+microwave band. Sixteen samples per symbol is the usual floor. The toolkit's
+default 320 GHz is chosen for the network-analyser sweep and gives only 3.2
+samples per symbol at 100 Gb/s, which is not enough for the element to fold
+anything, so in eye mode the builder raises the rate to
+`16 x symbol rate` and says by how much.
 
-At exactly 0 or 180 degrees dP/dV is zero: the modulator sits at a turning
+### Level labelling
+
+Once a reference is connected the element labels levels by the transmitted bit
+rather than by power order. An MZM biased on the falling side of its transfer
+curve then legitimately decodes level one *below* level zero, and the element
+reports it in language that reads like a failure ("level zero mean greater than
+level one mean", "eye considered closed"). It is the labelling, not the device.
+The sign is known in advance from dP/dV at the bias, so the builder predicts it
+and says which way round the eye will come out; add 180 degrees to the bias to
+flip it.
+
+At exactly 0 or 180 degrees that slope is zero: the modulator sits at a turning
 point, there is no small-signal modulation at all, and the output responds at
 twice the drive frequency. Both the eye and the EO bandwidth are meaningless
-there, and both sides of the toolkit now say so rather than reporting a number.
+there, and both sides of the toolkit say so rather than reporting a number.

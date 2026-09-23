@@ -79,12 +79,11 @@ P_DIGI_IN = _pin('modulation', 'input', 'in', 'port 1', 'in1')
 # ports positionally the combiner's output is 'port 1' -- not 'port 2', which
 # would silently wire the detector to one of the inputs.
 P_COMB_OUT = _pin('output', 'out', 'port 1', 'output 1', 'out1')
-# The eye analyser's two optional inputs. Neither is on by default in the port
-# list -- 'bit pattern input' has to be enabled first, and 'reference' is
-# enabled but unconnected -- and without one of them the eye has no idea what
-# was transmitted.
-P_EYE_BITS = _pin('bit pattern', 'bit pattern input', 'bits', 'pattern',
-                  'modulation', 'input 2')
+# The eye analyser's reference input. Its documented job is "automatic delay
+# compensation of the input signal": it is the timing reference the element
+# folds the received waveform against, so without it there is no eye at all --
+# not merely a missing BER. It is enabled by default, which is why it shows up
+# in the schematic as an unconnected pin waiting for something.
 P_EYE_REF = _pin('reference', 'reference input', 'signal reference', 'input 2')
 # Everything worth probing when a name is refused.
 P_ALL = _pin('input', 'output', 'in', 'out', 'modulation', 'reference',
@@ -106,6 +105,9 @@ def load_lumapi(lumapi_path: str):
             f"'lumapi directory' field at e.g. "
             f"C:\\Program Files\\Lumerical\\v242\\api\\python  ({exc})") from exc
 
+
+# Samples per symbol the eye analyser needs to fold a waveform sensibly.
+EYE_SAMPLES_PER_SYMBOL = 16
 
 KNOWN_ENA_RESULTS = ['input 1/S21', 'input 1/transmission', 'input 1/gain',
                      'S21', 'transmission', 'gain', 'ENA_1', 'model']
@@ -264,7 +266,23 @@ class InterconnectBuilder:
         sim.switchtodesign()
         sim.deleteall()
         self._wiring = []
-        sim.set("sample rate", float(p["ic_sample_rate_GHz"]) * 1e9)
+        # In eye mode the sample rate has to resolve a symbol, not just the
+        # top of the microwave band: the element folds the waveform on the
+        # symbol period, and a handful of samples per symbol gives it nothing
+        # to fold. 16 per symbol is the usual floor. At the 320 GHz default a
+        # 100 Gb/s NRZ eye would get 3.2, which is why it produced nothing.
+        fs_GHz = float(p["ic_sample_rate_GHz"])
+        if mode == "eye":
+            levels = 4 if str(p["mod_format"]).upper() == "PAM4" else 2
+            sym_rate = float(p["bitrate_Gbps"]) / (1 if levels == 2 else 2)
+            needed = EYE_SAMPLES_PER_SYMBOL * sym_rate
+            if fs_GHz < needed:
+                self.log(f"  Sample rate raised from {fs_GHz:.0f} to "
+                         f"{needed:.0f} GHz: an eye at {sym_rate:.0f} GBd needs "
+                         f"at least {EYE_SAMPLES_PER_SYMBOL} samples per symbol "
+                         f"and {fs_GHz:.0f} GHz gives {fs_GHz/sym_rate:.1f}.")
+                fs_GHz = needed
+        sim.set("sample rate", fs_GHz * 1e9)
 
         f_opt = 299792458.0 / (float(p["lambda_nm"]) * 1e-9)
 
@@ -433,6 +451,7 @@ class InterconnectBuilder:
             self.connect('PIN_1', P_OUT, 'EYE_1', P_IN)
             self.connect('NRZ_1', P_OUT, 'TW_1', P_IN)
             self._wire_eye_reference(p)
+            self._check_eye_wiring()
         else:
             self._add_ena(p)
             self.connect('PIN_1', P_OUT, 'ENA_1', P_IN1)
@@ -536,70 +555,92 @@ class InterconnectBuilder:
 
     def _wire_eye_reference(self, p: dict):
         """
-        Give the eye analyser something to compare the received bits against.
+        Connect the eye analyser's timing reference.
 
-        Left on its own the EYE element sees only the detected waveform. It
-        will still draw an eye and still report the Gaussian-estimated Q, but
-        the *measured* BER needs to know what was actually transmitted, and
-        with no reference it reports BER = 0 -- which is not a good result, it
-        is no result. The element reference is explicit about this: "with only
-        the input signal: with no information of the original bits, BER = 0
-        (incorrect)".
+        The 'reference' port is not optional in practice. Its documented job is
+        "automatic delay compensation of the input signal": it is what tells
+        the element where the bit boundaries are, so with nothing connected to
+        it the element has no timing to fold the received waveform against and
+        produces no eye and no results -- not merely a BER of zero.
 
-        Three ways to fix it, tried in the order Ansys recommends:
+        The reference is the electrical drive from NRZ_1, which is what the
+        Ansys transceiver examples use. If this build will not fan the NRZ
+        output out to both the electrode and the analyser, a second PRBS/NRZ
+        pair with the same order and the same fixed seed emits an identical
+        waveform, which is the trick the Ansys differential-drive note uses for
+        the same reason.
 
-          1. the transmitted bit pattern itself, straight from PRBS_1;
-          2. the electrical drive from NRZ_1 into the 'reference' port, from
-             which the element recovers the pattern;
-          3. a second PRBS with the same order and a fixed seed, for a build
-             that will not fan a generator output out to two destinations.
-
-        Both of the first two need a fan-out, which is the one thing an
-        INTERCONNECT build is entitled to refuse, hence the third.
+        The element also has a 'bit pattern input' port, off by default, which
+        takes the transmitted bits directly and makes the measured BER exact.
+        It is deliberately left off: the tutorials do not use it, it needs a
+        second fan-out of its own, and an enabled port with nothing plugged
+        into it is worse than no port.
         """
-        if self.setp('EYE_1', ['bit pattern input'], True, required=False):
-            if self._try_connect_any('PRBS_1', P_OUT, 'EYE_1', P_EYE_BITS):
-                self.log("  EYE_1 reference: the transmitted bit pattern from "
-                         "PRBS_1 (measured BER is exact).")
-                self._warn_if_inverted(p)
-                return
-            self.setp('EYE_1', ['bit pattern input'], False, required=False)
-
+        self.setp('EYE_1', ['bit pattern input'], False, required=False)
         self.setp('EYE_1', ['signal reference input'], True, required=False)
+
         if self._try_connect_any('NRZ_1', P_OUT, 'EYE_1', P_EYE_REF):
-            self.log("  EYE_1 reference: the electrical drive from NRZ_1 "
-                     "(the pattern is recovered from it).")
+            self.log("  EYE_1 reference: the electrical drive from NRZ_1.")
             self._warn_if_inverted(p)
             return
 
-        # Neither fan-out was allowed. A second generator with the same order
-        # and the same fixed seed emits the identical sequence, which is the
-        # trick the Ansys differential-drive note uses for the same reason.
+        # The fan-out was refused. Duplicate the generator instead.
         try:
-            self.add(['PRBS Generator'], 'PRBS_2', 115, 60)
-            self.setp('PRBS_2', ['bitrate', 'bit rate'],
-                      float(p["bitrate_Gbps"]) * 1e9 /
-                      (1 if str(p["mod_format"]).upper() != "PAM4" else 2),
-                      required=False)
-            self.setp('PRBS_2', ['order'], int(p["prbs_order"]), required=False)
-            self.setp('PRBS_2', ['automatic seed'], False, required=False)
-            self.setp('PRBS_2', ['seed'], 1, required=False)
-            self.setp('PRBS_1', ['automatic seed'], False, required=False)
-            self.setp('PRBS_1', ['seed'], 1, required=False)
-            self.setp('EYE_1', ['bit pattern input'], True, required=False)
-            if self._try_connect_any('PRBS_2', P_OUT, 'EYE_1', P_EYE_BITS):
-                self.log("  EYE_1 reference: a second PRBS with the same order "
-                         "and seed, because this build would not fan PRBS_1 out "
-                         "to two destinations.")
-                self._warn_if_inverted(p)
-                return
-        except Exception as exc:
-            self.log(f"  second PRBS not available ({exc}).")
+            levels = 4 if str(p["mod_format"]).upper() == "PAM4" else 2
+            rate_Hz = float(p["bitrate_Gbps"]) * 1e9 / (1 if levels == 2 else 2)
+            vpp = float(p["drive_Vpp_V"])
+            for el, props in (('PRBS_1', None), ('PRBS_2', True)):
+                if props:
+                    self.add(['PRBS Generator'], 'PRBS_2', 115, 60)
+                    self.setp('PRBS_2', ['bitrate', 'bit rate'], rate_Hz,
+                              required=False)
+                    self.setp('PRBS_2', ['order'], int(p["prbs_order"]),
+                              required=False)
+                self.setp(el, ['automatic seed'], False, required=False)
+                self.setp(el, ['seed'], 1, required=False)
 
-        self.log("  WARNING: EYE_1 has no reference. It will still draw the eye "
-                 "and report the Gaussian-estimated Q, but the measured BER "
-                 "will read 0, which means 'unknown', not 'perfect'. Connect "
-                 "PRBS_1 or NRZ_1 to EYE_1 by hand in the schematic.")
+            self.add(['NRZ Pulse Generator'], 'NRZ_2', 265, 60)
+            for k, v in (('amplitude', vpp), ('bias', -vpp / 2.0)):
+                self.setp('NRZ_2', [k], v, required=False)
+            drive_bw = float(p["drive_bw_GHz"]) or 0.7 * (rate_Hz / 1e9)
+            rise_frac = min(0.9, max(0.05, 0.35 * (rate_Hz / 1e9) / drive_bw))
+            for k in ('rise period', 'fall period'):
+                self.setp('NRZ_2', [k], rise_frac, required=False)
+            self.connect('PRBS_2', P_OUT, 'NRZ_2', P_DIGI_IN)
+            self.connect('NRZ_2', P_OUT, 'EYE_1', P_EYE_REF)
+            self.log("  EYE_1 reference: a duplicate PRBS/NRZ pair with the "
+                     "same order and seed, because this build would not fan "
+                     "the NRZ output out to two destinations.")
+            self._warn_if_inverted(p)
+            return
+        except Exception as exc:
+            self.log(f"  duplicate drive chain not available ({exc}).")
+
+        self.log("  WARNING: EYE_1 has no reference, so it has no timing to "
+                 "fold the waveform against and will produce no eye and no "
+                 "results. Connect NRZ_1's output to EYE_1's 'reference' port "
+                 "by hand in the schematic.")
+
+    def _check_eye_wiring(self):
+        """
+        Confirm the eye analyser has both of the links it cannot work without,
+        rather than trusting that every connect call did what it said.
+
+        EYE_1 needs the detected waveform on 'input' and a timing reference on
+        'reference'. Missing either, it produces nothing at all, and finding
+        that out from an empty results window is a poor way to learn it.
+        """
+        have = {w.split(' -> ')[1].split(':')[1] for w in self._wiring
+                if w.split(' -> ')[1].startswith('EYE_1:')}
+        missing = [n for n, ports in (("detected signal", P_IN),
+                                      ("timing reference", P_EYE_REF))
+                   if not have & set(ports)]
+        if missing:
+            self.log(f"  WARNING: EYE_1 is missing its {' and its '.join(missing)}. "
+                     f"It has: {', '.join(sorted(have)) or 'nothing'}. The eye "
+                     f"will not compute.")
+        else:
+            self.log(f"  EYE_1 wired: {', '.join(sorted(have))}.")
 
     def _try_connect_any(self, a, ports_a, b, ports_b) -> bool:
         """connect(), but a refusal is an answer rather than an error."""
