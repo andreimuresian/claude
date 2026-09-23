@@ -45,6 +45,35 @@ class _FanOutUnsupported(RuntimeError):
     electrical output, so push-pull has to fall back to the lumped equivalent."""
 
 
+class PortNameError(RuntimeError):
+    """No spelling of a port name was accepted for a connection.
+
+    Port names are not stable across INTERCONNECT versions and element
+    libraries -- the same physical pin is 'input', 'in', 'in1' or 'port 1'
+    depending on the build -- so every connection is tried against a list of
+    spellings. This is raised only when every one of them was refused, and it
+    carries INTERCONNECT's own message, which usually names the ports that do
+    exist.
+    """
+
+
+# Port-name spellings to try, most likely first. Indexed ports keep their
+# index across spellings so a two-output splitter cannot get crossed over.
+def _pin(*names):
+    return list(names)
+
+
+P_IN = _pin('input', 'in', 'port 1', 'in1', 'input 1', 'port1')
+P_OUT = _pin('output', 'out', 'port 2', 'out1', 'output 1', 'port2')
+P_BI1 = _pin('port 1', 'input', 'in', 'in1', 'port1')
+P_BI2 = _pin('port 2', 'output', 'out', 'out1', 'port2')
+P_OUT1 = _pin('output 1', 'out1', 'output1', 'port 2', 'port2')
+P_OUT2 = _pin('output 2', 'out2', 'output2', 'port 3', 'port3')
+P_IN1 = _pin('input 1', 'in1', 'input1', 'port 1', 'port1')
+P_IN2 = _pin('input 2', 'in2', 'input2', 'port 2', 'port2')
+P_MOD = _pin('modulation', 'modulation 1', 'mod', 'electrical', 'input 2', 'in2')
+
+
 def load_lumapi(lumapi_path: str):
     """Import lumapi from an explicit install directory."""
     if lumapi_path and os.path.isdir(lumapi_path) and lumapi_path not in sys.path:
@@ -73,6 +102,7 @@ class InterconnectBuilder:
         self.sim = self._lumapi.INTERCONNECT(hide=bool(hide))
         self.topology = None
         self.mode = "ena"
+        self._wiring = []
 
     # ---------------- low level helpers (from the original launcher) ----
     def setp(self, el, candidates, value, required=True):
@@ -99,12 +129,71 @@ class InterconnectBuilder:
                 continue
         raise RuntimeError(f"Cannot add {name} from {candidates}")
 
-    def _try_connect(self, *args) -> bool:
+    def _try_connect(self, a, pa, b, pb) -> bool:
         try:
-            self.sim.connect(*args)
+            self.sim.connect(a, pa, b, pb)
+            self._wiring.append(f"{a}:{pa} -> {b}:{pb}")
             return True
         except Exception:
             return False
+
+    def connect(self, a, ports_a, b, ports_b, required=True):
+        """
+        Wire two elements, trying every spelling of each port name.
+
+        The element library does not name its pins consistently across
+        versions, and a single refused name used to abort the whole build --
+        which is how an eye schematic ended up on screen with no modulators in
+        it: the drive chain was wired before the interferometer, so one bad
+        port name upstream meant the arms were never created at all. Both
+        halves of that are fixed: names are resolved here, and the optical core
+        is now built and wired before anything electrical is attached.
+        """
+        last = None
+        for pa in ports_a:
+            for pb in ports_b:
+                try:
+                    self.sim.connect(a, pa, b, pb)
+                    self._wiring.append(f"{a}:{pa} -> {b}:{pb}")
+                    return (pa, pb)
+                except Exception as exc:
+                    last = exc
+        if not required:
+            self.log(f"  (optional link {a} -> {b} not made)")
+            return None
+        raise PortNameError(
+            f"Could not wire {a} -> {b}. Tried {ports_a} against {ports_b}. "
+            f"INTERCONNECT said: {last}")
+
+    def report_ports(self, *elements) -> dict:
+        """
+        Ask the build what each element's ports are actually called.
+
+        There is no portable API for this, so several spellings of the query
+        are tried and whatever comes back is reported verbatim. Run it when a
+        build fails on a port name and paste the output -- it turns guessing
+        into a one-step answer.
+        """
+        out = {}
+        for el in elements:
+            found = None
+            for getter, arg in (("getnamed", "port"), ("getnamed", "ports"),
+                                ("getportnames", None)):
+                try:
+                    fn = getattr(self.sim, getter)
+                    found = fn(el) if arg is None else fn(el, arg)
+                    break
+                except Exception:
+                    continue
+            if found is None:
+                # Fall back to the error text, which normally names the ports.
+                try:
+                    self.sim.connect(el, "__no_such_port__", el, "__no_such_port__")
+                except Exception as exc:
+                    found = f"(from error) {exc}"
+            out[el] = found
+            self.log(f"  ports of {el}: {found}")
+        return out
 
     # ---------------- build --------------------------------------------
     def build(self, p: dict, files: dict, mode: str = "ena") -> str:
@@ -129,6 +218,11 @@ class InterconnectBuilder:
             except _FanOutUnsupported:
                 self.log("  This INTERCONNECT build will not fan one electrical "
                          "output out to two modulation ports.")
+            except PortNameError:
+                # Rebuilding as a lumped equivalent would hit the same port
+                # name, so there is nothing to fall back to. Let it out with
+                # its diagnostic intact.
+                raise
             except Exception as exc:
                 self.log(f"  Push-pull build failed ({type(exc).__name__}: {exc}).")
             self.log("  Rebuilding from scratch as a lumped push-pull equivalent.")
@@ -145,6 +239,7 @@ class InterconnectBuilder:
         sim.new()
         sim.switchtodesign()
         sim.deleteall()
+        self._wiring = []
         sim.set("sample rate", float(p["ic_sample_rate_GHz"]) * 1e9)
 
         f_opt = 299792458.0 / (float(p["lambda_nm"]) * 1e-9)
@@ -292,21 +387,26 @@ class InterconnectBuilder:
         # eye analyser for the time domain. Building them from the same code
         # path is the point -- an eye and a bandwidth then describe the same
         # device by construction.
+        # ---- 9. wiring ----
+        # Order matters. The interferometer is built and wired first, because
+        # it is the part that has been validated and the part worth keeping if
+        # anything downstream refuses. The drive and the detector sink go on
+        # last, so a port name this build spells differently costs one clear
+        # error instead of a schematic with no modulators in it.
+        self.connect('CWL_1', P_OUT, 'SPLT_1', P_IN)
+        self.connect('SPLT_2', P_OUT, 'PIN_1', P_IN)
+        topo = self._wire_arms(p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM)
+
         if mode == "eye":
             self._add_eye_chain(p)
+            self.connect('PIN_1', P_OUT, 'EYE_1', P_IN)
+            self.connect('NRZ_1', P_OUT, 'TW_1', P_IN)
         else:
             self._add_ena(p)
-
-        # ---- 9. wiring common to every topology ----
-        sim.connect('CWL_1', 'output', 'SPLT_1', 'input')
-        sim.connect('SPLT_2', 'output', 'PIN_1', 'input')
-        if mode == "eye":
-            sim.connect('PIN_1', 'output', 'EYE_1', 'input')
-            sim.connect('NRZ_1', 'output', 'TW_1', 'input')
-        else:
-            sim.connect('PIN_1', 'output', 'ENA_1', 'input 1')
-            sim.connect('ENA_1', 'output', 'TW_1', 'input')
-        return self._wire_arms(p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM)
+            self.connect('PIN_1', P_OUT, 'ENA_1', P_IN1)
+            self.connect('ENA_1', P_OUT, 'TW_1', P_IN)
+        self.log(f"  Wiring resolved: {len(self._wiring)} links.")
+        return topo
 
     def _add_ena(self, p: dict):
         self.add(['Network Analyzer'], 'ENA_1', 340, -350)
@@ -371,7 +471,7 @@ class InterconnectBuilder:
         rise_frac = min(0.9, max(0.05, 0.35 * sym_rate / drive_bw))
         for k in ('rise time', 'fall time'):
             self.setp('NRZ_1', [k], rise_frac, required=False)
-        sim.connect('PRBS_1', 'output', 'NRZ_1', 'input')
+        self.connect('PRBS_1', P_OUT, 'NRZ_1', P_IN)
         if levels == 4:
             self.log("  NOTE: PAM4 is simulated in the Python eye but this build "
                      "wires a two-level NRZ drive. Add a 4-level coder between "
@@ -393,19 +493,19 @@ class InterconnectBuilder:
 
     def _wire_arms(self, p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM) -> str:
         """Wire the interferometer and report the topology actually built."""
-        sim = self.sim
         if pushpull:
             add_modulator('OM_1', 560, 120, c1)
             add_modulator('OM_2', 560, 300, c2)
-            sim.connect('SPLT_1', 'output 1', 'OM_1', 'port 1')
-            sim.connect('OM_1', 'port 2', 'SPLT_2', 'input 1')
-            sim.connect('SPLT_1', 'output 2', 'OM_2', 'port 1')
-            sim.connect('OM_2', 'port 2', 'PHS_1', 'port 1')
-            sim.connect(*self._wire_arm2_tail(), 'SPLT_2', 'input 2')
+            self.connect('SPLT_1', P_OUT1, 'OM_1', P_BI1)
+            self.connect('OM_1', P_BI2, 'SPLT_2', P_IN1)
+            self.connect('SPLT_1', P_OUT2, 'OM_2', P_BI1)
+            self.connect('OM_2', P_BI2, 'PHS_1', P_BI1)
+            tail, tail_port = self._wire_arm2_tail()
+            self.connect(tail, tail_port, 'SPLT_2', P_IN2)
 
             # The fan-out is the one step that can legitimately be refused.
-            sim.connect('TW_1', 'output', 'OM_1', 'modulation')
-            if not self._try_connect('TW_1', 'output', 'OM_2', 'modulation'):
+            tw_out, om_mod = self.connect('TW_1', P_OUT, 'OM_1', P_MOD)
+            if not self._try_connect('TW_1', tw_out, 'OM_2', om_mod):
                 raise _FanOutUnsupported(
                     "one electrical output cannot drive two modulation ports")
             self.log("  Topology: TRUE PUSH-PULL -- one electrode driving both arms "
@@ -414,11 +514,12 @@ class InterconnectBuilder:
 
         c_drive = (c1 - c2) if lumped_pp else c1
         add_modulator('OM_1', 560, 120, c_drive)
-        sim.connect('SPLT_1', 'output 1', 'OM_1', 'port 1')
-        sim.connect('OM_1', 'port 2', 'SPLT_2', 'input 1')
-        sim.connect('SPLT_1', 'output 2', 'PHS_1', 'port 1')
-        sim.connect(*self._wire_arm2_tail(), 'SPLT_2', 'input 2')
-        sim.connect('TW_1', 'output', 'OM_1', 'modulation')
+        self.connect('SPLT_1', P_OUT1, 'OM_1', P_BI1)
+        self.connect('OM_1', P_BI2, 'SPLT_2', P_IN1)
+        self.connect('SPLT_1', P_OUT2, 'PHS_1', P_BI1)
+        tail, tail_port = self._wire_arm2_tail()
+        self.connect(tail, tail_port, 'SPLT_2', P_IN2)
+        self.connect('TW_1', P_OUT, 'OM_1', P_MOD)
 
         if lumped_pp:
             vpi_eff = np.pi / (abs(c_drive) * L_OM)
@@ -432,12 +533,12 @@ class InterconnectBuilder:
         return "single-arm"
 
     def _wire_arm2_tail(self):
-        """Insert the arm-2 attenuator if present; return the element/port feeding
-        the combiner."""
+        """Insert the arm-2 attenuator if present; return the element and the
+        port-name candidates that feed the combiner."""
         if self.has_attenuator:
-            self.sim.connect('PHS_1', 'port 2', 'ATT_1', 'input')
-            return ('ATT_1', 'output')
-        return ('PHS_1', 'port 2')
+            self.connect('PHS_1', P_BI2, 'ATT_1', P_IN)
+            return ('ATT_1', P_OUT)
+        return ('PHS_1', P_BI2)
 
     # ---------------- run & read back -----------------------------------
     def run(self, save_path: Optional[str] = None):

@@ -1132,7 +1132,23 @@ class MZMStudio(tk.Tk):
             b = InterconnectBuilder(str(p["lumapi_path"]), hide=bool(p["ic_hide"]),
                                     log=lambda m: self.log(m))
             self.ic_builder = b            # keeps the process alive
-            topo = b.build(p, files, mode=mode)
+            try:
+                topo = b.build(p, files, mode=mode)
+            except Exception as exc:
+                from .interconnect import PortNameError
+                if isinstance(exc, PortNameError):
+                    self.log(str(exc), "warn")
+                    self.log("Asking this build what its ports are actually "
+                             "called -- paste the lines below and the candidate "
+                             "list can be corrected in one step:", "warn")
+                    try:
+                        b.report_ports('CWL_1', 'SPLT_1', 'SPLT_2', 'PHS_1',
+                                       'TW_1', 'PIN_1', 'OM_1',
+                                       *(('PRBS_1', 'NRZ_1', 'EYE_1')
+                                         if mode == "eye" else ('ENA_1',)))
+                    except Exception as exc2:
+                        self.log(f"  port report failed too: {exc2}", "warn")
+                raise
             self.log(f"Schematic built ({topo}, {mode} mode).")
             name = "TWMZM_eye.icp" if mode == "eye" else "TWMZM_EO_response.icp"
             b.run(os.path.join(out, name))

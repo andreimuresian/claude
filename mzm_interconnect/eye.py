@@ -98,6 +98,25 @@ def _auto(value, fallback):
     return v if v > 0 else fallback
 
 
+# A filter corner this close to the sample grid's Nyquist frequency cannot be
+# represented: the stopband has nowhere to live, so a sharp edge rings instead
+# of settling, and the ringing shows up as photocurrent below zero and rails
+# past the static transfer curve. Anything above this is clamped and said so.
+NYQUIST_SAFE_FRACTION = 0.4
+
+
+def _clamp_bw(name, value, fs_GHz, notes):
+    """Hold a filter corner inside what the sample grid can represent."""
+    ceiling = NYQUIST_SAFE_FRACTION * fs_GHz
+    if value <= ceiling:
+        return value
+    notes.append(
+        f"{name} {value:.1f} GHz is past what this grid can represent "
+        f"(sample rate {fs_GHz:.0f} GHz); clamped to {ceiling:.1f} GHz. "
+        f"Raise 'Samples per symbol' to model a faster filter.")
+    return ceiling
+
+
 def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
     """
     Run the link in the time domain and fold the result into an eye.
@@ -139,13 +158,14 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
     v = np.repeat(symbols - 0.5, sps) * Vpp
     f_GHz = np.fft.rfftfreq(n, d=1.0 / (fs_GHz * 1e9)) / 1e9
 
-    drive_bw = _auto(p["drive_bw_GHz"], 0.7 * sym_rate)
+    notes = []
+    drive_bw = _clamp_bw("Driver bandwidth",
+                         _auto(p["drive_bw_GHz"], 0.7 * sym_rate), fs_GHz, notes)
     V = np.fft.rfft(v) * _bessel4(f_GHz, drive_bw)
 
     # ---- per-arm electrode response ---------------------------------
     arm1, arm2 = arm_models(p)
     f_model = np.minimum(f_GHz, F_MODEL_CEIL_GHz)
-    notes = []
     if f_GHz[-1] > F_MODEL_CEIL_GHz:
         notes.append(f"electrode response held constant above "
                      f"{F_MODEL_CEIL_GHz:.0f} GHz (it is ~100 dB down there)")
@@ -181,7 +201,8 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
     R = 1.0                                                # A/W, matches PIN_1
     i_t = R * np.abs(E) ** 2
 
-    rx_bw = _auto(p["rx_bw_GHz"], 0.75 * sym_rate)
+    rx_bw = _clamp_bw("Receiver bandwidth",
+                      _auto(p["rx_bw_GHz"], 0.75 * sym_rate), fs_GHz, notes)
     if bool(p["eye_noise"]):
         rng = np.random.default_rng(seed)
         q = 1.602176634e-19

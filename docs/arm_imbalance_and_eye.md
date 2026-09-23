@@ -151,3 +151,36 @@ number and not worth worrying about.
 * The `Eye diagram` tab and the `Build eye in INTERCONNECT` button are driven
   from the same fitted line, the same V_pi and the same imbalances, so a
   disagreement between them is a modelling difference, not a bookkeeping one.
+
+## 6. Reading the eye, and checking it without measured data
+
+Four things carry almost all the information, and each points at a cause:
+
+| What you see | What it means | Which knob |
+|---|---|---|
+| The "0" rail sits above zero | finite extinction ratio | `arm_loss_imbalance_dB`, `split_err` |
+| Rails unequal distance from the crossing; crossing off 50 % | the bias is not at quadrature | `bias_phase_deg`, `arm_phase_imbalance_deg` |
+| Rails thick and sloped, eye narrow in time | intersymbol interference: the bit rate is too close to the bandwidth | `bitrate_Gbps` vs the EO bandwidth, `drive_bw_GHz` |
+| Rails flattened, eye stops improving with more drive | over-driven past the null | `drive_Vpp_V` against V_pi,eff |
+
+The right-hand panel exists to settle the last one at a glance: if the green
+drive band runs past the minimum of P(V), the eye is being folded, and no
+amount of bandwidth will fix it.
+
+`tools/validate_eye.py` checks the model in fourteen places where the answer is
+known before you run it -- three closed forms (static ER, chirp, bandwidth
+invariance), the ISI-free limit, crossing symmetry, monotonic closure with bit
+rate, and the power scaling of the noise. Run it against your own line:
+
+    python tools/validate_eye.py path/to/line.s2p --L-meas 2.5 --L 16.5 --Rt 53
+
+It prints what was expected, where the expectation comes from, and what the
+model produced. That is not the same as validating against a measured eye, but
+it does tell you whether the arithmetic is doing what the physics says it must.
+
+**The cheapest real calibration point is a DC transfer curve.** Sweeping the
+bias voltage and recording output power gives V_pi, the static extinction ratio
+and the insertion loss from one measurement, and those three numbers pin down
+`Vpi_V`, `arm_loss_imbalance_dB` and `split_err` together. Everything dynamic in
+the eye is built on top of them, so a model that reproduces the DC curve is
+already most of the way to being trustworthy.
