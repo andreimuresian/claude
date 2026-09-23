@@ -183,6 +183,19 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
         else (arm_phase(arm2) if arm2.g != 0 else np.zeros(n))
 
     # ---- two-beam interference --------------------------------------
+    # At a turning point of the transfer curve the small-signal slope vanishes
+    # and the output responds at twice the drive frequency. That is a real
+    # operating point (it is how you make a carrier-suppressed tone) but every
+    # eye and bandwidth metric below assumes the linearised response, so say so
+    # rather than reporting a number that means nothing.
+    slope = 2 * arm1.a * arm2.a * np.sin(arm2.phi0 - arm1.phi0) * (arm1.g - arm2.g)
+    full = 2 * arm1.a * arm2.a * abs(arm1.g - arm2.g)
+    if full > 0 and abs(slope) < 1e-3 * full:
+        notes.append("the bias sits at a turning point of the transfer curve "
+                     "(dP/dV = 0): there is no small-signal modulation, and the "
+                     "output responds at twice the drive frequency. Quadrature "
+                     "is 90 deg.")
+
     P_laser = 10 ** (float(p["P_laser_dBm"]) / 10) / 1000.0
     E0 = np.sqrt(P_laser)
     E = E0 * (arm1.a * np.exp(1j * (arm1.phi0 + m1))

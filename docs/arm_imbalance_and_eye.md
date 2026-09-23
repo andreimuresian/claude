@@ -235,3 +235,44 @@ and the insertion loss from one measurement, and those three numbers pin down
 `Vpi_V`, `arm_loss_imbalance_dB` and `split_err` together. Everything dynamic in
 the eye is built on top of them, so a model that reproduces the DC curve is
 already most of the way to being trustworthy.
+
+## 7. The eye analyser needs a reference, or it computes nothing
+
+The EYE element left on its own sees only the detected waveform. It will draw
+an eye and report the Gaussian-estimated Q, but the *measured* BER compares
+recovered bits against the transmitted ones, and with nothing to compare
+against the element reference is blunt about the result:
+
+    with only the input signal   : no information of the original bits,
+                                   BER = 0 (incorrect)
+    with only reference signal   : the bit pattern is recovered from the
+                                   reference signal
+    with bit pattern input       : BER computed against the provided
+                                   pattern (recommended)
+
+A reported BER of 0 therefore means "unknown", not "perfect". The builder wires
+one of three references, in the order Ansys recommends:
+
+1. `PRBS_1` output into the eye's bit-pattern port, after setting
+   `bit pattern input = true`. The exact transmitted bits, nothing recovered.
+2. `NRZ_1` output into `reference` (`signal reference input` is already true by
+   default, which is why that port is sitting there unconnected). The element
+   recovers the pattern from the drive.
+3. A second PRBS with the same `order` and the same fixed `seed`, for a build
+   that will not fan one generator output out to two destinations. Identical
+   sequence, no fan-out needed -- the same trick the Ansys differential-drive
+   note uses.
+
+**One consequence worth knowing about.** Once a reference is connected the
+element labels levels by the transmitted bit rather than by power order. An MZM
+biased on the falling side of its transfer curve then legitimately decodes
+level one *below* level zero, and the element says so in language that reads
+like a failure ("level zero mean greater than level one mean", "eye considered
+closed"). It is the labelling, not the device. The sign is known in advance
+from dP/dV at the bias, so the builder predicts it and says which way round the
+eye will come out; add 180 degrees to the bias to flip it.
+
+At exactly 0 or 180 degrees dP/dV is zero: the modulator sits at a turning
+point, there is no small-signal modulation at all, and the output responds at
+twice the drive frequency. Both the eye and the EO bandwidth are meaningless
+there, and both sides of the toolkit now say so rather than reporting a number.

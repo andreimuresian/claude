@@ -79,6 +79,13 @@ P_DIGI_IN = _pin('modulation', 'input', 'in', 'port 1', 'in1')
 # ports positionally the combiner's output is 'port 1' -- not 'port 2', which
 # would silently wire the detector to one of the inputs.
 P_COMB_OUT = _pin('output', 'out', 'port 1', 'output 1', 'out1')
+# The eye analyser's two optional inputs. Neither is on by default in the port
+# list -- 'bit pattern input' has to be enabled first, and 'reference' is
+# enabled but unconnected -- and without one of them the eye has no idea what
+# was transmitted.
+P_EYE_BITS = _pin('bit pattern', 'bit pattern input', 'bits', 'pattern',
+                  'modulation', 'input 2')
+P_EYE_REF = _pin('reference', 'reference input', 'signal reference', 'input 2')
 # Everything worth probing when a name is refused.
 P_ALL = _pin('input', 'output', 'in', 'out', 'modulation', 'reference',
              'port 1', 'port 2', 'port 3', 'port 4',
@@ -425,6 +432,7 @@ class InterconnectBuilder:
             self._add_eye_chain(p)
             self.connect('PIN_1', P_OUT, 'EYE_1', P_IN)
             self.connect('NRZ_1', P_OUT, 'TW_1', P_IN)
+            self._wire_eye_reference(p)
         else:
             self._add_ena(p)
             self.connect('PIN_1', P_OUT, 'ENA_1', P_IN1)
@@ -525,6 +533,111 @@ class InterconnectBuilder:
         self.log(f"  Eye drive: PRBS-{int(p['prbs_order'])} at {sym_rate:.1f} GBd, "
                  f"{vpp:.2f} Vpp centred on the bias point, rise/fall "
                  f"{rise_frac:.2f} of a bit period.")
+
+    def _wire_eye_reference(self, p: dict):
+        """
+        Give the eye analyser something to compare the received bits against.
+
+        Left on its own the EYE element sees only the detected waveform. It
+        will still draw an eye and still report the Gaussian-estimated Q, but
+        the *measured* BER needs to know what was actually transmitted, and
+        with no reference it reports BER = 0 -- which is not a good result, it
+        is no result. The element reference is explicit about this: "with only
+        the input signal: with no information of the original bits, BER = 0
+        (incorrect)".
+
+        Three ways to fix it, tried in the order Ansys recommends:
+
+          1. the transmitted bit pattern itself, straight from PRBS_1;
+          2. the electrical drive from NRZ_1 into the 'reference' port, from
+             which the element recovers the pattern;
+          3. a second PRBS with the same order and a fixed seed, for a build
+             that will not fan a generator output out to two destinations.
+
+        Both of the first two need a fan-out, which is the one thing an
+        INTERCONNECT build is entitled to refuse, hence the third.
+        """
+        if self.setp('EYE_1', ['bit pattern input'], True, required=False):
+            if self._try_connect_any('PRBS_1', P_OUT, 'EYE_1', P_EYE_BITS):
+                self.log("  EYE_1 reference: the transmitted bit pattern from "
+                         "PRBS_1 (measured BER is exact).")
+                self._warn_if_inverted(p)
+                return
+            self.setp('EYE_1', ['bit pattern input'], False, required=False)
+
+        self.setp('EYE_1', ['signal reference input'], True, required=False)
+        if self._try_connect_any('NRZ_1', P_OUT, 'EYE_1', P_EYE_REF):
+            self.log("  EYE_1 reference: the electrical drive from NRZ_1 "
+                     "(the pattern is recovered from it).")
+            self._warn_if_inverted(p)
+            return
+
+        # Neither fan-out was allowed. A second generator with the same order
+        # and the same fixed seed emits the identical sequence, which is the
+        # trick the Ansys differential-drive note uses for the same reason.
+        try:
+            self.add(['PRBS Generator'], 'PRBS_2', 115, 60)
+            self.setp('PRBS_2', ['bitrate', 'bit rate'],
+                      float(p["bitrate_Gbps"]) * 1e9 /
+                      (1 if str(p["mod_format"]).upper() != "PAM4" else 2),
+                      required=False)
+            self.setp('PRBS_2', ['order'], int(p["prbs_order"]), required=False)
+            self.setp('PRBS_2', ['automatic seed'], False, required=False)
+            self.setp('PRBS_2', ['seed'], 1, required=False)
+            self.setp('PRBS_1', ['automatic seed'], False, required=False)
+            self.setp('PRBS_1', ['seed'], 1, required=False)
+            self.setp('EYE_1', ['bit pattern input'], True, required=False)
+            if self._try_connect_any('PRBS_2', P_OUT, 'EYE_1', P_EYE_BITS):
+                self.log("  EYE_1 reference: a second PRBS with the same order "
+                         "and seed, because this build would not fan PRBS_1 out "
+                         "to two destinations.")
+                self._warn_if_inverted(p)
+                return
+        except Exception as exc:
+            self.log(f"  second PRBS not available ({exc}).")
+
+        self.log("  WARNING: EYE_1 has no reference. It will still draw the eye "
+                 "and report the Gaussian-estimated Q, but the measured BER "
+                 "will read 0, which means 'unknown', not 'perfect'. Connect "
+                 "PRBS_1 or NRZ_1 to EYE_1 by hand in the schematic.")
+
+    def _try_connect_any(self, a, ports_a, b, ports_b) -> bool:
+        """connect(), but a refusal is an answer rather than an error."""
+        try:
+            return self.connect(a, ports_a, b, ports_b, required=False) is not None
+        except Exception:
+            return False
+
+    def _warn_if_inverted(self, p: dict):
+        """
+        Say so when a transmitted '1' will come out as the LOW optical level.
+
+        Given a reference, the eye labels levels by the bit that produced them
+        rather than by power order, so an MZM biased on the falling side of its
+        transfer curve legitimately decodes level one below level zero. The
+        element then reports things like "level zero mean greater than level
+        one mean" and "eye considered closed", which look like failures and are
+        not. The sign is known in advance -- dP/dv at the bias -- so there is no
+        reason to be surprised by it.
+        """
+        from .physics import arm_models
+        arm1, arm2 = arm_models(p)
+        slope = 2 * arm1.a * arm2.a * np.sin(arm2.phi0 - arm1.phi0) \
+            * (arm1.g - arm2.g)
+        full = 2 * arm1.a * arm2.a * abs(arm1.g - arm2.g)
+        if full > 0 and abs(slope) < 1e-3 * full:
+            self.log("  WARNING: this bias sits at a turning point of the "
+                     "transfer curve (dP/dV = 0), so there is no small-signal "
+                     "modulation at all -- the output responds at twice the "
+                     "drive frequency instead. The eye and the EO bandwidth "
+                     "are both meaningless here. Quadrature is 90 deg.")
+        elif slope < 0:
+            self.log("  NOTE: at this bias a '1' bit produces the LOW optical "
+                     "level (dP/dV < 0). With a reference connected the eye "
+                     "labels levels by the transmitted bit, so it will report "
+                     "level zero above level one and may call the eye closed. "
+                     "That is the labelling, not the device. Add 180 deg to the "
+                     "bias to flip it.")
 
     def _set_root(self, prop, value) -> bool:
         """Set a root-element property, whichever way this build spells it."""
