@@ -742,3 +742,228 @@ Compare against what `assemble_periodic` actually builds (`fk.soft_p(du, dv) + �
 **Nothing started beyond scope:** no `line_rlgc` change, no geometry-blindness investigation, no thick metal, no Phase 4.
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.17 Sharp-Table Fix — Result
+gate	target	before	after	verdict
+kernel vs exact, β = 1285	≤ 1e-4	2.64e-2	2.82e-4	FAIL (94× better)
+kernel vs exact, β = 0	≤ 1e-4	2.53e-2	1.00e-3	FAIL (25× better)
+n_sharp 6 vs 16	≤ 1e-4	1.3e-2	~7e-5	PASS
+sharp tail ρ ∈ [1, 10] mm	~1	−4071 @ 3.2 mm	1.02 @ 1 mm, diverges past 2 mm	FAIL
+n_m(air)	1.0000 ± 1e-4	1.024099	1.024099	FAIL, unchanged
+n_m(ε = 11.7)	3.4205 ± 4e-4	3.502941	3.502941	FAIL, unchanged
+V3.1b E-invariance	< 1e-3	—	1.2e-5 / 1.4e-3	PASS / marginal
+The kernel is 94× more accurate; the solver's n_m is bit-identical. The kernel fix was necessary but orthogonal to the n_m error.
+
+3.18 The n_m "Bias" Was Largely Physical, Not Numeric
+SIBC contribution decomposed:
+
+case	n_m(air)
+Zs = R_s(1+j) (physical gold)	1.024099
+Zs = 0 (PEC)	1.013630
+exact TEM (PEC reference)	1.000000
+SIBC contribution: 1.05 points — physics, not a bug.
+
+Real solver error against PEC: 1.36%.
+
+The previously reported "2.3% homogeneous bias" was 1.05 points of physical SIBC effect plus 1.36 points of solver error. The gate as originally specified (1.0000 ± 1e-4 with lossy gold) was unachievable — I specified it wrong.
+
+3.19 The Dominant Remaining Defect — Geometry-Blindness
+This is the finding that survives the kernel fix and matters most.
+
+quantity	MoM spread across 5 rows	CST spread across 5 rows
+unetched n_m	1.2% (2.268 → 2.296)	17.8% (1.744 → 2.054)
+Across WS ∈ [56, 70] μm and GAP ∈ [8.6, 18.7] μm, CST's baseline index moves 17.8%. Ours moves 1.2%. That is a 15× sensitivity deficit and is not a small residual to tune out.
+
+This defect is:
+
+Not caused by the sharp-table bug (fixing it left n_m bit-identical).
+
+Not caused by the mesh (near_fac invariant to 1e-5; refinement flat).
+
+Not the seed-lock issue (ruled out by the open-sweep scan).
+
+Not the loop-mode issue (ruled out by comparing Vh[-1] and inverse iteration).
+
+Consistent with a geometry-independent additive term in the periodic G_q — the chatbot previously measured Im(G_q,periodic) ≈ −1.19e13 constant across the cell, matching the n = 0 surface-wave harmonic S_p / (2 |a_0| P).
+
+3.20 Retracted Earlier Claims
+"The kernel sharp-table bug explains the 2.3% n_m bias." Retracted. n_m is unchanged by the fix.
+
+"The n_m gate is 1.0000 ± 1e-4." Retracted. The correct PEC-referenced gate is 1.0000 ± 1e-4; the lossy-gold gate is 1.0136 ± tolerance, plus a 1.36% solver term.
+
+"The remaining defect is localized to line_rlgc." Already retracted in a prior addendum; C is accurate to ±3%.
+
+3.21 Current State of Every Observable
+quantity	status
+Absolute C (unetched)	±3% — healthy
+Absolute L (unetched)	20–84% high — broken
+Absolute n_m (unetched)	1.2% spread, should be 17.8% — geometry-blind
+ΔL	median 6.4% — PASS median, FAIL worst
+ΔC	67.7% — FAIL, not mesh-driven
+Δα	167.6% — FAIL, not mesh-driven
+Kernel (air)	2.82e-4 — 94× improved, still not ≤ 1e-4
+Air n_m vs PEC	+1.36% — bounded, unexplained
+3.22 Root-Cause Candidates Ranked
+Geometry-independent additive term in periodic G_q — strongest hypothesis. Would explain why MoM is nearly blind to WS/GAP while CST's baseline varies 17.8%. Consistent with the measured constant Im(G_q) offset.
+
+Isotropic LN approximation (ε = 34.7 vs. anisotropic 43/28/43) — affects absolute n_m on the layered case, but not the spread, so cannot explain the 15× sensitivity deficit alone.
+
+Zero-thickness metal (SIBC, no MTX geometry) — CST models finite thickness; ours does not. Correlates with MTX (partial r = −0.94), but the previous falsifiable-ordering prediction for ΔL failed, so this is not proven either.
+
+Residual _sommerfeld contour issue (2.8e-4 kernel error) — real but 100× too small to explain the n_m gap.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.23 Audit of Dataset-Input Coverage
+Triggered by the observation that mesh_generator.py:30 parses both MTX and CAP_W but nothing downstream uses them.
+
+Findings:
+
+MTX (metal thickness) is unused. Zero references in the solver. It is the single dominant geometry variable in the dataset:
+
+target	MTX t-stat	span over MTX range	sd of target
+nm_baseline	−82.8	−0.313	0.116
+z0_baseline	−29.0	−14.04 Ω	9.92
+deltaL lumped	−9.4	−7.9e-12	1.64e-11
+alpha_delta	−6.9	−1.65 dB/cm	2.19
+MTX alone accounts for 94% of CST's n_m spread across the five test rows (partial-contribution decomposition, 9-variable linear model, R² = 0.959).
+
+CAP_W is unused, and this is correct. User confirmed CST never built the SiO₂ cap above the rib; its small effect cancels in the differential. The apparent t = 5.08 significance is confounded through GAP (r = 0.45).
+
+WG = 70 μm is a hardcoded constant, sourced from the CST history. User confirmed correct.
+
+Tee orientation confirmed correct by user: narrow base of the tee on the ground inner edge, facing the gap.
+
+Mesh generator in-plane geometry audit passes: all seven in-plane parameters round-trip exactly, role assignment correct, no degenerate cases in 500 rows.
+
+Process gap identified: two dataset columns were parsed and silently dropped for three phases without any invariant to catch it. A Phase-0 check that every dataset column either reaches the model or is documented as intentionally excluded should be added.
+
+3.24 Two-Height Green's Function — Validated
+The extension needed to represent MTX:
+
+text
+G̃(k_ρ; z, z') = [e^{−jk_z|z−z'|} + Γ·e^{−jk_z(z+z')}] / (2η_up),   Γ = (η_up − η_dn)/(η_up + η_dn)
+Direct-plus-reflection form for a source in the upper half-space above a stratified medium. The conductor lives entirely in the air half-space (z ∈ [0, MTX]), so no general multilayer machinery is needed.
+
+Validation: at z = z' = 0 the two-height kernel reduces to the existing same-interface kernel to 1e-15 or better, for both TM and TE, across k_ρ/k₀ from 0.3 to 500.
+
+This is a strong result. The current zero-thickness solver becomes the MTX → 0 limit of the extended solver, so all Phase-1 validation carries forward as a regression test.
+
+3.25 MTX Mechanism — Partially Characterised
+Question: what physical channel does MTX act through?
+
+Test: approximate MTX effect as side-wall air capacitance between facing gap walls.
+
+Result: predicted dn_m/dMTX = −0.0091 /μm against CST's −0.0224 /μm — 41%. Side walls are a major term but under half.
+
+Conclusion: the mechanism is distributed. The full effect requires:
+
+Facing gap walls (41%)
+
+Top face elevated into air, away from high-ε substrate
+
+Fringing at top corners
+
+A reduced model that meshes only the gap-facing walls lands at ~40–60%. The full closed surface is needed.
+
+Additional constraint: MTX/GAP spans 0.06–3.00, median 0.56, and 76/500 rows have metal thicker than the gap is wide. Classical closed-form thick-strip corrections (Wen/Ghione-style effective widening) are first-order in t/gap and do not apply in this regime.
+
+SIBC validity confirmed: skin depth in gold at 60 GHz is 0.304 μm; MTX/δ_skin ranges 3.3–49 (median 25). The current rides the outer surface of the conductor. Surface-impedance BC on each face is correct; the metal interior never needs meshing.
+
+3.26 Implementation Scope (If MTX Diagnostic Confirms)
+component	difficulty	note
+Two-height kernel	done — validated at 1e-15	uses existing _eta_up / _eta_dn
+Dyadic components for z-directed current	hard, new	walls carry vertical current; standard Sommerfeld but new code
+Ewald with z-dependence	the main cost	radial table becomes (ρ, z, z') instead of 1D in ρ
+Closed-surface mesh + RWG across face/wall edges	moderate	gmsh extrudes footprint; closed-surface RWG is standard
+Mitigation for the Ewald cost: MTX ≤ 15 μm against a 200 μm period. Walls need only a few elements through thickness. A small set of discrete (z, z') pairs or a low-order z-expansion may suffice rather than a full 2D table.
+
+Honest scope: this is Phase-1-sized, not a patch. Days to weeks.
+
+3.27 Pending — The 2D Thickness Diagnostic
+Decision gate before committing to the 3D build. A 2D electrostatic cross-section solve with true rectangular conductors in the layered dielectric.
+
+Method: Laplace solve on the cross-section. For quasi-TEM, n_m = √(C/C_air). ~150 lines of finite differences — no new Green's function, no Floquet, no Bloch.
+
+Answers two questions no other test can cheaply:
+
+Does it reproduce CST's dn_m/dMTX = −0.0224 from first principles? (Validates the mechanism.)
+
+Does the 10–30% absolute n_m bias collapse when thickness is included? (Validates the diagnosis.)
+
+Pass criterion: 2D slopes match CST's partial derivatives to within 30%.
+
+Additions requested:
+
+Test Z₀ as well (CST's z0_baseline has MTX t-stat −29.0).
+
+Run 5 rows + a 50-row scatter (slope may be regime-dependent).
+
+Anchor against C_base (Phase-2 C match must not break).
+
+Delete after use — write under diagnostics/, do not carry into production.
+
+Distinction from the previously-ruled-out quasi-static pivot: the pivot was to replace the full-wave deliverable with a quasi-static extraction. This is a throwaway sizing calculation to decide whether the 3D build is justified. The deliverable stays the full-wave Route C solver.
+
+3.28 Updated Phase Status
+phase	status	completion
+Phase 1 — Green's function (same-interface)	validated	100%
+Phase 1 — two-height kernel	validated at 1e-15, not yet used	10%
+Phase 2 — finite-line MoM	abandoned; assembly reused	40%
+Phase 3 — periodic Floquet (same-interface)	kernel + assembly + eigenvalue work; ΔL validated; C accurate; ΔC, Δα blocked by MTX absence	65%
+Phase 3 — with MTX	not started; awaits 2D diagnostic	0%
+Phase 4 — production wrapper	not started	0%
+Overall project	validated core, one dominant physical ingredient missing	~35%
+3.29 Strategic Read
+The physics core works. The kernel is accurate (2.82e-4), the assembly is validated (C match to ±3%, ε-scaling to 0.1%), the Bloch eigenvalue converges cleanly, and ΔL matches CST to median 3.8% on mesh-converged runs.
+
+The remaining failure — ΔC, Δα, absolute n_m — is not a bug. It is a missing geometric dimension: metal thickness. MTX drives 94% of CST's baseline variability, and the current formulation has no input for it at all.
+
+The two-height Green's function has been derived and validated. It reduces to the current kernel to 1e-15 in the MTX → 0 limit. It is a Phase-1-sized extension, not a patch.
+
+The 2D diagnostic is the next decision gate: if it reproduces CST's dn_m/dMTX = −0.0224 from first principles, the mechanism is confirmed and the 3D build is justified. If it does not, we have saved weeks.
+
+No fix attempted. No 3D build started. line_rlgc untouched.
+
+
+
+
