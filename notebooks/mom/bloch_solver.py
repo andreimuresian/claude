@@ -112,7 +112,10 @@ def _static_blocks(cell, fk, near_fac, n_sharp):
     repeat assembly to a few seconds, which is what makes a secant search (and
     gate V3.7) affordable."""
     c = cell.get("_asm_cache")
-    key = (id(fk), near_fac, n_sharp)
+    # _RFLOOR MUST be in the key: it changes the blocks this function builds,
+    # and a sweep over it silently reused the first value's cache until the
+    # driver popped _asm_cache by hand.  That trap is closed here.
+    key = (id(fk), near_fac, n_sharp, _RFLOOR)
     if c is not None and c["key"] == key:
         return c
     nodes = cell["nodes"]; tris = cell["tris"]
