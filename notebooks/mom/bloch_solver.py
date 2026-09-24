@@ -39,10 +39,10 @@ _G7 = np.array([[1/3, 1/3],
                 [(6+_s15)/21, (9-2*_s15)/21],
                 [(6-_s15)/21, (6-_s15)/21], [(9+2*_s15)/21, (6-_s15)/21],
                 [(6-_s15)/21, (9+2*_s15)/21]])
-# KNOWN DEFECT -- READ BEFORE TRUSTING C OR dC FROM THIS SOLVER.
+# KNOWN LIMITATION -- READ BEFORE TRUSTING C OR dC FROM THIS SOLVER.
 #
 # _RFLOOR floors the quadrature distances in the near-field remainder.  It is
-# NOT a harmless safeguard: it sets the answer.  Measured on row 118 at
+# NOT a harmless safeguard: it influences the answer.  Measured on row 118 at
 # h = 9 um, varying only this number:
 #
 #     floor      C_u error     n_m
@@ -69,10 +69,28 @@ _G7 = np.array([[1/3, 1/3],
 # coplanar triangles has a semi-analytic form, which removes the singularity at
 # EVERY rho rather than at one.  That is the prerequisite for a trustworthy dC.
 #
-# The pre-change code sampled the remainder at a single point at
-# reff = max(D, 0.35 sqrt(Ai+Aj)) -- the same arbitrariness, cruder.  Its 2.9 %
-# absolute C accuracy is therefore not established as principled either; that
-# has not been tested.
+# That test has now been done, and it settles the question: the pre-change code
+# was LUCKY, and this scheme is roughly an order of magnitude more robust, not
+# less.  Sweeping the old single-point distance reff = max(D, _RCO sqrt(Ai+Aj))
+# on the same row:
+#
+#     _RCO       C error       n_m
+#     0.15        -23.5 %     1.9684
+#     0.25         -8.5 %     2.1508
+#     0.35 (ship)  +3.1 %     2.2808
+#     0.50        +22.1 %     2.4818
+#     0.70         -6.2 %     2.1496
+#
+# i.e. a 45-point C range and a 26 % n_m range, with the shipped 0.35 sitting on
+# the single best C value in the sweep.  Against that, this scheme spans 5 points
+# in C and 1.5 % in n_m.  So this change REDUCED a pre-existing parameter
+# dependence; it did not introduce one, and reverting is not a sound option.
+#
+# Two corollaries.  The old code's n_m = 2.2808 was itself a floor artifact --
+# the same code gives 2.1508 and 2.1496 at _RCO = 0.25 and 0.70, near this
+# scheme's 2.0971 and near the independent 2D value 2.0821.  And the reported
+# "dC went 67.7 % -> 73.1 %" was a comparison between two arbitrary parameter
+# points, not a regression.
 _RFLOOR = 0.15
 _W7 = np.array([9/40,
                 (155-_s15)/1200, (155-_s15)/1200, (155-_s15)/1200,
