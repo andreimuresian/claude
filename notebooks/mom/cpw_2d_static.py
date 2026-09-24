@@ -1,18 +1,32 @@
-"""THROWAWAY DIAGNOSTIC -- DELETE AFTER USE.  NOT PRODUCTION CODE.
+"""2D quasi-TEM baseline for the thick-metal CPW cross-section.
 
-Purpose: decide whether finite electrode thickness (MTX) explains the CST
-sensitivity the zero-thickness MoM cannot reproduce, BEFORE committing to the
-3D closed-surface build.  This is not an extraction method and must never be
-carried into the solver path.  It is 2D electrostatics, not full-wave, and it
-exists only to size one effect.
+PRODUCTION.  Promoted out of diagnostics/ after it reproduced the CST reference
+to <=3 % on both observables where the 3D zero-thickness MoM was +10 to +30 %
+high.  This is the absolute baseline of the extraction; the 3D periodic solver
+supplies the FRACTIONAL tee perturbation on top of it.
 
-Method.  For a quasi-TEM line,
+Why it exists.  MTX (electrode thickness, 1-15 um against gaps of 4-20 um) is
+the strongest single geometry predictor in the CST dataset -- t = -83 against
+nm_baseline, spanning 2.7 standard deviations -- and a zero-thickness RWG sheet
+has no representation for it at all.  Here it costs nothing: the electrodes are
+just rectangles of cells.
+
     n_m = sqrt(C / C_air),        Z0 = 1 / (c sqrt(C C_air))
-where C is the cross-section capacitance per unit length with the real layer
-stack and C_air the same geometry with every dielectric replaced by vacuum.
-Both come from one 2D Laplace solve, so finite-thickness rectangular electrodes
-cost nothing extra -- which is the whole point, since that is exactly what the
-zero-thickness RWG formulation cannot represent.
+
+with C the cross-section capacitance per unit length for the real layer stack
+and C_air the same geometry with every dielectric replaced by vacuum.
+
+Validation (diagnostics/mtx_2d_run.py holds the record):
+  * dn_m/dMTX  -0.02162 vs CST -0.02241  (ratio 0.96, 50-row regression)
+  * dZ0/dMTX   -1.16667 vs CST -1.17387  (ratio 0.99)
+  * absolute n_m within -0.8 to -2.9 % on the five test rows, Z0 within -3.2 %
+  * setting MTX = 0 reproduces the zero-thickness pathology: n_m collapses to
+    2.08-2.14 across five geometries and the per-row errors rank as the 3D
+    MoM's do, which is what identified thickness as the cause
+  * grid-converged to 0.016 % in n_m over a 4x refinement
+
+It is quasi-TEM and gives no loss, so alpha still comes from the full-wave
+solver.  It is a first-principles solve, not a fit: the dataset is never read.
 
 Discretisation: cell-centred finite volume on a graded tensor grid.  eps is
 constant per cell (layer interfaces are forced onto cell FACES), face

@@ -1,12 +1,12 @@
-"""THROWAWAY DIAGNOSTIC -- DELETE AFTER USE.  NOT PRODUCTION CODE.
+"""VALIDATION RECORD for cpw_2d_static.py (kept: it is the evidence).
 Driver for mtx_2d_probe: does finite electrode thickness reproduce CST's
 MTX sensitivity in n_m AND Z0?  Pass criterion: within 30 % of CST's partials."""
 import sys, json, time
 sys.path.insert(0, "/home/user/claude/notebooks/mom")
-sys.path.insert(0, "/home/user/claude/notebooks/mom/diagnostics")
+# cpw_2d_static now lives in the parent (production)
 import numpy as np, pandas as pd
 import stack_params as sp
-from mtx_2d_probe import solve_cs, observables
+from cpw_2d_static import solve_cs, observables
 
 C0 = 299792458.0
 DATA = "/root/.claude/uploads/f069cebc-0d61-5069-a4b8-cc5b76a72567/51442c2b-FULL_DATASET.xlsx"

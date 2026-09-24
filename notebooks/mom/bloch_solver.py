@@ -70,22 +70,56 @@ def _static_blocks(cell, fk, near_fac, n_sharp):
         Ip = np.array([_Ipot(r, Tj) for r in ro])
         Iv = np.array([_Ivec(r, Tj) for r in ro])
         SPsing = Ai*np.sum(_W3*Ip)
+
+        # ---- near-field remainder: LOCAL asymptote + double quadrature ----
+        # Phase 3 extracted the rho -> 0 constant Kq = 1/(2 pi eps0 (eps_air +
+        # eps_LN)) analytically and evaluated the whole remainder at ONE
+        # effective distance.  Both halves of that are wrong in a layered
+        # stack.  Kq is the correct 1/rho constant only for rho << t_LN, and
+        # t_LN is 0.13-0.36 um against a mesh of 9-13 um: over the range where
+        # near pairs actually sit, the true local constant rho*G(rho) is 2.4 to
+        # 5.0 times Kq, so the analytic integration removes less than a quarter
+        # of the singularity and the leftover KEEPS a 1/rho that a one-point
+        # evaluation cannot integrate.  Measured on row 118, the remainder
+        # g_q varies 76x across a single triangle and changes sign.
+        #
+        # This is also why the homogeneous-air case converges under refinement
+        # and the layered case does not (0.0016 vs 0.0576 for h = 13 -> 9 um):
+        # in one medium Kq is exact at EVERY rho, so nothing is left over.
+        #
+        # Fix: re-split with the local constant K_loc = rho_c G(rho_c) at the
+        # pair's own distance -- an exact splitting, since the same K_loc is
+        # integrated analytically and subtracted inside the quadrature -- and
+        # integrate what remains over BOTH triangles instead of sampling it at
+        # a point.  Only the conditioning changes, never the operator.
+        # G_A needs none of this (it varies 1.2x over the same range) but gets
+        # the same treatment for consistency.
+        rj = (_G3[:, 0][:, None]*(Tj[1]-Tj[0]) + _G3[:, 1][:, None]*(Tj[2]-Tj[0])
+              + Tj[0])
+        Rpq = np.maximum(np.hypot(ro[:, None, 0] - rj[None, :, 0],
+                                  ro[:, None, 1] - rj[None, :, 1]),
+                         0.15*np.sqrt(Ai + Aj))
+        Wpq = _W3[:, None]*_W3[None, :]
         reff = max(D[i, j], 0.35*np.sqrt(Ai+Aj))
-        gq = complex(fk.Gq_sharp(reff)) - fk.Kq/reff
-        gA = complex(fk.GA_sharp(reff)) - fk.KA/reff
-        SP = fk.Kq*SPsing + Ai*Aj*gq
+        Kq_l = reff*complex(fk.Gq_sharp(reff))        # local 1/rho constants
+        KA_l = reff*complex(fk.GA_sharp(reff))
+        gq_pq = fk.Gq_sharp(Rpq) - Kq_l/Rpq
+        gA_pq = fk.GA_sharp(Rpq) - KA_l/Rpq
+        SP = Kq_l*SPsing + Ai*Aj*np.sum(Wpq*gq_pq)
         Gpot_near[i, j] = SP/(Ai*Aj)
         Gpot_near[j, i] = SP/(Ai*Aj)
         em = _edges_of(cell, i); en = _edges_of(cell, j)
         for (me, mv, ms) in em:
             rmv = ro - nodes[mv]
-            cmv = cent[i] - nodes[mv]
             sm = sh_p[me] if ms > 0 else sh_m[me]
             for (ne, nv, ns) in en:
                 sn = sh_p[ne] if ns > 0 else sh_m[ne]
                 inner = Iv + (ro-nodes[nv])*Ip[:, None]
                 vs = Ai*np.sum(_W3*np.sum(rmv*inner, axis=1))
-                VP = fk.KA*vs + Ai*Aj*np.dot(cmv, cent[j]-nodes[nv])*gA
+                # (r_p - v_m).(r'_q - v_n) weighted by the remainder, over both
+                # triangles, in place of the centroid-only product
+                dot_pq = np.einsum("pd,qd->pq", rmv, rj - nodes[nv])
+                VP = KA_l*vs + Ai*Aj*np.sum(Wpq*dot_pq*gA_pq)
                 base = (jw*(ms*Le[me]/(2*Ai))*(ns*Le[ne]/(2*Aj))*VP
                         + (1.0/jw)*(ms*Le[me]/Ai)*(ns*Le[ne]/Aj)*SP)
                 rows.append(me); cols.append(ne); vals.append(base); dsh.append(sm-sn)

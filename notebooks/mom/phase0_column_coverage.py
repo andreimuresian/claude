@@ -77,6 +77,42 @@ def used_in_source(col):
     return False
 
 
+def _bare_word_used(col):
+    """The ORIGINAL, buggy matcher, kept only as a negative control."""
+    pat = re.compile(r"\b" + re.escape(col) + r"\b")
+    for f in SRC:
+        p = HERE / f
+        if not p.exists():
+            continue
+        for line in p.read_text().splitlines():
+            if "row[" in line or line.strip().startswith("#"):
+                continue
+            if pat.search(line):
+                return True
+    return False
+
+
+def negative_control():
+    """A gate that cannot fail proves nothing.  The first version of this check
+    reported MTX as reaching the model because mom_solver's module docstring
+    contains the phrase "MTX up to ~14 um".  Assert that the old matcher still
+    false-passes and the new one does not, so the fix stays pinned."""
+    old = _bare_word_used("MTX")
+    new = used_in_source("MTX")
+    if not old:
+        print("  negative control VACUOUS: the bare-word matcher no longer "
+              "false-passes MTX (the docstring phrase was probably edited). "
+              "Re-point the control at a live case before trusting this gate.")
+        return 0
+    if new:
+        print("  negative control FAILED: the strict matcher also reports MTX "
+              "as used, so it is not actually stricter.")
+        return 1
+    print("  negative control PASS: bare-word matcher false-passes MTX, "
+          "strict matcher correctly does not")
+    return 0
+
+
 def main():
     bad = []
     print("Phase-0 dataset column coverage")
@@ -92,12 +128,14 @@ def main():
     print("  %d reference columns (scoring only, never read at solve time)"
           % len(REFERENCE))
     print("-" * 72)
+    rc = negative_control()
+    print("-" * 72)
     if bad:
         print("FAIL: %d input column(s) neither used nor documented: %s"
               % (len(bad), ", ".join(bad)))
         return 1
     print("PASS: every input column is used or documented as excluded")
-    return 0
+    return rc
 
 
 if __name__ == "__main__":
