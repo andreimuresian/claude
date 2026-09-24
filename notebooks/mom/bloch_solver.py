@@ -26,6 +26,57 @@ which is zero exactly at the eigenvalues, using one LU solve per evaluation.
 import numpy as np
 from scipy import sparse
 from mom_solver import _Ipot, _Ivec, _G3, _W3, _edges_of, _gram
+
+# Degree-5 symmetric 7-point triangle rule, for the OUTER integration of the
+# singular 1/rho double integral.  The local-asymptote re-split multiplies
+# SPsing by K_loc ~ 4.8 x the old Kq, so whatever error the outer rule makes is
+# amplified by the same factor -- and int_Ti int_Tj 1/rho has a log singularity
+# in the outer variable, which a 3-point rule resolves poorly.  Measured effect
+# of leaving it at 3 points: absolute C degraded from 2.9 % to 12.9 %.
+_s15 = np.sqrt(15.0)
+_G7 = np.array([[1/3, 1/3],
+                [(6+_s15)/21, (6+_s15)/21], [(9-2*_s15)/21, (6+_s15)/21],
+                [(6+_s15)/21, (9-2*_s15)/21],
+                [(6-_s15)/21, (6-_s15)/21], [(9+2*_s15)/21, (6-_s15)/21],
+                [(6-_s15)/21, (9+2*_s15)/21]])
+# KNOWN DEFECT -- READ BEFORE TRUSTING C OR dC FROM THIS SOLVER.
+#
+# _RFLOOR floors the quadrature distances in the near-field remainder.  It is
+# NOT a harmless safeguard: it sets the answer.  Measured on row 118 at
+# h = 9 um, varying only this number:
+#
+#     floor      C_u error     n_m
+#     0.300        -7.5 %     2.1195
+#     0.150       -11.2 %     2.1020
+#     0.050       -12.7 %     2.1329
+#     0.015       +60.3 %     3.0677     <- diverges
+#
+# Cause: the remainder  g = G_sharp(rho) - K_loc/rho  STILL carries a 1/rho
+# singularity.  A single constant can only cancel it at one distance (reff);
+# everywhere else the 1/rho survives with a different coefficient.  A
+# fixed-order Gauss rule cannot integrate 1/rho, so it diverges as sample
+# points approach coincidence and is floor-dependent otherwise.
+#
+# Consequence: beta (hence n_m) is robust to this -- it moves 1.5 % over the
+# floor range 0.30-0.05 while C moves 5 points, and its agreement with the
+# independent 2D finite-volume solve (0.4-0.7 %) holds throughout.  C and dC
+# from this solver are NOT trustworthy at better than 5-10 %.  The hybrid takes
+# the baseline C from cpw_2d_static instead, which is why this has not blocked
+# the deliverable.
+#
+# Proper fix, not done: the layered static kernel is an exact image series
+# sum_n a_n / sqrt(rho^2 + (2 n t)^2); each term's double integral over
+# coplanar triangles has a semi-analytic form, which removes the singularity at
+# EVERY rho rather than at one.  That is the prerequisite for a trustworthy dC.
+#
+# The pre-change code sampled the remainder at a single point at
+# reff = max(D, 0.35 sqrt(Ai+Aj)) -- the same arbitrariness, cruder.  Its 2.9 %
+# absolute C accuracy is therefore not established as principled either; that
+# has not been tested.
+_RFLOOR = 0.15
+_W7 = np.array([9/40,
+                (155-_s15)/1200, (155-_s15)/1200, (155-_s15)/1200,
+                (155+_s15)/1200, (155+_s15)/1200, (155+_s15)/1200])
 from layered_greens import EPS0, MU0, C0
 
 
@@ -65,11 +116,11 @@ def _static_blocks(cell, fk, near_fac, n_sharp):
     for i, j in zip(ii, jj):
         Ti = tri_pts[i]; Tj = tri_pts[j]
         Ai = area[i]; Aj = area[j]
-        ro = (_G3[:, 0][:, None]*(Ti[1]-Ti[0]) + _G3[:, 1][:, None]*(Ti[2]-Ti[0])
+        ro = (_G7[:, 0][:, None]*(Ti[1]-Ti[0]) + _G7[:, 1][:, None]*(Ti[2]-Ti[0])
               + Ti[0])
         Ip = np.array([_Ipot(r, Tj) for r in ro])
         Iv = np.array([_Ivec(r, Tj) for r in ro])
-        SPsing = Ai*np.sum(_W3*Ip)
+        SPsing = Ai*np.sum(_W7*Ip)
 
         # ---- near-field remainder: LOCAL asymptote + double quadrature ----
         # Phase 3 extracted the rho -> 0 constant Kq = 1/(2 pi eps0 (eps_air +
@@ -94,12 +145,12 @@ def _static_blocks(cell, fk, near_fac, n_sharp):
         # a point.  Only the conditioning changes, never the operator.
         # G_A needs none of this (it varies 1.2x over the same range) but gets
         # the same treatment for consistency.
-        rj = (_G3[:, 0][:, None]*(Tj[1]-Tj[0]) + _G3[:, 1][:, None]*(Tj[2]-Tj[0])
+        rj = (_G7[:, 0][:, None]*(Tj[1]-Tj[0]) + _G7[:, 1][:, None]*(Tj[2]-Tj[0])
               + Tj[0])
         Rpq = np.maximum(np.hypot(ro[:, None, 0] - rj[None, :, 0],
                                   ro[:, None, 1] - rj[None, :, 1]),
-                         0.15*np.sqrt(Ai + Aj))
-        Wpq = _W3[:, None]*_W3[None, :]
+                         _RFLOOR*np.sqrt(Ai + Aj))
+        Wpq = _W7[:, None]*_W7[None, :]
         reff = max(D[i, j], 0.35*np.sqrt(Ai+Aj))
         Kq_l = reff*complex(fk.Gq_sharp(reff))        # local 1/rho constants
         KA_l = reff*complex(fk.GA_sharp(reff))
@@ -115,7 +166,7 @@ def _static_blocks(cell, fk, near_fac, n_sharp):
             for (ne, nv, ns) in en:
                 sn = sh_p[ne] if ns > 0 else sh_m[ne]
                 inner = Iv + (ro-nodes[nv])*Ip[:, None]
-                vs = Ai*np.sum(_W3*np.sum(rmv*inner, axis=1))
+                vs = Ai*np.sum(_W7*np.sum(rmv*inner, axis=1))
                 # (r_p - v_m).(r'_q - v_n) weighted by the remainder, over both
                 # triangles, in place of the centroid-only product
                 dot_pq = np.einsum("pd,qd->pq", rmv, rj - nodes[nv])
