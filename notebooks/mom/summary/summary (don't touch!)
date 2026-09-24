@@ -966,4 +966,208 @@ No fix attempted. No 3D build started. line_rlgc untouched.
 
 
 
+Phase 3 Technical Summary — Continuation
+3.30 2D Thickness Diagnostic — Result
+The 2D electrostatic cross-section solve (finite-difference Laplace on the layered stack with true rectangular conductors) was run to decide whether the 3D thick-metal build was justified.
 
+The hybrid architecture was validated instead.
+
+The idea: rather than build a 3D solver that models metal thickness, combine two solvers that already exist.
+
+2D cross-section solver — captures thick metal exactly. Computes the absolute baseline n_m and Z₀. Runs in 2 seconds per geometry.
+
+3D periodic Floquet MoM — has a zero-thickness metal model, but its β carries a multiplicative bias that cancels in ratios. Computes the fractional perturbation Δn/n. Runs in 80–220 seconds per geometry.
+
+Combined: n_final = n_baseline_2D × (1 + Δn/n_3D).
+
+3.30.1 Hybrid Results on 5 Rows
+row	n_final hybrid	CST	err	n_final 3D-only	err
+118	2.2898	2.3697	−3.4 %	2.6397	+11.4 %
+416	1.8620	1.8785	−0.9 %	2.4415	+30.0 %
+121	2.4179	2.4204	−0.1 %	2.7048	+11.8 %
+38	2.3457	2.3724	−1.1 %	2.8335	+19.4 %
+49	2.7295	2.5813	+5.7 %	3.1708	+22.8 %
+n_final median 1.1 % (gate 3 %); 3D-only was 19.4 %. Z₀ baseline median 2.5 % (gate 5 %).
+
+Row 49 is the known bad eigenvalue — root ran into the surface-wave region, test-vector overlap 0.390 vs 0.54–0.64 elsewhere. Not a hybrid failure; a separate known limitation.
+
+3.30.2 Decision — Kill the 3D Build
+Three quantitative arguments:
+
+What thick metal would fix is already fixed. Absolute n_m and Z₀ land at 1.1 % and 2.5 % via a 2-second solve.
+
+What's still broken isn't thickness. ΔC (67 %) and Δα (167 %) survive the hybrid unchanged.
+
+It works against the speed goal. 2 s vs 80–220 s per geometry.
+
+The 2D solver is promoted from diagnostic to production baseline. The delete-after-use banner is stripped. cpw_2d_static.py is now the baseline engine.
+
+3.31 Near-Field Integration Fix — Investigation and Result
+3.31.1 The Hypothesis
+The _static_blocks routine handles the near field as an analytic K/ρ singularity plus a smooth remainder evaluated at triangle centroids. Phase 1 had established that G_q varies ~36 % at ρ = 1 μm because the LiNbO₃ film is only 0.3 μm thick, while the mesh triangles are 9–13 μm. Sampling a rapidly-varying remainder at a single point per triangle should fail.
+
+Evidence: refining h = 13 → 9 μm moves n_m by 0.0016 in air, but 0.058 in the layered stack — 36× worse. Consistent with the hypothesis.
+
+3.31.2 The Actual Root Cause
+Worse than "bad quadrature":
+
+ρ (μm)	local 1/ρ constant ρ·G_sharp(ρ)	/ Kq used by the code
+0.05	7.63e+08	1.52
+1.0	2.51e+09	4.98
+4.0	2.27e+09	4.51
+9.0	1.21e+09	2.41
+20.0	−2.67e+07	−0.05
+The code extracts Kq = 1/(2πε₀(ε_air+ε_LN)) = 5.035e8, valid only for ρ ≪ t_LN = 0.13 μm. At the mesh scale the true local constant is 2.4–5.0× larger (set by SiO₂, not LN). So the analytic 1/ρ integration removed under a quarter of the singularity and the leftover kept a 1/ρ singularity, sampled at a single point.
+
+This explains why air converges and the layered stack doesn't: in a homogeneous medium, Kq is exact at every ρ, so the leftover is genuinely smooth.
+
+3.31.3 The Fix and Its Result
+Fix applied: re-splitting with the pair's local constant plus a 3×3 double quadrature.
+
+What it fixed:
+
+quantity	before	after	gate	verdict
+n_m unetched median	13.9 %	7.2 %	3 %	FAIL, 1.9× better
+Δα median	167.6 %	57.9 %	25 %	FAIL, 2.9× better
+ΔL median	6.4 %	7.7 %	20 %	PASS on median
+ΔC median	67.7 %	73.1 %	20 %	FAIL, worse
+ΔC worst	124.3 %	170.0 %	35 %	FAIL, worse
+Cross-method agreement: 3D full-wave MoM now agrees with 2D finite-volume Laplace at zero thickness to 0.4–0.7 % on three geometries, versus 6.1–9.5 % before. Two methods sharing no code, no kernel, no discretization.
+
+Residual n_m error is monotonic in MTX — 2.9 % / 4.7 % / 7.2 % / 13.2 % / 21.2 % at MTX = 1.96 / 3.58 / 3.93 / 12.24 / 14.93 μm. What's left is the physical thickness deficiency the hybrid covers, not numerical error.
+
+Mesh sensitivity h = 13 → 9 μm dropped 0.0576 → 0.0151.
+
+3.31.4 What It Did Not Fix
+Δα improved 2.9× but still fails.
+
+ΔC got worse.
+
+Homogeneous air degraded slightly, +2.41 % → +2.72 %.
+
+Second failed prediction: the fix was predicted to help both ΔC and Δα. It helped neither in the way expected — it fixed the baseline instead.
+
+3.32 The Floor Dependence — Structural Problem Discovered
+The action-2 check (is absolute C still ±3 % after the fix?) found a regression in the fix itself:
+
+row	C_base CST	C_u before	err	C_u after	err
+118	1.7241e-10	1.7770e-10	+3.1 %	1.5128e-10	−12.3 %
+416	1.8855e-10	1.7224e-10	−8.7 %	1.5104e-10	−19.9 %
+121	1.5937e-10	1.6234e-10	+1.9 %	1.4572e-10	−8.6 %
+38	1.4850e-10	1.4413e-10	−2.9 %	1.2869e-10	−13.3 %
+49	1.7997e-10	1.7604e-10	−2.2 %	1.5672e-10	−12.9 %
+Median 2.9 % → 12.9 %, systematically negative on all five rows.
+
+3.32.1 Two Mechanisms Proposed and Refuted
+Outer quadrature rule too coarse (3-point → 7-point). Barely moved C (−12.3 % → −11.2 %). Wrong.
+
+Conditioning (differencing two nearly-equal quantities). Refuted: a 4.4× degradation in absolute C moved ΔC by only 1.08×. ΔC's error is not driven by absolute C error.
+
+3.32.2 The Real Mechanism — Floor Dependence
+floor (×√(Ai+Aj))	C_u error	n_m
+0.30	−7.5 %	2.1195
+0.15	−11.2 %	2.1020
+0.05	−12.7 %	2.1329
+0.015	+60.3 %	3.0677
+C swings with an arbitrary parameter and then diverges when the floor shrinks.
+
+The reason: the remainder g(ρ) = G_sharp(ρ) − K_loc/ρ still has a 1/ρ singularity. A single constant can only cancel 1/ρ at one distance; everywhere else the 1/ρ survives with a different coefficient. A fixed-order Gauss rule cannot integrate 1/ρ — it blows up as sample points approach coincidence, and away from that the floor picks the answer.
+
+The floor is a tuning knob dressed as a safeguard. It cannot be tuned correctly because there is no correct value; the underlying integrand has a true singularity that no quadrature rule of this order can handle.
+
+3.32.3 What Survives and What Doesn't
+Survives:
+
+The β improvement from the near-field fix. Across all floor values, n_m moves 1.5 % while C moves 5 points.
+
+3D/2D cross-method agreement at 0.4–0.7 %.
+
+MTX-monotonic residual.
+
+3.8× mesh-sensitivity drop.
+
+Does not survive:
+
+Any claim that C or ΔC from the 3D solver is trustworthy. Parameter-dependent at the 5–10 % level.
+
+Retracted:
+
+The conditioning hypothesis.
+
+The claim that the pre-fix code was sound. It sampled the remainder at a single equally arbitrary reff, so its 2.9 % C accuracy may have been luck. Untested.
+
+3.32.4 The Real Fix — Not Done
+The layered static kernel is an exact image series Σ aₙ/√(ρ²+(2nt)²). Each term's double integral over coplanar triangles has a semi-analytic form. This removes the singularity at every ρ instead of at one. It is what a production layered-MoM does. Estimated: ~1 day of careful implementation.
+
+3.33 The Pattern — Four Consecutive Failed Predictions
+The chatbot's own statement:
+
+"Four predictions in this vein, four misses. The pattern holds that the measurements have been reliable and the mechanisms I reason to have not, which argues for measuring first on everything that follows."
+
+The four predictions, all retracted by the chatbot itself:
+
+Metal thickness causes ΔL error ordering — refuted by data.
+
+Kernel sharp-table bug causes the n_m bias — refuted (n_m unchanged after fix).
+
+Near-field fix would improve both ΔC and Δα — it improved neither as predicted.
+
+Conditioning limits ΔC — refuted (ΔC insensitive to C error at 4.4×).
+
+Each failure was documented, not hidden. This is the correct posture.
+
+3.34 Committed State
+The floor dependence is documented directly in bloch_solver.py as _RFLOOR = 0.15 with the sweep table and explanation above it. Nobody inherits the constant as a harmless-looking number.
+
+The commit records:
+
+Holds: β is floor-robust, cross-method 0.4–0.7 % agreement, MTX-monotonic residual, 3.8× mesh-sensitivity drop.
+
+Does not hold: C or ΔC from the 3D solver at better than 5–10 %.
+
+Explicitly not claimed: that the pre-change code was sound.
+
+Recorded as the real fix, not done: the image-series treatment.
+
+3.35 Pending Actions
+Action A — 50-row 2D baseline validation (~4 min).
+Run the 2D solver on 50 rows spanning WS, GAP, MTX, ETCH_DEPTH. Compare median and worst error on n_m and Z₀ against nm_baseline_val and z0_baseline_val.
+
+If median < 3 % on n_m and < 5 % on Z₀ → hybrid baseline is production-ready.
+
+If degraded → the 5-row result was a coincidence and the hybrid needs re-examination.
+
+Action B — Floor sweep on pre-fix code (~15 min).
+Revert to pre-fix sampling, sweep the effective floor, check whether C stays near ±3 % across the sweep or swings. Determines whether reverting is a legitimate path or whether the old accuracy was luck.
+
+Action C — ΔC architecture decision (pending A and B).
+Three options:
+
+(a) Accept ΔC as known-limited at 3D-solver accuracy (~60–70 % error).
+
+(b) Spend ~1 day on the image series for a trustworthy 3D C.
+
+(c) Route ΔC through the 2D duty-cycle segment model (~4 s). Combines C for full-ground, slotted, and partially-slotted cross-sections weighted by length fraction. Not the quasi-static pivot ruled out earlier (which replaced the whole deliverable) — uses 2D for the quantity 3D cannot do well.
+
+3.36 Updated Phase Status
+phase	status	completion
+Phase 1 — Green's function (same-interface)	validated	100 %
+Phase 1 — two-height kernel	validated at 1e-15, unused	10 %
+Phase 2 — finite-line MoM	abandoned; assembly reused	40 %
+Phase 3 — periodic Floquet (same-interface)	β, ΔL validated; C floor-dependent; ΔC, Δα failing	70 %
+Phase 3 — hybrid with 2D baseline	5-row validated, pending 50-row	60 %
+Phase 3 — ΔC architecture	undecided	0 %
+Phase 4 — production wrapper	not started	0 %
+Overall project	baseline solved; ΔL solved; Δα close; ΔC blocked	~50 %
+3.37 Strategic Read
+The baseline is essentially solved. The hybrid — 2D thick-metal baseline × 3D zero-thickness perturbation — lands n_m at 1.1 % median and Z₀ at 2.5 % median on 5 rows, with the near-field fix having pushed 3D/2D agreement at zero thickness to 0.4–0.7 %. Pending 50-row confirmation.
+
+ΔL is solved (7.7 % median).
+
+Δα is close (57.9 %, gate 25 %) but blocked on the radiative contribution.
+
+ΔC is architecturally blocked in the 3D solver. The 1/ρ singularity in the layered near-field is not integrable by the current quadrature scheme. The fix is either the image-series treatment (~1 day) or routing ΔC through the 2D solver.
+
+The four-prediction failure pattern has shifted the workflow: measurements have been reliable, mechanisms proposed by reasoning have not. Every new hypothesis from here should be paired with a cheap sizing test before committing to a fix.
+
+No 3D thick-metal build. No image series started. line_rlgc untouched. The floor dependence is committed and documented.
