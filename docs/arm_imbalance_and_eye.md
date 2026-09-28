@@ -181,6 +181,32 @@ nanometres, so in practice **the EO bandwidth of this device is insensitive to
 arm imbalance**. That is the answer to give: the bandwidth measurement will not
 see the defect, and the eye will.
 
+Why so small: `ng_imbalance` splits the index symmetrically, `n_g(1 + dn/2)`
+on one arm and `n_g(1 - dn/2)` on the other, so the *average* walk-off is
+unchanged and the first-order change in bandwidth cancels between the arms.
+What is left grows with `dn^2`. On the Jerez line (16.5 mm, 53 ohm):
+
+| ng_imbalance | EO bandwidth | shift |
+|---|---|---|
+| 0 | 84.47 GHz | - |
+| 0.001 | 84.44 GHz | -0.03 |
+| 0.005 | 83.53 GHz | -0.94 |
+| 0.01 | 80.08 GHz | -4.40 |
+| 0.02 | 70.00 GHz | -14.48 |
+
+Doubling `dn` from 0.005 to 0.01 multiplies the shift by 4.7, close to the 4
+of a pure square law.
+
+### Where this shows up in the GUI
+
+The Response tab, the bandwidth card, the sweep's "EO bandwidth" metric, the
+command line and the exported EO Touchstone all use `device_response`: the
+whole modulator, both arms with their own `n_g`. The bare electrode (both arms
+at the nominal `n_g`) is drawn as a dotted reference curve on the Response tab
+whenever the two differ, and is available in the sweep as "EO bandwidth, bare
+electrode". Before this, those views showed the bare electrode, so
+`ng_imbalance` changed nothing on screen.
+
 ## 3. What the imbalances actually do
 
 Sweep of `arm_loss_imbalance_dB`, 100 Gb/s NRZ, noise off:

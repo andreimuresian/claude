@@ -24,7 +24,7 @@ is preserved.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Optional
 
 import numpy as np
@@ -353,6 +353,10 @@ class EOResult:
     norm_window_GHz: tuple = (0.0, 0.0)
     ripple_period_GHz: float = 0.0
     ripple_pp_dB: float = 0.0     # peak-to-peak of the low-frequency ripple
+    # Filled by ``device_response``: the bare electrode (both arms at the
+    # nominal n_g), kept alongside the whole-modulator curve for comparison.
+    bw_electrode_GHz: float = float("nan")
+    s21_electrode_dB: np.ndarray = field(default_factory=lambda: np.empty(0))
 
 
 def eo_response(fit: LineFit, p: dict) -> EOResult:
@@ -632,13 +636,16 @@ def link_response(fit: LineFit, p: dict, res: Optional[EOResult] = None) -> Link
 
     dphi0 = arm2.phi0 - arm1.phi0
     prefactor = -2.0 * arm1.a * arm2.a * np.sin(dphi0)
-    H = prefactor * (arm1.g * H1 - arm2.g * H2)
+    bracket = arm1.g * H1 - arm2.g * H2
+    H = prefactor * bracket
 
     if res is None:
         res = eo_response(fit, p)
     window = res.norm_window_GHz
 
-    mag = np.abs(H)
+    # The shape comes from the bracket alone; the prefactor is flat and is
+    # zero at a null bias, where it would otherwise wipe out the curve.
+    mag = np.abs(bracket)
     mag = np.where(np.isfinite(mag) & (mag > 0), mag, 1e-300)
     s21, bw, ref, clipped = normalise_and_measure(f, 20.0 * np.log10(mag), window, level)
 
@@ -651,4 +658,46 @@ def link_response(fit: LineFit, p: dict, res: Optional[EOResult] = None) -> Link
         f_GHz=f, s21_dB=s21, bw_GHz=bw, bw_clipped=clipped,
         bw_electrode_GHz=float(res.bw_GHz), H=H, slope_efficiency=float(slope),
         ref_dB=float(ref), norm_window_GHz=window,
+    )
+
+
+def device_response(fit: LineFit, p: dict) -> EOResult:
+    """
+    The EO response of the whole modulator: what the GUI, the sweep, the
+    command line and the exported Touchstone report as "the" EO response.
+
+    ``eo_response`` models one electrode seen by light at the nominal n_g.
+    That is the whole device only while both arms share that n_g. With a
+    group-index imbalance each arm walks off differently, and the modulator
+    responds to the weighted difference of two electrode responses:
+
+        H_dev(f) = (g1 H1(f) - g2 H2(f)) / (g1 - g2)
+
+    (the bracket of ``link_response``, divided by its DC value so that with
+    equal n_g it is exactly H1). This returns the electrode result with H,
+    S21 and bandwidth replaced by the whole-modulator ones, normalised in the
+    same window, and keeps the bare electrode's in ``bw_electrode_GHz`` /
+    ``s21_electrode_dB``. Every other imbalance is frequency-flat, so with
+    ng_imbalance = 0 nothing changes.
+    """
+    res = eo_response(fit, p)
+    arm1, arm2 = arm_models(p)
+    f = res.f_GHz
+    if arm1.ng == float(p["ng"]) and arm2.ng == float(p["ng"]):
+        return replace(res, bw_electrode_GHz=float(res.bw_GHz),
+                       s21_electrode_dB=res.s21_dB)
+    H1 = electrode_transfer(fit, p, f, arm1.ng)
+    H2 = electrode_transfer(fit, p, f, arm2.ng) if arm2.g != 0 else 0.0
+    H = (arm1.g * H1 - arm2.g * H2) / (arm1.g - arm2.g)
+    mag = np.abs(H)
+    mag = np.where(np.isfinite(mag) & (mag > 0), mag, 1e-300)
+    s21, bw, ref, clipped = normalise_and_measure(
+        f, 20.0 * np.log10(mag), res.norm_window_GHz, float(p["bw_level_dB"]))
+    i_probe = int(np.argmin(np.abs(f - float(p["f_probe_GHz"]))))
+    i_bw = int(np.argmin(np.abs(f - bw)))
+    return replace(
+        res, H=H, s21_dB=s21, bw_GHz=float(bw), bw_clipped=bool(clipped),
+        ref_dB=float(ref), s21_at_probe_dB=float(s21[i_probe]),
+        walkoff_at_bw=float(abs(res.nm[i_bw] - float(p["ng"]))),
+        bw_electrode_GHz=float(res.bw_GHz), s21_electrode_dB=res.s21_dB,
     )

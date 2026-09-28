@@ -36,7 +36,7 @@ from . import sweep as SW
 from .extractor import (DARK as FIG_DARK, LIGHT as FIG_LIGHT, bandwidth_spread,
                         diagnostic_figure, eo_figure, export_lumerical_tables,
                         export_touchstone, extraction_warnings, eye_figure)
-from .physics import eo_response, link_metrics
+from .physics import device_response, eo_response, link_metrics
 
 APP_TITLE = "MZM Studio  --  traveling-wave Mach-Zehnder modulator explorer"
 
@@ -888,7 +888,7 @@ class MZMStudio(tk.Tk):
             self.fit = fit
             self.log(f"Fitted {fit.source_file}: data {fit.f_min_sim_GHz:.2f}-"
                      f"{fit.f_max_sim_GHz:.2f} GHz, L_meas = {fit.L_meas_m*1e3:.2f} mm")
-            res = eo_response(fit, p)
+            res = device_response(fit, p)
             lm = link_metrics(p)
             self.result = res
             if res.bw_clipped:
@@ -899,6 +899,10 @@ class MZMStudio(tk.Tk):
                 self.log(f"EO bandwidth = {res.bw_GHz:.2f} GHz "
                          f"({p['bw_level_dB']:.0f} dB), V_pi,eff = {lm.vpi_eff_V:.2f} V, "
                          f"chirp = {lm.chirp_alpha:.3f}", "ok")
+            if abs(res.bw_GHz - res.bw_electrode_GHz) > 0.005:
+                self.log(f"  Group-index imbalance moves it from {res.bw_electrode_GHz:.2f} "
+                         f"GHz (both arms at n_g) to {res.bw_GHz:.2f} GHz "
+                         f"({res.bw_GHz - res.bw_electrode_GHz:+.2f} GHz).")
             for w in extraction_warnings(fit, res):
                 self.log("NOTE: " + w, "warn")
 
@@ -937,7 +941,7 @@ class MZMStudio(tk.Tk):
         def work():
             from .eye import simulate_eye
             from .physics import link_response
-            res = self.result if self.result is not None else eo_response(self.fit, p)
+            res = self.result if self.result is not None else device_response(self.fit, p)
             lk = link_response(self.fit, p, res)
             ey = simulate_eye(self.fit, p)
             self.eye_result = ey
@@ -1179,6 +1183,12 @@ class MZMStudio(tk.Tk):
             f_GHz, s_dB, bw = b.ena_trace(p, norm_window=self.result.norm_window_GHz)
             self.lumerical_overlay = (f_GHz, s_dB, bw)
             py = self.result.bw_GHz
+            topo = getattr(b, "topology", "")
+            if "lumped" in str(topo) and abs(py - self.result.bw_electrode_GHz) > 0.005:
+                py = self.result.bw_electrode_GHz
+                self.log("  This schematic is the lumped fallback and cannot carry "
+                         "the group-index imbalance, so it is compared with the "
+                         "bare-electrode bandwidth.", "warn")
             self.log(f"Python  {py:.2f} GHz  |  INTERCONNECT  {bw:.2f} GHz  |  "
                      f"difference {abs(py-bw):.2f} GHz "
                      f"({abs(py-bw)/max(py,1e-9)*100:.1f} %)",

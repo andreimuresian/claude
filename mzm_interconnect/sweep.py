@@ -23,7 +23,7 @@ import numpy as np
 
 from . import parameters as P
 from .extractor import extract_line_fit
-from .physics import LineFit, eo_response, link_metrics, link_response
+from .physics import LineFit, device_response, link_metrics
 
 
 # =====================================================================
@@ -43,7 +43,8 @@ class MetricSpec:
 
 METRICS: list[MetricSpec] = [
     MetricSpec("bw_GHz", "EO bandwidth", "GHz",
-               "The -3 dB (or -6 dB) point of the normalised EO S21."),
+               "The -3 dB (or -6 dB) point of the normalised EO S21 of the "
+               "whole modulator, including any group-index imbalance."),
     MetricSpec("s21_at_probe_dB", "EO S21 at probe frequency", "dB",
                "Response at the probe frequency -- stays meaningful when the "
                "-3 dB point runs off the top of the sweep."),
@@ -59,11 +60,11 @@ METRICS: list[MetricSpec] = [
                "Ceiling set by arm loss and splitter imbalance."),
     MetricSpec("chirp_alpha", "Chirp parameter", "-",
                "0 for ideal push-pull, 1 for single-arm drive."),
-    MetricSpec("link_bw_GHz", "Link EO bandwidth", "GHz",
-               "The -3 dB point of the whole interferometer rather than of the "
-               "bare electrode. The two differ only through a group-index "
-               "mismatch between the arms; every other imbalance is "
-               "frequency-flat and cannot move the bandwidth."),
+    MetricSpec("electrode_bw_GHz", "EO bandwidth, bare electrode", "GHz",
+               "The electrode alone, both arms at the nominal n_g. Differs from "
+               "the EO bandwidth only through a group-index mismatch between "
+               "the arms; every other imbalance is frequency-flat and cannot "
+               "move the bandwidth."),
     MetricSpec("eye_er_dB", "Eye extinction ratio", "dB",
                "Measured on the eye, so unlike the static ER it includes "
                "intersymbol interference. Needs 'Sweep the eye too'."),
@@ -116,12 +117,11 @@ def evaluate_point(p: dict, fit: Optional[LineFit] = None,
     """
     if fit is None:
         fit = get_fit(p)
-    res = eo_response(fit, p)
+    res = device_response(fit, p)
     lm = link_metrics(p)
     i_bw = int(np.argmin(np.abs(res.f_GHz - res.bw_GHz)))
     extra = {k: float("nan") for k in
              ("eye_er_dB", "eye_q", "eye_height_mA", "eye_oma_mA", "eye_jitter_ps")}
-    lk = link_response(fit, p, res)
     if with_eye:
         from .eye import simulate_eye
         ey = simulate_eye(fit, p)
@@ -129,7 +129,7 @@ def evaluate_point(p: dict, fit: Optional[LineFit] = None,
                  "eye_height_mA": ey.eye_height_A * 1e3,
                  "eye_oma_mA": ey.oma_A * 1e3, "eye_jitter_ps": ey.jitter_rms_ps}
     return {
-        "link_bw_GHz": lk.bw_GHz,
+        "electrode_bw_GHz": res.bw_electrode_GHz,
         **extra,
         "bw_GHz": res.bw_GHz,
         "bw_clipped": res.bw_clipped,

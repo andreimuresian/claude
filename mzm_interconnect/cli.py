@@ -26,7 +26,7 @@ from . import sweep as SW
 from .extractor import (DARK, LIGHT, bandwidth_spread, diagnostic_figure, eo_figure,
                         export_lumerical_tables, export_touchstone,
                         extraction_warnings)
-from .physics import eo_response, link_metrics
+from .physics import device_response, link_metrics
 
 
 def _add_param_args(ap):
@@ -52,7 +52,7 @@ def _params_from_args(args, s2p) -> dict:
 def cmd_analyse(args):
     p = _params_from_args(args, args.s2p)
     fit = SW.get_fit(p)
-    res = eo_response(fit, p)
+    res = device_response(fit, p)
     lm = link_metrics(p)
     theme = DARK if args.theme == "dark" else LIGHT
 
@@ -170,7 +170,7 @@ def cmd_sweep(args):
 def cmd_export(args):
     p = _params_from_args(args, args.s2p)
     fit = SW.get_fit(p)
-    res = eo_response(fit, p)
+    res = device_response(fit, p)
     paths = export_lumerical_tables(fit, p, res, str(p["out_dir"]))
     for k in ("loss", "z0", "nm", "json"):
         print(f"  {paths[k]}")
@@ -184,14 +184,14 @@ def cmd_build(args):
     from .interconnect import InterconnectBuilder
     p = _params_from_args(args, args.s2p)
     fit = SW.get_fit(p)
-    res = eo_response(fit, p)
+    res = device_response(fit, p)
     out = str(p["out_dir"])
     files = export_lumerical_tables(fit, p, res, out)
     b = InterconnectBuilder(str(p["lumapi_path"]), hide=bool(p["ic_hide"]))
     topo = b.build(p, files)
     print(f"topology: {topo}")
     b.run(os.path.join(out, "TWMZM_EO_response.icp"))
-    f_GHz, s_dB, bw = b.ena_trace(p)
+    f_GHz, s_dB, bw = b.ena_trace(p, norm_window=res.norm_window_GHz)
     print(f"Python {res.bw_GHz:.2f} GHz | INTERCONNECT {bw:.2f} GHz | "
           f"difference {abs(res.bw_GHz-bw):.2f} GHz")
     fig = eo_figure(fit, res, p, DARK if args.theme == "dark" else LIGHT,

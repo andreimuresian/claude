@@ -642,6 +642,13 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
     level = float(p["bw_level_dB"])
     label = f"Python model (BW = {res.bw_GHz:.2f} GHz" + (" +" if res.bw_clipped else "") + ")"
     ax.plot(res.f_GHz, res.s21_dB, "-", lw=2, color="#3f7fd0", label=label)
+    s21_el = getattr(res, "s21_electrode_dB", None)
+    if (s21_el is not None and len(s21_el) == len(res.f_GHz)
+            and abs(res.bw_GHz - res.bw_electrode_GHz) > 0.005):
+        dn = float(p.get("ng_imbalance", 0.0))
+        ax.plot(res.f_GHz, s21_el, ":", lw=1.6, color=theme["fg"], alpha=0.6,
+                label=f"same line, no n_g imbalance (BW = {res.bw_electrode_GHz:.2f} GHz); "
+                      f"with {dn*100:g} % imbalance: {res.bw_GHz - res.bw_electrode_GHz:+.2f} GHz")
     if lumerical is not None:
         f_l, s_l, bw_l = lumerical
         ax.plot(f_l, s_l, "--", lw=1.8, color="#e2504a",
