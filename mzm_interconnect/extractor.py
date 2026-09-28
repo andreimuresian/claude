@@ -468,21 +468,24 @@ def _export_bend_tables(p: dict, f_table, alpha, nm, Zc, out_dir: str, prov: str
                               f"{'source' if tag == 'zsrc' else 'terminating'} impedance; {prov}",
                        comments="# ")
             e[tag] = path
-        if k >= 2:
-            ph = np.unwrap(np.angle(vth))
-            tau = max(0.0, -float(np.polyfit(w, ph, 1)[0]))
-            rest = vth * np.exp(1j * w * tau)
-            path = os.path.join(out_dir, f"drive_to_section_{k}.s2p")
-            with open(path, "w") as fh:
-                fh.write(f"! V_th/V_s at section {k} with {tau*1e12:.4f} ps of transit "
-                         f"removed (applied by an Electrical Delay)\n# GHz S RI R 50\n")
-                rows = [(0.0, abs(rest[0]) * np.sign(np.real(rest[0]) or 1.0))] + \
-                    list(zip(f_table, rest))
-                for f, s21 in rows:
-                    s21 = complex(s21)
-                    fh.write(f"{f:.6f} 0 0 {s21.real:.8e} {s21.imag:.8e} 0 0 0 0\n")
-            e["spar"] = path
-            e["delay_s"] = tau
+        # Every section gets its own drive block, section 1 included (a flat
+        # 1): INTERCONNECT realises each table-driven element as a digital
+        # filter with its own processing latency, and the sections only add
+        # up correctly if every drive path goes through the same kind and
+        # size of filter, so that latency is common and cancels.
+        ph = np.unwrap(np.angle(vth))
+        tau = max(0.0, -float(np.polyfit(w, ph, 1)[0])) if k >= 2 else 0.0
+        path = os.path.join(out_dir, f"drive_to_section_{k}.s2p")
+        with open(path, "w") as fh:
+            fh.write(f"! S21 = V_th/V_s: drive seen at the input of modulating section {k}\n"
+                     f"! (RF transit ~{tau*1e12:.3f} ps, bend loss, reflections included)\n"
+                     f"# GHz S RI R 50\n")
+            rows = [(0.0, complex(abs(vth[0])))] + list(zip(f_table, vth))
+            for f, s21 in rows:
+                s21 = complex(s21)
+                fh.write(f"{f:.6f} 0 0 {s21.real:.8e} {s21.imag:.8e} 0 0 0 0\n")
+        e["spar"] = path
+        e["delay_s"] = tau
         out.append(e)
     return out
 

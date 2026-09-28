@@ -160,6 +160,7 @@ class InterconnectBuilder:
         return False
 
     def add(self, candidates, name, x, y):
+        x, y = getattr(self, "_pos", {}).get(name, (x, y))
         for c in candidates:
             try:
                 el = self.sim.addelement(c)
@@ -297,6 +298,8 @@ class InterconnectBuilder:
         sim.switchtodesign()
         sim.deleteall()
         self._wiring = []
+        secs = files.get("bend_sections") if int(p.get("n_bends", 0)) > 0 else None
+        self._pos = self._bend_positions(len(secs)) if secs else {}
         # In eye mode the sample rate has to resolve a symbol, not just the
         # top of the microwave band: the element folds the waveform on the
         # symbol period, and a handful of samples per symbol gives it nothing
@@ -873,13 +876,52 @@ class InterconnectBuilder:
                  "the other). Chirp parameter = 1, V_pi is the full single-arm V_pi.")
         return "single-arm"
 
+    @staticmethod
+    def _bend_positions(n_sec: int) -> dict:
+        """
+        Non-overlapping grid for a bent electrode, one column per section:
+
+            drive row      PRBS  NRZ    SPAR_1        SPAR_2 ...
+            arm-1 TW row          TW_1_1        TW_1_2 ...
+            arm-1 optics          OM_1_1  ODL   OM_1_2 ...
+            centre line    CWL  SPLT_1          ...        SPLT_2  PIN  EYE
+            arm-2 optics          OM_2_1  ODL   OM_2_2 ...  PHS  ATT
+            arm-2 TW row          TW_2_1        TW_2_2 ...
+
+        Rows are 150-180 apart and columns 300 apart, leaving room for each
+        element's property annotations underneath it.
+        """
+        Y = dict(drive=-330, tw1=-150, opt1=30, mid=180, opt2=330, tw2=510)
+        x0, pitch = 520, 300
+        xs = [x0 + k * pitch for k in range(n_sec)]
+        x_end = xs[-1]
+        pos = {"PRBS_1": (100, Y["drive"]), "NRZ_1": (260, Y["drive"]),
+               "ENA_1": (260, Y["drive"]),
+               "CWL_1": (100, Y["mid"]), "SPLT_1": (280, Y["mid"]),
+               "PHS_1": (x_end + 150, Y["opt2"]), "ATT_1": (x_end + 270, Y["opt2"]),
+               "SPLT_2": (x_end + 400, Y["mid"]), "PIN_1": (x_end + 560, Y["mid"]),
+               "EYE_1": (x_end + 720, Y["mid"]),
+               "PRBS_2": (x_end + 560, Y["drive"]), "NRZ_2": (x_end + 720, Y["drive"])}
+        for k, x in enumerate(xs, start=1):
+            for arm, (ro, rt) in ((1, ("opt1", "tw1")), (2, ("opt2", "tw2"))):
+                pos[f"OM_{arm}_{k}"] = (x, Y[ro])
+                pos[f"TW_{arm}_{k}"] = (x - 110, Y[rt])
+                if k < n_sec:
+                    # left of the next section's TW column, so the vertical
+                    # drive wire to the arm-2 electrode runs between blocks
+                    pos[f"ODL_{arm}_{k}"] = (x + 100, Y[ro])
+            pos[f"SPAR_{k}"] = (x - 110, Y["drive"])
+        return pos
+
     def _wire_arms_bends(self, p, files, pushpull, add_modulator, c1, c2, ng1, ng2) -> str:
         """
         Segmented electrode: per arm, one TW + OM per modulating section, the
         OMs joined optically by Optical Delays (the light's transit through the
-        bend and the next section), and per section k >= 2 a shared drive
-        chain Electrical Delay -> Electrical N Port S-Parameter giving that
-        section its Thevenin drive. The bends themselves are not elements:
+        bend and the next section), and per section a shared Electrical N Port
+        S-Parameter (S21 = V_th/V_s, RF transit included; a flat 1 for the
+        first section) giving that section its Thevenin drive. Every drive
+        path is the same kind of filter, so INTERCONNECT's processing latency
+        is common to all sections and cancels. The bends themselves are not elements:
         their impedance, loss and delay are carried by the sections' source /
         terminating impedance tables and by the drive chains, which is what
         makes this exact while every section keeps the fitted line tables.
@@ -905,6 +947,7 @@ class InterconnectBuilder:
                 add_modulator(om, x, y_opt, c * s["L_m"] / L_mod)
                 self._add_tw(tw, p, files, ng_a, x - 140, y_tw, length_m=s["L_m"],
                              zsrc=s["zsrc"], zload=s["zload"])
+                self._fix_filter(tw)
                 self.tw_names.append(tw)
                 self.connect(tw, P_OUT, om, P_MOD)
                 if prev is None:
@@ -928,41 +971,48 @@ class InterconnectBuilder:
             tail, tail_port = self._wire_arm2_tail()
             self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
 
-        for s in secs[1:]:
+        for s in secs:
             k = s["k"]
-            dly, spar = f"DLY_{k}", f"SPAR_{k}"
-            self.add(['Electrical Delay'], dly, 200 + (k - 2) * 120, -180)
-            self.setp(dly, ['delay'], float(s["delay_s"]))
+            spar = f"SPAR_{k}"
             self.add(['Electrical N Port S-Parameter', 'Electrical S Parameter'],
-                     spar, 200 + (k - 2) * 120, -110)
+                     spar, 200 + k * 120, -330)
             self.setp(spar, ['load from file'], True)
             self.setp(spar, ['s parameters filename'], s["spar"])
             self.setp(spar, ['s parameters convention'], 'engineering', required=False)
-            self.connect(dly, P_OUT, spar, P_SPAR1)
-            self.drive_chains.append((k, dly, spar))
+            self._fix_filter(spar)
+            self.drive_chains.append((k, spar))
         nb = len(secs) - 1
         lens = " + ".join("%.2f" % (s["L_m"] * 1e3) for s in secs)
         kind = "PUSH-PULL" if pushpull else "SINGLE-ARM"
-        self.log(f"  Topology: {kind} with {nb} bend(s): "
-                 f"{len(secs)} TW + OM sections per arm ({lens} mm), "
-                 f"{nb} optical delay(s) per arm, {nb} drive chain(s) "
-                 f"(Electrical Delay + S-parameter).")
+        self.log(f"  Topology: {kind} with {nb} bend(s): {len(secs)} TW + OM sections "
+                 f"per arm ({lens} mm), {nb} optical delay(s) per arm, one drive "
+                 f"S-parameter per section (SPAR_k = V_th/V_s at section k).")
         return ("push-pull" if pushpull else "single-arm") + f", {nb} bend(s)"
+
+    # Same digital-filter size for every table-driven element of a bent
+    # electrode. INTERCONNECT turns each into an FIR filter; if their lengths
+    # (and so any processing latency) differ, the sections are summed out of
+    # step, which shows up as flat half-power traces across the eye.
+    BEND_FIR_TAPS = 1024
+
+    def _fix_filter(self, el):
+        self.setp(el, ['digital filter type'], 'FIR', required=False)
+        self.setp(el, ['number of taps estimation'], 'disabled', required=False)
+        self.setp(el, ['number of fir taps'], self.BEND_FIR_TAPS, required=False)
+        self.setp(el, ['maximum number of fir taps'], max(4096, self.BEND_FIR_TAPS),
+                  required=False)
+        self.setp(el, ['single tap filter'], False, required=False)
 
     def _drive_electrodes(self, src: str):
         """Feed the drive signal to every electrode. With two electrodes the
         source output fans out; that is the one step a build can refuse."""
         if getattr(self, "bend_sections", None):
-            first = [tw for tw in self.tw_names if tw.endswith("_1")]
-            src_out, tw_in = self.connect(src, P_OUT, first[0], P_IN)
-            targets = [(tw, tw_in) for tw in first[1:]]
-            for k, dly, spar in self.drive_chains:
-                targets.append((dly, P_IN))
-            for tgt, ports in targets:
-                ports = list(ports) if isinstance(ports, (list, tuple)) else [ports]
-                if not self._try_connect_any(src, (src_out,), tgt, ports):
-                    raise _FanOutUnsupported(f"{src} cannot also drive {tgt}")
-            for k, dly, spar in self.drive_chains:
+            src_out = None
+            for k, spar in self.drive_chains:
+                if src_out is None:
+                    src_out, _ = self.connect(src, P_OUT, spar, P_SPAR1)
+                elif not self._try_connect_any(src, [src_out], spar, P_SPAR1):
+                    raise _FanOutUnsupported(f"{src} cannot also drive {spar}")
                 tws = [tw for tw in self.tw_names if tw.endswith(f"_{k}")]
                 sp_out, tw_in = self.connect(spar, P_SPAR2, tws[0], P_IN)
                 for tw in tws[1:]:
