@@ -788,8 +788,9 @@ def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
                 label=f"bias {float(p['bias_phase_deg']):.0f}$\\degree$"
                       + (f" {float(p['arm_phase_imbalance_deg']):+.0f}$\\degree$ arm error"
                          if float(p["arm_phase_imbalance_deg"]) else ""))
-    hi, lo = float(P_of_v.max()), float(P_of_v.min())
-    er_static = 10 * np.log10(hi / lo) if lo > 1e-12 else float("inf")
+    # From the closed-form extremes, not the sampled curve: the grid never
+    # lands exactly on the null, which turned an infinite ceiling into ~74 dB.
+    er_static = 10 * np.log10(p_hi / p_lo) if p_lo > 1e-12 * p_hi else float("inf")
     axt.set_xlabel("Drive voltage (V)")
     axt.set_ylabel("Output power / laser power")
     axt.set_ylim(-0.03, 1.03)
