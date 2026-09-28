@@ -98,17 +98,34 @@ something:
     alpha(f), Zc(f) and n_m(f) -- which is the whole point of the extraction.
     Not worth it.
 
-**6. Voltage-dependent loss imbalance (residual amplitude modulation).**
-Representable through `absorption coefficient a..d`, and left at zero here
-because undoped LiNbO3 has no electro-absorption worth modelling. In a silicon
-depletion-mode modulator it would be the first thing to set.
+**6. Y-branch excess loss -- fully representable, and NOT an imbalance.**
+The Y element's `insertion loss`, exposed as `y_branch_loss_dB`. It is listed
+here because it lives beside the imbalance knobs in the GUI, but it is
+common-mode by construction: it attenuates both arms equally, so it cannot
+touch the extinction ratio, the chirp or the bandwidth. It changes the
+absolute received power and nothing else. Keeping it in the same group is a
+convenience, not a claim that it is a sixth imbalance.
 
-Two further knobs on the OM element are deliberately left at zero. The
-`absorption coefficient a..d` fields give voltage-dependent loss, i.e.
-electro-absorption; in undoped LiNbO3 there is none worth modelling, unlike a
-depletion-mode Si modulator where residual amplitude modulation is real. The
-`length` field is arbitrary here (only the product with the phase coefficient
-matters) and is fixed at 1 um in both arms.
+**Not implemented: voltage-dependent loss (electro-absorption) imbalance.**
+A genuinely separate seventh mechanism -- absorption that tracks the drive
+voltage, producing residual amplitude modulation and its own chirp. It cannot
+be folded into arm loss imbalance, which is static. It is left out because
+undoped LiNbO3 has no free carriers and negligible electro-absorption at
+1550 nm, so the effect is essentially zero. The hooks exist if that ever
+changes: the OM element's `absorption coefficient a..d`, currently set to zero
+by the builder. In a silicon depletion-mode modulator it would be the first
+thing to set.
+
+### The clean taxonomy
+
+Five of these are differential -- they make the two arms different, and that
+is what an imbalance is:
+
+    1 arm loss      2 splitter      3 static phase      4 V_pi      5 n_g
+
+One is common-mode and is a device parameter rather than an imbalance:
+
+    6 Y-branch excess loss
 
 ## 2. Why arm imbalance cannot move the -3 dB point
 
