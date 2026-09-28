@@ -176,7 +176,12 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("vpi_imbalance_frac", "V_pi imbalance", 0.0, "Arm imbalance", "-",
               sweepable=True, sweep_default=(0.0, 0.20, 21), affects="link",
               help="Fractional V_pi mismatch between the two arms (different overlap "
-                   "integral after over-etch). Residual chirp in push-pull comes from this.",
+                   "integral after over-etch). Arm 2's V_pi is V_pi*(1+d). It raises the "
+                   "device's effective V_pi, so at a FIXED drive amplitude the eye "
+                   "shrinks (positive d: under-driven) or over-drives (negative d). "
+                   "Re-set the drive to the new effective V_pi and the back-to-back eye "
+                   "is exactly the balanced one again; what remains is residual chirp, "
+                   "which only matters after fibre dispersion.",
               vmin=-0.5, vmax=0.5,
               typical="0.01-0.05. A 100 nm gap difference on a 5 um gap is exactly 0.02; 150 nm of waveguide-to-electrode overlay error is of that order too."),
     ParamSpec("split_err", "Splitter imbalance", 0.0, "Arm imbalance", "-",
@@ -201,7 +206,8 @@ PARAMS: list[ParamSpec] = [
                    "change the -3 dB bandwidth, because it is the only one "
                    "that makes the two arms see different walk-off. The other "
                    "four are frequency-flat and move the eye without moving "
-                   "the bandwidth.",
+                   "the bandwidth. In INTERCONNECT each arm gets its own "
+                   "traveling-wave electrode carrying its own optical index.",
               vmin=0.0, vmax=0.02,
               typical="below 0.001 between two arms on the same die. The values above that are there to show the mechanism, not because they are reachable."),
 

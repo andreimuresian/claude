@@ -1143,7 +1143,8 @@ class MZMStudio(tk.Tk):
                              "list can be corrected in one step:", "warn")
                     try:
                         b.report_ports('CWL_1', 'SPLT_1', 'SPLT_2', 'PHS_1',
-                                       'TW_1', 'PIN_1', 'OM_1',
+                                       *getattr(b, 'tw_names', ['TW_1']),
+                                       'PIN_1', 'OM_1',
                                        *(('PRBS_1', 'NRZ_1', 'EYE_1')
                                          if mode == "eye" else ('ENA_1',)))
                     except Exception as exc2:

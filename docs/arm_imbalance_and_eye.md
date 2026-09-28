@@ -24,7 +24,11 @@ mechanism 1, **not** through V_pi. The chain "over-etch -> different overlap ->
 different V_pi -> residual chirp" runs through mechanism 4. They are two
 separate consequences of the same defect and they do different things: loss
 imbalance caps the extinction ratio and does not produce chirp; V_pi imbalance
-produces chirp and barely touches the extinction ratio.
+produces chirp and leaves the *static* extinction ratio (slow bias sweep)
+untouched. It does shrink the eye at a fixed drive amplitude, because it raises
+the effective V_pi and the same drive then swings less than a full V_pi; set
+the drive to the new effective V_pi and the back-to-back eye is identical to
+the balanced one (section 4).
 
 ### What each one costs in INTERCONNECT
 
@@ -82,21 +86,24 @@ the product of the coefficient and `length` matters, so you can equivalently
 vary `length`; the builder varies the coefficient and keeps the length at 1 um
 in both arms.
 
-**5. Group-index imbalance -- NOT representable as currently wired.** One TW
-element feeds both modulators and carries a single `optical index`, so both
-arms necessarily see the same walk-off. There are two routes, and both cost
-something:
+**5. Group-index imbalance -- representable, with one electrode per arm.**
+The TW element carries a single `optical index`, so one TW feeding both
+modulators forces both arms to the same walk-off. A push-pull build therefore
+has two TW elements, `TW_1` driving `OM_1` and `TW_2` driving `OM_2`. Both load
+the same loss, impedance and microwave-index tables and the same source and
+load, and both are fed from the same drive output (ENA or NRZ), so they are
+two copies of the one physical GSG line. They differ only in `optical index`:
+`n_g(1 + dn/2)` on arm 1 and `n_g(1 - dn/2)` on arm 2, the same split the
+Python model uses. With `ng_imbalance = 0` they are identical and the result is
+the same as one electrode feeding both arms. The drive has to fan out to two
+electrodes; a build that refuses the fan-out falls back to the lumped
+single-modulator equivalent, which cannot carry `ng_imbalance`, and the log
+says so. `verify_points` can re-sweep `ng_imbalance` in place on the
+two-electrode build.
 
-  * give each arm its own TW element. That is the honest fix, and it is also
-    the prerequisite for a genuine differential drive, so it is the one worth
-    doing -- but it needs a second drive path (a second PRBS/NRZ pair with a
-    digital NOT between them, per the Ansys note) or an electrical splitter.
-  * switch the OM elements to `electrode type = 'traveling wave'` and give each
-    its own `optical index`. This works, but the OM's built-in electrode takes
-    scalar `microwave loss` and `microwave index` rather than the frequency
-    tables the TW element accepts, so you would be throwing away the fitted
-    alpha(f), Zc(f) and n_m(f) -- which is the whole point of the extraction.
-    Not worth it.
+(The alternative, `electrode type = 'traveling wave'` inside each OM element,
+takes scalar microwave loss and index instead of the fitted tables, and was
+rejected for that reason.)
 
 **6. Y-branch excess loss -- fully representable, and NOT an imbalance.**
 The Y element's `insertion loss`, exposed as `y_branch_loss_dB`. It is listed
@@ -209,9 +216,24 @@ for a fractional V_pi mismatch `d`. So 10 % mismatch gives alpha = 0.048 and
 single-arm drive. This is the quantitative reason push-pull is worth having.
 
 Chirp is a phase effect. A photodiode is square-law, so **a back-to-back eye is
-almost blind to it**: what changes the back-to-back eye when `d` is varied is
+blind to it**: what changes the back-to-back eye when `d` is varied is
 the change in `Vpi_eff = 1/(1/Vpi1 + 1/Vpi2)`, i.e. the drive-to-V_pi ratio,
-not the chirp. Chirp only becomes distortion once dispersion has converted
+not the chirp. On the Jerez line at 100 Gb/s with V_pi = 4 V per arm:
+
+| d | Vpi_eff | eye ER at 2.0 Vpp | eye ER at Vpp = Vpi_eff |
+|---|---|---|---|
+| -0.4 | 1.500 V | 10.62 dB (over-driven) | 17.86 dB |
+| -0.2 | 1.778 V | 18.50 dB | 17.86 dB |
+| 0 | 2.000 V | 17.86 dB | 17.86 dB |
+| +0.1 | 2.095 V | 16.73 dB | 17.86 dB |
+| +0.3 | 2.261 V | 14.79 dB | 17.86 dB |
+| +0.5 | 2.400 V | 13.42 dB | 17.86 dB |
+
+At a fixed 2 V drive the eye shrinks and its rails thicken (0.27 -> 0.49 mA
+rail spread at d = +0.5), because the levels no longer sit on the flat top and
+bottom of the cosine where it compresses ringing. With the drive matched to
+`Vpi_eff`, extinction ratio, height, modulation amplitude and rail spread are
+the balanced values to every printed digit. Chirp only becomes distortion once dispersion has converted
 phase into amplitude. To see it, set `fibre_km` above zero.
 
 The honest result of doing that: at 100 Gb/s NRZ over standard SMF the

@@ -12,16 +12,18 @@ Two topologies are available:
   "single-arm"  one driven arm + a static phase shifter in the other.
                 This is the historically validated build.
 
-  "push-pull"   both arms modulated from the same traveling-wave electrode
-                with opposite-sign phase coefficients, which is what an X-cut
-                LN G-S-G device physically does. The microwave response is
-                identical; V_pi halves and the chirp goes to zero.
+  "push-pull"   both arms modulated with opposite-sign phase coefficients,
+                which is what an X-cut LN G-S-G device physically does. Each
+                arm has its own traveling-wave electrode element (same
+                microwave tables, same drive) so each can carry its own
+                optical group index; with no n_g imbalance the two are
+                identical. V_pi halves and the chirp goes to zero.
 
 If the INTERCONNECT build in use will not fan one electrical output out to two
-modulation ports, the builder falls back to a single modulator carrying the
-summed efficiency. That reproduces the same |S21| and the same effective
-V_pi -- only the chirp/spectral asymmetry is lost -- and it says so loudly in
-the log rather than silently building something different.
+electrodes, the builder falls back to a single modulator carrying the summed
+efficiency. That reproduces the same |S21| and the same effective V_pi -- the
+chirp and any n_g imbalance are lost -- and it says so loudly in the log
+rather than silently building something different.
 """
 
 from __future__ import annotations
@@ -41,7 +43,7 @@ class LumericalUnavailable(RuntimeError):
 
 
 class _FanOutUnsupported(RuntimeError):
-    """This INTERCONNECT build will not drive two modulation ports from one
+    """This INTERCONNECT build will not drive two electrodes from one
     electrical output, so push-pull has to fall back to the lumped equivalent."""
 
 
@@ -231,9 +233,9 @@ class InterconnectBuilder:
         Build the whole schematic from a normalised parameter dict and the
         loss/z0/nm table paths. Returns the topology actually built.
 
-        A push-pull build needs one electrical output to feed two modulation
-        ports. Not every INTERCONNECT build allows that, so if the fan-out is
-        refused we throw the half-wired schematic away and build the lumped
+        A push-pull build needs one electrical output to feed two electrodes
+        (one per arm). Not every INTERCONNECT build allows that, so if the
+        fan-out is refused we throw the half-wired schematic away and build the lumped
         equivalent from a clean slate. Patching a partially connected
         schematic in place is what used to leave the session wedged: the
         repair tried to connect ports that were still occupied, the exception
@@ -247,7 +249,7 @@ class InterconnectBuilder:
                 return self.topology
             except _FanOutUnsupported:
                 self.log("  This INTERCONNECT build will not fan one electrical "
-                         "output out to two modulation ports.")
+                         "output out to two electrodes.")
             except PortNameError:
                 # Rebuilding as a lumped equivalent would hit the same port
                 # name, so there is nothing to fall back to. Let it out with
@@ -358,55 +360,33 @@ class InterconnectBuilder:
                 self.setp(name, [f'absorption coefficient {k}', f'absorption {k}'],
                           0.0, required=False)
 
-        # ---- 6. traveling-wave electrode ----
-        self.add(['Traveling Wave Electrode'], 'TW_1', 420, -45)
-        self.setp('TW_1', ['length'], float(p["L_target_mm"]) * 1e-3)
-        self.setp('TW_1', ['optical index'], float(p["ng"]))
-        self.setp('TW_1', ['transfer function'], 'modulation voltage')
-
-        nm_ok = (self.setp('TW_1', ['microwave index type'], 'table', required=False) and
-                 self.setp('TW_1', ['load microwave index from file',
-                                    'microwave index from file'], True, required=False) and
-                 self.setp('TW_1', ['microwave index filename', 'microwave index file'],
-                           files["nm"], required=False))
-        if nm_ok:
-            self.log("  TW_1: dispersive n_m(f) table loaded from nm.txt")
+        # ---- 6. traveling-wave electrode(s) ----
+        # A GSG line is one microwave mode, but each arm's light rides it at
+        # its own group index, so each arm sees its own walk-off. The TW
+        # element carries a single `optical index`, so a true push-pull build
+        # gets one electrode per arm: identical microwave tables, identical
+        # source and load, driven by the same signal, differing only in n_g.
+        # With ng_imbalance = 0 the two are identical and the result is the
+        # same as one electrode feeding both arms.
+        ng = float(p["ng"])
+        dn = float(p.get("ng_imbalance", 0.0))
+        ng1, ng2 = ng * (1.0 + dn / 2.0), ng * (1.0 - dn / 2.0)
+        if pushpull:
+            self.tw_names = ['TW_1', 'TW_2']
+            self._add_tw('TW_1', p, files, ng1, 420, -45)
+            self._add_tw('TW_2', p, files, ng2, 420, 420)
+            self.log(f"  Two electrodes, one per arm: n_g = {ng1:.5f} (arm 1) and "
+                     f"{ng2:.5f} (arm 2).")
         else:
-            nm60 = float(np.loadtxt(files["nm"], comments='#')[:, 1].mean())
-            self.setp('TW_1', ['microwave index type'], 'constant')
-            self.setp('TW_1', ['microwave index'], nm60)
-            self.log(f"  TW_1: n_m table unsupported -> constant n_m = {nm60:.4f}")
-
-        self.setp('TW_1', ['loss type'], 'table')
-        self.setp('TW_1', ['load loss from file', 'loss from file'], True)
-        self.setp('TW_1', ['loss filename', 'loss file'], files["loss"])
-        self.setp('TW_1', ['characteristic impedance type'], 'table')
-        self.setp('TW_1', ['load characteristic impedance from file',
-                           'characteristic impedance from file'], True)
-        self.setp('TW_1', ['characteristic impedance filename',
-                           'characteristic impedance file'], files["z0"])
-
-        # INTERCONNECT takes a single constant reactance, so any L/C parasitic
-        # is collapsed to its value at the probe frequency. The Python model
-        # keeps the full frequency dependence -- expect the two to diverge if
-        # you push the parasitics hard.
-        f_probe = float(p["f_probe_GHz"])
-        zs = complex(rlc_impedance(np.array([f_probe]), float(p["Zs_R"]),
-                                   float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))[0])
-        zt = complex(rlc_impedance(np.array([f_probe]), float(p["Rt_R"]),
-                                   float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))[0])
-        self.setp('TW_1', ['source resistance'], float(np.real(zs)))
-        self.setp('TW_1', ['source reactance'], float(np.imag(zs)))
-        self.setp('TW_1', ['terminating resistance'], float(np.real(zt)))
-        self.setp('TW_1', ['terminating reactance'], float(np.imag(zt)))
-        if abs(np.imag(zs)) > 1e-9 or abs(np.imag(zt)) > 1e-9:
-            self.log(f"  NOTE: source/load reactance frozen at {f_probe:.1f} GHz "
-                     f"(Xs={np.imag(zs):+.2f}, Xt={np.imag(zt):+.2f} ohm). "
-                     f"INTERCONNECT has no frequency-dependent termination.")
-        self.setp('TW_1', ['junction capacitance', 'constant junction capacitance'],
-                  0, required=False)
-        self.setp('TW_1', ['junction resistance', 'constant junction resistance'],
-                  0, required=False)
+            self.tw_names = ['TW_1']
+            # Single-arm drive only modulates arm 1, so arm 1's index is the
+            # one that matters. The lumped push-pull fallback has one electrode
+            # for two arms and cannot carry a difference.
+            self._add_tw('TW_1', p, files, ng if lumped_pp else ng1, 420, -45)
+            if lumped_pp and abs(dn) > 0:
+                self.log(f"  ng_imbalance = {dn:g} is NOT in this schematic: the "
+                         f"lumped fallback has one electrode for both arms. "
+                         f"The Python bandwidth includes it; this one will not.")
 
         # ---- 7. detector ----
         self.add(['PIN Photodetector', 'Photodetector'], 'PIN_1', 950, 210)
@@ -436,15 +416,67 @@ class InterconnectBuilder:
         if mode == "eye":
             self._add_eye_chain(p)
             self.connect('PIN_1', P_OUT, 'EYE_1', P_IN)
-            self.connect('NRZ_1', P_OUT, 'TW_1', P_IN)
+            self._drive_electrodes('NRZ_1')
             self._wire_eye_reference(p)
             self._check_eye_wiring()
         else:
             self._add_ena(p)
             self.connect('PIN_1', P_OUT, 'ENA_1', P_IN1)
-            self.connect('ENA_1', P_OUT, 'TW_1', P_IN)
+            self._drive_electrodes('ENA_1')
         self.log(f"  Wiring resolved: {len(self._wiring)} links.")
         return topo
+
+    def _add_tw(self, name: str, p: dict, files: dict, ng: float, x: int, y: int):
+        """One travelling-wave electrode loaded with the fitted line tables."""
+        self.add(['Traveling Wave Electrode'], name, x, y)
+        self.setp(name, ['length'], float(p["L_target_mm"]) * 1e-3)
+        self.setp(name, ['optical index'], float(ng))
+        self.setp(name, ['transfer function'], 'modulation voltage')
+
+        nm_ok = (self.setp(name, ['microwave index type'], 'table', required=False) and
+                 self.setp(name, ['load microwave index from file',
+                                  'microwave index from file'], True, required=False) and
+                 self.setp(name, ['microwave index filename', 'microwave index file'],
+                           files["nm"], required=False))
+        if nm_ok:
+            self.log(f"  {name}: dispersive n_m(f) table loaded from nm.txt")
+        else:
+            nm60 = float(np.loadtxt(files["nm"], comments='#')[:, 1].mean())
+            self.setp(name, ['microwave index type'], 'constant')
+            self.setp(name, ['microwave index'], nm60)
+            self.log(f"  {name}: n_m table unsupported -> constant n_m = {nm60:.4f}")
+
+        self.setp(name, ['loss type'], 'table')
+        self.setp(name, ['load loss from file', 'loss from file'], True)
+        self.setp(name, ['loss filename', 'loss file'], files["loss"])
+        self.setp(name, ['characteristic impedance type'], 'table')
+        self.setp(name, ['load characteristic impedance from file',
+                         'characteristic impedance from file'], True)
+        self.setp(name, ['characteristic impedance filename',
+                         'characteristic impedance file'], files["z0"])
+
+        # INTERCONNECT takes a single constant reactance, so any L/C parasitic
+        # is collapsed to its value at the probe frequency. The Python model
+        # keeps the full frequency dependence -- expect the two to diverge if
+        # you push the parasitics hard.
+        f_probe = float(p["f_probe_GHz"])
+        zs = complex(rlc_impedance(np.array([f_probe]), float(p["Zs_R"]),
+                                   float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))[0])
+        zt = complex(rlc_impedance(np.array([f_probe]), float(p["Rt_R"]),
+                                   float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))[0])
+        self.setp(name, ['source resistance'], float(np.real(zs)))
+        self.setp(name, ['source reactance'], float(np.imag(zs)))
+        self.setp(name, ['terminating resistance'], float(np.real(zt)))
+        self.setp(name, ['terminating reactance'], float(np.imag(zt)))
+        if name == 'TW_1' and (abs(np.imag(zs)) > 1e-9 or abs(np.imag(zt)) > 1e-9):
+            self.log(f"  NOTE: source/load reactance frozen at {f_probe:.1f} GHz "
+                     f"(Xs={np.imag(zs):+.2f}, Xt={np.imag(zt):+.2f} ohm). "
+                     f"INTERCONNECT has no frequency-dependent termination.")
+        self.setp(name, ['junction capacitance', 'constant junction capacitance'],
+                  0, required=False)
+        self.setp(name, ['junction resistance', 'constant junction resistance'],
+                  0, required=False)
+
 
     def _add_y_branches(self, p: dict) -> bool:
         """
@@ -770,13 +802,12 @@ class InterconnectBuilder:
             tail, tail_port = self._wire_arm2_tail()
             self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
 
-            # The fan-out is the one step that can legitimately be refused.
-            tw_out, om_mod = self.connect('TW_1', P_OUT, 'OM_1', P_MOD)
-            if not self._try_connect('TW_1', tw_out, 'OM_2', om_mod):
-                raise _FanOutUnsupported(
-                    "one electrical output cannot drive two modulation ports")
-            self.log("  Topology: TRUE PUSH-PULL -- one electrode driving both arms "
-                     "with opposite-sign phase coefficients.")
+            # One electrode per arm; the drive fans out to both electrodes
+            # (see _drive_electrodes), so each OM has a private modulation port.
+            self.connect('TW_1', P_OUT, 'OM_1', P_MOD)
+            self.connect('TW_2', P_OUT, 'OM_2', P_MOD)
+            self.log("  Topology: TRUE PUSH-PULL -- two electrodes, one per arm, "
+                     "same drive, opposite-sign phase coefficients, per-arm n_g.")
             return "push-pull"
 
         c_drive = (c1 - c2) if lumped_pp else c1
@@ -798,6 +829,15 @@ class InterconnectBuilder:
         self.log("  Topology: SINGLE-ARM drive (one modulated arm, static phase in "
                  "the other). Chirp parameter = 1, V_pi is the full single-arm V_pi.")
         return "single-arm"
+
+    def _drive_electrodes(self, src: str):
+        """Feed the drive signal to every electrode. With two electrodes the
+        source output fans out; that is the one step a build can refuse."""
+        src_out, tw_in = self.connect(src, P_OUT, self.tw_names[0], P_IN)
+        for tw in self.tw_names[1:]:
+            if not self._try_connect(src, src_out, tw, tw_in):
+                raise _FanOutUnsupported(
+                    f"{src} cannot drive a second electrode ({tw})")
 
     def _wire_arm2_tail(self):
         """Insert the arm-2 attenuator if present; return the element and the
@@ -964,12 +1004,23 @@ class InterconnectBuilder:
 # ---------------------------------------------------------------------------
 # Parameters that can also be swept on the INTERCONNECT side (spot checks)
 # ---------------------------------------------------------------------------
+# Each entry maps a GUI value to (property candidates, value for arm 1, value
+# for arm 2). The value is applied to every electrode in the schematic -- two
+# in a push-pull build, one otherwise -- so the electrodes can never drift apart
+# on a property they are supposed to share.
+def _ng_arms(p, ng, dn):
+    return ng * (1.0 + dn / 2.0), ng * (1.0 - dn / 2.0)
+
+
 LUMERICAL_SWEEPABLE = {
-    "Rt_R": ('TW_1', ['terminating resistance'], lambda v: float(v)),
-    "Zs_R": ('TW_1', ['source resistance'], lambda v: float(v)),
-    "L_target_mm": ('TW_1', ['length'], lambda v: float(v) * 1e-3),
-    "ng": ('TW_1', ['optical index'], lambda v: float(v)),
-    "Vpi_V": (None, None, None),     # handled by rebuilding the coefficient
+    "Rt_R": (['terminating resistance'], lambda p, v: (float(v), float(v))),
+    "Zs_R": (['source resistance'], lambda p, v: (float(v), float(v))),
+    "L_target_mm": (['length'], lambda p, v: (float(v) * 1e-3,) * 2),
+    "ng": (['optical index'],
+           lambda p, v: _ng_arms(p, float(v), float(p.get("ng_imbalance", 0.0)))),
+    "ng_imbalance": (['optical index'],
+                     lambda p, v: _ng_arms(p, float(p["ng"]), float(v))),
+    "Vpi_V": (None, None),     # handled by rebuilding the coefficient
 }
 
 
@@ -986,11 +1037,17 @@ def verify_points(builder: InterconnectBuilder, p: dict, key: str,
     """
     if key not in LUMERICAL_SWEEPABLE or LUMERICAL_SWEEPABLE[key][0] is None:
         raise ValueError(f"'{key}' cannot be re-swept in place; it needs a rebuild.")
-    element, props, conv = LUMERICAL_SWEEPABLE[key]
+    tws = list(getattr(builder, "tw_names", ['TW_1']))
+    if key == "ng_imbalance" and len(tws) < 2:
+        raise ValueError("ng_imbalance needs the two-electrode push-pull build; "
+                         f"this schematic has {len(tws)} electrode.")
+    props, conv = LUMERICAL_SWEEPABLE[key]
     out = {"values": list(values), "bw_GHz": []}
     for i, v in enumerate(values):
         builder.sim.switchtodesign()
-        builder.setp(element, props, conv(v))
+        per_arm = conv(p, v)
+        for tw, val in zip(tws, per_arm):
+            builder.setp(tw, props, val)
         builder.run()
         _, _, bw = builder.ena_trace(p, norm_window=norm_window)
         out["bw_GHz"].append(float(bw))
