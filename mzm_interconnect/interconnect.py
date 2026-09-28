@@ -508,6 +508,13 @@ class InterconnectBuilder:
                   required=False)
         self.setp('SPLT_2', ['split ratio'], 'even')
         self._set_split_ports(False)
+        if y_loss > 0:
+            self.log(f"  NOTE: the Optical Splitter has no insertion-loss "
+                     f"property, so the {y_loss:.2f} dB per Y branch is NOT in "
+                     f"this schematic (it is in the Python eye). It is "
+                     f"common-mode, so the ER and the bandwidth still agree; "
+                     f"only the absolute received power differs, by "
+                     f"{2*y_loss:.2f} dB.")
         return False
 
     def _set_split_ports(self, y: bool):

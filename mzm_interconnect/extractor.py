@@ -696,11 +696,40 @@ def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
     axt = fig.add_subplot(1, 2, 2)
 
     # ---- eye density -------------------------------------------------
+    # The vertical axis is FIXED, from zero to the photocurrent you would get
+    # if every photon the laser emits reached the detector. It used to
+    # auto-range to the data, which made the eye fill the frame whatever
+    # happened to it: an imbalance that lifts the '0' rail just moved the
+    # bottom of the plot up with it, so the picture looked identical until the
+    # two levels met and the auto-range zoomed into the ringing between them.
+    # On a fixed frame a lifted floor is visibly a lifted floor, and a common
+    # loss visibly shrinks the whole eye.
     t, tr = eye.t_ps, eye.traces * 1e3                      # mA
+    P_in_mA = 10 ** (float(p["P_laser_dBm"]) / 10)         # 1 A/W, so mW = mA
+    y_top = 1.05 * max(P_in_mA, float(np.max(tr)))
+    y_bot = min(0.0, float(np.min(tr)))
     h, xe, ye = np.histogram2d(
-        np.tile(t, tr.shape[0]), tr.ravel(), bins=(len(t), 150))
+        np.tile(t, tr.shape[0]), tr.ravel(), bins=(len(t), 200),
+        range=[[t[0], t[-1]], [y_bot, y_top]])
     ax.pcolormesh(xe, ye, np.sqrt(h.T), cmap="viridis", shading="auto")
+    ax.set_ylim(y_bot, y_top)
     ax.axvline(t[eye.sample_index], color="#ffd166", ls=":", lw=1.4)
+
+    # Where the rails WOULD sit with infinite bandwidth: the static maximum
+    # and minimum of the transfer curve. The gap between these lines and the
+    # rails is intersymbol interference; the height of the lower line above
+    # zero is the imbalance.
+    arm1, arm2 = arm_models(p)
+    common = 10 ** (-2.0 * float(p.get("y_branch_loss_dB", 0.0)) / 10.0)
+    p_hi = P_in_mA * common * 0.5 * (arm1.a + arm2.a) ** 2
+    p_lo = P_in_mA * common * 0.5 * (arm1.a - arm2.a) ** 2
+    for lvl, name in ((p_hi, "static max"), (p_lo, "static min")):
+        ax.axhline(lvl, color="#ff8c69", ls="--", lw=1.0, alpha=0.9)
+        ax.text(t[-1], lvl, f" {name}", color="#ff8c69", fontsize=6.5,
+                va="bottom", ha="right")
+    ax.axhline(P_in_mA, color="#8a93a5", ls=":", lw=0.9)
+    ax.text(t[0], P_in_mA, " all laser light", color="#8a93a5", fontsize=6.5,
+            va="bottom", ha="left")
     ax.set_xlabel("Time (ps)")
     ax.set_ylabel("Photocurrent (mA)")
     fmt = "PAM4" if eye.levels == 4 else "NRZ"
@@ -708,18 +737,25 @@ def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
                  f"({eye.symbol_rate_GBd:.0f} GBd)  |  "
                  f"L = {float(p['L_target_mm']):.2f} mm", fontsize=9)
 
-    txt = (f"ER          {eye.er_dB:6.2f} dB\n"
-           f"OMA         {eye.oma_A * 1e3:6.3f} mA\n"
-           f"eye height  {eye.eye_height_A * 1e3:6.3f} mA\n"
-           f"Q (worst)   {eye.q_factor:6.2f}\n"
-           f"crossing    {eye.crossing_pct:6.1f} %\n"
-           f"jitter rms  {eye.jitter_rms_ps:6.3f} ps")
-    ax.text(0.02, 0.98, txt, transform=ax.transAxes, va="top", ha="left",
-            fontsize=7.5, family="monospace", color="#ffffff",
-            bbox=dict(facecolor="#000000", alpha=0.45, edgecolor="none", pad=4))
+    if eye.eye_closed or eye.levels_inverted:
+        txt = ("EYE CLOSED" + (" / LEVELS INVERTED" if eye.levels_inverted else "")
+               + "\nno sampling instant\nseparates the levels")
+    else:
+        txt = (f"ext. ratio  {eye.er_dB:6.2f} dB\n"
+               f"mod. ampl.  {eye.oma_A * 1e3:6.3f} mA\n"
+               f"height      {eye.eye_height_A * 1e3:6.3f} mA\n"
+               f"width       {eye.eye_width_UI:6.3f} UI\n"
+               f"rails 1/0   {eye.rail_sd_one_A * 1e3:5.3f}/"
+               f"{eye.rail_sd_zero_A * 1e3:5.3f}\n"
+               f"crossing    {eye.crossing_pct:6.1f} %\n"
+               f"Q (worst)   {eye.q_factor:6.2f}")
+    # Inside the eye opening, which is the one region of the plot that is
+    # empty when the eye is healthy.
+    ax.text(t[eye.sample_index], 0.5 * (p_hi + p_lo), txt, va="center",
+            ha="center", fontsize=7, family="monospace", color="#ffffff",
+            bbox=dict(facecolor="#000000", alpha=0.55, edgecolor="none", pad=4))
 
     # ---- static transfer curve with the operating point --------------
-    arm1, arm2 = arm_models(p)
     # Span the drive swing and a little over one period of the effective
     # transfer function, so over-driving past a null is visible but the plot
     # does not turn into a wall of fringes.
@@ -727,10 +763,15 @@ def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
     vpi_eff = np.pi / g_eff
     v_span = max(1.6 * float(p["drive_Vpp_V"]), 2.4 * vpi_eff)
     v = np.linspace(-v_span / 2, v_span / 2, 800)
-    P_of_v = (arm1.a ** 2 + arm2.a ** 2
-              + 2 * arm1.a * arm2.a
-              * np.cos((arm1.phi0 + arm1.g * v) - (arm2.phi0 + arm2.g * v)))
-    P_of_v /= (arm1.a + arm2.a) ** 2
+    # As a fraction of the LASER power, not of this curve's own peak: dividing
+    # by (a1 + a2)^2 pinned the maximum at 1 whatever happened, which hid a
+    # redistributing splitter and any common loss. Now the peak drops with
+    # Y-branch loss and the trough rises with imbalance, on the same scale
+    # every time.
+    P_of_v = common * 0.5 * (arm1.a ** 2 + arm2.a ** 2
+                             + 2 * arm1.a * arm2.a
+                             * np.cos((arm1.phi0 + arm1.g * v)
+                                      - (arm2.phi0 + arm2.g * v)))
     axt.plot(v, P_of_v, "-", lw=2, color="#3f7fd0", label="static $P(V)$")
 
     vpp = float(p["drive_Vpp_V"])
@@ -743,7 +784,7 @@ def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
     hi, lo = float(P_of_v.max()), float(P_of_v.min())
     er_static = 10 * np.log10(hi / lo) if lo > 1e-12 else float("inf")
     axt.set_xlabel("Drive voltage (V)")
-    axt.set_ylabel("Normalised output power")
+    axt.set_ylabel("Output power / laser power")
     axt.set_ylim(-0.03, 1.03)
     bw_txt = ""
     if lk is not None:

@@ -317,3 +317,55 @@ At exactly 0 or 180 degrees that slope is zero: the modulator sits at a turning
 point, there is no small-signal modulation at all, and the output responds at
 twice the drive frequency. Both the eye and the EO bandwidth are meaningless
 there, and both sides of the toolkit say so rather than reporting a number.
+
+## 8. How the DC and dynamic extinction ratios combine
+
+The **standard definition** of an eye's extinction ratio (IEEE 802.3, ITU-T
+G.957, and what a sampling oscilloscope reports) is `ER = P1/P0`, the ratio of
+the mean optical power of the logic-one and logic-zero levels, usually taken
+from their histograms over a central window of the eye (commonly the central
+20 % of the symbol period). The toolkit takes the means at the single best
+sampling instant instead of over a window, which agrees when the rails are
+flat and reads slightly high when the eye is narrow.
+
+Two different things raise the zero level above true darkness:
+
+1. **Static leakage.** An imbalanced interferometer cannot cancel perfectly,
+   so even at the null some light gets through. This is the *DC extinction
+   ratio*, `ER_DC`, measured with a slow bias sweep. It depends only on the
+   imbalance, not on speed.
+2. **Intersymbol interference.** At the sampling instant a '0' that follows
+   '1's has not finished falling. Call the ratio a perfectly *balanced* device
+   shows at this bit rate `ER_ISI`. It depends only on bandwidth and bit rate.
+
+Both are unwanted light in the same zero level, so to first order they
+**add as powers**, and the extinction ratios combine like resistors in
+parallel:
+
+    1 / ER_eye  =  1 / ER_DC  +  1 / ER_ISI        (all linear, not dB)
+
+The smaller one dominates, but they are not independent -- an earlier version
+of these notes said `ER_eye = min(ER_DC, ER_ISI)`, which is wrong by up to
+2.6 dB when the two are comparable. Checked on the Jerez line at 100 Gb/s
+(ER_ISI = 17.86 dB) and 25 Gb/s (21.83 dB):
+
+| case | ER_DC | min() | reciprocal sum | eye |
+|---|---|---|---|---|
+| split 0.10 | 19.91 | 17.86 | 15.76 | 15.76 |
+| split 0.20 | 13.61 | 13.61 | 12.22 | 12.23 |
+| arm loss 2 dB | 18.81 | 17.86 | 15.30 | 15.30 |
+| split 0.10 @ 25 Gb/s | 19.91 | 19.91 | 17.75 | 17.75 |
+
+The reciprocal sum matches to 0.01 dB. It is derived here, not a named result
+from the literature; it holds to first order because the '1' rail reaches
+close to the static maximum, and would drift for a heavily closed eye.
+
+## 9. The eye plot's vertical axis
+
+The eye is drawn on a fixed frame, from zero to the photocurrent you would get
+if every photon from the laser reached the detector, with dashed lines at the
+static maximum and minimum of the transfer curve. An earlier version
+auto-ranged the axis to the data, which made every eye fill the frame: a
+lifted floor just moved the bottom of the plot up with it, so splitter
+imbalance and Y-branch loss were both invisible in the picture until the
+levels met.

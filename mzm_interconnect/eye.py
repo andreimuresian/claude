@@ -207,8 +207,17 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
     # what decides whether the eye is noise limited or ISI limited.
     P_laser *= 10 ** (-2.0 * float(p.get("y_branch_loss_dB", 0.0)) / 10.0)
     E0 = np.sqrt(P_laser)
-    E = E0 * (arm1.a * np.exp(1j * (arm1.phi0 + m1))
-              + arm2.a * np.exp(1j * (arm2.phi0 + m2)))
+    # arm_models gives the field each arm carries after the INPUT splitter
+    # (sqrt(rho), sqrt(1-rho)). The OUTPUT combiner is a 50:50 Y and takes
+    # another sqrt(0.5) from each arm. Leaving that out -- as this line used
+    # to -- sends 2x the laser power out of a passive device at constructive
+    # interference: every absolute number (OMA, eye height, mean power, and
+    # the noise-limited Q) came out 3 dB high, while the ratios (ER, crossing,
+    # width, bandwidth) were unaffected. It matches INTERCONNECT's Y branch,
+    # which conserves power the same way.
+    c = np.sqrt(0.5)
+    E = E0 * c * (arm1.a * np.exp(1j * (arm1.phi0 + m1))
+                  + arm2.a * np.exp(1j * (arm2.phi0 + m2)))
 
     # ---- optional fibre ---------------------------------------------
     z_km = float(p["fibre_km"])
