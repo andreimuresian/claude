@@ -19,6 +19,16 @@ Two topologies are available:
                 optical group index; with no n_g imbalance the two are
                 identical. V_pi halves and the chirp goes to zero.
 
+With electrode bends (n_bends > 0) each arm is a chain of TW + OM sections.
+A TW element is one uniform line between a source and a load, so each section
+gets the exact Thevenin source and load of its position as impedance TABLES,
+and sections after the first are driven through an Electrical Delay and an
+Electrical N Port S-Parameter holding V_th/V_s. Optical Delays between the
+OMs carry the light's transit through the bends and sections. The bends are
+not elements: their impedance, loss and delay live in those tables, which is
+what keeps every section on the fitted line tables and the result identical
+to the Python cascade (checked to 1e-14 with the closed-form TW model).
+
 If the INTERCONNECT build in use will not fan one electrical output out to two
 electrodes, the builder falls back to a single modulator carrying the summed
 efficiency. That reproduces the same |S21| and the same effective V_pi -- the
@@ -35,7 +45,7 @@ from typing import Callable, Optional, Sequence
 import numpy as np
 
 from . import parameters as P
-from .physics import normalise_and_measure, rlc_impedance
+from .physics import C0, normalise_and_measure, rlc_impedance
 
 
 class LumericalUnavailable(RuntimeError):
@@ -93,6 +103,8 @@ P_Y1, P_Y2, P_Y3 = _pin('port 1'), _pin('port 2'), _pin('port 3')
 # folds the received waveform against, so without it there is no eye at all --
 # not merely a missing BER. It is enabled by default, which is why it shows up
 # in the schematic as an unconnected pin waiting for something.
+P_SPAR1 = _pin('port 1', 'port1', 'input', 'in', 'input 1')
+P_SPAR2 = _pin('port 2', 'port2', 'output', 'out', 'output 1')
 P_EYE_REF = _pin('reference', 'reference input', 'signal reference', 'input 2')
 # Everything worth probing when a name is refused.
 P_ALL = _pin('input', 'output', 'in', 'out', 'modulation', 'reference',
@@ -248,14 +260,14 @@ class InterconnectBuilder:
         p = P.normalise(p)
         self.mode = mode
         if int(p.get("n_bends", 0)) > 0:
-            raise BendsNotSupported(
-                "Electrode bends are modelled in the Python response and eye only. "
-                "The INTERCONNECT TW element outputs the averaged modulation "
-                "voltage, not the line voltage, so TW blocks cannot be chained "
-                "through a bend; the representation (TW with source/terminating "
-                "impedance tables + a transfer block, or the bidirectional TWM + "
-                "Electrical Connector family) is still to be agreed. Set 'Number "
-                "of TW bends' to 0 to build.")
+            if not files.get("bend_sections"):
+                raise BendsNotSupported("n_bends > 0 but the tables were exported "
+                                        "without the per-section bend files.")
+            # No lumped fallback here: a single modulator cannot carry a
+            # segmented electrode, so a refused fan-out is reported as is.
+            self.topology = self._build_once(
+                p, files, pushpull=str(p["drive_config"]) == "push-pull", mode=mode)
+            return self.topology
         if str(p["drive_config"]) == "push-pull":
             try:
                 self.topology = self._build_once(p, files, pushpull=True, mode=mode)
@@ -384,7 +396,10 @@ class InterconnectBuilder:
         ng = float(p["ng"])
         dn = float(p.get("ng_imbalance", 0.0))
         ng1, ng2 = ng * (1.0 + dn / 2.0), ng * (1.0 - dn / 2.0)
-        if pushpull:
+        self.bend_sections = files.get("bend_sections") if int(p.get("n_bends", 0)) > 0 else None
+        if self.bend_sections:
+            pass                    # electrodes are built per section in _wire_arms_bends
+        elif pushpull:
             self.tw_names = ['TW_1', 'TW_2']
             self._add_tw('TW_1', p, files, ng1, 420, -45)
             self._add_tw('TW_2', p, files, ng2, 420, 420)
@@ -424,7 +439,11 @@ class InterconnectBuilder:
         # error instead of a schematic with no modulators in it.
         self.connect('CWL_1', P_OUT, 'SPLT_1', self.p_split_in)
         self.connect('SPLT_2', self.p_comb_out, 'PIN_1', P_IN)
-        topo = self._wire_arms(p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM)
+        if self.bend_sections:
+            topo = self._wire_arms_bends(p, files, pushpull, add_modulator, c1, c2,
+                                         ng1, ng2)
+        else:
+            topo = self._wire_arms(p, pushpull, lumped_pp, add_modulator, c1, c2, L_OM)
 
         if mode == "eye":
             self._add_eye_chain(p)
@@ -439,10 +458,15 @@ class InterconnectBuilder:
         self.log(f"  Wiring resolved: {len(self._wiring)} links.")
         return topo
 
-    def _add_tw(self, name: str, p: dict, files: dict, ng: float, x: int, y: int):
-        """One travelling-wave electrode loaded with the fitted line tables."""
+    def _add_tw(self, name: str, p: dict, files: dict, ng: float, x: int, y: int,
+                length_m: Optional[float] = None, zsrc: Optional[str] = None,
+                zload: Optional[str] = None):
+        """One travelling-wave electrode loaded with the fitted line tables.
+        *zsrc* / *zload* replace the constant source / termination with
+        frequency-dependent tables (a section inside a bent electrode)."""
         self.add(['Traveling Wave Electrode'], name, x, y)
-        self.setp(name, ['length'], float(p["L_target_mm"]) * 1e-3)
+        self.setp(name, ['length'], float(p["L_target_mm"]) * 1e-3 if length_m is None
+                  else float(length_m))
         self.setp(name, ['optical index'], float(ng))
         self.setp(name, ['transfer function'], 'modulation voltage')
 
@@ -481,10 +505,16 @@ class InterconnectBuilder:
         self.setp(name, ['source reactance'], float(np.imag(zs)))
         self.setp(name, ['terminating resistance'], float(np.real(zt)))
         self.setp(name, ['terminating reactance'], float(np.imag(zt)))
-        if name == 'TW_1' and (abs(np.imag(zs)) > 1e-9 or abs(np.imag(zt)) > 1e-9):
+        if zsrc is None and zload is None and name == 'TW_1' and \
+                (abs(np.imag(zs)) > 1e-9 or abs(np.imag(zt)) > 1e-9):
             self.log(f"  NOTE: source/load reactance frozen at {f_probe:.1f} GHz "
-                     f"(Xs={np.imag(zs):+.2f}, Xt={np.imag(zt):+.2f} ohm). "
-                     f"INTERCONNECT has no frequency-dependent termination.")
+                     f"(Xs={np.imag(zs):+.2f}, Xt={np.imag(zt):+.2f} ohm).")
+        for tbl, kind in ((zsrc, 'source'), (zload, 'terminating')):
+            if tbl is None:
+                continue
+            self.setp(name, [f'{kind} impedance type'], 'table')
+            self.setp(name, [f'load {kind} impedance from file'], True)
+            self.setp(name, [f'{kind} impedance filename'], tbl)
         self.setp(name, ['junction capacitance', 'constant junction capacitance'],
                   0, required=False)
         self.setp(name, ['junction resistance', 'constant junction resistance'],
@@ -843,9 +873,102 @@ class InterconnectBuilder:
                  "the other). Chirp parameter = 1, V_pi is the full single-arm V_pi.")
         return "single-arm"
 
+    def _wire_arms_bends(self, p, files, pushpull, add_modulator, c1, c2, ng1, ng2) -> str:
+        """
+        Segmented electrode: per arm, one TW + OM per modulating section, the
+        OMs joined optically by Optical Delays (the light's transit through the
+        bend and the next section), and per section k >= 2 a shared drive
+        chain Electrical Delay -> Electrical N Port S-Parameter giving that
+        section its Thevenin drive. The bends themselves are not elements:
+        their impedance, loss and delay are carried by the sections' source /
+        terminating impedance tables and by the drive chains, which is what
+        makes this exact while every section keeps the fitted line tables.
+
+        The TW output is referenced to the light LEAVING its section (the
+        Xu et al. form INTERCONNECT cites, which is also eo_transfer's), so each
+        OM stands at its section's exit and the delay between two OMs is
+        n_g (bend optical length + next section length) / c.
+        """
+        secs = self.bend_sections
+        L_mod = sum(s["L_m"] for s in secs) or 1.0
+        arms = [(1, c1, ng1)] + ([(2, c2, ng2)] if pushpull else [])
+        self.tw_names, self.drive_chains = [], []
+        dx = 230
+        for arm, c, ng_a in arms:
+            y_opt = 120 if arm == 1 else 300
+            y_tw = -45 if arm == 1 else 465
+            prev = None
+            for s in secs:
+                k = s["k"]
+                x = 560 + (k - 1) * dx
+                om, tw = f"OM_{arm}_{k}", f"TW_{arm}_{k}"
+                add_modulator(om, x, y_opt, c * s["L_m"] / L_mod)
+                self._add_tw(tw, p, files, ng_a, x - 140, y_tw, length_m=s["L_m"],
+                             zsrc=s["zsrc"], zload=s["zload"])
+                self.tw_names.append(tw)
+                self.connect(tw, P_OUT, om, P_MOD)
+                if prev is None:
+                    self.connect('SPLT_1', self.p_split_a if arm == 1 else self.p_split_b,
+                                 om, P_BI1)
+                else:
+                    dl = f"ODL_{arm}_{k - 1}"
+                    self.add(['Optical Delay'], dl, x - 115, y_opt)
+                    self.setp(dl, ['delay'], ng_a * (s["bend_opt_m"] + s["L_m"]) / C0)
+                    self.connect(prev, P_BI2, dl, P_BI1)
+                    self.connect(dl, P_BI2, om, P_BI1)
+                prev = om
+            if arm == 1:
+                self.connect(prev, P_BI2, 'SPLT_2', self.p_comb_a)
+            else:
+                self.connect(prev, P_BI2, 'PHS_1', P_BI1)
+                tail, tail_port = self._wire_arm2_tail()
+                self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
+        if not pushpull:
+            self.connect('SPLT_1', self.p_split_b, 'PHS_1', P_BI1)
+            tail, tail_port = self._wire_arm2_tail()
+            self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
+
+        for s in secs[1:]:
+            k = s["k"]
+            dly, spar = f"DLY_{k}", f"SPAR_{k}"
+            self.add(['Electrical Delay'], dly, 200 + (k - 2) * 120, -180)
+            self.setp(dly, ['delay'], float(s["delay_s"]))
+            self.add(['Electrical N Port S-Parameter', 'Electrical S Parameter'],
+                     spar, 200 + (k - 2) * 120, -110)
+            self.setp(spar, ['load from file'], True)
+            self.setp(spar, ['s parameters filename'], s["spar"])
+            self.setp(spar, ['s parameters convention'], 'engineering', required=False)
+            self.connect(dly, P_OUT, spar, P_SPAR1)
+            self.drive_chains.append((k, dly, spar))
+        nb = len(secs) - 1
+        lens = " + ".join("%.2f" % (s["L_m"] * 1e3) for s in secs)
+        kind = "PUSH-PULL" if pushpull else "SINGLE-ARM"
+        self.log(f"  Topology: {kind} with {nb} bend(s): "
+                 f"{len(secs)} TW + OM sections per arm ({lens} mm), "
+                 f"{nb} optical delay(s) per arm, {nb} drive chain(s) "
+                 f"(Electrical Delay + S-parameter).")
+        return ("push-pull" if pushpull else "single-arm") + f", {nb} bend(s)"
+
     def _drive_electrodes(self, src: str):
         """Feed the drive signal to every electrode. With two electrodes the
         source output fans out; that is the one step a build can refuse."""
+        if getattr(self, "bend_sections", None):
+            first = [tw for tw in self.tw_names if tw.endswith("_1")]
+            src_out, tw_in = self.connect(src, P_OUT, first[0], P_IN)
+            targets = [(tw, tw_in) for tw in first[1:]]
+            for k, dly, spar in self.drive_chains:
+                targets.append((dly, P_IN))
+            for tgt, ports in targets:
+                ports = list(ports) if isinstance(ports, (list, tuple)) else [ports]
+                if not self._try_connect_any(src, (src_out,), tgt, ports):
+                    raise _FanOutUnsupported(f"{src} cannot also drive {tgt}")
+            for k, dly, spar in self.drive_chains:
+                tws = [tw for tw in self.tw_names if tw.endswith(f"_{k}")]
+                sp_out, tw_in = self.connect(spar, P_SPAR2, tws[0], P_IN)
+                for tw in tws[1:]:
+                    if not self._try_connect(spar, sp_out, tw, tw_in):
+                        raise _FanOutUnsupported(f"{spar} cannot drive a second electrode")
+            return
         src_out, tw_in = self.connect(src, P_OUT, self.tw_names[0], P_IN)
         for tw in self.tw_names[1:]:
             if not self._try_connect(src, src_out, tw, tw_in):
@@ -1050,6 +1173,10 @@ def verify_points(builder: InterconnectBuilder, p: dict, key: str,
     """
     if key not in LUMERICAL_SWEEPABLE or LUMERICAL_SWEEPABLE[key][0] is None:
         raise ValueError(f"'{key}' cannot be re-swept in place; it needs a rebuild.")
+    if getattr(builder, "bend_sections", None):
+        raise ValueError("In-place re-sweeps are not available for a bent electrode: "
+                         "its source/termination live in per-section tables. Rebuild "
+                         "at each point instead.")
     tws = list(getattr(builder, "tw_names", ['TW_1']))
     if key == "ng_imbalance" and len(tws) < 2:
         raise ValueError("ng_imbalance needs the two-electrode push-pull build; "

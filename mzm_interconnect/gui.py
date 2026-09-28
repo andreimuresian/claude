@@ -1154,11 +1154,6 @@ class MZMStudio(tk.Tk):
         if self.result is None or self.fit is None:
             self.log("Run 'Extract + analyse' first.", "warn")
             return
-        if int(p.get("n_bends", 0)) > 0:
-            self.log("Electrode bends are in the Python response and eye only; the "
-                     "INTERCONNECT representation of a bend is not built yet. Set "
-                     "'Number of TW bends' to 0 to build the schematic.", "warn")
-            return
 
         def work():
             from .interconnect import InterconnectBuilder
@@ -1193,6 +1188,11 @@ class MZMStudio(tk.Tk):
                                          if mode == "eye" else ('ENA_1',)))
                     except Exception as exc2:
                         self.log(f"  port report failed too: {exc2}", "warn")
+                # A failed build must never look like a button that does nothing.
+                msg = f"{type(exc).__name__}: {exc}"
+                self._ui(lambda: (self.nb.select(self.tab_log),
+                                  messagebox.showerror("INTERCONNECT build failed",
+                                                       msg[:1500])))
                 raise
             self.log(f"Schematic built ({topo}, {mode} mode).")
             name = "TWMZM_eye.icp" if mode == "eye" else "TWMZM_EO_response.icp"

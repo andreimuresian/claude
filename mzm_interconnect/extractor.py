@@ -421,7 +421,70 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
     paths["f_measured_max_GHz"] = float(fit.f_max_sim_GHz)
     paths["n_points"] = n_table
     paths["extrapolated"] = extrapolated
+    if int(p.get("n_bends", 0)) > 0:
+        paths["bend_sections"] = _export_bend_tables(p, f_table, alpha, nm, Zc, out_dir, prov)
     return paths
+
+
+def _export_bend_tables(p: dict, f_table, alpha, nm, Zc, out_dir: str, prov: str) -> list:
+    """
+    What each modulating section of a bent electrode needs in INTERCONNECT.
+
+    A TW element models one uniform line between a source and a load. A
+    section inside a bent electrode is exactly that, provided the "source" is
+    the Thevenin equivalent of everything before it (driver, earlier sections,
+    bends) and the "load" is everything after it (bends, later sections,
+    termination). Both are frequency dependent, and the TW element takes them
+    as source / terminating impedance tables. The Thevenin voltage is the
+    drive passed through the transfer V_th,k / V_s: split here into its pure
+    RF transit delay (an Electrical Delay, exact) and the remainder, written
+    as S21 of a 2-port Touchstone for an Electrical N Port S-Parameter.
+    These are the same quantities the Python cascade uses, so the schematic and
+    the GUI describe one device.
+    """
+    from .physics import electrode_layout, rlc_impedance, segmented_transfer
+    lay = electrode_layout(p)
+    f_eval = f_table
+    Zs = rlc_impedance(f_eval, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
+    Zt = rlc_impedance(f_eval, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
+    bnm = float(p.get("bend_nm", 0.0))
+    bz = float(p.get("bend_Z_ohm", 0.0))
+    seg = segmented_transfer(f_table, alpha, nm, Zc, lay, float(p["ng"]), Zs, Zt,
+                             bend_alpha_dB_cm=float(p.get("bend_loss_dB_cm", 0.0)),
+                             bend_nm=bnm if bnm > 0 else None,
+                             bend_Z=bz if bz > 0 else None)
+    mods = [x for x in lay if x["kind"] == "mod"]
+    bend_opt = next((x["L_opt"] for x in lay if x["kind"] == "bend"), 0.0)
+    w = 2 * np.pi * f_table * 1e9
+    out = []
+    for k, (piece, zsrc, zload, vth) in enumerate(
+            zip(mods, seg.z_source, seg.z_load, seg.v_thevenin), start=1):
+        e = {"k": k, "L_m": float(piece["L_rf"]), "bend_opt_m": float(bend_opt)}
+        for tag, z in (("zsrc", zsrc), ("zload", zload)):
+            path = os.path.join(out_dir, f"{tag}_{k}.txt")
+            np.savetxt(path, np.column_stack([f_table * 1e9, np.real(z), np.imag(z)]),
+                       fmt="%.6e", delimiter="\t",
+                       header=f"Frequency (Hz)\tReal(Z)\tImag(Z)\n# section {k} "
+                              f"{'source' if tag == 'zsrc' else 'terminating'} impedance; {prov}",
+                       comments="# ")
+            e[tag] = path
+        if k >= 2:
+            ph = np.unwrap(np.angle(vth))
+            tau = max(0.0, -float(np.polyfit(w, ph, 1)[0]))
+            rest = vth * np.exp(1j * w * tau)
+            path = os.path.join(out_dir, f"drive_to_section_{k}.s2p")
+            with open(path, "w") as fh:
+                fh.write(f"! V_th/V_s at section {k} with {tau*1e12:.4f} ps of transit "
+                         f"removed (applied by an Electrical Delay)\n# GHz S RI R 50\n")
+                rows = [(0.0, abs(rest[0]) * np.sign(np.real(rest[0]) or 1.0))] + \
+                    list(zip(f_table, rest))
+                for f, s21 in rows:
+                    s21 = complex(s21)
+                    fh.write(f"{f:.6f} 0 0 {s21.real:.8e} {s21.imag:.8e} 0 0 0 0\n")
+            e["spar"] = path
+            e["delay_s"] = tau
+        out.append(e)
+    return out
 
 
 def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
