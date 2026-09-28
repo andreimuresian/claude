@@ -23,7 +23,7 @@ import numpy as np
 
 from . import parameters as P
 from .extractor import extract_line_fit
-from .physics import LineFit, device_response, link_metrics
+from .physics import LineFit, bend_efficiency_dB, device_response, link_metrics
 
 
 # =====================================================================
@@ -65,6 +65,10 @@ METRICS: list[MetricSpec] = [
                "the EO bandwidth only through a group-index mismatch between "
                "the arms; every other imbalance is frequency-flat and cannot "
                "move the bandwidth."),
+    MetricSpec("bend_eff_dB", "Modulation vs straight electrode", "dB",
+               "Low-frequency EO response relative to the same modulating length "
+               "without bends. The normalised bandwidth hides a flat bend loss; "
+               "this shows it. 0 dB without bends."),
     MetricSpec("eye_er_dB", "Eye extinction ratio", "dB",
                "Measured on the eye, so unlike the static ER it includes "
                "intersymbol interference. Needs 'Sweep the eye too'."),
@@ -130,6 +134,7 @@ def evaluate_point(p: dict, fit: Optional[LineFit] = None,
                  "eye_oma_mA": ey.oma_A * 1e3, "eye_jitter_ps": ey.jitter_rms_ps}
     return {
         "electrode_bw_GHz": res.bw_electrode_GHz,
+        "bend_eff_dB": bend_efficiency_dB(fit, p),
         **extra,
         "bw_GHz": res.bw_GHz,
         "bw_clipped": res.bw_clipped,

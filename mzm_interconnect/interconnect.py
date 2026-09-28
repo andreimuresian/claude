@@ -42,6 +42,10 @@ class LumericalUnavailable(RuntimeError):
     pass
 
 
+class BendsNotSupported(RuntimeError):
+    """The schematic cannot yet represent a segmented electrode."""
+
+
 class _FanOutUnsupported(RuntimeError):
     """This INTERCONNECT build will not drive two electrodes from one
     electrical output, so push-pull has to fall back to the lumped equivalent."""
@@ -243,6 +247,15 @@ class InterconnectBuilder:
         """
         p = P.normalise(p)
         self.mode = mode
+        if int(p.get("n_bends", 0)) > 0:
+            raise BendsNotSupported(
+                "Electrode bends are modelled in the Python response and eye only. "
+                "The INTERCONNECT TW element outputs the averaged modulation "
+                "voltage, not the line voltage, so TW blocks cannot be chained "
+                "through a bend; the representation (TW with source/terminating "
+                "impedance tables + a transfer block, or the bidirectional TWM + "
+                "Electrical Connector family) is still to be agreed. Set 'Number "
+                "of TW bends' to 0 to build.")
         if str(p["drive_config"]) == "push-pull":
             try:
                 self.topology = self._build_once(p, files, pushpull=True, mode=mode)

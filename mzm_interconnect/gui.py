@@ -527,6 +527,7 @@ class MZMStudio(tk.Tk):
     # ---------------- parameter widgets --------------------------------
     def _build_param_widgets(self, parent):
         t = self.theme
+        self._rows = []                     # (spec, row frame) in display order
         for group in P.GROUPS:
             specs = [s for s in P.PARAMS if s.group == group]
             box = Collapsible(parent, group, t,
@@ -534,6 +535,29 @@ class MZMStudio(tk.Tk):
             box.pack(fill="x", padx=4)
             for spec in specs:
                 self._add_param_row(box.body, spec)
+        self._refresh_visibility()
+
+    def _refresh_visibility(self):
+        """Show only the parameters that exist for the current settings, e.g.
+        one length field per electrode section once there are bends. Rows are
+        re-packed in registry order so they never shuffle."""
+        try:
+            p = self._get_params()
+        except Exception:
+            return
+        for spec, row in self._rows:
+            if spec.visible_if is not None:
+                row.pack_forget()
+        prev = None
+        for spec, row in self._rows:
+            show = spec.visible_if is None or bool(spec.visible_if(p))
+            if spec.visible_if is not None and show:
+                if prev is not None and prev.master is row.master:
+                    row.pack(fill="x", pady=2, after=prev)
+                else:
+                    row.pack(fill="x", pady=2)
+            if show:
+                prev = row
 
     def _add_param_row(self, parent, spec: P.ParamSpec):
         t = self.theme
@@ -570,6 +594,7 @@ class MZMStudio(tk.Tk):
         if spec.help:
             Tooltip(w, f"{spec.label}\n\n{spec.tooltip}", t)
         self.vars[spec.key] = var
+        self._rows.append((spec, row))
 
     def _browse(self, spec, var):
         if spec.kind == "dirpath":
@@ -776,6 +801,7 @@ class MZMStudio(tk.Tk):
                     self.vars[k].set(bool(v))
                 else:
                     self.vars[k].set(str(v))
+        self._refresh_visibility()
 
     # =================================================================
     # background worker plumbing
@@ -874,6 +900,7 @@ class MZMStudio(tk.Tk):
     # actions
     # =================================================================
     def _on_change(self):
+        self._refresh_visibility()
         if self.auto_var.get() and self.fit is not None and not self._busy:
             self.action_analyse()
 
@@ -899,6 +926,14 @@ class MZMStudio(tk.Tk):
                 self.log(f"EO bandwidth = {res.bw_GHz:.2f} GHz "
                          f"({p['bw_level_dB']:.0f} dB), V_pi,eff = {lm.vpi_eff_V:.2f} V, "
                          f"chirp = {lm.chirp_alpha:.3f}", "ok")
+            if int(p.get("n_bends", 0)) > 0:
+                from .physics import bend_efficiency_dB, electrode_layout
+                lay = electrode_layout(p)
+                secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in lay if x["kind"] == "mod")
+                self.log(f"  Electrode: {int(p['n_bends'])} bend(s), modulating sections "
+                         f"{secs} mm; low-frequency modulation vs the straight "
+                         f"electrode {bend_efficiency_dB(fit, p):+.2f} dB (the normalised "
+                         f"bandwidth does not show this).")
             if abs(res.bw_GHz - res.bw_electrode_GHz) > 0.005:
                 self.log(f"  Group-index imbalance moves it from {res.bw_electrode_GHz:.2f} "
                          f"GHz (both arms at n_g) to {res.bw_GHz:.2f} GHz "
@@ -1118,6 +1153,11 @@ class MZMStudio(tk.Tk):
         p = self._get_params()
         if self.result is None or self.fit is None:
             self.log("Run 'Extract + analyse' first.", "warn")
+            return
+        if int(p.get("n_bends", 0)) > 0:
+            self.log("Electrode bends are in the Python response and eye only; the "
+                     "INTERCONNECT representation of a bend is not built yet. Set "
+                     "'Number of TW bends' to 0 to build the schematic.", "warn")
             return
 
         def work():

@@ -205,6 +205,197 @@ def eo_transfer(f_GHz, alpha_dB_cm, nm, Zc, L_device_m, ng, Zs, Zt):
     return p1 * p2, zin
 
 
+# ---------------------------------------------------------------------
+# 4b. Segmented electrode: modulating sections joined by non-modulating bends
+# ---------------------------------------------------------------------
+MAX_BENDS = 4
+
+
+def electrode_layout(p: dict) -> list:
+    """
+    The electrode as an ordered list of pieces, from the RF input to the load.
+
+    Each piece is a dict with ``kind`` ('mod' or 'bend'), ``L_rf`` (m, length
+    along the electrode) and ``L_opt`` (m, optical path length through it).
+    With n_bends = 0 this is one modulating piece of length L.
+    """
+    nb = max(0, min(int(p.get("n_bends", 0)), MAX_BENDS))
+    L = float(p["L_target_mm"]) * 1e-3
+    if nb == 0:
+        return [dict(kind="mod", L_rf=L, L_opt=L)]
+    auto = L / (nb + 1)
+    secs = []
+    for k in range(1, nb + 2):
+        Lk = float(p.get(f"tw_len_{k}_mm", 0.0)) * 1e-3
+        secs.append(Lk if Lk > 0 else auto)
+    Lb = float(p.get("bend_len_mm", 0.0)) * 1e-3
+    Lbo = float(p.get("bend_opt_len_mm", 0.0)) * 1e-3 or Lb
+    out = []
+    for k, Lk in enumerate(secs):
+        out.append(dict(kind="mod", L_rf=Lk, L_opt=Lk))
+        if k < nb:
+            out.append(dict(kind="bend", L_rf=Lb, L_opt=Lbo))
+    return out
+
+
+def modulating_length_m(p: dict) -> float:
+    return sum(x["L_rf"] for x in electrode_layout(p) if x["kind"] == "mod")
+
+
+def rf_length_m(p: dict) -> float:
+    return sum(x["L_rf"] for x in electrode_layout(p))
+
+
+def _int_exp(x, L):
+    """(1 - exp(-x L)) / x, with the x -> 0 limit L."""
+    xL = x * L
+    small = np.abs(xL) < 1e-9
+    safe = np.where(small, 1.0, x)
+    return np.where(small, L * (1 - xL / 2), (1 - np.exp(-xL)) / safe)
+
+
+@dataclass
+class SegmentedLine:
+    """What the cascade knows about each modulating section (for export)."""
+    H: np.ndarray                  # same convention as eo_transfer
+    zin: np.ndarray                # input impedance of the whole electrode
+    z_source: list                 # per mod section: impedance looking back to the source
+    z_load: list                   # per mod section: impedance looking into the rest
+    v_thevenin: list               # per mod section: open-circuit voltage / source voltage
+    t_optical: list                # per mod section: optical delay to its start (s)
+
+
+def segmented_transfer(f_GHz, alpha_dB_cm, nm, Zc, layout, ng, Zs, Zt,
+                       bend_alpha_dB_cm=0.0, bend_nm=None, bend_Z=None) -> SegmentedLine:
+    """
+    EO transfer function of an electrode made of several line pieces.
+
+    Exact transmission-line cascade: input impedances are found from the load
+    backwards, voltages from the source forwards, so every reflection -- at the
+    source, at each impedance step into and out of a bend, at the load -- is
+    included to all orders. On piece i the voltage is
+
+        V_i(z) = V_i+ ( e^{-g z} + G_i e^{-2 g L_i} e^{g z} ),   G_i = (Z_L,i - Zc_i)/(Z_L,i + Zc_i)
+
+    and the light, which reaches the start of modulating piece i after the
+    optical transit s_i of everything before it (bends included), sees
+
+        H = (1/L_mod) sum_i e^{j bo s_i} int_0^{L_i} V_i(z) e^{j bo z} dz
+
+    with bo = n_g w / c. Bends carry the RF (loss, delay, impedance) but add
+    nothing to the sum. One piece reproduces eo_transfer up to a pure delay
+    (eo_transfer references the optical exit, this the entry), which the phase
+    factor at the end removes.
+    """
+    f = np.asarray(f_GHz, dtype=float)
+    w = 2 * np.pi * f * 1e9
+    bo = ng * w / C0
+    n = f.size
+
+    def as_arr(x):
+        return np.broadcast_to(np.asarray(x, dtype=complex), (n,)).copy()
+
+    g_line = np.asarray(alpha_dB_cm) * 100.0 * NP_PER_DB + 1j * np.asarray(nm) * w / C0
+    nm_b = nm if bend_nm is None else bend_nm
+    g_bend = bend_alpha_dB_cm * 100.0 * NP_PER_DB + 1j * np.asarray(nm_b) * w / C0
+    Zc = as_arr(Zc)
+    Zb = Zc if bend_Z is None else as_arr(bend_Z)
+    Zs, Zt = as_arr(Zs), as_arr(Zt)
+
+    pieces = [(as_arr(g_line), Zc, x) if x["kind"] == "mod" else (as_arr(g_bend), Zb, x)
+              for x in layout]
+
+    # load -> source: impedance looking into each piece, and each piece's load
+    z_load = [None] * len(pieces)
+    zl = Zt
+    for i in range(len(pieces) - 1, -1, -1):
+        g, Z, x = pieces[i]
+        z_load[i] = zl
+        th = np.tanh(g * x["L_rf"])
+        zl = Z * (zl + Z * th) / (Z + zl * th)
+    zin = zl
+
+    # source -> load: voltages, Thevenin equivalents, optical positions
+    v_in = zin / (Zs + zin)
+    z_back = Zs
+    s_opt = 0.0
+    L_mod = sum(x["L_rf"] for x in layout if x["kind"] == "mod") or 1.0
+    acc = np.zeros(n, dtype=complex)
+    out_zs, out_zl, out_vth, out_t = [], [], [], []
+    for i, (g, Z, x) in enumerate(pieces):
+        L = x["L_rf"]
+        G = (z_load[i] - Z) / (z_load[i] + Z)
+        e2 = np.exp(-2 * g * L)
+        vp = v_in / (1 + G * e2)
+        if x["kind"] == "mod":
+            fwd = _int_exp(g - 1j * bo, L)
+            bwd = np.exp(-g * L + 1j * bo * L) * _int_exp(g + 1j * bo, L)
+            acc += np.exp(1j * bo * s_opt) * vp * (fwd + G * bwd)
+            out_zs.append(z_back.copy())
+            out_zl.append(z_load[i].copy())
+            zin_i = _zin_of(g, Z, L, z_load[i])
+            out_vth.append(v_in * (z_back + zin_i) / zin_i)
+            out_t.append(ng * s_opt / C0)
+        th = np.tanh(g * L)
+        z_back = Z * (z_back + Z * th) / (Z + z_back * th)
+        v_in = vp * np.exp(-g * L) * (1 + G)
+        s_opt += x["L_opt"]
+
+    H = acc / L_mod * np.exp(-1j * bo * s_opt)
+    return SegmentedLine(H=H, zin=zin, z_source=out_zs, z_load=out_zl,
+                         v_thevenin=out_vth, t_optical=out_t)
+
+
+def _zin_of(g, Z, L, zl):
+    th = np.tanh(g * L)
+    return Z * (zl + Z * th) / (Z + zl * th)
+
+
+def line_transfer(f_GHz, alpha, nm, Zc, p: dict, ng: float, Zs, Zt):
+    """(H, zin) of the electrode described by *p*: the closed-form uniform line
+    when there are no bends (unchanged, validated path), the cascade otherwise."""
+    if int(p.get("n_bends", 0)) <= 0:
+        return eo_transfer(f_GHz, alpha, nm, Zc, float(p["L_target_mm"]) * 1e-3, ng, Zs, Zt)
+    bnm = float(p.get("bend_nm", 0.0))
+    bz = float(p.get("bend_Z_ohm", 0.0))
+    seg = segmented_transfer(f_GHz, alpha, nm, Zc, electrode_layout(p), ng, Zs, Zt,
+                             bend_alpha_dB_cm=float(p.get("bend_loss_dB_cm", 0.0)),
+                             bend_nm=bnm if bnm > 0 else None,
+                             bend_Z=bz if bz > 0 else None)
+    return seg.H, seg.zin
+
+
+def straight_reference_transfer(f_GHz, alpha, nm, Zc, p: dict, ng: float, Zs, Zt):
+    """The same device without bends: one straight electrode of the same total
+    MODULATING length, same source and load. It is the yardstick for what the
+    bends cost, because V_pi.L is a property of the modulating cross-section --
+    a bend adds RF path and loss, never modulation."""
+    L = modulating_length_m(p)
+    return segmented_transfer(f_GHz, alpha, nm, Zc, [dict(kind="mod", L_rf=L, L_opt=L)],
+                              ng, Zs, Zt).H
+
+
+def bend_efficiency_dB(fit: "LineFit", p: dict) -> float:
+    """Low-frequency modulation of the bent electrode relative to the straight
+    one (0 dB without bends). The normalised S21 cannot show this: a bend loss
+    that is flat in frequency scales the whole curve and normalises away."""
+    if int(p.get("n_bends", 0)) <= 0:
+        return 0.0
+    f = np.array([fit.f_min_sim_GHz])
+    alpha = fit.alpha_dB_cm(f, scale=float(p["alpha_scale"]),
+                            skin_scale=float(p["alpha_skin_scale"]),
+                            diel_scale=float(p["alpha_diel_scale"]),
+                            offset=float(p["alpha_offset_dB_cm"]))
+    nm = fit.nm(f, offset=float(p["nm_offset"]))
+    Zc = fit.Zc(f, offset=float(p["zc_offset_ohm"]))
+    Zs = rlc_impedance(f, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
+    Zt = rlc_impedance(f, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
+    ng = float(p["ng"])
+    Hb, _ = line_transfer(f, alpha, nm, Zc, p, ng, Zs, Zt)
+    Hs = straight_reference_transfer(f, alpha, nm, Zc, p, ng, Zs, Zt)
+    return float(20 * np.log10(abs(Hb[0]) / abs(Hs[0])))
+
+
 # =====================================================================
 # 5. Bandwidth extraction
 # =====================================================================
@@ -315,7 +506,7 @@ def plateau_window(fit: "LineFit", p: dict, bw_hint: float) -> tuple:
 
     Returns (f_lo, f_hi, period_GHz, n_periods).
     """
-    L_m = float(p["L_target_mm"]) * 1e-3
+    L_m = rf_length_m(p)
     nm_ref = float(np.atleast_1d(fit.nm(np.array([min(60.0, fit.f_max_sim_GHz)])))[0])
     period = ripple_period_GHz(nm_ref, L_m)
     f_lo = max(fit.f_min_sim_GHz, 0.0)
@@ -392,10 +583,9 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     Zs = rlc_impedance(f_eval, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
     Zt = rlc_impedance(f_eval, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
 
-    L_m = float(p["L_target_mm"]) * 1e-3
     ng = float(p["ng"])
 
-    H, zin = eo_transfer(f, alpha, nm, Zc, L_m, ng, Zs, Zt)
+    H, zin = line_transfer(f, alpha, nm, Zc, p, ng, Zs, Zt)
 
     mag = np.abs(H)
     mag = np.where(np.isfinite(mag) & (mag > 0), mag, 1e-300)
@@ -500,7 +690,7 @@ def link_metrics(p: dict) -> LinkMetrics:
 
     return LinkMetrics(
         vpi_eff_V=float(vpi_eff),
-        vpi_L_Vcm=float(vpi_eff * float(p["L_target_mm"]) * 0.1),
+        vpi_L_Vcm=float(vpi_eff * modulating_length_m(p) * 100.0),
         er_dB=float(er_dB),
         chirp_alpha=float(chirp),
         imbalance_note=note,
@@ -564,7 +754,7 @@ def arm_models(p: dict) -> tuple:
             ArmModel(a2, phi0_2, g2, ng * (1.0 - dn / 2.0)))
 
 
-def electrode_transfer(fit: LineFit, p: dict, f_GHz, ng: float):
+def electrode_transfer(fit: LineFit, p: dict, f_GHz, ng: float, straight: bool = False):
     """The electrode's complex EO transfer function on an arbitrary grid.
 
     Shared by the small-signal response and the time-domain eye so the two can
@@ -583,7 +773,9 @@ def electrode_transfer(fit: LineFit, p: dict, f_GHz, ng: float):
     Zc = fit.Zc(f_eval, offset=float(p["zc_offset_ohm"]))
     Zs = rlc_impedance(f_eval, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
     Zt = rlc_impedance(f_eval, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
-    H, _ = eo_transfer(f, alpha, nm, Zc, float(p["L_target_mm"]) * 1e-3, ng, Zs, Zt)
+    if straight:
+        return straight_reference_transfer(f, alpha, nm, Zc, p, ng, Zs, Zt)
+    H, _ = line_transfer(f, alpha, nm, Zc, p, ng, Zs, Zt)
     return H
 
 

@@ -178,8 +178,14 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
     def arm_phase(arm):
         H = electrode_transfer(fit, p, f_model, arm.ng)
         # Normalise so a DC drive of V_pi gives pi radians: that is what makes
-        # V_pi mean what it means. H[0] carries the low-frequency gain.
-        h0 = H[0] if np.isfinite(H[0]) and abs(H[0]) > 0 else 1.0
+        # V_pi mean what it means. H[0] carries the low-frequency gain. With
+        # bends the reference is the straight electrode of the same modulating
+        # length: V_pi belongs to the modulating cross-section, and whatever
+        # the bends lose must show up as a smaller eye, not be normalised away.
+        h0 = H[0]
+        if int(p.get("n_bends", 0)) > 0:
+            h0 = electrode_transfer(fit, p, f_model[:1], arm.ng, straight=True)[0]
+        h0 = h0 if np.isfinite(h0) and abs(h0) > 0 else 1.0
         m = np.fft.irfft(V * (H / h0) * arm.g, n=n)
         return m
 

@@ -19,7 +19,7 @@ to be touched.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 
 @dataclass(frozen=True)
@@ -39,6 +39,9 @@ class ParamSpec:
     vmin: Optional[float] = None       # below this the model is not meaningful
     vmax: Optional[float] = None       # above this it is degenerate or unphysical
     typical: str = ""                  # what a real process actually delivers
+    # Shown in the GUI only when this returns True for the current parameter
+    # values (e.g. the per-section lengths only exist once there are bends).
+    visible_if: Optional[Callable[[dict], bool]] = None
 
     @property
     def display(self) -> str:
@@ -93,9 +96,77 @@ PARAMS: list[ParamSpec] = [
     # ---------------- Device geometry ------------------------------------
     ParamSpec("L_target_mm", "Electrode length L", 8.0, "Device geometry", "mm",
               sweepable=True, sweep_default=(2.0, 20.0, 37), affects="circuit",
-              help="Length the response is extrapolated to. Per-unit-length "
-                   "physics is assumed length-invariant (true for a uniform line, "
-                   "NOT true once bends or tapers are included)."),
+              help="Length the response is extrapolated to. With bends, this is the "
+                   "total MODULATING length used when the section lengths are left "
+                   "at 0 (automatic); explicit section lengths override it."),
+    ParamSpec("n_bends", "Number of TW bends", 0, "Device geometry", "-", kind="int",
+              affects="circuit", vmin=0, vmax=4,
+              help="Non-modulating bends in the electrode (folded / meandered "
+                   "layout). With N bends each arm has N+1 modulating "
+                   "traveling-wave sections joined by N bends. 0 = one straight "
+                   "electrode of length L (the configuration used so far). "
+                   "Every section uses the same fitted loss / impedance / "
+                   "microwave-index tables; only the lengths differ.",
+              typical="0 for a straight device, 1-2 for a folded one."),
+    ParamSpec("tw_len_1_mm", "Section 1 length", 0.0, "Device geometry", "mm",
+              sweepable=True, sweep_default=(1.0, 12.0, 23), affects="circuit", vmin=0.0,
+              visible_if=lambda p, k=1: int(p.get("n_bends", 0)) >= k - 1 and int(p.get("n_bends", 0)) > 0,
+              help="Length of modulating traveling-wave section 1 (counted from "
+                   "the RF input). 0 = automatic: L split equally over the "
+                   "sections, so the total modulating length stays L."),
+    ParamSpec("tw_len_2_mm", "Section 2 length", 0.0, "Device geometry", "mm",
+              sweepable=True, sweep_default=(1.0, 12.0, 23), affects="circuit", vmin=0.0,
+              visible_if=lambda p, k=2: int(p.get("n_bends", 0)) >= k - 1 and int(p.get("n_bends", 0)) > 0,
+              help="Length of modulating traveling-wave section 2 (counted from "
+                   "the RF input). 0 = automatic: L split equally over the "
+                   "sections, so the total modulating length stays L."),
+    ParamSpec("tw_len_3_mm", "Section 3 length", 0.0, "Device geometry", "mm",
+              sweepable=True, sweep_default=(1.0, 12.0, 23), affects="circuit", vmin=0.0,
+              visible_if=lambda p, k=3: int(p.get("n_bends", 0)) >= k - 1 and int(p.get("n_bends", 0)) > 0,
+              help="Length of modulating traveling-wave section 3 (counted from "
+                   "the RF input). 0 = automatic: L split equally over the "
+                   "sections, so the total modulating length stays L."),
+    ParamSpec("tw_len_4_mm", "Section 4 length", 0.0, "Device geometry", "mm",
+              sweepable=True, sweep_default=(1.0, 12.0, 23), affects="circuit", vmin=0.0,
+              visible_if=lambda p, k=4: int(p.get("n_bends", 0)) >= k - 1 and int(p.get("n_bends", 0)) > 0,
+              help="Length of modulating traveling-wave section 4 (counted from "
+                   "the RF input). 0 = automatic: L split equally over the "
+                   "sections, so the total modulating length stays L."),
+    ParamSpec("tw_len_5_mm", "Section 5 length", 0.0, "Device geometry", "mm",
+              sweepable=True, sweep_default=(1.0, 12.0, 23), affects="circuit", vmin=0.0,
+              visible_if=lambda p, k=5: int(p.get("n_bends", 0)) >= k - 1 and int(p.get("n_bends", 0)) > 0,
+              help="Length of modulating traveling-wave section 5 (counted from "
+                   "the RF input). 0 = automatic: L split equally over the "
+                   "sections, so the total modulating length stays L."),
+    ParamSpec("bend_len_mm", "Bend RF length", 0.5, "Device geometry", "mm",
+              sweepable=True, sweep_default=(0.0, 3.0, 31), affects="circuit", vmin=0.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              help="Length of the electrode along one bend (same for every bend). "
+                   "The bend carries the RF but does not modulate."),
+    ParamSpec("bend_opt_len_mm", "Bend optical length", 0.0, "Device geometry", "mm",
+              sweepable=True, sweep_default=(0.0, 3.0, 31), affects="circuit", vmin=0.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              help="Optical path length through one bend. It sets how late the light "
+                   "reaches the next section relative to the RF, i.e. the "
+                   "velocity matching across the bend. 0 = same as the bend RF length."),
+    ParamSpec("bend_Z_ohm", "Bend impedance", 0.0, "Device geometry", "ohm",
+              sweepable=True, sweep_default=(30.0, 70.0, 41), affects="circuit", vmin=0.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              help="Characteristic impedance of the bends (constant, real). "
+                   "0 = same as the line Zc(f), i.e. no reflection at the bends. "
+                   "Any other value creates two impedance steps per bend.",
+              typical="chosen close to the line impedance; a few ohm of mismatch is common."),
+    ParamSpec("bend_loss_dB_cm", "Bend RF loss", 0.0, "Device geometry", "dB/cm",
+              sweepable=True, sweep_default=(0.0, 10.0, 21), affects="circuit", vmin=0.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              help="RF attenuation of the bends, constant in frequency. Loss of one "
+                   "bend = this x bend RF length. Put the extra radiation / "
+                   "discontinuity loss of the bend in here."),
+    ParamSpec("bend_nm", "Bend microwave index", 0.0, "Device geometry", "-",
+              sweepable=True, sweep_default=(1.8, 3.0, 25), affects="circuit", vmin=0.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              help="Microwave index in the bends (sets the RF delay across a bend). "
+                   "0 = same as the line n_m(f)."),
 
     # ---------------- Microwave line 'what-if' knobs ---------------------
     ParamSpec("alpha_scale", "Total loss scale", 1.0, "Microwave line", "x",

@@ -667,6 +667,18 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
                    label=f"0 dB reference: single point at {lo:.2f} GHz")
     ax.set_ylabel("Normalised EO S21 (dB)")
     ax.set_ylim(min(-40, level - 10), 3)
+    from .physics import electrode_layout, bend_efficiency_dB
+    _lay = electrode_layout(p)
+    if len(_lay) > 1:
+        _secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in _lay if x["kind"] == "mod")
+        _bz = float(p.get("bend_Z_ohm", 0.0))
+        _zt = "line Zc" if _bz <= 0 else f"{_bz:.0f} ohm"
+        _geom = (f"{int(p['n_bends'])} bend(s): sections {_secs} mm, "
+                 f"bend {float(p['bend_len_mm']):.2f} mm @ {_zt}, "
+                 f"{float(p['bend_loss_dB_cm']):.1f} dB/cm\n"
+                 f"low-frequency modulation vs straight electrode: {bend_efficiency_dB(fit, p):+.2f} dB")
+        ax.text(0.99, 0.97, _geom, transform=ax.transAxes, ha="right", va="top", fontsize=8,
+                color=theme["fg"], bbox=dict(facecolor=theme["axes"], alpha=0.8, edgecolor="none"))
     ax.set_title(f"EO response  |  {fit.source_file}  |  L = {float(p['L_target_mm']):.2f} mm, "
                  f"$R_T$ = {float(p['Rt_R']):.0f} $\\Omega$, $n_g$ = {float(p['ng']):.3f}")
 
