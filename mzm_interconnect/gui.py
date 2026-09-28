@@ -543,7 +543,7 @@ class MZMStudio(tk.Tk):
         lab = ttk.Label(row, text=spec.display, style="Muted.TLabel", width=24, anchor="w")
         lab.pack(side="left", padx=(4, 4))
         if spec.help:
-            Tooltip(lab, f"{spec.label}\n\n{spec.help}", t)
+            Tooltip(lab, f"{spec.label}\n\n{spec.tooltip}", t)
 
         if spec.kind == "bool":
             var = tk.BooleanVar(value=bool(spec.default))
@@ -568,7 +568,7 @@ class MZMStudio(tk.Tk):
             w.bind("<Return>", lambda e: self._on_change())
             w.bind("<FocusOut>", lambda e: self._on_change())
         if spec.help:
-            Tooltip(w, f"{spec.label}\n\n{spec.help}", t)
+            Tooltip(w, f"{spec.label}\n\n{spec.tooltip}", t)
         self.vars[spec.key] = var
 
     def _browse(self, spec, var):

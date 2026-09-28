@@ -36,10 +36,30 @@ class ParamSpec:
     log_sweep: bool = False
     affects: str = "circuit"
     help: str = ""
+    vmin: Optional[float] = None       # below this the model is not meaningful
+    vmax: Optional[float] = None       # above this it is degenerate or unphysical
+    typical: str = ""                  # what a real process actually delivers
 
     @property
     def display(self) -> str:
         return f"{self.label} [{self.unit}]" if self.unit else self.label
+
+    @property
+    def range_text(self) -> str:
+        """One line describing the usable range, for tooltips and docs."""
+        bits = []
+        if self.vmin is not None or self.vmax is not None:
+            lo = "-inf" if self.vmin is None else f"{self.vmin:g}"
+            hi = "+inf" if self.vmax is None else f"{self.vmax:g}"
+            bits.append(f"usable range {lo} to {hi} {self.unit}".rstrip())
+        if self.typical:
+            bits.append(f"typical: {self.typical}")
+        return "   |   ".join(bits)
+
+    @property
+    def tooltip(self) -> str:
+        r = self.range_text
+        return f"{self.help}\n\n{r}" if r else self.help
 
 
 # ---------------------------------------------------------------------------
@@ -144,18 +164,26 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("arm_loss_imbalance_dB", "Arm loss imbalance", 0.0, "Arm imbalance", "dB",
               sweepable=True, sweep_default=(0.0, 1.0, 21), affects="link",
               help="Excess propagation loss of arm 2 vs arm 1 -- e.g. asymmetric "
-                   "rib over-etch. Sets the static extinction ratio."),
+                   "rib over-etch. Sets the static extinction ratio.",
+              vmin=0.0, vmax=3.0,
+              typical="0.0-0.3 dB. Above ~1 dB suspect a localised defect, not a gradual asymmetry: 5 % difference in loss coefficient over a 16.5 mm arm at 0.2 dB/cm is only 0.017 dB."),
     ParamSpec("arm_phase_imbalance_deg", "Arm phase imbalance", 0.0, "Arm imbalance", "deg",
               sweepable=True, sweep_default=(0.0, 180.0, 37), affects="link",
               help="Static optical path-length mismatch between the arms; shifts "
-                   "the bias point and makes it wavelength dependent."),
+                   "the bias point and makes it wavelength dependent.",
+              vmin=-180.0, vmax=180.0,
+              typical="any value -- a bias controller nulls it continuously, so it is a demand on control range rather than a performance limit. Beyond about 60 deg the levels invert and the eye shuts."),
     ParamSpec("vpi_imbalance_frac", "V_pi imbalance", 0.0, "Arm imbalance", "-",
               sweepable=True, sweep_default=(0.0, 0.20, 21), affects="link",
               help="Fractional V_pi mismatch between the two arms (different overlap "
-                   "integral after over-etch). Residual chirp in push-pull comes from this."),
+                   "integral after over-etch). Residual chirp in push-pull comes from this.",
+              vmin=-0.5, vmax=0.5,
+              typical="0.01-0.05. A 100 nm gap difference on a 5 um gap is exactly 0.02; 150 nm of waveguide-to-electrode overlay error is of that order too."),
     ParamSpec("split_err", "Splitter imbalance", 0.0, "Arm imbalance", "-",
               sweepable=True, sweep_default=(0.0, 0.10, 21), affects="link",
-              help="Power split deviation from 0.5 (0.02 = 52:48). Caps the ER."),
+              help="Power split deviation from 0.5 (0.02 = 52:48). Caps the ER.",
+              vmin=0.0, vmax=0.45,
+              typical="0.005-0.02 (50.5:49.5 to 52:48) for a good Y branch or MMI. This is the deviation of the POWER fraction from 0.5, so 0.01 means 51:49. At 0.5 all the light is in one arm and the device stops being an interferometer."),
     ParamSpec("y_branch_loss_dB", "Y-branch excess loss", 0.0, "Arm imbalance", "dB",
               sweepable=True, sweep_default=(0.0, 1.0, 21), affects="link",
               help="Excess loss of ONE Y branch. A real thin-film LN Y is "
@@ -163,7 +191,9 @@ PARAMS: list[ParamSpec] = [
                    "twice in the power budget. It is common-mode, so it does "
                    "not touch the extinction ratio, the chirp or the "
                    "bandwidth -- only the absolute received power, which is "
-                   "what decides whether the eye is noise-limited."),
+                   "what decides whether the eye is noise-limited.",
+              vmin=0.0, vmax=2.0,
+              typical="0.1-0.3 dB per branch for a well-made thin-film LN Y. Counted twice, once at each end."),
     ParamSpec("ng_imbalance", "Group-index imbalance", 0.0, "Arm imbalance", "-",
               sweepable=True, sweep_default=(0.0, 0.02, 21), affects="link",
               help="Fractional n_g mismatch between the arms (arm 1 gets "
@@ -171,7 +201,9 @@ PARAMS: list[ParamSpec] = [
                    "change the -3 dB bandwidth, because it is the only one "
                    "that makes the two arms see different walk-off. The other "
                    "four are frequency-flat and move the eye without moving "
-                   "the bandwidth."),
+                   "the bandwidth.",
+              vmin=0.0, vmax=0.02,
+              typical="below 0.001 between two arms on the same die. The values above that are there to show the mechanism, not because they are reachable."),
 
     # ---------------- Eye diagram / time domain ---------------------------
     ParamSpec("bitrate_Gbps", "Bit rate", 100.0, "Eye diagram", "Gb/s",

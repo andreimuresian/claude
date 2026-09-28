@@ -283,13 +283,26 @@ def sweep_figure(result: SweepResult, metric_key: str, theme, figsize=(10.5, 5.2
                    "#2fa8b8", "#e07b39", "#7f8fa6"]
     x = np.asarray(result.x_values, dtype=float)
 
+    # A perfectly balanced interferometer has an infinite static extinction
+    # ratio, so the first point of every imbalance sweep is +inf. Plotted
+    # directly it stretches the axis to infinity and squashes every finite
+    # point onto the baseline, which reads as "nothing happens, then a cliff"
+    # when the curve is in fact perfectly smooth. Infinities are dropped from
+    # the line and reported instead.
+    n_inf = 0
     for si in range(n_s):
         color = cmap_colors[si % len(cmap_colors)]
         lbl = None
         if result.series_key:
             sv = result.series_values[si]
             lbl = f"{float(sv):g}"
-        ax.plot(x, y[si], "-o", ms=3.2, lw=1.8, color=color, label=lbl)
+        good = np.isfinite(y[si])
+        n_inf += int((~good).sum())
+        ax.plot(x[good], y[si][good], "-o", ms=3.2, lw=1.8, color=color, label=lbl)
+        # Mark where the value was infinite, at the top of the finite range.
+        if (~good).any() and good.any():
+            ax.plot(x[~good], np.full((~good).sum(), y[si][good].max()),
+                    "^", ms=8, mfc="none", mec=color, mew=1.6)
 
         # mark points where the response never crossed the -3 dB level:
         # the plotted value there is a floor, not a real bandwidth.
@@ -299,6 +312,13 @@ def sweep_figure(result: SweepResult, metric_key: str, theme, figsize=(10.5, 5.2
 
     ax.set_xlabel(result.x_label, color=theme["fg"])
     ax.set_ylabel(spec.display if spec else metric_key, color=theme["fg"])
+    if n_inf:
+        ax.text(0.99, 0.02,
+                f"{n_inf} point(s) infinite (a perfectly balanced device has "
+                f"infinite static ER); shown as open triangles at the top of "
+                f"the finite range",
+                transform=ax.transAxes, ha="right", va="bottom", fontsize=7,
+                color=theme["muted"])
     title = f"{spec.label if spec else metric_key} vs {P.BY_KEY[result.x_key].label}"
     ax.set_title(title, color=theme["fg"])
     ax.grid(True, alpha=0.25, color=theme["grid"])

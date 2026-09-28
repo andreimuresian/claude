@@ -84,6 +84,11 @@ class EyeResult:
     jitter_rms_ps: float
     q_factor: float
     oma_A: float
+    eye_width_UI: float           # fraction of the symbol period the eye is open
+    eye_closed: bool              # no sampling instant separates the levels
+    levels_inverted: bool         # a transmitted '1' lands below a '0'
+    rail_sd_one_A: float          # thickness of the '1' rail (1 sigma)
+    rail_sd_zero_A: float         # thickness of the '0' rail (1 sigma)
     mean_power_W: float
     sample_index: int             # where in the window the eye was sampled
     # what went in, so a figure can label itself
@@ -267,7 +272,17 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
                 gaps.append(lo_.min() - hi_.max())
         return min(gaps) if gaps else -np.inf
 
-    j0 = max(range(win), key=opening_at)
+    open_curve = np.array([opening_at(j) for j in range(win)])
+    j0 = int(np.argmax(open_curve))
+
+    # How much of the symbol period the eye stays open for. This is the
+    # horizontal half of the picture: ER and eye height say how tall the eye
+    # is, the width says how much timing margin a decision circuit has before
+    # it lands on an edge. Jitter closes the width without touching the height.
+    # The 2-UI window shows two openings, so halve the count to get one eye's
+    # width. "Open" here is the plain criterion: the worst '1' still sits
+    # above the worst '0'.
+    open_frac = float(np.count_nonzero(open_curve > 0)) / (2 * sps)
 
     labels = symbols[labels_at(j0)]
     col = traces[:, j0]
@@ -276,7 +291,26 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
     sd = np.array([col[labels == u].std() if (labels == u).sum() > 1 else 0.0
                    for u in uniq])
 
+    # Rail thickness: how far the ones and the zeros spread about their own
+    # level. This is the "cleanness" of the eye -- thick rails mean
+    # intersymbol interference or noise, and they eat the height from inside.
     mu0, mu1 = float(mu[0]), float(mu[-1])
+    sd0, sd1 = float(sd[0]), float(sd[-1])
+
+    # Past roughly 60 degrees of bias error the levels cross over and the eye
+    # shuts. Every metric below is defined on an open, correctly-ordered eye,
+    # so rather than reporting a negative extinction ratio and a NaN crossing
+    # -- which look like bugs -- say what actually happened.
+    eye_closed = bool(open_curve.max() <= 0)
+    levels_inverted = bool(mu1 < mu0)
+    if levels_inverted:
+        notes.append("the levels are inverted: a transmitted '1' lands BELOW a "
+                     "'0'. The bias is past the turning point of the transfer "
+                     "curve. Add 180 deg to the bias, or reduce the bias error.")
+    if eye_closed:
+        notes.append("the eye is closed: no sampling instant separates the "
+                     "levels, so the height, crossing and jitter below are not "
+                     "meaningful.")
     oma = mu1 - mu0
     er = 10 * np.log10(mu1 / mu0) if mu0 > 0 else float("inf")
 
@@ -321,6 +355,9 @@ def simulate_eye(fit: LineFit, p: dict, seed: int = 12345) -> EyeResult:
         else float("-inf"),
         crossing_pct=float(crossing_pct), jitter_rms_ps=jitter,
         q_factor=float(q_fac), oma_A=float(oma),
+        eye_width_UI=float(open_frac), eye_closed=eye_closed,
+        levels_inverted=levels_inverted,
+        rail_sd_one_A=sd1, rail_sd_zero_A=sd0,
         mean_power_W=float(np.mean(i_t) / R), sample_index=j0,
         drive_bw_GHz=drive_bw, rx_bw_GHz=rx_bw, fibre_km=z_km, notes=notes,
     )
