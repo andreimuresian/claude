@@ -224,7 +224,7 @@ def export_tl_tables(fit, p: dict, out_dir: str, f_top_GHz=None,
     os.makedirs(out_dir, exist_ok=True)
     top = float(f_top_GHz or default_table_top_GHz(p))
     f_lo = max(fit.f_min_sim_GHz, 1e-3)
-    f_GHz = np.linspace(f_lo, top, max(int((top - f_lo) * points_per_GHz), 400))
+    f_GHz = np.linspace(f_lo, top, max(int((top - f_lo) * points_per_GHz), 32))
     alpha, Zc, nm = line_tables(fit, p, f_GHz)
     notes = [f"electrode line from {os.path.basename(fit.source_file)}",
              f"measured range {fit.f_min_sim_GHz:.2f}-{fit.f_max_sim_GHz:.2f} GHz, "

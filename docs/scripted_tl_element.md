@@ -75,10 +75,25 @@ length, n_g, Zs and Rt, and ignores bends.
 
 **Command line:** `python -m mzm_interconnect.cli tl-step0 your_line.s2p`
 
-The schematic has two cases: the GUI's Zs/Rt, and 30 Ω / 80 Ω so the
-reflections at both ends are large. Each case has three rows, each measured by
-its own Network Analyzer on the electrode's modulation output (electrical only,
-no optics):
+Step 0 runs as five small simulations. Each runs in a fresh INTERCONNECT
+session and is saved as `TL_step0_S#.icp` **before** it runs, so a crash names
+its cause and leaves a project you can open and run by hand. INTERCONNECT's own
+error message then appears in its Output window.
+
+| Stage | What runs | If it is the first to fail |
+|---|---|---|
+| S1 | Ansys TW block alone | the session or the Network Analyzer, not the TL line |
+| S2 | TL line as a plain 2-port: ENA → CNC → TL → ENA | `setsparameter` on bidirectional electrical ports |
+| S3 | TL line with its modulation output, short table (~50 points) | the Output port driven from bidirectional ports |
+| S4 | same, full table, both cases | table size or FIR design |
+| S5 | S4 inside a Compound | the Compound's S-parameter solver |
+
+A failed stage does not stop the next one: the Compound can work where the
+flat row does not. The element tables stop at the run's Nyquist frequency.
+
+The two cases are the GUI's Zs/Rt, and 30 Ω / 80 Ω so the reflections at both
+ends are large. Each row is measured by its own Network Analyzer on the
+electrode's modulation output (electrical only, no optics):
 
 | Row | Contents |
 |---|---|

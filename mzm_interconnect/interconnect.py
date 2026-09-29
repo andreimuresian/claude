@@ -1037,6 +1037,10 @@ class InterconnectBuilder:
     def run(self, save_path: Optional[str] = None):
         what = ("time-domain eye simulation" if self.mode == "eye"
                 else "impulse-response sweep")
+        if save_path:
+            # Saved before the run too: if INTERCONNECT crashes, the project is
+            # still there to open and run by hand, with its own error message.
+            self.sim.save(save_path)
         self.log(f"  Running {what} in INTERCONNECT...")
         self.sim.run()
         if save_path:
