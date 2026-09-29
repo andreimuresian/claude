@@ -328,6 +328,20 @@ def bandwidth_spread(fit: LineFit, p: dict) -> dict:
 # =====================================================================
 # 2. Export for INTERCONNECT
 # =====================================================================
+def line_tables(fit: LineFit, p: dict, f_GHz):
+    """alpha (dB/cm), Zc (ohm, complex) and n_m of the electrode line on a grid,
+    with the GUI's what-if knobs applied. Every exported table goes through
+    here, so the TW block and the scripted TL element see the same line."""
+    alpha = fit.alpha_dB_cm(f_GHz,
+                            scale=float(p["alpha_scale"]),
+                            skin_scale=float(p["alpha_skin_scale"]),
+                            diel_scale=float(p["alpha_diel_scale"]),
+                            offset=float(p["alpha_offset_dB_cm"]))
+    Zc = fit.Zc(f_GHz, offset=float(p["zc_offset_ohm"]))
+    nm = fit.nm(f_GHz, offset=float(p["nm_offset"]))
+    return alpha, Zc, nm
+
+
 def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
                             out_dir: str, points_per_GHz: float | None = None) -> dict:
     """
@@ -359,13 +373,7 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
     # nonsense for Zc.
     f_table = np.linspace(max(fit.f_min_sim_GHz, 1e-3), table_f_max, n_table)
 
-    alpha = fit.alpha_dB_cm(f_table,
-                            scale=float(p["alpha_scale"]),
-                            skin_scale=float(p["alpha_skin_scale"]),
-                            diel_scale=float(p["alpha_diel_scale"]),
-                            offset=float(p["alpha_offset_dB_cm"]))
-    Zc = fit.Zc(f_table, offset=float(p["zc_offset_ohm"]))
-    nm = fit.nm(f_table, offset=float(p["nm_offset"]))
+    alpha, Zc, nm = line_tables(fit, p, f_table)
 
     paths = {
         "loss": os.path.join(out_dir, "loss.txt"),

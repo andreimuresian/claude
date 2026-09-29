@@ -202,6 +202,36 @@ def cmd_build(args):
     return 0
 
 
+def cmd_tl_export(args):
+    """Tables for the scripted TL line element + the model's predictions."""
+    from . import scripted_line as SL
+    p = _params_from_args(args, args.s2p)
+    fit = SW.get_fit(p)
+    out = os.path.join(str(p["out_dir"]), "tl_line")
+    paths = SL.export_tl_tables(fit, p, out)
+    els, opt = SL.device_chain(paths)
+    r = SL.chain_response(els, float(p["Zs_R"]), float(p["Rt_R"]), opt_lengths=opt)
+    f = r.f_Hz / 1e9
+    print(f"tables written to {out}")
+    for k in ("electrode", "bend", "json"):
+        if k in paths:
+            print(f"  {paths[k]}")
+    print("elements, source to load: " + " -> ".join(
+        f"{e['name']} ({e['line_length']*1e3:.2f} mm)" for e in paths["meta"]["elements"]))
+    print(f"EO bandwidth of this chain (Python, same network INTERCONNECT solves): "
+          f"{SL.bw_GHz(f[f > 0], r.H[f > 0], float(p['f_norm_GHz'])):.2f} GHz")
+    return 0
+
+
+def cmd_tl_step0(args):
+    """Step 0: scripted TL line element vs the Ansys TW block, in INTERCONNECT."""
+    from .scripted_test import run_step0
+    p = _params_from_args(args, args.s2p)
+    fit = SW.get_fit(p)
+    run_step0(fit, p, library_name=args.library or None, compound=not args.no_compound)
+    return 0     # the report is printed and written to <out_dir>/tl_step0/step0_report.txt
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="mzm_interconnect",
                                 description="Traveling-wave MZM modelling toolkit")
@@ -241,6 +271,23 @@ def main(argv=None):
     b.add_argument("s2p")
     _add_param_args(b)
     b.set_defaults(func=cmd_build)
+
+    t = sub.add_parser("tl-export", help="tables for the scripted TL line element "
+                                         "(electrode_line.txt, bend_line.txt)")
+    t.add_argument("s2p")
+    _add_param_args(t)
+    t.set_defaults(func=cmd_tl_export)
+
+    t0 = sub.add_parser("tl-step0", help="build and run Step 0: TL line element vs the "
+                                         "Ansys TW block, report in numbers")
+    t0.add_argument("s2p")
+    t0.add_argument("--library", default="",
+                    help="Custom-library name of a TL line element made once by hand "
+                         "(needed if scripts cannot create scripted elements)")
+    t0.add_argument("--no-compound", action="store_true",
+                    help="skip the row that puts the line inside a Compound")
+    _add_param_args(t0)
+    t0.set_defaults(func=cmd_tl_step0)
 
     g = sub.add_parser("gui", help="launch the graphical interface")
     g.add_argument("s2p", nargs="?", default="")

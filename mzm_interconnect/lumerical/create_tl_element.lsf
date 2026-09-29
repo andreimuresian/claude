@@ -1,0 +1,52 @@
+# =============================================================================
+# Turn an EMPTY scripted element into a "TL line" element (MZM Studio).
+#
+# 1. In the schematic: right-click > Create scripted element. Rename it (the
+#    name below is TL_1) and leave it empty.
+# 2. Edit the four lines under "settings", then run this file from the Script
+#    File Editor (or paste it into the Script Prompt).
+# 3. If the last message says the setup script could not be set automatically,
+#    open the element's Edit window, Scripts tab, Setup, and paste the content
+#    of tl_element_setup.lsf there.
+#
+# For a bend, use modulating = 0: the element then has no "modulation" port.
+# Once it works, right-click the element and add it to the Custom library, so
+# the next ones are simply dragged in.
+# =============================================================================
+
+# ---- settings ---------------------------------------------------------------
+el = "TL_1";                     # name of the empty scripted element
+modulating = 1;                  # 1 = electrode, 0 = bend
+far_end = 0;                     # 1 = add the "far end" voltage output
+setup_file = "tl_element_setup.lsf";   # full path if not in the working directory
+# ------------------------------------------------------------------------------
+
+addproperty(el, "line_length", "TL line", "Number", 0, 1, "FixedUnit", "m", 0.007);
+addproperty(el, "ng", "TL line", "Number", 0, 100, "FixedUnit", "-", 2.27);
+addproperty(el, "R0", "TL line", "Number", 1, 10000, "FixedUnit", "ohm", 50);
+addproperty(el, "table_file", "TL line", "FileOpen", 0, 0, "NonQuantity", "", "electrode_line.txt");
+addproperty(el, "modulating", "TL line", "Logical", 0, 0, "NonQuantity", "", modulating);
+addproperty(el, "far_end_output", "TL line", "Logical", 0, 0, "NonQuantity", "", far_end);
+addproperty(el, "wave_convention", "TL line", "ComboChoice", 0, 0, "NonQuantity", "", "voltage;power");
+addproperty(el, "fir_taps", "TL line", "Number", 0, 100000, "FixedUnit", "-", 1024);
+
+addport(el, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5);
+addport(el, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5);
+if (modulating) {
+    addport(el, "modulation", "Output", "Electrical Signal", "Top", 0.5);
+}
+if (far_end) {
+    addport(el, "far end", "Output", "Electrical Signal", "Bottom", 0.5);
+}
+
+ok = 0;
+try {
+    setnamed(el, "setup script", read(setup_file));
+    ok = 1;
+} catch(err);
+
+if (ok) {
+    ?"TL line: properties, ports and setup script set on " + el + ".";
+} else {
+    ?"TL line: properties and ports set on " + el + ". The setup script could not be set automatically: paste tl_element_setup.lsf into Edit > Scripts > Setup.";
+}

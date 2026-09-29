@@ -1,0 +1,148 @@
+# =============================================================================
+# SETUP script of the "TL line" scripted element (MZM Studio).
+#
+# One uniform transmission line, defined by a table, with its exact S-matrix:
+#
+#   port 1      bidirectional, electrical   input end of the line
+#   port 2      bidirectional, electrical   far end of the line
+#   modulation  output, electrical          (electrodes only) the voltage the
+#                                           light integrates along the line,
+#                                           V_avg = (1/L) int V(z) exp(j beta_o z) dz,
+#                                           referenced to the light leaving the
+#                                           line (same definition as the TW
+#                                           element's "modulation voltage")
+#   far end     output, electrical          (optional) the line voltage at port 2
+#
+# An electrode is this element with modulating = 1; a bend is the same element
+# with modulating = 0 and its own table. The element knows nothing about its
+# neighbours: INTERCONNECT solves the reflections between it, the source, the
+# bend, the next electrode and the termination.
+#
+# Properties read here (created by create_tl_element.lsf):
+#   line_length      m      physical length of the line
+#   ng               -      optical group index (used by electrodes only)
+#   R0               ohm    reference impedance of the S-matrix. Every element
+#                           in the chain must use the same value; source and
+#                           termination are Electrical Connectors that step
+#                           from Zs to R0 and from R0 to Rt.
+#   table_file       path   columns: frequency (Hz), loss (dB/m), microwave
+#                           index, Re Z0 (ohm), Im Z0 (ohm). Header lines must
+#                           start with a letter (readdata skips those).
+#   modulating       0/1    1 for an electrode, 0 for a bend
+#   far_end_output   0/1    1 if the element has the "far end" port
+#   wave_convention  text   "voltage" (a = (V + R0 I)/2) or "power"
+#                           (a = (V/sqrt(R0) + sqrt(R0) I)/2). S11 and S21 are
+#                           the same in both; only the two output ports change.
+#   fir_taps         -      FIR taps for every entry (0 = INTERCONNECT default)
+#
+# No user-defined functions and one statement per line, on purpose. Reserved
+# names (c, e, h, pi, eps0, mu0, true, false) and built-in function names
+# (length, eye, ...) are not used as variables.
+# =============================================================================
+
+c0 = 299792458;
+NP_PER_DB = log(10) / 20;
+
+# ---- 1. read the line table --------------------------------------------------
+if (fileexists(table_file) == 0) {
+    logmessage("TL line: table file not found: " + table_file);
+    break;
+}
+M = readdata(table_file);
+fr = M(:, 1);
+lossdB = M(:, 2);
+nmw = M(:, 3);
+Zl = M(:, 4) + 1i * M(:, 5);
+
+# The line at DC: same loss, index and impedance as the first tabulated point,
+# so the filter is defined down to 0 Hz instead of being extrapolated.
+if (fr(1) > 0) {
+    fr = [0; fr];
+    lossdB = [lossdB(1); lossdB];
+    nmw = [nmw(1); nmw];
+    Zl = [Zl(1); Zl];
+}
+nf = length(fr);
+Lline = line_length;
+w = 2 * pi * fr;
+
+# ---- 2. the line's own S-matrix, reference R0 --------------------------------
+g = lossdB * NP_PER_DB + 1i * w * nmw / c0;
+G = (Zl - R0) / (Zl + R0);
+e1 = exp(-g * Lline);
+e2 = e1 * e1;
+den = 1 - G * G * e2;
+S11 = G * (1 - e2) / den;
+S21 = (1 - G * G) * e1 / den;
+
+# ---- 3. port voltage and current per unit incident wave ----------------------
+ws = 1;
+if (wave_convention == "power") { ws = sqrt(R0); }
+Rw = R0 / ws;
+
+# ---- 4. write the S-matrix (amplitude and unwrapped phase per entry) ---------
+T = matrix(nf, 3);
+T(:, 1) = fr;
+
+T(:, 2) = abs(S11);
+T(:, 3) = unwrap(angle(S11));
+setsparameter("port 1", "port 1", "transmission", T);
+setsparameter("port 2", "port 2", "transmission", T);
+
+T(:, 2) = abs(S21);
+T(:, 3) = unwrap(angle(S21));
+setsparameter("port 2", "port 1", "transmission", T);
+setsparameter("port 1", "port 2", "transmission", T);
+
+# ---- 5. modulation output: exact integral over the line ----------------------
+# Inside the line V(z) = Vp exp(-g z) + Vm exp(+g z). Vp and Vm follow from the
+# voltage and current at port 1, which follow from the incident waves. The
+# integral is closed-form: no slicing, no sampling error.
+if (modulating) {
+    bo = w * ng / c0;
+    q1 = -g + 1i * bo;
+    q1 = q1 + (abs(q1) < 1e-12) * 1e-12;
+    q2 = g + 1i * bo;
+    q2 = q2 + (abs(q2) < 1e-12) * 1e-12;
+    F1 = (exp(q1 * Lline) - 1) / q1;
+    F2 = (exp(q2 * Lline) - 1) / q2;
+    Xo = exp(-1i * bo * Lline) / Lline;
+
+    # wave entering at port 1: a1 = 1, a2 = 0, so b1 = S11
+    V1 = ws * (1 + S11);
+    I1 = (1 - S11) / Rw;
+    Vp = (V1 + Zl * I1) / 2;
+    Vm = (V1 - Zl * I1) / 2;
+    T1 = (Vp * F1 + Vm * F2) * Xo;
+
+    # wave entering at port 2: a1 = 0, a2 = 1, so b1 = S12 = S21
+    V1 = ws * S21;
+    I1 = -S21 / Rw;
+    Vp = (V1 + Zl * I1) / 2;
+    Vm = (V1 - Zl * I1) / 2;
+    T2 = (Vp * F1 + Vm * F2) * Xo;
+
+    T(:, 2) = abs(T1);
+    T(:, 3) = unwrap(angle(T1));
+    setsparameter("modulation", "port 1", "transmission", T);
+    T(:, 2) = abs(T2);
+    T(:, 3) = unwrap(angle(T2));
+    setsparameter("modulation", "port 2", "transmission", T);
+}
+
+# ---- 6. optional far-end voltage: V2 = ws (a2 + b2), b2 = S21 a1 + S22 a2 ----
+if (far_end_output) {
+    T(:, 2) = abs(ws * S21);
+    T(:, 3) = unwrap(angle(S21));
+    setsparameter("far end", "port 1", "transmission", T);
+    T(:, 2) = abs(ws * (1 + S11));
+    T(:, 3) = unwrap(angle(1 + S11));
+    setsparameter("far end", "port 2", "transmission", T);
+}
+
+# ---- 7. time-domain filter ---------------------------------------------------
+if (fir_taps > 0) {
+    setfir("rectangular", fir_taps, 0, 0.01, max([fir_taps, 4096]));
+}
+
+logmessage("TL line ready: L = " + num2str(Lline * 1e3) + " mm, R0 = " + num2str(R0) + " ohm, " + num2str(nf) + " points up to " + num2str(fr(nf) / 1e9) + " GHz, modulating = " + num2str(modulating));

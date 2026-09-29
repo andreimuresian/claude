@@ -746,6 +746,8 @@ class MZMStudio(tk.Tk):
                    command=self.action_build_interconnect).pack(side="left", padx=3)
         ttk.Button(ctrl, text="Build eye in INTERCONNECT",
                    command=self.action_build_interconnect_eye).pack(side="left", padx=3)
+        ttk.Button(ctrl, text="Step 0: TL line vs TW",
+                   command=self.action_tl_step0).pack(side="left", padx=3)
         self.lum_keep = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl, text="Leave INTERCONNECT open afterwards",
                         variable=self.lum_keep).pack(side="left", padx=14)
@@ -1209,6 +1211,37 @@ class MZMStudio(tk.Tk):
 
     def action_build_interconnect_eye(self):
         self.action_build_interconnect(mode="eye")
+
+    def action_tl_step0(self):
+        """Step 0 of the scripted TL line element: the same straight electrode as
+        the Ansys TW block and as the new element, side by side, compared in
+        numbers. Uses the current length, n_g, Zs and Rt (bends are ignored)."""
+        p = self._get_params()
+        if self.result is None or self.fit is None:
+            self.log("Run 'Extract + analyse' first.", "warn")
+            return
+
+        def work():
+            from .scripted_test import run_step0
+            out = os.path.join(self._resolve_out_dir(p), "tl_step0")
+            if self.ic_builder is not None:
+                try:
+                    self.ic_builder.close()
+                except Exception:
+                    pass
+                self.ic_builder = None
+            try:
+                rep, b = run_step0(self.fit, p, out_dir=out, log=lambda m: self.log(m),
+                                   keep_open=self.lum_keep.get())
+            except Exception as exc:
+                msg = f"{type(exc).__name__}: {exc}"
+                self._ui(lambda: (self.nb.select(self.tab_log),
+                                  messagebox.showerror("Step 0 failed", msg[:1500])))
+                raise
+            self.ic_builder = b
+            self.log(f"Step 0 report written to {os.path.join(out, 'step0_report.txt')}", "ok")
+            self._ui(lambda: self.nb.select(self.tab_log))
+        self._run_async(work, "Step 0")
 
     def action_build_interconnect(self, mode: str = "ena"):
         p = self._get_params()

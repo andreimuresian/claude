@@ -29,7 +29,7 @@ class ParamSpec:
     default: Any
     group: str
     unit: str = ""
-    kind: str = "float"           # float | int | bool | choice | path | dirpath
+    kind: str = "float"           # float | int | bool | choice | path | dirpath | text
     choices: Sequence[str] = ()
     sweepable: bool = False
     sweep_default: Optional[tuple] = None   # (start, stop, n_points)
@@ -407,6 +407,11 @@ PARAMS: list[ParamSpec] = [
               affects="lumerical"),
     ParamSpec("ic_hide", "Run INTERCONNECT hidden", False, "Lumerical", kind="bool",
               affects="lumerical"),
+    ParamSpec("tl_library_name", "TL line library element", "", "Lumerical", kind="text",
+              affects="lumerical",
+              help="Name under which a TL line scripted element was saved in the Custom "
+                   "library (made once with lumerical/create_tl_element.lsf). Leave empty "
+                   "to let the Step 0 build create the scripted elements itself."),
 ]
 
 BY_KEY: dict[str, ParamSpec] = {p.key: p for p in PARAMS}
