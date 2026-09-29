@@ -232,6 +232,15 @@ def cmd_tl_step0(args):
     return 0     # the report is printed and written to <out_dir>/tl_step0/step0_report.txt
 
 
+def cmd_tl_step0_report(args):
+    """Rebuild the Step 0 report from a saved step0_traces.csv (no INTERCONNECT)."""
+    from .scripted_test import report_from_csv
+    p = _params_from_args(args, args.s2p)
+    fit = SW.get_fit(p)
+    print(report_from_csv(fit, p, args.folder))
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="mzm_interconnect",
                                 description="Traveling-wave MZM modelling toolkit")
@@ -288,6 +297,13 @@ def main(argv=None):
                     help="skip the row that puts the line inside a Compound")
     _add_param_args(t0)
     t0.set_defaults(func=cmd_tl_step0)
+
+    tr = sub.add_parser("tl-step0-report", help="re-read a saved Step 0 run "
+                                                "(step0_traces.csv) with the current rules")
+    tr.add_argument("s2p")
+    tr.add_argument("folder", help="the tl_step0 folder of that run")
+    _add_param_args(tr)
+    tr.set_defaults(func=cmd_tl_step0_report)
 
     g = sub.add_parser("gui", help="launch the graphical interface")
     g.add_argument("s2p", nargs="?", default="")

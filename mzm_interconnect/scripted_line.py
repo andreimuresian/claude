@@ -287,15 +287,17 @@ def bw_GHz(f_GHz, H, f_norm_GHz=1.0, level_dB=-3.0) -> float:
 
 
 def compare_traces(f_ref_GHz, H_ref, f_test_GHz, H_test, band=(1.0, 150.0),
-                   scale_band=(0.5, 3.0), f_norm_GHz=1.0) -> dict:
+                   scale_band=(0.5, 3.0), f_norm_GHz=1.0, convention=None) -> dict:
     """
     Compare two complex responses (*ref* in the engineering convention).
 
     Three things are separated out before anything is called a difference:
       * the phase convention of *test*: INTERCONNECT works in exp(-i w t), so
-        its phases are the conjugate of ours. Both readings are tried and the
-        one that leaves the smaller non-linear phase residual is used
-        ('convention' = 'physics' means the test data were conjugated);
+        its phases are the conjugate of ours. Pass *convention* to impose it;
+        otherwise both readings are tried and the one that leaves the smaller
+        non-linear phase residual is used. The guess is only reliable when the
+        two responses agree, so a report should fix it from its cleanest row
+        ('physics' means the test data were conjugated);
       * a pure latency (the digital filters' processing delay), fitted as a
         straight line in phase over *band* and reported as 'latency_ps';
       * an overall scale (|test/ref| median over *scale_band*), which carries
@@ -312,8 +314,11 @@ def compare_traces(f_ref_GHz, H_ref, f_test_GHz, H_test, band=(1.0, 150.0),
     w = 2 * np.pi * f_ref[b] * 1e9
     A = np.column_stack([np.ones_like(w), -w])
 
+    cands = (("engineering", Ht0), ("physics", np.conj(Ht0)))
+    if convention is not None:          # fixed by the caller (e.g. from the cleanest row)
+        cands = tuple(c for c in cands if c[0] == convention)
     best = None
-    for conv, Ht in (("engineering", Ht0), ("physics", np.conj(Ht0))):
+    for conv, Ht in cands:
         ph = np.unwrap(np.angle(Ht[b] / Hr[b]))
         (ph0, tau), *_ = np.linalg.lstsq(A, ph, rcond=None)
         resid = ph - (ph0 - w * tau)

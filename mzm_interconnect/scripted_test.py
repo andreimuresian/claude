@@ -215,23 +215,69 @@ class Step0Builder(InterconnectBuilder):
         self.setp(el, ['number of fir taps'], FIR_TAPS, required=False)
         self.setp(el, ['maximum number of fir taps'], max(4096, FIR_TAPS), required=False)
 
-    def _make_compound(self, name: str, members: list) -> bool:
-        """Group already-wired elements into a Compound and turn its S-parameter
-        solver on. The Compound keeps the external connections as its ports."""
+    ROOT_SCOPE = "::Root Element"
+
+    def _make_compound(self, name: str, members: list, out_from=None, out_to=None) -> bool:
+        """
+        Group elements into a Compound, add its output port, and turn its
+        S-parameter solver on.
+
+        createcompound keeps a link that enters the selection from outside
+        (analyser output -> connector) but, as the first real Step 0 run showed,
+        drops the link that leaves it (TL modulation -> analyser input). So that
+        link is made afterwards: an Output port is added to the Compound, wired
+        to the analyser at root level, and wired to the TL line from inside the
+        Compound. Every spelling tried is logged; if none works the build stops
+        with instructions instead of running an analyser with no input.
+        """
+        s = self.sim
         try:
-            self.sim.select(members[0])
+            s.select(members[0])
             for m in members[1:]:
-                self.sim.shiftselect(m)
-            self.sim.createcompound()
+                s.shiftselect(m)
+            s.createcompound()
         except Exception as exc:
             self.log(f"  createcompound failed: {exc}")
             return False
         for cand in ("COMPOUND_1", "Compound Element", "COMPOUND"):
             try:
-                self.sim.setnamed(cand, "name", name)
+                s.setnamed(cand, "name", name)
                 break
             except Exception:
                 continue
+
+        if out_from is not None:
+            el, port = out_from
+            pname = "modulation"
+            try:
+                got = s.addport(name, pname, "Output", "Electrical Signal", "Right", 0.5)
+                if isinstance(got, str) and got:
+                    pname = got
+            except Exception as exc:
+                self.log(f"  {name}: addport failed: {exc}")
+                return False
+            self.connect(name, [pname], out_to, P_IN1)
+            inner = False
+            try:
+                s.groupscope(f"{self.ROOT_SCOPE}::{name}")
+                for tgt, tport in ((pname, pname), (pname, "port"), (pname, "port 1"),
+                                   (pname, "input"), (pname, "output"), (name, pname)):
+                    if self._try_connect(el, port, tgt, tport):
+                        self.log(f"  {name}: inside, {el}:{port} -> {tgt}:{tport}")
+                        inner = True
+                        break
+            except Exception as exc:
+                self.log(f"  {name}: could not enter the Compound's scope ({exc})")
+            finally:
+                try:
+                    s.groupscope(self.ROOT_SCOPE)
+                except Exception:
+                    pass
+            if not inner:
+                self.pending_manual.append(
+                    f"{name}: open the saved .icp, double-click {name}, draw the wire from "
+                    f"{el} '{port}' to the port '{pname}', then run it by hand")
+
         ok = self.setp(name, ['scattering data analysis'], True, required=False)
         if not ok:
             self.log(f"  {name}: could not switch 'scattering data analysis' on.")
@@ -247,6 +293,7 @@ class Step0Builder(InterconnectBuilder):
         sim.deleteall()
         self._wiring = []
         self._pos = {}
+        self.pending_manual = []
         sim.set("sample rate", float(p["ic_sample_rate_GHz"]) * 1e9)
         ng = float(p["ng"])
         built, y = [], 0
@@ -285,9 +332,10 @@ class Step0Builder(InterconnectBuilder):
                     self.connect(ena, P_OUT, cs, P_CNC1)
                     self.connect(cs, P_CNC2, tl, P_TL1)
                     self.connect(tl, P_TL2, ct, P_CNC1)
-                    self.connect(tl, P_TLMOD, ena, P_IN1)
-                    if spec.get("compound") and not self._make_compound(
-                            f"LINE_{label}_{i}", [cs, tl, ct]):
+                    if not spec.get("compound"):
+                        self.connect(tl, P_TLMOD, ena, P_IN1)
+                    elif not self._make_compound(f"LINE_{label}_{i}", [cs, tl, ct],
+                                                 out_from=(tl, "modulation"), out_to=ena):
                         raise RuntimeError(f"the Compound for {tl} could not be made")
                 built.append((case["name"], label, ena))
                 y += 150
@@ -359,9 +407,9 @@ def python_predictions(fit, p: dict, out_dir: str, L: float) -> dict:
     return pred
 
 
-def _row_line(A, cname, what, c_ref, meas_row, band):
+def _row_line(A, cname, what, c_ref, meas_row, band, convention=None):
     f, H, cplx, label = meas_row
-    cmp = SL.compare_traces(c_ref["f_GHz"], c_ref["exit"], f, H, band)
+    cmp = SL.compare_traces(c_ref["f_GHz"], c_ref["exit"], f, H, band, convention=convention)
     ph = f"{cmp['max_deg']:8.3f}" if cplx else "     n/a"
     lat = f"{cmp['latency_ps']:9.2f}" if cplx else "      n/a"
     conv = cmp["convention"][:4] if cplx else "n/a"
@@ -381,10 +429,11 @@ def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> 
     first_fail = None
     for sid, title, status, detail in stages:
         A(f"  {sid}  {status:7s} {title}" + (f"\n        {detail}" if detail else ""))
-        if status != "ran" and first_fail is None and sid != "S1":
+        if status == "FAILED" and first_fail is None and sid != "S1":
             first_fail = sid
     st = {sid: status for sid, _t, status, _d in stages}
-    if st.get("S5") and st.get("S6") and first_fail in ("S5", "S6"):
+    if st.get("S5") in ("ran", "FAILED") and st.get("S6") in ("ran", "FAILED") \
+            and first_fail in ("S5", "S6"):
         if st["S5"] != "ran" and st["S6"] == "ran":
             A("  -> S5 failed but S6 ran: the Compound accepts the TL line; it refuses the "
               "1-port load element. Use the connector termination (S6) inside Compounds.")
@@ -392,6 +441,9 @@ def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> 
         elif st["S5"] == "ran" and st["S6"] != "ran":
             A(f"  -> first failing stage S6: {STAGE_MEANING['S6']}.")
             first_fail = None
+    for sid, _t, status, _d in stages:
+        if status == "SAVED":
+            A(f"  -> {sid} was saved but not run: draw the one wire named above, then run it.")
     if first_fail:
         A(f"  -> first failing stage {first_fail}: {STAGE_MEANING[first_fail]}.")
         A(f"     Open TL_step0_{first_fail}.icp, press Run, and copy the message in "
@@ -410,6 +462,19 @@ def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> 
     A(f"band {band[0]:g}-{band[1]:g} GHz; element tables up to {pred['table_top_GHz']:.1f} GHz "
       f"(the Nyquist frequency of this run)")
     A("")
+    # The phase convention is a property of INTERCONNECT, not of a row: take it
+    # from the cleanest comparison (the plain 2-port, then the short-table row)
+    # and impose it on every model comparison.
+    conv = None
+    for key, pr in (("2PORT", "2port"), ("FLAT_SHORT", "short")):
+        k = next(((cn, lb) for (cn, lb) in meas if lb == key), None)
+        if k and meas[k][2]:
+            conv = SL.compare_traces(pred[pr][k[0]]["f_GHz"], pred[pr][k[0]]["exit"],
+                                     meas[k][0], meas[k][1], band)["convention"]
+            A(f"INTERCONNECT phase convention, from the {key} row: {conv} "
+              f"(applied to every row below)")
+            A("")
+            break
     hdr = (f"{'case':9s} {'what':30s} {'scale':>8s} {'conv':>5s} {'latency ps':>9s} "
            f"{'max dB':>8s} {'max deg':>8s} {'BW ref':>8s} {'BW test':>8s}")
     tl_rows = ("FLAT", "CMP", "CMP_CNC")
@@ -417,23 +482,23 @@ def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> 
         A(f"== case '{cname}': Zs = {c['Zs']:g} ohm, Rt = {c['Rt']:g} ohm")
         A(hdr)
         if (cname, "REF") in meas:
-            _row_line(A, cname, "REF (Ansys TW) vs model", c, meas[(cname, "REF")], band)
+            _row_line(A, cname, "REF (Ansys TW) vs model", c, meas[(cname, "REF")], band, conv)
         if (cname, "2PORT") in meas:
             _row_line(A, cname, "2PORT far end vs model", pred["2port"][cname],
-                      meas[(cname, "2PORT")], band)
+                      meas[(cname, "2PORT")], band, conv)
         if (cname, "FLAT_SHORT") in meas:
             _row_line(A, cname, "FLAT short table vs model", pred["short"][cname],
-                      meas[(cname, "FLAT_SHORT")], band)
+                      meas[(cname, "FLAT_SHORT")], band, conv)
         for lab in tl_rows:
             if (cname, lab) in meas:
-                _row_line(A, cname, f"{lab} vs model", c, meas[(cname, lab)], band)
+                _row_line(A, cname, f"{lab} vs model", c, meas[(cname, lab)], band, conv)
         if (cname, "REF") in meas:
             fR, HR, cR, lR = meas[(cname, "REF")]
             ref = dict(f_GHz=fR, exit=HR)
             for lab in tl_rows:
                 if (cname, lab) in meas:
                     _row_line(A, cname, f"{lab} vs REF (IC only)", ref,
-                              meas[(cname, lab)], band)
+                              meas[(cname, lab)], band, "engineering" if conv else None)
         A("")
     A("Pass: the CMP row within ~0.05 dB and ~1 deg of REF and of the model up to the top "
       "of the band, the same bandwidth to ~0.1 GHz, and a TL / TW scale of 1.")
@@ -484,6 +549,12 @@ def run_step0(fit, p: dict, out_dir: Optional[str] = None,
             built = b.build_stage(p, files, pred["tables"], L, rows, library_name)
             icp = os.path.join(out_dir, f"TL_step0_{sid}.icp")
             b.sim.save(icp)
+            if b.pending_manual:
+                msg = "; ".join(b.pending_manual)
+                status.append((sid, title, "SAVED", "not run -- one wire must be drawn by "
+                                                    "hand: " + msg))
+                log(f"  {sid}: saved {icp}, not run: {msg}")
+                continue
             log(f"  {sid}: saved {icp}; running...")
             b.sim.run()
             got = 0
@@ -521,3 +592,26 @@ def run_step0(fit, p: dict, out_dir: Optional[str] = None,
                 wr.writerow([cname, row, f"{fi:.6f}", f"{hi.real:.9e}", f"{hi.imag:.9e}"])
     log(rep)
     return rep, None
+
+
+def report_from_csv(fit, p: dict, out_dir: str) -> str:
+    """Rebuild the Step 0 report from a saved step0_traces.csv, with the current
+    comparison rules, without running INTERCONNECT. *p* must hold the same
+    parameters as the run (sim_params.json in the same folder has them)."""
+    p = P.normalise(dict(p, n_bends=0))
+    fs_needed = 2.5 * float(p["f_max_GHz"])
+    if float(p["ic_sample_rate_GHz"]) < fs_needed:
+        p["ic_sample_rate_GHz"] = fs_needed
+    L = float(p["L_target_mm"]) * 1e-3
+    pred = python_predictions(fit, p, os.path.join(out_dir, "reanalysis"), L)
+    rows = {}
+    with open(os.path.join(out_dir, "step0_traces.csv"), newline="") as fh:
+        for r in csv.DictReader(fh):
+            rows.setdefault((r["case"], r["row"]), []).append(
+                (float(r["f_GHz"]), complex(float(r["re"]), float(r["im"]))))
+    meas = {k: (np.array([a for a, _ in v]), np.array([b for _, b in v]),
+                bool(np.any(np.imag([b for _, b in v]))), "from csv")
+            for k, v in rows.items()}
+    band = (1.0, 0.95 * float(p["f_max_GHz"]))
+    stages = [("csv", "re-read from step0_traces.csv", "ran", f"{len(meas)} traces")]
+    return format_report(pred, meas, stages, band, float(p["ic_sample_rate_GHz"]))
