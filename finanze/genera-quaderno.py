@@ -135,7 +135,7 @@ sp.freeze_panes = "A4"
 SPESE_RIGHE = [
     (date(2026, 9, 20), "Revisione caldaia + controllo fumi (100 € contanti + 40 € carta)", 140, BLACK),
     (date(2026, 10, 3), "Assicurazione auto — rinnovo Prima/Triglav, pagamento unico", 467.76, BLACK),
-    (date(2026, 10, 5), "Lotta Club Seggiano — abbonamento SEMESTRALE 25×6 (corretto da 35) + quota iscrizione, una tantum: NIENTE rate mensili fino a marzo (previsto, ~20-30 €). 3 allenamenti/settimana, stesso prezzo.", 175, GREENIT),
+    (date(2026, 10, 5), "Lotta Club Seggiano — quota iscrizione + primo mese, MENSILE non semestrale (corretto): dal secondo mese 25 €/mese ricorrenti, va nel budget fisso non più qui. 2 allenamenti/settimana per ora.", 50, BLACK),
 ]
 for i, (d, voce, imp, font) in enumerate(SPESE_RIGHE):
     r = 4 + i
@@ -173,7 +173,7 @@ for i, (h, w) in enumerate([("Data", 12), ("Voce", 44), ("Importo (€)", 14)], 
 en_sh.freeze_panes = "A4"
 
 ENTRATE_RIGHE = [
-    (date(2026, 10, 1), "Stipendio di settembre (previsto, ~2.190 €)", 2190, GREENIT),
+    (date(2026, 9, 29), "Stipendio di settembre — accreditato, confermato", 2197, BLACK),
     (date(2026, 10, 1), "Bonifico da papà (previsto)", 250, GREENIT),
     (date(2026, 10, 1), "Ricarica buoni pasto — 22 giorni lavorativi × 9 € (previsto)", 198, GREENIT),
     (date(2026, 11, 15), "Rimborso 730 — accredito su carta (atteso nov/dic, importo confermato dal 730-3)", 1481, GREENIT),
@@ -309,8 +309,9 @@ for i, (lab, val, fmt, nota) in enumerate(par):
 pl.cell(row=7, column=1, value="Impegni noti, pagati dal conto corrente (non dal fondo)").font = LBL
 impegni = [
     "Assicurazione auto: 467,76 € a inizio ottobre (confermato, vedi foglio Spese).",
-    "Lotta Club Seggiano: ~235 € una tantum a ottobre (semestrale + quota iscrizione). Nessuna rata "
-    "mensile fino a marzo 2027 — il corso è già pagato per il semestre.",
+    "Lotta Club Seggiano: 50 € a ottobre (iscrizione + primo mese), poi 25 €/mese ricorrenti — è "
+    "mensile, non semestrale (corretto). Da novembre è un costo fisso ricorrente, non più una spesa "
+    "una tantum del buffer.",
     "Rimborso 730: 1.481 € netti attesi nov/dic (vedi foglio Entrate). Non ancora nella curva sotto: "
     "la aggiungo quando arriva davvero.",
 ]
