@@ -984,9 +984,9 @@ class InterconnectBuilder:
         nb = len(secs) - 1
         lens = " + ".join("%.2f" % (s["L_m"] * 1e3) for s in secs)
         kind = "PUSH-PULL" if pushpull else "SINGLE-ARM"
-        self.log(f"  Topology: {kind} with {nb} bend(s): {len(secs)} TW + OM sections "
-                 f"per arm ({lens} mm), {nb} optical delay(s) per arm, one drive "
-                 f"S-parameter per section (SPAR_k = V_th/V_s at section k).")
+        self.log(f"  Topology: {kind} with {nb} bend(s): {len(secs)} electrodes per arm "
+                 f"(TW_<arm>_<electrode> + OM, {lens} mm), {nb} optical delay(s) per arm, "
+                 f"one drive S-parameter per electrode (SPAR_k = voltage reaching electrode k).")
         return ("push-pull" if pushpull else "single-arm") + f", {nb} bend(s)"
 
     # Same digital-filter size for every table-driven element of a bent

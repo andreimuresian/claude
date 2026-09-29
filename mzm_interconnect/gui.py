@@ -600,11 +600,22 @@ class MZMStudio(tk.Tk):
         if spec.kind == "dirpath":
             path = filedialog.askdirectory(title=spec.label)
         else:
-            path = filedialog.askopenfilename(
-                title=spec.label,
-                filetypes=[("Touchstone 2-port", "*.s2p"), ("All files", "*.*")])
+            types = ([("CSV", "*.csv"), ("All files", "*.*")] if spec.key == "bend_loss_file"
+                     else [("Touchstone 2-port", "*.s2p"), ("All files", "*.*")])
+            path = filedialog.askopenfilename(title=spec.label, filetypes=types)
         if path:
             var.set(path)
+            if spec.key == "bend_loss_file":
+                from .physics import fit_bend_loss
+                try:
+                    a, b, rms = fit_bend_loss(path, float(self.vars["bend_loss_file_len_mm"].get()))
+                    self.vars["bend_alpha_sqrt"].set(f"{a:.5g}")
+                    self.vars["bend_alpha_lin"].set(f"{b:.5g}")
+                    self.log(f"Bend loss fitted from {os.path.basename(path)}: alpha(f) = "
+                             f"{a:.4f}.sqrt(f) + {b:.5f}.f dB/cm (rms residual {rms*1e3:.2f} mdB).", "ok")
+                except Exception as exc:
+                    self.log(f"Could not fit {path}: {exc}", "warn")
+                self._on_change()
             if spec.key == "s2p_path":
                 if not self.vars["out_dir"].get():
                     self.vars["out_dir"].set(os.path.dirname(path))
@@ -801,6 +812,10 @@ class MZMStudio(tk.Tk):
                     self.vars[k].set(bool(v))
                 else:
                     self.vars[k].set(str(v))
+        try:
+            self._last_nb = int(float(self.vars["n_bends"].get() or 0))
+        except (KeyError, ValueError):
+            pass
         self._refresh_visibility()
 
     # =================================================================
@@ -899,7 +914,47 @@ class MZMStudio(tk.Tk):
     # =================================================================
     # actions
     # =================================================================
+    def _sync_bend_lengths(self):
+        """Switching bends on splits the straight length L equally over the
+        electrodes (only fields still at 0 are filled); switching them off puts
+        the summed electrode length back into L. The device keeps its length
+        either way, and L never silently coexists with explicit electrodes."""
+        try:
+            nb = int(float(self.vars["n_bends"].get() or 0))
+        except ValueError:
+            return
+        prev = getattr(self, "_last_nb", 0)
+        self._last_nb = nb
+        if nb == prev:
+            return
+        keys = [f"tw_len_{k}_mm" for k in range(1, 6) if f"tw_len_{k}_mm" in self.vars]
+        vals = {}
+        for k in keys:
+            try:
+                vals[k] = float(self.vars[k].get() or 0)
+            except ValueError:
+                vals[k] = 0.0
+        if nb > 0:
+            active = keys[:nb + 1]
+            set_ = [vals[k] for k in active if vals[k] > 0]
+            if set_:
+                fill = sum(set_) / len(set_)
+            else:
+                fill = float(self.vars["L_target_mm"].get() or 0) / (nb + 1)
+            for k in active:
+                if vals[k] <= 0:
+                    self.vars[k].set(f"{fill:.4g}")
+            total = sum(float(self.vars[k].get()) for k in active)
+            self.log(f"Bends on: {nb + 1} electrodes, total modulating length "
+                     f"{total:.3f} mm (edit the electrode lengths; L is no longer used).")
+        elif prev > 0:
+            total = sum(vals[k] for k in keys[:prev + 1])
+            if total > 0:
+                self.vars["L_target_mm"].set(f"{total:.4g}")
+                self.log(f"Bends off: L set to the summed electrode length, {total:.3f} mm.")
+
     def _on_change(self):
+        self._sync_bend_lengths()
         self._refresh_visibility()
         if self.auto_var.get() and self.fit is not None and not self._busy:
             self.action_analyse()
@@ -930,10 +985,16 @@ class MZMStudio(tk.Tk):
                 from .physics import bend_efficiency_dB, electrode_layout
                 lay = electrode_layout(p)
                 secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in lay if x["kind"] == "mod")
-                self.log(f"  Electrode: {int(p['n_bends'])} bend(s), modulating sections "
-                         f"{secs} mm; low-frequency modulation vs the straight "
-                         f"electrode {bend_efficiency_dB(fit, p):+.2f} dB (the normalised "
-                         f"bandwidth does not show this).")
+                from .physics import bend_loss_coefficients
+                a_b, b_b, src = bend_loss_coefficients(p)
+                self.log(f"  {int(p['n_bends'])} bend(s): electrodes {secs} mm "
+                         f"(total {sum(x['L_rf'] for x in lay if x['kind'] == 'mod')*1e3:.2f} mm); "
+                         f"bend {float(p['bend_len_mm']):.2f} mm, {float(p['bend_Z_ohm']):.1f} ohm, "
+                         f"n = {float(p['bend_nm']):.2f}, loss {a_b:.4f}.sqrt(f) + {b_b:.5f}.f dB/cm "
+                         f"[{src}] = {(a_b*10**0.5+b_b*10)*float(p['bend_len_mm'])/10:.3f} / "
+                         f"{(a_b*100**0.5+b_b*100)*float(p['bend_len_mm'])/10:.3f} dB per bend at 10 / 100 GHz. "
+                         f"Low-frequency modulation vs the same electrodes without bends: "
+                         f"{bend_efficiency_dB(fit, p):+.2f} dB.")
             if abs(res.bw_GHz - res.bw_electrode_GHz) > 0.005:
                 self.log(f"  Group-index imbalance moves it from {res.bw_electrode_GHz:.2f} "
                          f"GHz (both arms at n_g) to {res.bw_GHz:.2f} GHz "

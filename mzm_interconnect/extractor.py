@@ -442,17 +442,13 @@ def _export_bend_tables(p: dict, f_table, alpha, nm, Zc, out_dir: str, prov: str
     These are the same quantities the Python cascade uses, so the schematic and
     the GUI describe one device.
     """
-    from .physics import electrode_layout, rlc_impedance, segmented_transfer
+    from .physics import bend_line, electrode_layout, rlc_impedance, segmented_transfer
     lay = electrode_layout(p)
     f_eval = f_table
     Zs = rlc_impedance(f_eval, float(p["Zs_R"]), float(p["Zs_L_pH"]), float(p["Zs_C_fF"]))
     Zt = rlc_impedance(f_eval, float(p["Rt_R"]), float(p["Rt_L_pH"]), float(p["Rt_C_fF"]))
-    bnm = float(p.get("bend_nm", 0.0))
-    bz = float(p.get("bend_Z_ohm", 0.0))
     seg = segmented_transfer(f_table, alpha, nm, Zc, lay, float(p["ng"]), Zs, Zt,
-                             bend_alpha_dB_cm=float(p.get("bend_loss_dB_cm", 0.0)),
-                             bend_nm=bnm if bnm > 0 else None,
-                             bend_Z=bz if bz > 0 else None)
+                             **bend_line(p, f_table))
     mods = [x for x in lay if x["kind"] == "mod"]
     bend_opt = next((x["L_opt"] for x in lay if x["kind"] == "bend"), 0.0)
     w = 2 * np.pi * f_table * 1e9
@@ -461,10 +457,11 @@ def _export_bend_tables(p: dict, f_table, alpha, nm, Zc, out_dir: str, prov: str
             zip(mods, seg.z_source, seg.z_load, seg.v_thevenin), start=1):
         e = {"k": k, "L_m": float(piece["L_rf"]), "bend_opt_m": float(bend_opt)}
         for tag, z in (("zsrc", zsrc), ("zload", zload)):
-            path = os.path.join(out_dir, f"{tag}_{k}.txt")
+            name = "zsource" if tag == "zsrc" else "zload"
+            path = os.path.join(out_dir, f"{name}_electrode_{k}.txt")
             np.savetxt(path, np.column_stack([f_table * 1e9, np.real(z), np.imag(z)]),
                        fmt="%.6e", delimiter="\t",
-                       header=f"Frequency (Hz)\tReal(Z)\tImag(Z)\n# section {k} "
+                       header=f"Frequency (Hz)\tReal(Z)\tImag(Z)\n# electrode {k} "
                               f"{'source' if tag == 'zsrc' else 'terminating'} impedance; {prov}",
                        comments="# ")
             e[tag] = path
@@ -475,9 +472,9 @@ def _export_bend_tables(p: dict, f_table, alpha, nm, Zc, out_dir: str, prov: str
         # size of filter, so that latency is common and cancels.
         ph = np.unwrap(np.angle(vth))
         tau = max(0.0, -float(np.polyfit(w, ph, 1)[0])) if k >= 2 else 0.0
-        path = os.path.join(out_dir, f"drive_to_section_{k}.s2p")
+        path = os.path.join(out_dir, f"drive_to_electrode_{k}.s2p")
         with open(path, "w") as fh:
-            fh.write(f"! S21 = V_th/V_s: drive seen at the input of modulating section {k}\n"
+            fh.write(f"! S21 = V_th/V_s: drive seen at the input of modulating electrode {k}\n"
                      f"! (RF transit ~{tau*1e12:.3f} ps, bend loss, reflections included)\n"
                      f"# GHz S RI R 50\n")
             rows = [(0.0, complex(abs(vth[0])))] + list(zip(f_table, vth))
@@ -737,15 +734,16 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
     _lay = electrode_layout(p)
     if len(_lay) > 1:
         _secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in _lay if x["kind"] == "mod")
-        _bz = float(p.get("bend_Z_ohm", 0.0))
-        _zt = "line Zc" if _bz <= 0 else f"{_bz:.0f} ohm"
-        _geom = (f"{int(p['n_bends'])} bend(s): sections {_secs} mm, "
-                 f"bend {float(p['bend_len_mm']):.2f} mm @ {_zt}, "
-                 f"{float(p['bend_loss_dB_cm']):.1f} dB/cm\n"
+        from .physics import bend_loss_coefficients
+        _a, _b, _src = bend_loss_coefficients(p)
+        _geom = (f"{int(p['n_bends'])} bend(s): electrodes {_secs} mm; "
+                 f"bend {float(p['bend_len_mm']):.2f} mm, {float(p['bend_Z_ohm']):.0f} ohm, "
+                 f"n = {float(p['bend_nm']):.2f}, "
+                 f"loss {_a:.3f}sqrt(f)+{_b:.4f}f dB/cm ({_src})\n"
                  f"low-frequency modulation vs straight electrode: {bend_efficiency_dB(fit, p):+.2f} dB")
         ax.text(0.99, 0.97, _geom, transform=ax.transAxes, ha="right", va="top", fontsize=8,
                 color=theme["fg"], bbox=dict(facecolor=theme["axes"], alpha=0.8, edgecolor="none"))
-    ax.set_title(f"EO response  |  {fit.source_file}  |  L = {float(p['L_target_mm']):.2f} mm, "
+    ax.set_title(f"EO response  |  {fit.source_file}  |  L = {sum(x['L_rf'] for x in _lay if x['kind'] == 'mod')*1e3:.2f} mm, "
                  f"$R_T$ = {float(p['Rt_R']):.0f} $\\Omega$, $n_g$ = {float(p['ng']):.3f}")
 
     axr.plot(res.f_GHz, res.s11_dB, "-", lw=1.8, color="#b06bd0",
@@ -773,7 +771,7 @@ def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
     quadrature, and both are obvious the moment the swing is drawn on the
     curve.
     """
-    from .physics import arm_models
+    from .physics import arm_models, modulating_length_m
 
     fig = Figure(figsize=(10.5, 4.6), dpi=100)
     fig.patch.set_facecolor(theme["bg"])
@@ -820,7 +818,8 @@ def eye_figure(fit: LineFit, p: dict, eye, lk=None, theme=LIGHT) -> Figure:
     fmt = "PAM4" if eye.levels == 4 else "NRZ"
     ax.set_title(f"{eye.bitrate_Gbps:.0f} Gb/s {fmt} "
                  f"({eye.symbol_rate_GBd:.0f} GBd)  |  "
-                 f"L = {float(p['L_target_mm']):.2f} mm", fontsize=9)
+                 f"L = {modulating_length_m(p)*1e3:.2f} mm"
+                 + (f", {int(p['n_bends'])} bend(s)" if int(p.get('n_bends', 0)) else ""), fontsize=9)
 
     if eye.eye_closed or eye.levels_inverted:
         txt = ("EYE CLOSED" + (" / LEVELS INVERTED" if eye.levels_inverted else "")

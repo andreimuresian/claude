@@ -24,6 +24,8 @@ is preserved.
 
 from __future__ import annotations
 
+import os
+
 from dataclasses import dataclass, field, replace
 from typing import Optional
 
@@ -356,13 +358,64 @@ def line_transfer(f_GHz, alpha, nm, Zc, p: dict, ng: float, Zs, Zt):
     when there are no bends (unchanged, validated path), the cascade otherwise."""
     if int(p.get("n_bends", 0)) <= 0:
         return eo_transfer(f_GHz, alpha, nm, Zc, float(p["L_target_mm"]) * 1e-3, ng, Zs, Zt)
-    bnm = float(p.get("bend_nm", 0.0))
-    bz = float(p.get("bend_Z_ohm", 0.0))
     seg = segmented_transfer(f_GHz, alpha, nm, Zc, electrode_layout(p), ng, Zs, Zt,
-                             bend_alpha_dB_cm=float(p.get("bend_loss_dB_cm", 0.0)),
-                             bend_nm=bnm if bnm > 0 else None,
-                             bend_Z=bz if bz > 0 else None)
+                             **bend_line(p, f_GHz))
     return seg.H, seg.zin
+
+
+# ---------------------------------------------------------------------
+# The bend as a line of its own
+# ---------------------------------------------------------------------
+_BEND_FIT_CACHE: dict = {}
+
+
+def fit_bend_loss(path: str, length_mm: float) -> tuple:
+    """
+    Fit alpha(f) = a.sqrt(f) + b.f  [dB/cm, f in GHz] to a simulated bend S21.
+
+    The file holds f (GHz) and S21 (dB) of one bend of *length_mm*. It may be
+    normalised at some frequency (BEND200GHZ.csv is 0 dB at 1 GHz), so the fit
+    is on differences: S21(f) - S21(f_ref) = -(A(f) - A(f_ref)) with
+    A = (a.sqrt(f) + b.f).L. The form has zero loss at DC, which is what a
+    conductor-plus-dielectric line does, and it is what lets the loss be
+    scaled to any bend length. Returns (a, b, rms_residual_dB).
+    """
+    key = (os.path.abspath(path), os.path.getmtime(path), float(length_mm))
+    if key in _BEND_FIT_CACHE:
+        return _BEND_FIT_CACHE[key]
+    d = np.genfromtxt(path, delimiter=",", skip_header=1, invalid_raise=False)
+    d = d[np.all(np.isfinite(d[:, :2]), axis=1)]
+    f, s21 = d[:, 0], d[:, 1]
+    i_ref = int(np.argmin(np.abs(s21)))              # where the file is normalised
+    M = np.column_stack([np.sqrt(f) - np.sqrt(f[i_ref]), f - f[i_ref]])
+    (aL, bL), *_ = np.linalg.lstsq(M, -(s21 - s21[i_ref]), rcond=None)
+    rms = float(np.sqrt(np.mean((s21 - s21[i_ref] + M @ [aL, bL]) ** 2)))
+    L_cm = float(length_mm) / 10.0
+    out = (float(aL / L_cm), float(bL / L_cm), rms)
+    _BEND_FIT_CACHE[key] = out
+    return out
+
+
+def bend_loss_coefficients(p: dict) -> tuple:
+    """(a, b, source) of the bend attenuation alpha(f) = a.sqrt(f) + b.f."""
+    path = str(p.get("bend_loss_file", "") or "")
+    if path and os.path.isfile(path):
+        a, b, _ = fit_bend_loss(path, float(p.get("bend_loss_file_len_mm", 0.8)))
+        return a, b, os.path.basename(path)
+    return float(p.get("bend_alpha_sqrt", 0.0)), float(p.get("bend_alpha_lin", 0.0)), "coefficients"
+
+
+def bend_line(p: dict, f_GHz) -> dict:
+    """
+    The bend's own transmission-line properties on the frequency grid. Nothing
+    here comes from the electrode's Touchstone: the bend is a different line.
+    Keyword arguments for segmented_transfer.
+    """
+    f = np.maximum(np.asarray(f_GHz, dtype=float), 0.0)
+    a, b, _ = bend_loss_coefficients(p)
+    return dict(bend_alpha_dB_cm=a * np.sqrt(f) + b * f,
+                bend_nm=float(p.get("bend_nm", 2.3)),
+                bend_Z=float(p.get("bend_Z_ohm", 60.0)))
 
 
 def straight_reference_transfer(f_GHz, alpha, nm, Zc, p: dict, ng: float, Zs, Zt):
