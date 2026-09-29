@@ -45,7 +45,7 @@ def _axis(breaks, fine, h_near, near, h_far, growth=0.25):
     return np.unique(np.concatenate(out))
 
 
-def build(g, etched=True, hz_min=0.5e-6, far=150e-6, h_near=6e-6):
+def build(g, etched=True, hz_min=0.5e-6, far=150e-6, h_near=6e-6, no_slot=False):
     """Grid, materials and conductor masks.  g: dict in metres
     (WS, GAP, MTX, t_LN, W1, W2, L1, L2).  Unetched -> one z cell (exact:
     the solution is z-invariant)."""
@@ -78,7 +78,7 @@ def build(g, etched=True, hz_min=0.5e-6, far=150e-6, h_near=6e-6):
     inmet = (Y > 0) & (Y < MTX)
     sig = inmet & (X < x_si)
     gnd = inmet & (X > x_gi) & (X < x_go)
-    if etched:
+    if etched and not no_slot:
         slot = (((X >= x_gi) & (X < xb1) & (Z < g['L1']/2))
                 | ((X >= xb1) & (X < xb2) & (Z < g['L2']/2)))
         gnd &= ~slot
@@ -139,19 +139,25 @@ def _assemble(shape, faces, free, fixed_val, jump=None, extra_diag=None):
     return A, b, idx
 
 
-def capacitance(m, vacuum=False):
-    """Per-length C' [F/m] (full cell, both halves)."""
+def capacitance(m, vacuum=False, full=False, float_frame=False):
+    """Per-length C' [F/m] (full cell, both halves).  float_frame=True: the far
+    frame is dielectric with a Neumann outer face (zero net charge on signal +
+    grounds, the open-boundary condition of a periodic line) instead of a
+    grounded box."""
     ex, ey, ez = (np.ones_like(m['eps'][0]),)*3 if vacuum else m['eps']
     faces = _faces(m['d'], EPS0*ex, EPS0*ey, EPS0*ez)
     shape = ex.shape
     frame = np.zeros(shape, bool)
-    frame[-1, :, :] = True; frame[:, 0, :] = True; frame[:, -1, :] = True
+    if not float_frame:
+        frame[-1, :, :] = True; frame[:, 0, :] = True; frame[:, -1, :] = True
     fixed = m['sig'] | m['gnd'] | frame
     val = np.full(shape, np.nan); val[fixed] = 0.0; val[m['sig']] = 1.0
     A, b, idx = _assemble(shape, faces, ~fixed, val)
     x, rr = _solve(A, b)
     phi = np.where(np.isfinite(val), val, 0.0); phi[~fixed] = x
     sl = _slices([T*(phi[s0] - phi[s1])**2 for s0, s1, T in faces], ex.shape[2])
+    if full:
+        return 4*sl.sum()/P, rr, 2*sl, phi, faces, fixed
     return 4*sl.sum()/P, rr, 2*sl                      # 2*sl: full-width slice C [F]
 
 
