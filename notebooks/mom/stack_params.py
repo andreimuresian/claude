@@ -55,7 +55,9 @@ SI_H   = 550.0e-6                  # silicon handle
 # ~+/-20 %): if Phase 2's delta_alpha misses alpha_delta_val by ~10-20 %, the
 # anisotropic-LN kernel is the first thing to check.
 EPS_AIR  = 1.0
-EPS_LN   = 34.7
+EPS_LN   = 34.7                    # LEGACY isotropic proxy (MoM phases only)
+EPS_LN_ANISO = (28.0, 43.0)        # (lateral, vertical): the CST model, x-cut LN
+EPS_LN_ANISO_COMSOL = (28.0, 44.0) # COMSOL baseline model {28, 44, 44}
 EPS_SIO2 = 3.9
 EPS_SI   = 11.7
 SIGMA_SI = 2.5e-4                  # S/m, CST "Silicon (lossy)"

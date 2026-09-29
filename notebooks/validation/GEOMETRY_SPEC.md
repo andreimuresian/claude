@@ -29,7 +29,7 @@ Drawings: `geometry_row118.png`, `geometry_row416.png` (`python draw_geometry.py
 
 | # | Item | Code | CST | Proposed fix |
 |---|---|---|---|---|
-| 10 | LiNbO₃ permittivity (**author: anisotropy is essential; extraordinary axis = lateral**) | **isotropic 34.7 everywhere** (2D baseline, MoM, 3D probe) | anisotropic: lateral 28, vertical 43, along the line 43 (after CST's −90° rotation: X = line, Y = lateral, Z = vertical). COMSOL: {28, 44, 44} | Use the CST tensor. It is a two-line change in the FV solver. The 2D baseline check must be re-run afterwards |
+| 10 | LiNbO₃ permittivity (**author: anisotropy is essential; extraordinary axis = lateral**) | **isotropic 34.7 everywhere** (2D baseline, MoM, 3D probe) | anisotropic: lateral 28, vertical 43, along the line 43 (after CST's −90° rotation: X = line, Y = lateral, Z = vertical). COMSOL: {28, 44, 44} | **Done in the 2D solver (2026-09-29):** `solve_cs(eps_LN=(28, 43))`, exact tests in `test_cpw_2d_aniso.py`, 50-row re-run in `diagnostics/aniso_50row.py`. The 3D solver still has to follow |
 | 11 | Outer boundary | grounded box: 1200 µm lateral, 800 µm above, 150 µm below the Si | open | Numerical choice; to be verified by a padding sweep, not by assumption |
 
 ## C. Author's answers
@@ -58,7 +58,7 @@ like-for-like, the MoM ΔC median error goes 73% → 57% and ΔL 7.7% → 5.6%. 
 mismatch explains part of the past ΔC error, not most of it. **Any new ΔC/ΔL must
 be scored with the same cell-ABCD definition.**
 
-**D2. Possible mesh inconsistency in the CST reference.** In both etched histories
+**D2. Mesh inconsistency in the CST reference — confirmed by the author** (etched grounds visibly coarser). The author judges the Multilayer results valid regardless, given their agreement with the 3D time-domain N+1−N extraction. Kept as a note, not pursued. In both etched histories
 (400 and 600 µm), local mesh group `meshgroup1` (5 µm) holds `CENTRAL ELECTRODE`,
 `GROUND RIGHT ELECTRODE`, `GROUND RIGHT ELECTRODE_1`. Those grounds are later
 deleted and rebuilt as `GROUND ELECTRODE RIGHT/LEFT`, which are never added to

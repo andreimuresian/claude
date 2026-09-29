@@ -25,14 +25,18 @@ Validation (diagnostics/mtx_2d_run.py holds the record):
     MoM's do, which is what identified thickness as the cause
   * grid-converged to 0.016 % in n_m over a 4x refinement
 
+LiNbO3 may be passed as (lateral, vertical) permittivities (x-cut: the
+extraordinary axis, eps 28, is lateral; CST uses 43 vertically, COMSOL 44).
+The isotropic 34.7 proxy used before 2026-09-29 was not the CST model.
+
 It is quasi-TEM and gives no loss, so alpha still comes from the full-wave
 solver.  It is a first-principles solve, not a fit: the dataset is never read.
 
 Discretisation: cell-centred finite volume on a graded tensor grid.  eps is
 constant per cell (layer interfaces are forced onto cell FACES), face
 transmissibility uses the distance-weighted harmonic mean, so dielectric
-interfaces are handled exactly.  Conductors are Dirichlet cell sets, the outer
-boundary is Dirichlet 0 far away.  The discrete energy gives
+interfaces are handled exactly.  x-faces use the lateral permittivity and z-faces the vertical one.
+Conductors are Dirichlet cell sets, the outer boundary is Dirichlet 0 far away.  The discrete energy gives
 
     C = sum_faces T_f (phi_i - phi_j)^2     for V = 1,
 
@@ -69,11 +73,68 @@ def _grid(breaks, hfine, hmax, growth=0.25):
     return np.unique(np.concatenate(out))
 
 
+def fv_capacitance(dx, dz, ex, ez, sig, gnd, frame_dirichlet=True):
+    """Capacitance per unit length of a 2D FV cross-section (cell-centred).
+
+    dx, dz : cell widths (nx,), heights (nz,)
+    ex, ez : absolute permittivity per cell for fields along x (lateral) and
+             z (vertical), shape (nz, nx).  x-faces use ex, z-faces use ez,
+             each with the distance-weighted harmonic mean across the face,
+             so a diagonal anisotropic tensor is exact for fields along the
+             principal axes.
+    sig    : cells held at V = 1;  gnd: cells held at 0.
+    frame_dirichlet : pin the outer ring of free cells to 0 (open-space
+             truncation).  False leaves the outer boundary Neumann (used by
+             the analytic tests).
+    Returns C = sum_faces T (phi_i - phi_j)^2 for V = 1 (discrete energy)."""
+    nz, nx = ex.shape
+    fixed = sig | gnd
+    if frame_dirichlet:
+        frame = np.zeros((nz, nx), bool)
+        frame[0, :] = frame[-1, :] = True
+        frame[:, 0] = frame[:, -1] = True
+        fixed = fixed | frame
+    phiD = np.where(sig, 1.0, 0.0)
+    free = ~fixed
+    idx = -np.ones((nz, nx), int)
+    idx[free] = np.arange(free.sum())
+    N = int(free.sum())
+    Tx = (2*dz[:, None]*ex[:, :-1]*ex[:, 1:]
+          / (ex[:, :-1]*dx[None, 1:] + ex[:, 1:]*dx[None, :-1]))
+    Tz = (2*dx[None, :]*ez[:-1, :]*ez[1:, :]
+          / (ez[:-1, :]*dz[1:, None] + ez[1:, :]*dz[:-1, None]))
+    faces = ((np.s_[:, :-1], np.s_[:, 1:], Tx), (np.s_[:-1, :], np.s_[1:, :], Tz))
+    rows, cols, vals = [], [], []
+    b = np.zeros(N)
+    for s0, s1, T in faces:
+        a, c, T = idx[s0].ravel(), idx[s1].ravel(), T.ravel()
+        fa, fc = a >= 0, c >= 0
+        m = fa & fc
+        rows += [a[m], c[m], a[m], c[m]]
+        cols += [a[m], c[m], c[m], a[m]]
+        vals += [T[m], T[m], -T[m], -T[m]]
+        m = fa & ~fc
+        rows.append(a[m]); cols.append(a[m]); vals.append(T[m])
+        np.add.at(b, a[m], T[m]*phiD[s1].ravel()[m])
+        m = ~fa & fc
+        rows.append(c[m]); cols.append(c[m]); vals.append(T[m])
+        np.add.at(b, c[m], T[m]*phiD[s0].ravel()[m])
+    A = sparse.coo_matrix((np.concatenate(vals),
+                           (np.concatenate(rows), np.concatenate(cols))),
+                          shape=(N, N)).tocsr()
+    phi = phiD.copy()
+    phi[free] = spsolve(A, b)
+    return float(sum(np.sum(T*(phi[s0] - phi[s1])**2) for s0, s1, T in faces))
+
+
 def solve_cs(WS, GAP, WG, MTX, t_LN, BOX, SI, eps_LN, eps_SIO2, eps_SI,
              pad_x=600e-6, pad_up=400e-6, pad_dn=150e-6, hmin=None, hmax=12e-6):
     """Return (C, C_air) per unit length for the CPW cross-section.
 
-    All lengths in metres.  MTX = 0 reproduces the zero-thickness limit."""
+    All lengths in metres.  MTX = 0 reproduces the zero-thickness limit.
+    eps_LN: scalar (isotropic) or (lateral, vertical) for x-cut LiNbO3, e.g.
+    stack_params.EPS_LN_ANISO = (28, 43) as in the CST model."""
+    eps_lat, eps_ver = (eps_LN, eps_LN) if np.isscalar(eps_LN) else eps_LN
     x_si, x_gi, x_go = WS/2, WS/2 + GAP, WS/2 + GAP + WG
     if hmin is None:
         hmin = max(min(t_LN/4, GAP/40, max(MTX, 1e-7)/4), 8e-9)
@@ -92,11 +153,12 @@ def solve_cs(WS, GAP, WG, MTX, t_LN, BOX, SI, eps_LN, eps_SIO2, eps_SI,
     zc = 0.5*(zf[1:] + zf[:-1]); dz = np.diff(zf)
     nx, nz = len(xc), len(zc)
 
-    # ---- per-cell permittivity ----------------------------------------
-    er = np.ones((nz, nx))
-    er[(zc > zL) & (zc < 0.0), :] = eps_LN
-    er[(zc > zB) & (zc < zL), :] = eps_SIO2
-    er[(zc > zS) & (zc < zB), :] = eps_SI
+    # ---- per-cell permittivity (lateral, vertical) ----------------------
+    ex = np.ones((nz, nx)); ez = np.ones((nz, nx))
+    ln = (zc > zL) & (zc < 0.0)
+    ex[ln, :], ez[ln, :] = eps_lat, eps_ver
+    for sel, e in (((zc > zB) & (zc < zL), eps_SIO2), ((zc > zS) & (zc < zB), eps_SI)):
+        ex[sel, :] = e; ez[sel, :] = e
 
     # ---- conductors ----------------------------------------------------
     inmet = (zc[:, None] > 0.0) & (zc[:, None] < MTX) if MTX > 0 else np.zeros((nz, nx), bool)
@@ -108,59 +170,9 @@ def solve_cs(WS, GAP, WG, MTX, t_LN, BOX, SI, eps_LN, eps_SIO2, eps_SI,
         sig[k0, np.abs(xc) < x_si] = True
         gnd[k0, (np.abs(xc) > x_gi) & (np.abs(xc) < x_go)] = True
 
-    def _cap(eps_cells):
-        idx = -np.ones((nz, nx), int)
-        free = ~(sig | gnd)
-        idx[free] = np.arange(free.sum())
-        N = int(free.sum())
-        rows, cols, vals = [], [], []
-        b = np.zeros(N)
-        faces = []                      # (i0,j0,i1,j1,T)
-        # horizontal faces
-        Tx = (2*dz[:, None]*eps_cells[:, :-1]*eps_cells[:, 1:]
-              / (eps_cells[:, :-1]*dx[None, 1:] + eps_cells[:, 1:]*dx[None, :-1]))
-        Tz = (2*dx[None, :]*eps_cells[:-1, :]*eps_cells[1:, :]
-              / (eps_cells[:-1, :]*dz[1:, None] + eps_cells[1:, :]*dz[:-1, None]))
-        def add(ia, ja, ib, jb, T):
-            faces.append((ia, ja, ib, jb, T))
-        for (I, J, I2, J2, T) in (
-                (np.repeat(np.arange(nz), nx-1), np.tile(np.arange(nx-1), nz),
-                 np.repeat(np.arange(nz), nx-1), np.tile(np.arange(1, nx), nz), Tx.ravel()),
-                (np.repeat(np.arange(nz-1), nx), np.tile(np.arange(nx), nz-1),
-                 np.repeat(np.arange(1, nz), nx), np.tile(np.arange(nx), nz-1), Tz.ravel())):
-            add(I, J, I2, J2, T)
-        phiD = np.where(sig, 1.0, 0.0)
-        for (I, J, I2, J2, T) in faces:
-            a = idx[I, J]; c = idx[I2, J2]
-            fa = a >= 0; fc = c >= 0
-            m = fa & fc
-            rows += [a[m], c[m], a[m], c[m]]
-            cols += [a[m], c[m], c[m], a[m]]
-            vals += [T[m], T[m], -T[m], -T[m]]
-            m = fa & ~fc
-            rows += [a[m]]; cols += [a[m]]; vals += [T[m]]
-            np.add.at(b, a[m], T[m]*phiD[I2, J2][m])
-            m = ~fa & fc
-            rows += [c[m]]; cols += [c[m]]; vals += [T[m]]
-            np.add.at(b, c[m], T[m]*phiD[I, J][m])
-        A = sparse.coo_matrix((np.concatenate(vals),
-                               (np.concatenate(rows), np.concatenate(cols))),
-                              shape=(N, N)).tocsr()
-        # outer boundary: Dirichlet 0 -> pin the frame cells
-        frame = np.zeros((nz, nx), bool)
-        frame[0, :] = frame[-1, :] = True; frame[:, 0] = frame[:, -1] = True
-        fi = idx[frame & free]
-        A = A.tolil()
-        for i in fi:
-            A.rows[i] = [i]; A.data[i] = [1.0]; b[i] = 0.0
-        phi = np.zeros((nz, nx)); phi[sig] = 1.0
-        phi[free] = spsolve(A.tocsr(), b)
-        C = 0.0
-        for (I, J, I2, J2, T) in faces:
-            C += float(np.sum(T*(phi[I, J] - phi[I2, J2])**2))
-        return C
-
-    return _cap(EPS0*er), _cap(EPS0*np.ones_like(er)), (nx, nz)
+    one = np.ones((nz, nx))
+    return (fv_capacitance(dx, dz, EPS0*ex, EPS0*ez, sig, gnd),
+            fv_capacitance(dx, dz, EPS0*one, EPS0*one, sig, gnd), (nx, nz))
 
 
 def observables(C, Cair):
