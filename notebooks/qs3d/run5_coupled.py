@@ -59,8 +59,8 @@ def main():
         for dc in (dC0, dC1):
             L = r.z0_baseline_val*r.nm_baseline_val/q.C0 + dL/q.P
             C = r.nm_baseline_val/(r.z0_baseline_val*q.C0) + dc/q.P
-            z.append((np.sqrt(L/C)/r.z0_final - 1)*100)
-            n.append((q.C0*np.sqrt(L*C)/r.nm_final - 1)*100)
+            z.append((np.sqrt(L/C)/r.z0_final_val - 1)*100)
+            n.append((q.C0*np.sqrt(L*C)/r.nm_final_val - 1)*100)
         e0.append(abs(dC0/ref - 1)); e1.append(abs(dC1/ref - 1))
         print(f"{row:4d} | {e['L_e']/e['L_h']:10.4f} {e['L_e_1d']/e['L_h']:6.4f} | {dC0:+.4e} {(dC0/ref-1)*100:+6.1f}% | "
               f"{dC1:+.4e} {(dC1/ref-1)*100:+6.1f}% | {ref:+.4e} | n {n[0]:+.2f}% -> {n[1]:+.2f}%   Z0 {z[0]:+.2f}% -> {z[1]:+.2f}%")
