@@ -1,6 +1,7 @@
 # Geometry, materials and parameters — validation checklist
 
-Nothing downstream (3D ΔC/ΔL) runs until every item here is confirmed by the author.
+Status 2026-09-29: all questions answered by the author (section C). Geometry and
+materials confirmed; two new findings in section D.
 
 Sources checked:
 - the CST Multilayer history list (`2.5D_history_list.txt`, 159 steps, final state reconstructed);
@@ -28,17 +29,40 @@ Drawings: `geometry_row118.png`, `geometry_row416.png` (`python draw_geometry.py
 
 | # | Item | Code | CST | Proposed fix |
 |---|---|---|---|---|
-| 10 | LiNbO₃ permittivity | **isotropic 34.7 everywhere** (2D baseline, MoM, 3D probe) | anisotropic: lateral 28, vertical 43, along the line 43 (after CST's −90° rotation: X = line, Y = lateral, Z = vertical). COMSOL: {28, 44, 44} | Use the CST tensor. It is a two-line change in the FV solver. The 2D baseline check must be re-run afterwards |
+| 10 | LiNbO₃ permittivity (**author: anisotropy is essential; extraordinary axis = lateral**) | **isotropic 34.7 everywhere** (2D baseline, MoM, 3D probe) | anisotropic: lateral 28, vertical 43, along the line 43 (after CST's −90° rotation: X = line, Y = lateral, Z = vertical). COMSOL: {28, 44, 44} | Use the CST tensor. It is a two-line change in the FV solver. The 2D baseline check must be re-run afterwards |
 | 11 | Outer boundary | grounded box: 1200 µm lateral, 800 µm above, 150 µm below the Si | open | Numerical choice; to be verified by a padding sweep, not by assumption |
 
-## C. Questions only the author can answer
+## C. Author's answers
 
-| # | Question |
+| # | Answer |
 |---|---|
-| Q1 | The history builds the **3-tee (600 µm)** line. Does the **400 µm** model have 2 tees centred at 100 and 300 µm? If the same recipe was reused unchanged, the tees would sit at 0, 200 and 400 µm, i.e. split at the ports. |
-| Q2 | Exactly how were `deltaL lumped` and `deltaC lumped` computed? Which S-parameter files (single 200 µm cell? N+1 − N?) and which Π-network formula? The thesis formula is unreadable in the text export. A script like the α extractor would settle it. |
-| Q3 | The CST LN layer is **in-plane anisotropic** (ε_X = 43 ≠ ε_Y = 28). Did the Multilayer solver accept this without a warning? Layered solvers often only support a different *vertical* ε. What CST actually used is what must be matched. |
-| Q4 | In each CST run, was `SLAB_H` = 0.460 µm − ETCH_DEPTH? |
-| Q5 | The dataset breaks the thesis constraints: 65 rows have L1 > L2, and 84 have W1 + W2 > 60 µm (max 64.9, so no slot cuts through a ground). Row 416 (drawn) has L1 = 48.4, L2 = 6.5 µm. Is that what CST built, or are columns swapped? |
-| Q6 | Are `deltaL lumped` [H] and `deltaC lumped` [F] totals per 200 µm cell? |
-| Q7 | Do the two drawings match what your CST model looks like for those rows? |
+| Q1 | 400 µm model: 2 tees, centred at 100 and 300 µm (verified in its history: −L/2 ± 100 µm) |
+| Q2 | `deltaL/deltaC lumped` come from ONE 200 µm cell, etched vs unetched, at 60 GHz: L = Im(B)/ω, C = Im(C_abcd)/ω of the cell's ABCD matrix (`touchstone_extractor_lumped_delta.py`). N+1−N (400/600 µm) was used only for Δα |
+| Q3 | No CST warning; anisotropy is essential. Extraordinary axis (ε 28) is lateral, since the gap field is lateral. Vertical and along-line are 43 |
+| Q4 | Yes, SLAB_H = 0.460 µm − ETCH_DEPTH in every run |
+| Q5 | L1 > L2 is legitimate in the LHS; W1 + W2 ≤ 65 µm |
+| Q6 | Lumped values per 200 µm cell |
+| Q7 | Drawings agree. MTX = thickness of all three electrodes |
+
+## D. New findings (from the author's scripts and histories)
+
+**D1. The lumped ΔC is not ΔC per unit length × pitch.** The cell's ABCD gives
+per-length × P × sin θ/θ, with θ = β·P ≈ 0.48 rad unetched and 0.57 rad etched.
+The factor does not cancel in the difference. From the dataset alone
+(`lumped_definition_check.py`):
+- lumped ΔC / (per-length ΔC·P): 1.09–1.65, median 1.24; more than 30% off on 188/500 rows;
+- lumped ΔL / (per-length ΔL·P): 0.89–0.93.
+
+Phase 3 compared per-length `(Ce − Cu)·P` with the lumped value. Re-scored
+like-for-like, the MoM ΔC median error goes 73% → 57% and ΔL 7.7% → 5.6%. The
+mismatch explains part of the past ΔC error, not most of it. **Any new ΔC/ΔL must
+be scored with the same cell-ABCD definition.**
+
+**D2. Possible mesh inconsistency in the CST reference.** In both etched histories
+(400 and 600 µm), local mesh group `meshgroup1` (5 µm) holds `CENTRAL ELECTRODE`,
+`GROUND RIGHT ELECTRODE`, `GROUND RIGHT ELECTRODE_1`. Those grounds are later
+deleted and rebuilt as `GROUND ELECTRODE RIGHT/LEFT`, which are never added to
+the group. In the unetched history the grounds stay in the group. So the etched
+grounds, where the tees are, may use the coarser global mesh while the unetched
+grounds use 5 µm. **To confirm in CST:** Groups → meshgroup1 members, or the
+surface-mesh view of an etched ground.
