@@ -47,6 +47,8 @@ from .interconnect import InterconnectBuilder, P_IN, P_IN1, P_OUT
 
 LSF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lumerical")
 SETUP_LSF = os.path.join(LSF_DIR, "tl_element_setup.lsf")
+LOAD_LSF = os.path.join(LSF_DIR, "termination_setup.lsf")
+FIR_TAPS = 1024        # the same for the TW block and the TL line, so neither is favoured
 
 P_CNC1 = ['port 1']
 P_CNC2 = ['port 2']
@@ -68,8 +70,11 @@ STAGES = [
      [dict(kind="TL", table="short", cases="gui", label="FLAT_SHORT")]),
     ("S4", "TL line with modulation output, full table",
      [dict(kind="TL", table="full", cases="all", label="FLAT")]),
-    ("S5", "S4 inside a Compound with scattering data analysis",
-     [dict(kind="TL", table="full", cases="all", label="CMP", compound=True)]),
+    ("S5", "S4 inside a Compound, terminated by a 1-port load element",
+     [dict(kind="TL", table="full", cases="all", label="CMP", compound=True,
+           load="element")]),
+    ("S6", "S4 inside a Compound, terminated by a connector with a free port",
+     [dict(kind="TL", table="full", cases="all", label="CMP_CNC", compound=True)]),
 ]
 
 STAGE_MEANING = {
@@ -81,8 +86,11 @@ STAGE_MEANING = {
           "driven from bidirectional ports is the problem",
     "S4": "the element works with a short table but not the full one: table size "
           "or FIR design",
-    "S5": "the element works on its own but not inside a Compound: the S-parameter "
-          "solver of the Compound is the problem",
+    "S5": "the element works on its own but not inside a Compound, even with every "
+          "port connected: the Compound's S-parameter solver refuses the scripted "
+          "element",
+    "S6": "the Compound runs with a 1-port load (S5) but not with a connector whose "
+          "second port is left free: the solver needs every internal port connected",
 }
 
 
@@ -160,6 +168,8 @@ class Step0Builder(InterconnectBuilder):
                           "NonQuantity", "", "voltage;power")
             s.addproperty(name, "fir_taps", "TL line", "Number", 0, 100000, "FixedUnit", "-",
                           int(fir_taps))
+            s.addproperty(name, "phase_convention", "TL line", "ComboChoice", 0, 0,
+                          "NonQuantity", "", "physics;engineering")
             s.addport(name, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5)
             s.addport(name, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5)
             if modulating:
@@ -177,8 +187,33 @@ class Step0Builder(InterconnectBuilder):
         for prop, val in (("line_length", float(L)), ("ng", float(ng)),
                           ("R0", self.R0), ("table_file", table),
                           ("modulating", int(modulating)), ("far_end_output", int(far_end)),
-                          ("wave_convention", "voltage"), ("fir_taps", int(fir_taps))):
+                          ("wave_convention", "voltage"), ("fir_taps", int(fir_taps)),
+                          ("phase_convention", "physics")):
             self.setp(name, [prop], val)
+
+    def make_load(self, name: str, x: int, y: int, R: float):
+        """A one-port termination (scripted): reflects (R - R0)/(R + R0) and
+        leaves no unconnected port, which a Compound's solver may refuse."""
+        self.add(['Scripted Element', 'scripted element', 'Scripted element'], name, x, y)
+        s = self.sim
+        s.addproperty(name, "load_resistance", "TL load", "Number", 0, 1e9, "FixedUnit", "ohm", R)
+        s.addproperty(name, "R0", "TL load", "Number", 1, 10000, "FixedUnit", "ohm", self.R0)
+        s.addport(name, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5)
+        with open(LOAD_LSF, encoding="utf-8") as fh:
+            code = fh.read()
+        if not self.setp(name, ['setup script', 'setup', 'script setup'], code, required=False):
+            raise ScriptedElementUnavailable(f"{name}: the setup script could not be set.")
+        self.setp(name, ['load_resistance'], float(R))
+        self.setp(name, ['R0'], self.R0)
+
+    def _fix_tw_filter(self, el):
+        """Give the TW block the same FIR length as the TL line. Its default
+        filter can be shorter than one round trip of the line (2 n L / c), and
+        then it cannot reproduce the reflections at all."""
+        self.setp(el, ['digital filter type'], 'FIR', required=False)
+        self.setp(el, ['number of taps estimation'], 'disabled', required=False)
+        self.setp(el, ['number of fir taps'], FIR_TAPS, required=False)
+        self.setp(el, ['maximum number of fir taps'], max(4096, FIR_TAPS), required=False)
 
     def _make_compound(self, name: str, members: list) -> bool:
         """Group already-wired elements into a Compound and turn its S-parameter
@@ -227,22 +262,26 @@ class Step0Builder(InterconnectBuilder):
                 if kind == "REF":
                     tw = f"TW_REF_{i}"
                     self._add_tw(tw, pc, files, ng, 260, y, length_m=L)
+                    self._fix_tw_filter(tw)
                     self.connect(ena, P_OUT, tw, P_IN)
                     self.connect(tw, P_OUT, ena, P_IN1)
                 elif kind == "TL2P":
                     cs, tl = f"CNCS_{label}_{i}", f"TL_{label}_{i}"
                     self._cnc(cs, 200, y, case["Zs"], self.R0)
                     self.make_tl(tl, 340, y, tables[spec["table"]], L, ng, modulating=False,
-                                 library_name=library_name)
+                                 library_name=library_name, fir_taps=FIR_TAPS)
                     self.connect(ena, P_OUT, cs, P_CNC1)
                     self.connect(cs, P_CNC2, tl, P_TL1)
                     self.connect(tl, P_TL2, ena, P_IN1)
                 else:
-                    cs, tl, ct = f"CNCS_{label}_{i}", f"TL_{label}_{i}", f"CNCT_{label}_{i}"
+                    cs, tl, ct = f"CNCS_{label}_{i}", f"TL_{label}_{i}", f"LOAD_{label}_{i}"
                     self._cnc(cs, 200, y, case["Zs"], self.R0)
                     self.make_tl(tl, 340, y, tables[spec["table"]], L, ng,
                                  library_name=library_name)
-                    self._cnc(ct, 480, y, self.R0, case["Rt"])
+                    if spec.get("load") == "element":
+                        self.make_load(ct, 480, y, case["Rt"])
+                    else:
+                        self._cnc(ct, 480, y, self.R0, case["Rt"])
                     self.connect(ena, P_OUT, cs, P_CNC1)
                     self.connect(cs, P_CNC2, tl, P_TL1)
                     self.connect(tl, P_TL2, ct, P_CNC1)
@@ -320,30 +359,21 @@ def python_predictions(fit, p: dict, out_dir: str, L: float) -> dict:
     return pred
 
 
-def _row_line(A, cname, what, c_ref, meas_row, band, show_phase_ref=False):
+def _row_line(A, cname, what, c_ref, meas_row, band):
     f, H, cplx, label = meas_row
     cmp = SL.compare_traces(c_ref["f_GHz"], c_ref["exit"], f, H, band)
     ph = f"{cmp['max_deg']:8.3f}" if cplx else "     n/a"
-    gd = f"{cmp['mean_gd_ps']:8.3f}" if cplx else "     n/a"
-    A(f"{cname:9s} {what:28s} {cmp['scale_abs']:9.4f} {cmp['max_dB']:8.4f} "
-      f"{ph} {gd} {cmp['bw_ref_GHz']:8.2f} {cmp['bw_test_GHz']:8.2f}")
-    sign = (" (opposite sign: flip the OM coefficient sign when replacing the TW)"
-            if abs(abs(cmp['scale_deg']) - 180) < 5 else "")
-    A(f"{'':9s}   scale: {SL.interpret_scale(cmp['scale_abs'])}, phase "
-      f"{cmp['scale_deg']:+.1f} deg{sign}; dataset '{label}'")
-    if show_phase_ref and cplx and "entry" in c_ref:
-        ent = SL.compare_traces(c_ref["f_GHz"], c_ref["entry"], f, H, band)
-        which = ("light LEAVING the line (as modelled)" if cmp['max_deg'] <= ent['max_deg']
-                 else "light ENTERING the line -- the optical delays of the bend build "
-                      "must then follow the previous electrode instead")
-        A(f"{'':9s}   TW phase reference: max phase error {cmp['max_deg']:.2f} deg (exit) "
-          f"vs {ent['max_deg']:.2f} deg (entry): {which}")
+    lat = f"{cmp['latency_ps']:9.2f}" if cplx else "      n/a"
+    conv = cmp["convention"][:4] if cplx else "n/a"
+    A(f"{cname:9s} {what:30s} {cmp['scale_abs']:8.4f} {conv:>5s} {lat} {cmp['max_dB']:8.4f} "
+      f"{ph} {cmp['bw_ref_GHz']:8.2f} {cmp['bw_test_GHz']:8.2f}")
+    return cmp
 
 
-def format_report(pred: dict, meas: dict, stages: list, band) -> str:
+def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> str:
     """meas[(case, label)] = (f_GHz, H, is_complex, dataset label);
     stages = [(id, title, status, detail)]."""
-    L, A = [], None
+    L = []
     A = L.append
     A("STEP 0 -- scripted TL line element vs Ansys TW block")
     A("")
@@ -353,43 +383,62 @@ def format_report(pred: dict, meas: dict, stages: list, band) -> str:
         A(f"  {sid}  {status:7s} {title}" + (f"\n        {detail}" if detail else ""))
         if status != "ran" and first_fail is None and sid != "S1":
             first_fail = sid
+    st = {sid: status for sid, _t, status, _d in stages}
+    if st.get("S5") and st.get("S6") and first_fail in ("S5", "S6"):
+        if st["S5"] != "ran" and st["S6"] == "ran":
+            A("  -> S5 failed but S6 ran: the Compound accepts the TL line; it refuses the "
+              "1-port load element. Use the connector termination (S6) inside Compounds.")
+            first_fail = None if all(st[k] == "ran" for k in st if k not in ("S5",)) else first_fail
+        elif st["S5"] == "ran" and st["S6"] != "ran":
+            A(f"  -> first failing stage S6: {STAGE_MEANING['S6']}.")
+            first_fail = None
     if first_fail:
         A(f"  -> first failing stage {first_fail}: {STAGE_MEANING[first_fail]}.")
-        A(f"     Open TL_step0_{first_fail}.icp, press Run, and read the message in "
-          f"INTERCONNECT's Output window (the TL line also logs 'TL line ready: ...' "
-          f"there when its setup script completes).")
+        A(f"     Open TL_step0_{first_fail}.icp, press Run, and copy the message in "
+          f"INTERCONNECT's Output window.")
     A("")
-    A("scale = INTERCONNECT / model at 0.5-3 GHz (conventions live here); every other "
-      "number is after removing it.")
-    A(f"band for the comparison: {band[0]:g}-{band[1]:g} GHz; element tables up to "
-      f"{pred['table_top_GHz']:.1f} GHz (the Nyquist frequency of this run)")
+    A("How to read the table")
+    A("  scale    |INTERCONNECT / reference| at 0.5-3 GHz. Against the model it includes the")
+    A("           Network Analyzer's own factor (the same for every row); the number that")
+    A("           says something about the element is the TL / TW ratio ('vs REF' rows): 1.")
+    A("  conv     phase convention of the INTERCONNECT data: 'phys' = exp(-i w t), so the")
+    A("           data were conjugated before comparing.")
+    A("  latency  pure delay added by INTERCONNECT's digital filters, fitted and removed.")
+    A(f"           One sample is {1e3 / fs_GHz:.3f} ps; half a {FIR_TAPS}-tap filter is "
+      f"{FIR_TAPS / 2 * 1e3 / fs_GHz:.1f} ps.")
+    A("  max dB, max deg   what is left after removing scale and latency")
+    A(f"band {band[0]:g}-{band[1]:g} GHz; element tables up to {pred['table_top_GHz']:.1f} GHz "
+      f"(the Nyquist frequency of this run)")
     A("")
-    hdr = (f"{'case':9s} {'what':28s} {'scale':>9s} {'max dB':>8s} {'max deg':>8s} "
-           f"{'dGD ps':>8s} {'BW ref':>8s} {'BW test':>8s}")
+    hdr = (f"{'case':9s} {'what':30s} {'scale':>8s} {'conv':>5s} {'latency ps':>9s} "
+           f"{'max dB':>8s} {'max deg':>8s} {'BW ref':>8s} {'BW test':>8s}")
+    tl_rows = ("FLAT", "CMP", "CMP_CNC")
     for cname, c in pred["cases"].items():
         A(f"== case '{cname}': Zs = {c['Zs']:g} ohm, Rt = {c['Rt']:g} ohm")
         A(hdr)
         if (cname, "REF") in meas:
-            _row_line(A, cname, "REF (TW) vs model", c, meas[(cname, "REF")], band, True)
+            _row_line(A, cname, "REF (Ansys TW) vs model", c, meas[(cname, "REF")], band)
         if (cname, "2PORT") in meas:
-            _row_line(A, cname, "2PORT (far end) vs model", pred["2port"][cname],
+            _row_line(A, cname, "2PORT far end vs model", pred["2port"][cname],
                       meas[(cname, "2PORT")], band)
         if (cname, "FLAT_SHORT") in meas:
             _row_line(A, cname, "FLAT short table vs model", pred["short"][cname],
                       meas[(cname, "FLAT_SHORT")], band)
-        for lab in ("FLAT", "CMP"):
+        for lab in tl_rows:
             if (cname, lab) in meas:
                 _row_line(A, cname, f"{lab} vs model", c, meas[(cname, lab)], band)
         if (cname, "REF") in meas:
             fR, HR, cR, lR = meas[(cname, "REF")]
             ref = dict(f_GHz=fR, exit=HR)
-            for lab in ("FLAT", "CMP"):
+            for lab in tl_rows:
                 if (cname, lab) in meas:
-                    _row_line(A, cname, f"{lab} vs REF (IC only)", ref, meas[(cname, lab)], band)
+                    _row_line(A, cname, f"{lab} vs REF (IC only)", ref,
+                              meas[(cname, lab)], band)
         A("")
-    A("Pass: FLAT/CMP vs REF within ~0.05 dB and ~1 deg to the top of the band, same "
-      "bandwidth to ~0.1 GHz, and a scale that is a known convention factor. The CMP "
-      "row is the one to trust for reflections between blocks.")
+    A("Pass: the CMP row within ~0.05 dB and ~1 deg of REF and of the model up to the top "
+      "of the band, the same bandwidth to ~0.1 GHz, and a TL / TW scale of 1.")
+    A("A FLAT row (outside a Compound) with a large latency cannot be right when the line "
+      "is mismatched: the latency is added on every round trip of the reflections.")
     return "\n".join(L)
 
 
@@ -425,7 +474,7 @@ def run_step0(fit, p: dict, out_dir: Optional[str] = None,
         f"line, up to {pred['table_top_GHz']:.1f} GHz.")
 
     todo = [s for s in STAGES if (stages is None or s[0] in stages)
-            and (compound or s[0] != "S5")]
+            and (compound or s[0] not in ("S5", "S6"))]
     meas, status = {}, []
     for sid, title, rows in todo:
         log(f"  --- {sid}: {title}")
@@ -461,7 +510,7 @@ def run_step0(fit, p: dict, out_dir: Optional[str] = None,
                     pass
 
     band = (1.0, 0.95 * float(p["f_max_GHz"]))
-    rep = format_report(pred, meas, status, band)
+    rep = format_report(pred, meas, status, band, float(p["ic_sample_rate_GHz"]))
     with open(os.path.join(out_dir, "step0_report.txt"), "w") as fh:
         fh.write(rep + "\n")
     with open(os.path.join(out_dir, "step0_traces.csv"), "w", newline="") as fh:

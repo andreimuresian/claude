@@ -289,45 +289,60 @@ def bw_GHz(f_GHz, H, f_norm_GHz=1.0, level_dB=-3.0) -> float:
 def compare_traces(f_ref_GHz, H_ref, f_test_GHz, H_test, band=(1.0, 150.0),
                    scale_band=(0.5, 3.0), f_norm_GHz=1.0) -> dict:
     """
-    Compare two complex responses.
+    Compare two complex responses (*ref* in the engineering convention).
 
-    The overall complex scale (test / ref, median over *scale_band*) is reported
-    on its own: it carries the conventions (EMF vs incident wave, voltage vs
-    power waves). Everything else is measured after removing it:
-    max |dB| difference, max phase difference and mean group-delay difference
-    over *band*, and the -3 dB bandwidth of each.
+    Three things are separated out before anything is called a difference:
+      * the phase convention of *test*: INTERCONNECT works in exp(-i w t), so
+        its phases are the conjugate of ours. Both readings are tried and the
+        one that leaves the smaller non-linear phase residual is used
+        ('convention' = 'physics' means the test data were conjugated);
+      * a pure latency (the digital filters' processing delay), fitted as a
+        straight line in phase over *band* and reported as 'latency_ps';
+      * an overall scale (|test/ref| median over *scale_band*), which carries
+        the drive and wave conventions.
+    What is left is reported as max |dB| and max phase difference over *band*,
+    plus the -3 dB bandwidth of each.
     """
     f_ref = np.asarray(f_ref_GHz, float)
-    Ht = np.interp(f_ref, f_test_GHz, np.real(H_test)) + \
+    Ht0 = np.interp(f_ref, f_test_GHz, np.real(H_test)) + \
         1j * np.interp(f_ref, f_test_GHz, np.imag(H_test))
     Hr = np.asarray(H_ref, complex)
-    m = (f_ref >= scale_band[0]) & (f_ref <= scale_band[1])
-    ratio = Ht[m] / Hr[m]
-    # Magnitude from |ratio| and phase from the lowest frequency of the band, so
-    # that a pure delay difference shows up as phase and group delay, not as dB.
-    scale = float(np.median(np.abs(ratio))) * np.exp(1j * np.angle(ratio[0]))
-    Ht_n = Ht / scale
     b = (f_ref >= band[0]) & (f_ref <= band[1])
-    ddB = 20 * np.log10(np.abs(Ht_n[b]) / np.abs(Hr[b]))
-    dph = np.angle(Ht_n[b] / Hr[b])
+    m = (f_ref >= scale_band[0]) & (f_ref <= scale_band[1])
     w = 2 * np.pi * f_ref[b] * 1e9
-    gd = -np.gradient(np.unwrap(np.angle(Ht_n[b])) - np.unwrap(np.angle(Hr[b])), w)
-    return dict(scale_abs=abs(scale), scale_deg=float(np.degrees(np.angle(scale))),
-                max_dB=float(np.max(np.abs(ddB))), max_deg=float(np.degrees(np.max(np.abs(dph)))),
-                mean_gd_ps=float(np.mean(gd) * 1e12),
-                bw_ref_GHz=bw_GHz(f_ref, Hr, f_norm_GHz), bw_test_GHz=bw_GHz(f_ref, Ht_n, f_norm_GHz))
+    A = np.column_stack([np.ones_like(w), -w])
+
+    best = None
+    for conv, Ht in (("engineering", Ht0), ("physics", np.conj(Ht0))):
+        ph = np.unwrap(np.angle(Ht[b] / Hr[b]))
+        (ph0, tau), *_ = np.linalg.lstsq(A, ph, rcond=None)
+        resid = ph - (ph0 - w * tau)
+        rms = float(np.sqrt(np.mean(resid ** 2)))
+        if best is None or rms < best[0]:
+            best = (rms, conv, Ht, ph0, tau, resid)
+    _, conv, Ht, ph0, tau, resid = best
+
+    scale_abs = float(np.median(np.abs(Ht[m] / Hr[m])))
+    wf = 2 * np.pi * f_ref * 1e9
+    Ht_n = Ht * np.exp(1j * wf * tau) / scale_abs          # latency and scale removed
+    ddB = 20 * np.log10(np.abs(Ht_n[b]) / np.abs(Hr[b]))
+    ph0w = float(np.angle(np.exp(1j * ph0)))
+    return dict(scale_abs=scale_abs, scale_deg=float(np.degrees(ph0w)), convention=conv,
+                latency_ps=float(tau * 1e12),
+                max_dB=float(np.max(np.abs(ddB))),
+                max_deg=float(np.degrees(np.max(np.abs(resid)))),
+                bw_ref_GHz=bw_GHz(f_ref, Hr, f_norm_GHz),
+                bw_test_GHz=bw_GHz(f_ref, np.abs(Ht_n), f_norm_GHz))
 
 
 def interpret_scale(scale_abs: float, R0: float = 50.0) -> str:
-    """What an overall scale factor between INTERCONNECT and the model means."""
-    cands = {1.0: "as modelled (source = EMF behind Zs, voltage waves)",
-             0.5: "the source drives an incident wave, not an EMF: expect a factor 1/2",
-             2.0: "the source signal is the matched-load voltage: expect a factor 2",
-             np.sqrt(R0): "INTERCONNECT uses power waves: set wave_convention = power",
-             1 / np.sqrt(R0): "INTERCONNECT uses power waves (inverse): set wave_convention = power",
-             np.sqrt(R0) / 2: "power waves and incident-wave source",
-             2 / np.sqrt(R0): "power waves and matched-load source"}
+    """Name the conversion factor an overall scale corresponds to, if any. Only
+    the ratio between two INTERCONNECT rows (TL line / TW block) says anything
+    about the element; a factor shared by both rows belongs to the analyser."""
+    cands = {1.0: "x1", 0.5: "x1/2", 2.0: "x2", np.sqrt(R0): "x sqrt(R0)",
+             1 / np.sqrt(R0): "x 1/sqrt(R0)", np.sqrt(R0) / 2: "x sqrt(R0)/2",
+             2 / np.sqrt(R0): "x 2/sqrt(R0)"}
     best = min(cands, key=lambda c: abs(np.log(scale_abs / c)))
     if abs(np.log(scale_abs / best)) < 0.02:
-        return f"x{scale_abs:.4f}: {cands[best]}"
-    return f"x{scale_abs:.4f}: not a known convention factor -- a real difference"
+        return f"{scale_abs:.4f} (= {cands[best]})"
+    return f"{scale_abs:.4f} (not a clean factor)"

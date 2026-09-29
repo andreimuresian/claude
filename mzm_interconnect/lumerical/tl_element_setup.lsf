@@ -34,6 +34,13 @@
 #                           (a = (V/sqrt(R0) + sqrt(R0) I)/2). S11 and S21 are
 #                           the same in both; only the two output ports change.
 #   fir_taps         -      FIR taps for every entry (0 = INTERCONNECT default)
+#   phase_convention text   "physics" (default) or "engineering". The maths below
+#                           is written for exp(+j w t); INTERCONNECT works in the
+#                           physics convention exp(-i w t), so the phases are
+#                           written negated (complex conjugate). Written the other
+#                           way, every delay becomes an advance: INTERCONNECT then
+#                           shifts each filter by half its length to make it
+#                           causal, which is what Step 0 measured (512 samples).
 #
 # No user-defined functions and one statement per line, on purpose. Reserved
 # names (c, e, h, pi, eps0, mu0, true, false) and built-in function names
@@ -79,18 +86,20 @@ S21 = (1 - G * G) * e1 / den;
 ws = 1;
 if (wave_convention == "power") { ws = sqrt(R0); }
 Rw = R0 / ws;
+ps = -1;
+if (phase_convention == "engineering") { ps = 1; }
 
 # ---- 4. write the S-matrix (amplitude and unwrapped phase per entry) ---------
 T = matrix(nf, 3);
 T(:, 1) = fr;
 
 T(:, 2) = abs(S11);
-T(:, 3) = unwrap(angle(S11));
+T(:, 3) = ps * unwrap(angle(S11));
 setsparameter("port 1", "port 1", "transmission", T);
 setsparameter("port 2", "port 2", "transmission", T);
 
 T(:, 2) = abs(S21);
-T(:, 3) = unwrap(angle(S21));
+T(:, 3) = ps * unwrap(angle(S21));
 setsparameter("port 2", "port 1", "transmission", T);
 setsparameter("port 1", "port 2", "transmission", T);
 
@@ -123,20 +132,20 @@ if (modulating) {
     T2 = (Vp * F1 + Vm * F2) * Xo;
 
     T(:, 2) = abs(T1);
-    T(:, 3) = unwrap(angle(T1));
+    T(:, 3) = ps * unwrap(angle(T1));
     setsparameter("modulation", "port 1", "transmission", T);
     T(:, 2) = abs(T2);
-    T(:, 3) = unwrap(angle(T2));
+    T(:, 3) = ps * unwrap(angle(T2));
     setsparameter("modulation", "port 2", "transmission", T);
 }
 
 # ---- 6. optional far-end voltage: V2 = ws (a2 + b2), b2 = S21 a1 + S22 a2 ----
 if (far_end_output) {
     T(:, 2) = abs(ws * S21);
-    T(:, 3) = unwrap(angle(S21));
+    T(:, 3) = ps * unwrap(angle(S21));
     setsparameter("far end", "port 1", "transmission", T);
     T(:, 2) = abs(ws * (1 + S11));
-    T(:, 3) = unwrap(angle(1 + S11));
+    T(:, 3) = ps * unwrap(angle(1 + S11));
     setsparameter("far end", "port 2", "transmission", T);
 }
 

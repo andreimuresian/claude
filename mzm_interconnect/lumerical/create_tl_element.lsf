@@ -29,6 +29,7 @@ addproperty(el, "modulating", "TL line", "Logical", 0, 0, "NonQuantity", "", mod
 addproperty(el, "far_end_output", "TL line", "Logical", 0, 0, "NonQuantity", "", far_end);
 addproperty(el, "wave_convention", "TL line", "ComboChoice", 0, 0, "NonQuantity", "", "voltage;power");
 addproperty(el, "fir_taps", "TL line", "Number", 0, 100000, "FixedUnit", "-", 1024);
+addproperty(el, "phase_convention", "TL line", "ComboChoice", 0, 0, "NonQuantity", "", "physics;engineering");
 
 addport(el, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5);
 addport(el, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5);

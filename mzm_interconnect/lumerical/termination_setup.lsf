@@ -1,0 +1,15 @@
+# =============================================================================
+# SETUP script of the "TL load" scripted element (MZM Studio).
+#
+# A one-port termination: a resistor load_resistance seen from a line whose
+# S-matrix uses the reference R0. It reflects G = (R - R0) / (R + R0) and has
+# no dangling port, so it can sit inside a Compound whose S-parameter solver
+# needs every internal port connected.
+#
+# Ports:       port 1   bidirectional, electrical
+# Properties:  load_resistance (ohm), R0 (ohm, the same as the TL lines)
+# =============================================================================
+
+G = (load_resistance - R0) / (load_resistance + R0);
+setsparameter("port 1", "port 1", "constant", G);
+logmessage("TL load ready: R = " + num2str(load_resistance) + " ohm, R0 = " + num2str(R0) + " ohm, reflection " + num2str(G));

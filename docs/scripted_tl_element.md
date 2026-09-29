@@ -34,6 +34,7 @@ has only ports 1 and 2.
 | `far_end_output` | 1 to have the `far end` port |
 | `wave_convention` | `voltage` (default) or `power`. Step 0 tells which one INTERCONNECT uses. |
 | `fir_taps` | FIR taps per entry (1024) |
+| `phase_convention` | `physics` (default) or `engineering`. The maths is written for e^{+jωt}; INTERCONNECT works in e^{−iωt}, so the element writes the phases negated. Written the other way, every delay becomes an advance, and INTERCONNECT shifts each filter by half its length to make it causal. The first Step 0 run measured exactly that: 512 samples of a 1024-tap filter. |
 
 ## What it computes (`lumerical/tl_element_setup.lsf`)
 
@@ -75,7 +76,7 @@ length, n_g, Zs and Rt, and ignores bends.
 
 **Command line:** `python -m mzm_interconnect.cli tl-step0 your_line.s2p`
 
-Step 0 runs as five small simulations. Each runs in a fresh INTERCONNECT
+Step 0 runs as six small simulations. Each runs in a fresh INTERCONNECT
 session and is saved as `TL_step0_S#.icp` **before** it runs, so a crash names
 its cause and leaves a project you can open and run by hand. INTERCONNECT's own
 error message then appears in its Output window.
@@ -86,7 +87,8 @@ error message then appears in its Output window.
 | S2 | TL line as a plain 2-port: ENA → CNC → TL → ENA | `setsparameter` on bidirectional electrical ports |
 | S3 | TL line with its modulation output, short table (~50 points) | the Output port driven from bidirectional ports |
 | S4 | same, full table, both cases | table size or FIR design |
-| S5 | S4 inside a Compound | the Compound's S-parameter solver |
+| S5 | S4 inside a Compound, load = a 1-port scripted element (`termination_setup.lsf`) | the Compound's solver refuses the scripted element (if S6 also fails) or the 1-port load (if S6 runs) |
+| S6 | S4 inside a Compound, load = a connector with a free port | the Compound's solver needs every internal port connected (if S5 runs) |
 
 A failed stage does not stop the next one: the Compound can work where the
 flat row does not. The element tables stop at the run's Nyquist frequency.
@@ -119,14 +121,22 @@ For every row, compared with the Python model and with the REF row:
 
 | Column | Meaning |
 |---|---|
-| `scale` | INTERCONNECT ÷ model at 0.5–3 GHz. It carries the conventions, and the report names the one it matches: ×1 as modelled, ×0.5 or ×2 for the source convention, ×√50 for power waves. It also gives its phase; 180° means the opposite sign. |
-| `max dB`, `max deg` | largest magnitude and phase difference over the band, after removing `scale` |
-| `dGD ps` | mean group-delay difference |
+| `scale` | \|INTERCONNECT ÷ reference\| at 0.5–3 GHz. Against the model it includes the Network Analyzer's own factor (×2 in the first run, for the TW block and the TL line alike). The number that matters is the TL ÷ TW ratio (the "vs REF" rows): it should be 1. |
+| `conv` | phase convention of the INTERCONNECT data; `phys` = e^{−iωt}, conjugated before comparing |
+| `latency ps` | pure delay added by INTERCONNECT's digital filters, fitted and removed |
+| `max dB`, `max deg` | what is left after removing scale and latency |
 | `BW ref`, `BW test` | −3 dB bandwidths |
 
-The REF line also states which phase reference the TW block uses: light
-leaving the line, or light entering it. The documentation doesn't say. It
-decides where the optical delays go in a bend build.
+The TW block's phase reference (light leaving or entering the line) differs
+from the model only by a pure delay, which is indistinguishable from filter
+latency. Step 0 therefore cannot determine it; the bend build is tested
+directly (unequal electrodes with a zero-length bend against a straight
+electrode).
+
+A FLAT row (outside a Compound) with a large latency cannot be right when the
+line is mismatched: the latency is added on every round trip of the
+reflections, which moves the ripple. That is why the Compound row is the
+reference for chains.
 
 **Pass:** FLAT and CMP within about 0.05 dB and 1° of REF up to the top of the
 band, the same bandwidth to about 0.1 GHz, and a scale that is a known
