@@ -156,7 +156,6 @@ def build_polygons():
     skins_r[-1] = unary_union([skins_r[-1],                                     # outer wall foot
                                box(x_col_out - SKIN_T, y_slab_top,
                                    x_col_out, y_slab_top + OUTER_WALL_SKIN_H)])
-    bulk_r = el_r.difference(unary_union(skins_r))
 
     # ---- 3b. Corner patches (see CORNER_R) -----------------------------------
     r = CORNER_R
@@ -172,20 +171,23 @@ def build_polygons():
     }
     skins_r[0] = skins_r[0].difference(corners_r["elR_cornerI"])
     skins_r[-1] = skins_r[-1].difference(corners_r["elR_cornerO"])
+    bulk_r = el_r.difference(unary_union(
+        [*skins_r, corners_r["elR_cornerI"], corners_r["elR_cornerO"]]))
 
     # ---- 4. SiO2 buffer under the lifted pad, full height, to the domain edge
     #      "near" part: the bottom of the buffer, where the slab field lives.
-    buf_near_r = box(x_col_out, y_slab_top, x_near, y_slab_top + 1.0).difference(
-        corners_r["buf_cornerRO"])
-    buf_far_r = box(x_col_out, y_slab_top, x_dev_max, y_buf_top).difference(buf_near_r)
+    buf_near_full = box(x_col_out, y_slab_top, x_near, y_slab_top + 1.0)
+    buf_near_r = buf_near_full.difference(corners_r["buf_cornerRO"])
+    buf_far_r = box(x_col_out, y_slab_top, x_dev_max, y_buf_top).difference(buf_near_full)
 
     # ---- 5. LN Slab ----------------------------------------------------------
-    slab_fine = box(-(x_col_out + 1.0), y_slab_bot, x_col_out + 1.0, y_slab_top).difference(
+    slab_fine_full = box(-(x_col_out + 1.0), y_slab_bot, x_col_out + 1.0, y_slab_top)
+    slab_fine = slab_fine_full.difference(
         unary_union([corners_r["slab_cornerRI"], corners_r["slab_cornerRO"],
                      mirror(corners_r["slab_cornerRI"]), mirror(corners_r["slab_cornerRO"])]))
-    slab_mid = box(-x_near, y_slab_bot, x_near, y_slab_top).difference(slab_fine)
+    slab_mid = box(-x_near, y_slab_bot, x_near, y_slab_top).difference(slab_fine_full)
     slab_far = box(-x_dev_max, y_slab_bot, x_dev_max, y_slab_top).difference(
-        unary_union([slab_fine, slab_mid]))
+        box(-x_near, y_slab_bot, x_near, y_slab_top))
 
     # ---- 6. SiO2 Underclad (BOX) --------------------------------------------
     box_near = box(-(xg + 1.0), -1.5, xg + 1.0, y_slab_bot)
