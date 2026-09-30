@@ -43,3 +43,8 @@ at 200 nm) and never reaches the lift. 1D cutoff: ~38 nm. Predicted ripple perio
 |---|---|---|---|---|---|---|---|
 | Vpi*L (V*cm) | 1.635 | 1.770 | 1.899 | 2.025 | 2.148 | 2.271 | 2.392 |
 | IL (dB/cm) | 0.651 | 0.326 | 0.169 | 0.090 | 0.048 | 0.026 | 0.014 |
+
+## Final design: 200 nm buffer, gap 3.4 um (`lift_sweep_buffer200nm_gap3.4.csv`)
+Vpi*L = 2.2707 V*cm, IL = 0.0260 dB/cm (flat: 0.0260 for x_lift 4.5-16 um).
+Line of 14.85 mm with duty cycle 0.92: Vpi = 2.27 / (1.485 * 0.92) = 1.66 V (< 1.7 V).
+Deck: `Lifted_buffer_results.pptx`.
