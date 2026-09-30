@@ -241,6 +241,15 @@ def cmd_tl_step0_report(args):
     return 0
 
 
+def cmd_tl_step0_saved(args):
+    """Run the Compound stages of Step 0 from their saved, hand-wired projects."""
+    from .scripted_test import run_saved_stages
+    p = _params_from_args(args, args.s2p)
+    fit = SW.get_fit(p)
+    run_saved_stages(fit, p, args.folder)
+    return 0
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="mzm_interconnect",
                                 description="Traveling-wave MZM modelling toolkit")
@@ -304,6 +313,13 @@ def main(argv=None):
     tr.add_argument("folder", help="the tl_step0 folder of that run")
     _add_param_args(tr)
     tr.set_defaults(func=cmd_tl_step0_report)
+
+    ts = sub.add_parser("tl-step0-saved", help="run the Step 0 Compound projects "
+                                               "(S5, S6) after the wire is drawn by hand")
+    ts.add_argument("s2p")
+    ts.add_argument("folder", help="the tl_step0 folder of that run")
+    _add_param_args(ts)
+    ts.set_defaults(func=cmd_tl_step0_saved)
 
     g = sub.add_parser("gui", help="launch the graphical interface")
     g.add_argument("s2p", nargs="?", default="")

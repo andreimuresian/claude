@@ -748,6 +748,8 @@ class MZMStudio(tk.Tk):
                    command=self.action_build_interconnect_eye).pack(side="left", padx=3)
         ttk.Button(ctrl, text="Step 0: TL line vs TW",
                    command=self.action_tl_step0).pack(side="left", padx=3)
+        ttk.Button(ctrl, text="Step 0: run wired S5/S6",
+                   command=self.action_tl_step0_saved).pack(side="left", padx=3)
         self.lum_keep = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl, text="Leave INTERCONNECT open afterwards",
                         variable=self.lum_keep).pack(side="left", padx=14)
@@ -1242,6 +1244,29 @@ class MZMStudio(tk.Tk):
             self.log(f"Step 0 report written to {os.path.join(out, 'step0_report.txt')}", "ok")
             self._ui(lambda: self.nb.select(self.tab_log))
         self._run_async(work, "Step 0")
+
+    def action_tl_step0_saved(self):
+        """Run the Compound stages of Step 0 from their saved projects, once the
+        wire the report names has been drawn by hand and the project saved.
+        Keep the parameters of the Step 0 run: the model rows use them."""
+        p = self._get_params()
+        if self.result is None or self.fit is None:
+            self.log("Run 'Extract + analyse' first.", "warn")
+            return
+
+        def work():
+            from .scripted_test import run_saved_stages
+            out = os.path.join(self._resolve_out_dir(p), "tl_step0")
+            if self.ic_builder is not None:
+                try:
+                    self.ic_builder.close()
+                except Exception:
+                    pass
+                self.ic_builder = None
+            run_saved_stages(self.fit, p, out, log=lambda m: self.log(m))
+            self.log(f"Step 0 report written to {os.path.join(out, 'step0_report.txt')}", "ok")
+            self._ui(lambda: self.nb.select(self.tab_log))
+        self._run_async(work, "Step 0 (saved S5/S6)")
 
     def action_build_interconnect(self, mode: str = "ena"):
         p = self._get_params()

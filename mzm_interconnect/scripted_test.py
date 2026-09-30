@@ -12,7 +12,12 @@ message in its Output window:
       (tests setsparameter on bidirectional electrical ports, reflections)
   S3  TL line with its modulation output, short table (about 50 points)
   S4  TL line with its modulation output, full table, both cases
-  S5  S4 inside a Compound with scattering data analysis on
+  S5  S4 inside a Compound with scattering data analysis on, 1-port load
+  S6  the same, terminated by a connector with a free port
+
+If the script cannot draw the wire inside a Compound, S5/S6 are saved but not
+run. Draw that wire by hand, save the project, and run_saved_stages() runs the
+saved projects and adds their rows to the same report.
 
 Every row is driven by its own Network Analyzer (impulse response) and
 measured electrically -- no optics, so nothing else can differ:
@@ -106,6 +111,11 @@ def step0_cases(p: dict) -> list:
 def _fwd(path: str) -> str:
     """Forward slashes: Lumerical script reads them on every platform."""
     return path.replace("\\", "/")
+
+
+def _first_line(exc: Exception) -> str:
+    s = str(exc).strip()
+    return s.splitlines()[0] if s else type(exc).__name__
 
 
 class Step0Builder(InterconnectBuilder):
@@ -257,31 +267,60 @@ class Step0Builder(InterconnectBuilder):
                 self.log(f"  {name}: addport failed: {exc}")
                 return False
             self.connect(name, [pname], out_to, P_IN1)
-            inner = False
+            inner, refused, inside = False, [], []
             try:
                 s.groupscope(f"{self.ROOT_SCOPE}::{name}")
-                for tgt, tport in ((pname, pname), (pname, "port"), (pname, "port 1"),
-                                   (pname, "input"), (pname, "output"), (name, pname)):
-                    if self._try_connect(el, port, tgt, tport):
+                inside = self._scope_elements()
+                # The port's relay element inside the Compound: by its name first,
+                # then anything inside that is not one of the members.
+                tgts = [pname] + [x for x in inside if x not in members and x != pname]
+                for tgt in tgts:
+                    for tport in (pname, "port", "port 1", "input", "output", "relay"):
+                        try:
+                            s.connect(el, port, tgt, tport)
+                        except Exception as exc:
+                            refused.append(f"{tgt}:{tport} ({_first_line(exc)})")
+                            continue
+                        self._wiring.append(f"{el}:{port} -> {tgt}:{tport}")
                         self.log(f"  {name}: inside, {el}:{port} -> {tgt}:{tport}")
                         inner = True
                         break
+                    if inner:
+                        break
             except Exception as exc:
-                self.log(f"  {name}: could not enter the Compound's scope ({exc})")
+                refused.append(f"could not enter the Compound's scope ({_first_line(exc)})")
             finally:
                 try:
                     s.groupscope(self.ROOT_SCOPE)
                 except Exception:
                     pass
             if not inner:
+                self.log(f"  {name}: elements inside: {', '.join(inside) or 'could not be listed'}")
+                for r in refused:
+                    self.log(f"  {name}: refused {r}")
                 self.pending_manual.append(
                     f"{name}: open the saved .icp, double-click {name}, draw the wire from "
-                    f"{el} '{port}' to the port '{pname}', then run it by hand")
+                    f"{el} '{port}' to the port '{pname}', save the project "
+                    f"[elements inside: {', '.join(inside) or 'not listed'}; first refusal: "
+                    f"{refused[0] if refused else 'none'}]")
 
         ok = self.setp(name, ['scattering data analysis'], True, required=False)
         if not ok:
             self.log(f"  {name}: could not switch 'scattering data analysis' on.")
         return ok
+
+    def _scope_elements(self) -> list:
+        """Names of the elements in the current group scope (empty if the
+        script interface does not give them)."""
+        code = ('selectall; mzm_n = getnumber; mzm_names = ""; '
+                'for (mzm_i = 1:mzm_n) { mzm_names = mzm_names + get("name", mzm_i) + ";"; } '
+                'unselectall;')
+        try:
+            self.sim.eval(code)
+            return [x for x in str(self.sim.getv("mzm_names")).split(";") if x.strip()]
+        except Exception as exc:
+            self.log(f"  could not list the elements in this scope ({_first_line(exc)})")
+            return []
 
     # ---- one stage -------------------------------------------------------
     def build_stage(self, p: dict, files: dict, tables: dict, L: float, rows: list,
@@ -443,7 +482,11 @@ def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> 
             first_fail = None
     for sid, _t, status, _d in stages:
         if status == "SAVED":
-            A(f"  -> {sid} was saved but not run: draw the one wire named above, then run it.")
+            A(f"  -> {sid} was saved but not run: draw the wire named above, save the project, "
+              f"then press 'Step 0: run wired S5/S6' (CLI: tl-step0-saved).")
+    if not any(lb in ("CMP", "CMP_CNC") for (_c, lb) in meas):
+        A("  -> No Compound row (CMP, CMP_CNC) yet. Those are the rows that decide Step 0; "
+          "the FLAT rows cannot pass on a mismatched line.")
     if first_fail:
         A(f"  -> first failing stage {first_fail}: {STAGE_MEANING[first_fail]}.")
         A(f"     Open TL_step0_{first_fail}.icp, press Run, and copy the message in "
@@ -520,12 +563,7 @@ def run_step0(fit, p: dict, out_dir: Optional[str] = None,
     from .extractor import export_lumerical_tables
     from .physics import device_response
     log = log or print
-    p = P.normalise(dict(p, n_bends=0))
-    fs_needed = 2.5 * float(p["f_max_GHz"])
-    if float(p["ic_sample_rate_GHz"]) < fs_needed:
-        log(f"  Sample rate raised from {float(p['ic_sample_rate_GHz']):.0f} to "
-            f"{fs_needed:.0f} GHz for a {float(p['f_max_GHz']):.0f} GHz sweep.")
-        p["ic_sample_rate_GHz"] = fs_needed
+    p = _step0_params(p, log)
     out_dir = out_dir or os.path.join(str(p["out_dir"]) or ".", "tl_step0")
     os.makedirs(out_dir, exist_ok=True)
     L = float(p["L_target_mm"]) * 1e-3
@@ -584,34 +622,123 @@ def run_step0(fit, p: dict, out_dir: Optional[str] = None,
     rep = format_report(pred, meas, status, band, float(p["ic_sample_rate_GHz"]))
     with open(os.path.join(out_dir, "step0_report.txt"), "w") as fh:
         fh.write(rep + "\n")
+    _write_traces(out_dir, meas)
+    log(rep)
+    return rep, None
+
+
+def report_from_csv(fit, p: dict, out_dir: str, stages: Optional[list] = None) -> str:
+    """Rebuild the Step 0 report from a saved step0_traces.csv, with the current
+    comparison rules, without running INTERCONNECT. *p* must hold the same
+    parameters as the run (sim_params.json in the same folder has them)."""
+    p = _step0_params(p)
+    L = float(p["L_target_mm"]) * 1e-3
+    pred = python_predictions(fit, p, os.path.join(out_dir, "reanalysis"), L)
+    meas = _read_traces(out_dir)
+    band = (1.0, 0.95 * float(p["f_max_GHz"]))
+    stages = stages or [("csv", "re-read from step0_traces.csv", "ran", f"{len(meas)} traces")]
+    return format_report(pred, meas, stages, band, float(p["ic_sample_rate_GHz"]))
+
+
+def _step0_params(p: dict, log: Optional[Callable[[str], None]] = None) -> dict:
+    """The parameters every Step 0 stage uses: no bends, and a sample rate of at
+    least 2.5x the sweep ceiling."""
+    p = P.normalise(dict(p, n_bends=0))
+    fs_needed = 2.5 * float(p["f_max_GHz"])
+    if float(p["ic_sample_rate_GHz"]) < fs_needed:
+        if log:
+            log(f"  Sample rate raised from {float(p['ic_sample_rate_GHz']):.0f} to "
+                f"{fs_needed:.0f} GHz for a {float(p['f_max_GHz']):.0f} GHz sweep.")
+        p["ic_sample_rate_GHz"] = fs_needed
+    return p
+
+
+def _read_traces(out_dir: str) -> dict:
+    path = os.path.join(out_dir, "step0_traces.csv")
+    rows = {}
+    if os.path.exists(path):
+        with open(path, newline="") as fh:
+            for r in csv.DictReader(fh):
+                rows.setdefault((r["case"], r["row"]), []).append(
+                    (float(r["f_GHz"]), complex(float(r["re"]), float(r["im"]))))
+    return {k: (np.array([a for a, _ in v]), np.array([b for _, b in v]),
+                bool(np.any(np.imag([b for _, b in v]))), "from csv")
+            for k, v in rows.items()}
+
+
+def _write_traces(out_dir: str, meas: dict) -> None:
     with open(os.path.join(out_dir, "step0_traces.csv"), "w", newline="") as fh:
         wr = csv.writer(fh)
         wr.writerow(["case", "row", "f_GHz", "re", "im"])
         for (cname, row), (f, H, _c, _l) in meas.items():
             for fi, hi in zip(f, H):
                 wr.writerow([cname, row, f"{fi:.6f}", f"{hi.real:.9e}", f"{hi.imag:.9e}"])
+
+
+# Stages that may need a wire drawn by hand, and the row label of their analysers.
+SAVED_STAGE_ROWS = {"S5": "CMP", "S6": "CMP_CNC"}
+
+
+def run_saved_stages(fit, p: dict, out_dir: str, stages=("S5", "S6"),
+                     log: Optional[Callable[[str], None]] = None) -> str:
+    """
+    Run the Compound stages from their saved projects, after the missing wire
+    has been drawn by hand and the project saved (TL_step0_S5.icp, _S6.icp).
+
+    Each project is opened in a fresh INTERCONNECT session and run; its
+    analysers are read, added to step0_traces.csv next to the earlier rows, and
+    step0_report.txt is rewritten with every row. *p* must be the parameters of
+    the Step 0 run that saved the projects (sim_params.json has them): the model
+    rows are recomputed from it.
+    """
+    log = log or print
+    p = _step0_params(p)
+    meas = _read_traces(out_dir)
+    n_old = len(meas)
+    titles = {sid: title for sid, title, _r in STAGES}
+    status = [("S1-S4", "earlier run, re-read from step0_traces.csv", "ran",
+               f"{n_old} traces")]
+    for sid in stages:
+        icp = os.path.join(out_dir, f"TL_step0_{sid}.icp")
+        label = SAVED_STAGE_ROWS[sid]
+        if not os.path.exists(icp):
+            status.append((sid, titles[sid], "MISSING", f"{icp} not found"))
+            continue
+        log(f"  --- {sid}: running {icp}")
+        b = None
+        try:
+            b = Step0Builder(str(p["lumapi_path"]), hide=bool(p["ic_hide"]), log=log)
+            b.sim.load(_fwd(icp))
+            b.sim.run()
+            got, empty = 0, []
+            for i, case in enumerate(step0_cases(p), start=1):
+                ena = f"ENA_{label}_{i}"
+                try:
+                    tr = b.raw_trace(ena)
+                except Exception as exc:
+                    log(f"  {ena}: {_first_line(exc)}")
+                    empty.append(ena)
+                    continue
+                f, H = tr[0], tr[1]
+                if not np.any(np.abs(H[f > 0.5]) > 1e-9):
+                    log(f"  {ena}: no signal -- the wire inside LINE_{label}_{i} is not drawn")
+                    empty.append(ena)
+                    continue
+                meas[(case["name"], label)] = tr
+                got += 1
+            detail = f"{got}/{len(step0_cases(p))} analysers read (project wired by hand)"
+            if empty:
+                detail += f"; no data from {', '.join(empty)}"
+            status.append((sid, titles[sid], "ran" if got else "FAILED", detail))
+        except Exception as exc:
+            status.append((sid, titles[sid], "FAILED", f"{type(exc).__name__}: {_first_line(exc)}"))
+            log(f"  {sid}: FAILED -- {_first_line(exc)}")
+        finally:
+            if b is not None:
+                b.close()
+    _write_traces(out_dir, meas)
+    rep = report_from_csv(fit, p, out_dir, stages=status)
+    with open(os.path.join(out_dir, "step0_report.txt"), "w") as fh:
+        fh.write(rep + "\n")
     log(rep)
-    return rep, None
-
-
-def report_from_csv(fit, p: dict, out_dir: str) -> str:
-    """Rebuild the Step 0 report from a saved step0_traces.csv, with the current
-    comparison rules, without running INTERCONNECT. *p* must hold the same
-    parameters as the run (sim_params.json in the same folder has them)."""
-    p = P.normalise(dict(p, n_bends=0))
-    fs_needed = 2.5 * float(p["f_max_GHz"])
-    if float(p["ic_sample_rate_GHz"]) < fs_needed:
-        p["ic_sample_rate_GHz"] = fs_needed
-    L = float(p["L_target_mm"]) * 1e-3
-    pred = python_predictions(fit, p, os.path.join(out_dir, "reanalysis"), L)
-    rows = {}
-    with open(os.path.join(out_dir, "step0_traces.csv"), newline="") as fh:
-        for r in csv.DictReader(fh):
-            rows.setdefault((r["case"], r["row"]), []).append(
-                (float(r["f_GHz"]), complex(float(r["re"]), float(r["im"]))))
-    meas = {k: (np.array([a for a, _ in v]), np.array([b for _, b in v]),
-                bool(np.any(np.imag([b for _, b in v]))), "from csv")
-            for k, v in rows.items()}
-    band = (1.0, 0.95 * float(p["f_max_GHz"]))
-    stages = [("csv", "re-read from step0_traces.csv", "ran", f"{len(meas)} traces")]
-    return format_report(pred, meas, stages, band, float(p["ic_sample_rate_GHz"]))
+    return rep
