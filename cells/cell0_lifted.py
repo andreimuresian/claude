@@ -18,6 +18,29 @@ from femwell.mesh import mesh_from_OrderedDict
 
 warnings.filterwarnings("ignore")
 
+# ------------------------------------------------------------------------------
+# femwell bug fix.  mesh_from_OrderedDict() tries to switch off gmsh's
+# "extend mesh size from boundary" with `gmsh.model.mesh.MeshSizeExtendFromBoundary = 0`,
+# which only sets a Python attribute: the gmsh option is never changed.  As a
+# result every fine region pushes its size deep into its neighbours (the LN slab
+# nominally at 50 nm was really meshed at ~17 nm, the electrode bulk nominally at
+# 800 nm at ~18 nm), so the `resolutions` dict did not describe the real mesh.
+# This wrapper applies the options femwell intended, right when it installs its
+# background field.  The mesh then follows `resolutions` below, which were
+# re-converged with the fix in place.
+import gmsh
+if not getattr(gmsh.model.mesh.field, "_size_fix", False):
+    _orig_set_bg = gmsh.model.mesh.field.setAsBackgroundMesh
+
+    def _set_bg_fixed(tag):
+        _orig_set_bg(tag)
+        gmsh.option.setNumber("Mesh.MeshSizeExtendFromBoundary", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromPoints", 0)
+        gmsh.option.setNumber("Mesh.MeshSizeFromCurvature", 0)
+
+    gmsh.model.mesh.field.setAsBackgroundMesh = _set_bg_fixed
+    gmsh.model.mesh.field._size_fix = True
+
 # ============================================================
 # 1. FIXED PHYSICAL & GEOMETRIC PARAMETERS
 # ============================================================
@@ -64,9 +87,9 @@ ne, no = 2.136842, 2.210268
 n_sio2 = 1.438749
 eps_au = -120.7 - 11.9j             # Physical gold loss: Im(eps) < 0 in exp(+jwt)
 
-# ---- Mesh scales (values from the mesh-convergence study) --------------------
+# ---- Mesh scales (re-converged for THIS geometry, see notes at the bottom) ----
 h_core = 0.040
-h_skin = 0.025
+h_skin = 0.012                      # gold on bare LN: the SPP decays into Au in ~22 nm
 
 # Gold "skin": a 70 nm shell resolving the ~23 nm optical skin depth.
 # Only the lower block touches the mode, so only the lower block is shelled:
@@ -75,14 +98,15 @@ h_skin = 0.025
 #   * the bottom of its outer wall, where the channel under the metal ends.
 # The column and the lifted pad are >= 2 um from the slab: bulk mesh only.
 SKIN_T = 0.070
-SKIN_SEGMENTS = [(0.0, 2.5, 1.0), (2.5, LOW_W, 1.6)]   # offsets from the gap edge
+SKIN_SEGMENTS = [(0.0, 2.5, 1.0), (2.5, LOW_W, 1.0)]   # offsets from the gap edge; kept
+                                                       # as two regions for the loss map
 SKIN_LEN = SKIN_SEGMENTS[-1][1]
 OUTER_WALL_SKIN_H = 0.5
 # Metal corners that touch the LN slab carry a field singularity (a metal wedge
 # on a high-index dielectric).  A uniform skin mesh converges only ~O(h) there,
 # so both slab-contact corners of each lower block get a small patch of very
 # fine mesh on all three sides (metal / LN / air or SiO2).
-CORNER_R = 0.100                    # corner patch half-size (um)
+CORNER_R = 0.050                    # corner patch half-size (um)
 h_corner = 0.006                    # mesh size inside the corner patches (um)
 
 MATERIALS = {
@@ -140,7 +164,9 @@ def build_polygons():
     ])
 
     # ---- 2. SiO2 Cap (2.0 x 1.4 um, on the slab) ----------------------------
-    cap_poly = box(-CAP_W / 2.0, y_slab_top, CAP_W / 2.0, y_cap_top).difference(core_poly)
+    y_fine_top = y_slab_top + 0.6                   # 0.875: above this the mode is < -25 dB
+    cap_poly = box(-CAP_W / 2.0, y_slab_top, CAP_W / 2.0, y_fine_top).difference(core_poly)
+    cap_up = box(-CAP_W / 2.0, y_fine_top, CAP_W / 2.0, y_cap_top)
 
     # ---- 3. Electrode (right = signal), three blocks Boolean-fused ----------
     low_r = box(xg, y_slab_top, x_col_out, y_low_top)
@@ -190,21 +216,26 @@ def build_polygons():
         box(-x_near, y_slab_bot, x_near, y_slab_top))
 
     # ---- 6. SiO2 Underclad (BOX) --------------------------------------------
-    box_near = box(-(xg + 1.0), -1.5, xg + 1.0, y_slab_bot)
-    box_far = box(-x_dev_max, y_box_bot, x_dev_max, y_slab_bot).difference(box_near)
+    # Fine only in the top 0.5 um (the mode's BOX tail decays as exp(-4.85 y/um)).
+    box_near = box(-(xg + 1.0), -0.5, xg + 1.0, y_slab_bot)
+    box_mid = box(-(xg + 1.0), -1.5, xg + 1.0, -0.5)
+    box_far = box(-x_dev_max, y_box_bot, x_dev_max, y_slab_bot).difference(
+        box(-(xg + 1.0), -1.5, xg + 1.0, y_slab_bot))
 
     # ---- 7. Air Cladding -----------------------------------------------------
-    solids = [core_poly, cap_poly, el_r, mirror(el_r),
+    solids = [core_poly, cap_poly, cap_up, el_r, mirror(el_r),
               buf_near_r, buf_far_r, mirror(buf_near_r), mirror(buf_far_r),
               corners_r["buf_cornerRO"], mirror(corners_r["buf_cornerRO"]),
               corners_r["clad_cornerRI"], mirror(corners_r["clad_cornerRI"])]
     clad_all = box(-x_dev_max, y_slab_top, x_dev_max, y_clad_top).difference(unary_union(solids))
-    clad_gap = clad_all.intersection(box(-xg, y_slab_top, xg, y_cap_top + 0.6))
-    clad_far = clad_all.difference(clad_gap)
+    clad_gap = clad_all.intersection(box(-xg, y_slab_top, xg, y_fine_top))
+    clad_gap_up = clad_all.intersection(box(-xg, y_fine_top, xg, y_cap_top + 0.6))
+    clad_far = clad_all.difference(box(-xg, y_slab_top, xg, y_cap_top + 0.6))
 
     polys = OrderedDict()
     polys["core"] = core_poly
     polys["cap"] = cap_poly
+    polys["cap_up"] = cap_up
     for i, sk in enumerate(skins_r):
         polys[f"elR_skin{i}"] = sk
         polys[f"elL_skin{i}"] = mirror(sk)
@@ -221,8 +252,10 @@ def build_polygons():
     polys["slab_mid"] = slab_mid
     polys["slab_far"] = slab_far
     polys["box_near"] = box_near
+    polys["box_mid"] = box_mid
     polys["box_far"] = box_far
     polys["clad_gap"] = clad_gap
+    polys["clad_gap_up"] = clad_gap_up
     polys["clad_far"] = clad_far
 
     return polys, DEV_W, CLAD_H
@@ -234,12 +267,15 @@ polygons, DEV_W, CLAD_H = build_polygons()
 
 resolutions = {
     "core":        {"resolution": h_core,       "distance": 0.30},
-    "cap":         {"resolution": 1.5 * h_core, "distance": 0.30},
-    "clad_gap":    {"resolution": 2.0 * h_core, "distance": 0.40},
-    "slab_fine":   {"resolution": 0.050,        "distance": 0.30},
+    "cap":         {"resolution": 0.035,        "distance": 0.30},
+    "cap_up":      {"resolution": 0.080,        "distance": 0.30},
+    "clad_gap":    {"resolution": 0.040,        "distance": 0.30},
+    "clad_gap_up": {"resolution": 0.100,        "distance": 0.30},
+    "slab_fine":   {"resolution": 0.025,        "distance": 0.30},
     "slab_mid":    {"resolution": 0.110,        "distance": 0.40},
     "slab_far":    {"resolution": 0.150,        "distance": 0.50},
-    "box_near":    {"resolution": 0.080,        "distance": 0.50},
+    "box_near":    {"resolution": 0.040,        "distance": 0.30},
+    "box_mid":     {"resolution": 0.100,        "distance": 0.30},
     "box_far":     {"resolution": 0.800,        "distance": 1.00},
     "buf_near_r":  {"resolution": 0.150,        "distance": 0.40},
     "buf_near_l":  {"resolution": 0.150,        "distance": 0.40},
