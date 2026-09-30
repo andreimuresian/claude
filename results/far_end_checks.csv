@@ -1,0 +1,7 @@
+config,length_um,IL_dB_per_cm,VpiL_Vcm
+legacy_flat_gap4.2,EL_W=15,0.4063,2.2604
+legacy_flat_gap4.2,EL_W=15.45,0.4245,2.2604
+legacy_flat_gap4.2,EL_W=30,0.4201,2.2604
+legacy_flat_gap4.2,EL_W=35,0.4203,2.2604
+legacy_flat_gap4.2,EL_W=35.45,0.4214,2.2604
+lifted,x_lift=29.65,0.4179,2.2649
