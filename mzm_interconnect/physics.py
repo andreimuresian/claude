@@ -537,27 +537,34 @@ def ripple_period_GHz(nm_ref: float, L_m: float) -> float:
     return C0 / (2.0 * nm_ref * L_m) / 1e9
 
 
-PLATEAU_MAX_PERIODS = 3
 PLATEAU_ROLLOFF_FRACTION = 0.15
 
 
 def plateau_window(fit: "LineFit", p: dict, bw_hint: float) -> tuple:
     """
-    Low-frequency averaging window, spanning whole standing-wave periods.
+    Low-frequency averaging window: one standing-wave period.
 
-    Averaging over an integer number of periods cancels the ripple instead of
-    sampling it, which is what makes the reported bandwidth independent of
-    where the reference is taken.
+    Averaging over a whole period cancels the ripple instead of sampling it,
+    which is what makes the reported bandwidth independent of where the
+    reference is taken. One period is the least that does so. Every further
+    period only extends the window into the response's own low-frequency slope
+    (skin effect, Zc dispersion), which drags the reference down and inflates
+    the bandwidth.
 
-    The window must also stay inside the flat part of the response: a window
-    that reaches into the roll-off drags the reference down and inflates the
-    bandwidth. So it is capped at a fraction of the bandwidth itself (hence the
-    *bw_hint* from a first pass), and if not even one whole period fits below
-    that cap -- a short line, whose ripple period is comparable to its
-    bandwidth -- this returns n_per = 0 and the caller falls back to anchoring
-    on the lowest measured frequency.
+    The window must also stay inside the flat part of the response, so it is
+    capped at a fraction of the bandwidth (hence the *bw_hint* from a first
+    pass). When a whole period does not fit below that cap -- a short line,
+    whose ripple period is comparable to its bandwidth -- the window is
+    shortened to the cap rather than collapsed to one point.
 
-    Returns (f_lo, f_hi, period_GHz, n_periods).
+    The window is a continuous function of the line and its terminations.
+    It used to be 1, 2 or 3 whole periods, or a single point when not even one
+    fitted. Those steps turned small changes of Rt or of the frequency grid into
+    jumps of the bandwidth: 29.6 vs 56.6 GHz for the same 16.5 mm line on two
+    grids, and 65.9 -> 58.8 GHz between Rt = 35 and 40 ohm.
+
+    Returns (f_lo, f_hi, period_GHz, periods_covered); periods_covered <= 1,
+    0 when there is no room at all.
     """
     L_m = rf_length_m(p)
     nm_ref = float(np.atleast_1d(fit.nm(np.array([min(60.0, fit.f_max_sim_GHz)])))[0])
@@ -565,11 +572,9 @@ def plateau_window(fit: "LineFit", p: dict, bw_hint: float) -> tuple:
     f_lo = max(fit.f_min_sim_GHz, 0.0)
     ceiling = PLATEAU_ROLLOFF_FRACTION * float(bw_hint)
     if period <= 0 or ceiling <= f_lo:
-        return f_lo, f_lo, period, 0
-    n_per = min(PLATEAU_MAX_PERIODS, int((ceiling - f_lo) / period))
-    if n_per < 1:
-        return f_lo, f_lo, period, 0
-    return f_lo, f_lo + n_per * period, period, n_per
+        return f_lo, f_lo, period, 0.0
+    f_hi = f_lo + min(period, ceiling - f_lo)
+    return f_lo, f_hi, period, (f_hi - f_lo) / period
 
 
 @dataclass
@@ -644,20 +649,26 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     mag = np.where(np.isfinite(mag) & (mag > 0), mag, 1e-300)
     raw_dB = 20.0 * np.log10(mag)
 
-    # First pass: anchor on the lowest measured frequency just to locate the
-    # roll-off, so the averaging window can be kept inside the flat region.
+    # First pass: locate the roll-off, so the averaging window can be kept
+    # inside the flat region. The anchor is the mean over the first ripple
+    # period, not the lowest measured sample: that sample sits on a random
+    # phase of the ripple (or on the fit's low-frequency bump) and moved the
+    # hint enough to change the window.
     i_lo = int(np.argmin(np.abs(f - max(fit.f_min_sim_GHz, 0.0))))
-    bw_hint = first_crossing(f, raw_dB - raw_dB[i_lo], level,
+    _, _, period0, _ = plateau_window(fit, p, float("inf"))
+    first = (f >= f[i_lo]) & (f <= f[i_lo] + period0) & np.isfinite(raw_dB)
+    anchor = float(np.mean(raw_dB[first])) if first.sum() >= 2 else float(raw_dB[i_lo])
+    bw_hint = first_crossing(f, raw_dB - anchor, level,
                              f_start=float(f[i_lo])) or float(f[-1])
 
     f_lo, f_hi, period, n_per = plateau_window(fit, p, bw_hint)
     win = (f >= f_lo) & (f <= f_hi) & np.isfinite(raw_dB)
     ripple_pp = float(raw_dB[win].max() - raw_dB[win].min()) if win.any() else 0.0
 
-    if norm_mode == "plateau" and n_per >= 1 and win.any():
+    if norm_mode == "plateau" and n_per > 0 and win.sum() >= 2:
         norm_window = (float(f_lo), float(f_hi))
     elif norm_mode == "plateau":
-        norm_window = (float(f[i_lo]), float(f[i_lo]))   # no room for a whole period
+        norm_window = (float(f[i_lo]), float(f[i_lo]))   # no room at all
     else:
         i_norm = int(np.argmin(np.abs(f - f_norm)))
         norm_window = (float(f[i_norm]), float(f[i_norm]))

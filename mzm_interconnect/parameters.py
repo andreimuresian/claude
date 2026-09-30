@@ -352,9 +352,11 @@ PARAMS: list[ParamSpec] = [
     # ---------------- Analysis --------------------------------------------
     ParamSpec("norm_mode", "Normalisation", "plateau", "Analysis",
               kind="choice", choices=("plateau", "point"), affects="circuit",
-              help="'plateau' averages the low-frequency response over a whole "
-                   "number of standing-wave periods, so the 0 dB reference does "
-                   "not land on a random phase of the mismatch ripple. 'point' "
+              help="'plateau' averages the low-frequency response over one "
+                   "standing-wave period from the lowest measured frequency, so "
+                   "the 0 dB reference does not land on a random phase of the "
+                   "mismatch ripple (shortened on a short line so it stays "
+                   "below 15 % of the bandwidth). 'point' "
                    "anchors on a single frequency (the older behaviour, and the "
                    "usual textbook convention) -- on a mismatched line that makes "
                    "the bandwidth swing by 15 GHz depending on the frequency you "
