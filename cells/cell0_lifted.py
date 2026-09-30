@@ -87,13 +87,21 @@ ne, no = 2.136842, 2.210268
 n_sio2 = 1.438749
 eps_au = -120.7 - 11.9j             # Physical gold loss: Im(eps) < 0 in exp(+jwt)
 
-# ---- Mesh scales (re-converged for THIS geometry, see notes at the bottom) ----
+# ---- Mesh scales (re-converged for THIS geometry) -----------------------------
+# Reference (265k triangles, everything near the mode refined 1.5-2x):
+#     IL = 0.2218 dB/cm, Vpi*L = 2.2659 V*cm.
+# These settings (74k triangles, ~80 s for 10 modes):
+#     IL = 0.2216 dB/cm, Vpi*L = 2.2647 V*cm.
+# Honest IL uncertainty is ~ +/-3 %: going from h_skin 12 -> 10 nm still moves it
+# +2.4 %, so the lower-block skin is the one parameter to revisit if IL matters
+# at the percent level.  Vpi*L is converged to ~0.1 % in every test.
 h_core = 0.040
 h_skin = 0.012                      # gold on bare LN: the SPP decays into Au in ~22 nm
 
 # Gold "skin": a 70 nm shell resolving the ~23 nm optical skin depth.
 # Only the lower block touches the mode, so only the lower block is shelled:
-#   * its whole bottom face on the LN slab (the loss channel), graded laterally;
+#   * its whole bottom face on the LN slab (the loss channel), NOT graded: the
+#     field under the far half of the block matters as much as the near half;
 #   * its inner wall (faces the rib across the gap), full height;
 #   * the bottom of its outer wall, where the channel under the metal ends.
 # The column and the lifted pad are >= 2 um from the slab: bulk mesh only.
