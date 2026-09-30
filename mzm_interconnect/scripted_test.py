@@ -86,7 +86,7 @@ STAGES = [
      [dict(kind="TL", table="short", cases="gui", label="FLAT_SHORT")]),
     ("S4", "TL line with modulation output, full table",
      [dict(kind="TL", table="full", cases="all", label="FLAT")]),
-    ("S5", "S4 inside a Compound, terminated by a 1-port load element",
+    ("S5", "S4 inside a Compound (modulation and far-end outputs)",
      [dict(kind="TL", table="full", cases="all", label="CMP", compound=True),
       dict(kind="TL", table="full", cases="all", label="CMP_FE", compound=True,
            output="far end")]),
@@ -208,7 +208,8 @@ class Step0Builder(InterconnectBuilder):
     def make_source(self, name: str, x: int, y: int, R: float):
         """The source resistance as a scripted two-port (port 1 from the
         analyser, port 2 into the line): launches 2 R0/(R + R0) of the incoming
-        wave and reflects (R - R0)/(R + R0) back into the line."""
+        wave and reflects (R - R0)/(R + R0) back into the line. Reciprocal, so
+        a Compound's solver finds a path from port 1 back to itself."""
         self.add(['Scripted Element', 'scripted element', 'Scripted element'], name, x, y)
         s = self.sim
         s.addproperty(name, "source_resistance", "TL source", "Number", 0, 1e9, "FixedUnit",
