@@ -151,7 +151,8 @@ def build_polygons():
     x_el_outer = xg + EL_W                          # 32.10 um end of the lifted pad
     DEV_W = 2.0 * x_el_outer + 2.0 * MARGIN         # 74.20 um
     x_dev_max = DEV_W / 2.0                         # 37.10 um
-    x_near = x_col_out + 15.0                       # 22.00 um refined-slab boundary
+    x_near = min(x_col_out + 15.0, x_dev_max - 2.0) # 22.00 um refined-slab boundary (capped
+                                                    # so the lift can be pushed far out)
 
     y_slab_bot = 0.0
     y_slab_top = SLAB_H                             # 0.275
