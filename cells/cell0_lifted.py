@@ -78,6 +78,12 @@ SKIN_T = 0.070
 SKIN_SEGMENTS = [(0.0, 2.5, 1.0), (2.5, LOW_W, 1.6)]   # offsets from the gap edge
 SKIN_LEN = SKIN_SEGMENTS[-1][1]
 OUTER_WALL_SKIN_H = 0.5
+# Metal corners that touch the LN slab carry a field singularity (a metal wedge
+# on a high-index dielectric).  A uniform skin mesh converges only ~O(h) there,
+# so both slab-contact corners of each lower block get a small patch of very
+# fine mesh on all three sides (metal / LN / air or SiO2).
+CORNER_R = 0.100                    # corner patch half-size (um)
+h_corner = 0.006                    # mesh size inside the corner patches (um)
 
 MATERIALS = {
     "LN":     {"color": "#8b95a1", "eps_dc": (28.0, 44.0), "eps_opt": (ne**2, no**2, no**2), "desc": "LN Core / Slab"},
@@ -152,13 +158,31 @@ def build_polygons():
                                    x_col_out, y_slab_top + OUTER_WALL_SKIN_H)])
     bulk_r = el_r.difference(unary_union(skins_r))
 
+    # ---- 3b. Corner patches (see CORNER_R) -----------------------------------
+    r = CORNER_R
+    corners_r = {
+        # inner corner: metal / LN slab / gap air
+        "elR_cornerI":   box(xg, y_slab_top, xg + r, y_slab_top + r),
+        "slab_cornerRI": box(xg - r, y_slab_top - r, xg + r, y_slab_top),
+        "clad_cornerRI": box(xg - r, y_slab_top, xg, y_slab_top + r),
+        # outer corner: metal / LN slab / lift SiO2
+        "elR_cornerO":   box(x_col_out - r, y_slab_top, x_col_out, y_slab_top + r),
+        "slab_cornerRO": box(x_col_out - r, y_slab_top - r, x_col_out + r, y_slab_top),
+        "buf_cornerRO":  box(x_col_out, y_slab_top, x_col_out + r, y_slab_top + r),
+    }
+    skins_r[0] = skins_r[0].difference(corners_r["elR_cornerI"])
+    skins_r[-1] = skins_r[-1].difference(corners_r["elR_cornerO"])
+
     # ---- 4. SiO2 buffer under the lifted pad, full height, to the domain edge
     #      "near" part: the bottom of the buffer, where the slab field lives.
-    buf_near_r = box(x_col_out, y_slab_top, x_near, y_slab_top + 1.0)
+    buf_near_r = box(x_col_out, y_slab_top, x_near, y_slab_top + 1.0).difference(
+        corners_r["buf_cornerRO"])
     buf_far_r = box(x_col_out, y_slab_top, x_dev_max, y_buf_top).difference(buf_near_r)
 
     # ---- 5. LN Slab ----------------------------------------------------------
-    slab_fine = box(-(x_col_out + 1.0), y_slab_bot, x_col_out + 1.0, y_slab_top)
+    slab_fine = box(-(x_col_out + 1.0), y_slab_bot, x_col_out + 1.0, y_slab_top).difference(
+        unary_union([corners_r["slab_cornerRI"], corners_r["slab_cornerRO"],
+                     mirror(corners_r["slab_cornerRI"]), mirror(corners_r["slab_cornerRO"])]))
     slab_mid = box(-x_near, y_slab_bot, x_near, y_slab_top).difference(slab_fine)
     slab_far = box(-x_dev_max, y_slab_bot, x_dev_max, y_slab_top).difference(
         unary_union([slab_fine, slab_mid]))
@@ -169,7 +193,9 @@ def build_polygons():
 
     # ---- 7. Air Cladding -----------------------------------------------------
     solids = [core_poly, cap_poly, el_r, mirror(el_r),
-              buf_near_r, buf_far_r, mirror(buf_near_r), mirror(buf_far_r)]
+              buf_near_r, buf_far_r, mirror(buf_near_r), mirror(buf_far_r),
+              corners_r["buf_cornerRO"], mirror(corners_r["buf_cornerRO"]),
+              corners_r["clad_cornerRI"], mirror(corners_r["clad_cornerRI"])]
     clad_all = box(-x_dev_max, y_slab_top, x_dev_max, y_clad_top).difference(unary_union(solids))
     clad_gap = clad_all.intersection(box(-xg, y_slab_top, xg, y_cap_top + 0.6))
     clad_far = clad_all.difference(clad_gap)
@@ -180,6 +206,9 @@ def build_polygons():
     for i, sk in enumerate(skins_r):
         polys[f"elR_skin{i}"] = sk
         polys[f"elL_skin{i}"] = mirror(sk)
+    for _k, _c in corners_r.items():
+        polys[_k] = _c
+        polys[_k.replace("R", "L", 1)] = mirror(_c)
     polys["elR_bulk"] = bulk_r
     polys["elL_bulk"] = mirror(bulk_r)
     polys["buf_near_r"] = buf_near_r
@@ -221,6 +250,9 @@ resolutions = {
 for _i, (_a, _b, _f) in enumerate(SKIN_SEGMENTS):
     for _s in ("R", "L"):
         resolutions[f"el{_s}_skin{_i}"] = {"resolution": _f * h_skin, "distance": 0.20}
+for _k in polygons:
+    if "corner" in _k:
+        resolutions[_k] = {"resolution": h_corner, "distance": 0.10}
 
 # ---- Validity / consistency assertions ---------------------------------------
 assert set(resolutions) == set(polygons), (
@@ -244,7 +276,7 @@ print(f"              electrodes {EL_H:.1f} um thick | pad lifted on {BUFFER_H:.
 raw_mesh = mesh_from_OrderedDict(
     polygons,
     resolutions=resolutions,
-    default_resolution_min=0.5 * h_skin,
+    default_resolution_min=0.5 * min(h_skin, h_corner),
     default_resolution_max=0.6,
 )
 skfem_mesh = MeshTri(raw_mesh.points[:, :2].T, raw_mesh.cells_dict["triangle"].T)
