@@ -91,9 +91,10 @@ STAGE_MEANING = {
           "driven from bidirectional ports is the problem",
     "S4": "the element works with a short table but not the full one: table size "
           "or FIR design",
-    "S5": "the element works on its own but not inside a Compound, even with every "
-          "port connected: the Compound's S-parameter solver refuses the scripted "
-          "element",
+    "S5": "the element works on its own but not inside a Compound: either a wire "
+          "inside the Compound is wrong (check that the TL line's modulation output "
+          "goes only to the relay 'External Port = modulation') or the Compound's "
+          "S-parameter solver refuses the scripted element",
     "S6": "the Compound runs with a 1-port load (S5) but not with a connector whose "
           "second port is left free: the solver needs every internal port connected",
 }
@@ -259,6 +260,7 @@ class Step0Builder(InterconnectBuilder):
         if out_from is not None:
             el, port = out_from
             pname = "modulation"
+            before = self._elements_inside(name)
             try:
                 got = s.addport(name, pname, "Output", "Electrical Signal", "Right", 0.5)
                 if isinstance(got, str) and got:
@@ -267,25 +269,27 @@ class Step0Builder(InterconnectBuilder):
                 self.log(f"  {name}: addport failed: {exc}")
                 return False
             self.connect(name, [pname], out_to, P_IN1)
-            inner, refused, inside = False, [], []
+            # Inside the Compound every external port is a relay element
+            # (RELAY_n, "External Port = <name>"). createcompound already made
+            # RELAY_1 for the analyser's drive ('port 1'); the wire must go to the
+            # relay of the port just added, never to any other: wiring the
+            # modulation output onto RELAY_1 shorts it onto the drive and the run
+            # fails (the second Step 0 run did exactly that).
+            inner, refused, inside, relay = False, [], [], None
             try:
                 s.groupscope(f"{self.ROOT_SCOPE}::{name}")
                 inside = self._scope_elements()
-                # The port's relay element inside the Compound: by its name first,
-                # then anything inside that is not one of the members.
-                tgts = [pname] + [x for x in inside if x not in members and x != pname]
-                for tgt in tgts:
-                    for tport in (pname, "port", "port 1", "input", "output", "relay"):
+                relay = self._find_relay(inside, pname, before, members)
+                if relay:
+                    for tport in ("input", "port", pname, "port 1"):
                         try:
-                            s.connect(el, port, tgt, tport)
+                            s.connect(el, port, relay, tport)
                         except Exception as exc:
-                            refused.append(f"{tgt}:{tport} ({_first_line(exc)})")
+                            refused.append(f"{relay}:{tport} ({_first_line(exc)})")
                             continue
-                        self._wiring.append(f"{el}:{port} -> {tgt}:{tport}")
-                        self.log(f"  {name}: inside, {el}:{port} -> {tgt}:{tport}")
+                        self._wiring.append(f"{el}:{port} -> {relay}:{tport}")
+                        self.log(f"  {name}: inside, {el}:{port} -> {relay}:{tport}")
                         inner = True
-                        break
-                    if inner:
                         break
             except Exception as exc:
                 refused.append(f"could not enter the Compound's scope ({_first_line(exc)})")
@@ -295,19 +299,48 @@ class Step0Builder(InterconnectBuilder):
                 except Exception:
                     pass
             if not inner:
-                self.log(f"  {name}: elements inside: {', '.join(inside) or 'could not be listed'}")
+                self.log(f"  {name}: elements inside: {', '.join(inside) or 'could not be listed'}; "
+                         f"relay of '{pname}': {relay or 'not identified'}")
                 for r in refused:
                     self.log(f"  {name}: refused {r}")
                 self.pending_manual.append(
                     f"{name}: open the saved .icp, double-click {name}, draw the wire from "
-                    f"{el} '{port}' to the port '{pname}', save the project "
-                    f"[elements inside: {', '.join(inside) or 'not listed'}; first refusal: "
-                    f"{refused[0] if refused else 'none'}]")
+                    f"{el} '{port}' to the 'input' pin of the relay whose label reads "
+                    f"'External Port = {pname}' ({relay or 'RELAY_2 in earlier runs'}), "
+                    f"leave every other wire as it is, and save the project")
 
         ok = self.setp(name, ['scattering data analysis'], True, required=False)
         if not ok:
             self.log(f"  {name}: could not switch 'scattering data analysis' on.")
         return ok
+
+    def _elements_inside(self, name: str) -> list:
+        """Names of the elements inside Compound *name* (scope restored)."""
+        try:
+            self.sim.groupscope(f"{self.ROOT_SCOPE}::{name}")
+            return self._scope_elements()
+        except Exception:
+            return []
+        finally:
+            try:
+                self.sim.groupscope(self.ROOT_SCOPE)
+            except Exception:
+                pass
+
+    def _find_relay(self, inside: list, pname: str, before: list, members: list):
+        """The relay element of the Compound port *pname*, called from inside
+        the Compound's scope: the relay whose external port is *pname*, else
+        the one element that appeared when the port was added. None if neither
+        identifies it; nothing is wired to a guess."""
+        for x in inside:
+            for prop in ("external port", "External Port", "external_port"):
+                try:
+                    if str(self.sim.getnamed(x, prop)).strip() == pname:
+                        return x
+                except Exception:
+                    continue
+        new = [x for x in inside if x not in before and x not in members]
+        return new[0] if len(new) == 1 else None
 
     def _scope_elements(self) -> list:
         """Names of the elements in the current group scope (empty if the
