@@ -1,0 +1,27 @@
+# =============================================================================
+# SETUP script of the "TL source" scripted element (MZM Studio).
+#
+# The driver's source impedance, as a two-port on the same voltage-wave
+# reference R0 as the TL lines:
+#
+#   port 1   bidirectional, electrical   from the driver / Network Analyzer
+#   port 2   bidirectional, electrical   into the first line
+#
+# A wave a1 arriving at port 1 stands for an EMF of 2 a1 behind the source
+# resistance (a matched 50-ohm source convention: with Rs = R0 the element is
+# transparent). It launches b2 = 2 R0 / (Rs + R0) a1 into the line, and a wave
+# coming back from the line is reflected with (Rs - R0) / (Rs + R0); the rest
+# is dissipated in Rs, so nothing travels back to the driver.
+#
+# This replaces the Electrical Connector, which Step 0 showed reflects with the
+# opposite sign: an (impedance 1 = Zs | impedance 2 = R0) connector behaves as
+# a source of R0^2 / Zs seen from its port 2.
+#
+# Properties:  source_resistance (ohm), R0 (ohm, the same as the TL lines)
+# =============================================================================
+
+Gs = (source_resistance - R0) / (source_resistance + R0);
+Tf = 2 * R0 / (source_resistance + R0);
+setsparameter("port 2", "port 2", "constant", Gs);
+setsparameter("port 2", "port 1", "constant", Tf);
+logmessage("TL source ready: Rs = " + num2str(source_resistance) + " ohm, R0 = " + num2str(R0) + " ohm, reflection " + num2str(Gs) + ", launch " + num2str(Tf));

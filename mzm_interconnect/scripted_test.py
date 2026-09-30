@@ -8,23 +8,33 @@ leaves a project you can open and run by hand to read INTERCONNECT's own
 message in its Output window:
 
   S1  Ansys TW block alone (baseline; this build is known to run)
-  S2  TL line as a plain 2-port: ENA -> CNC(Zs|R0) -> TL -> ENA
+  S2  TL line as a plain 2-port: ENA -> SRC(Zs) -> TL -> ENA
       (tests setsparameter on bidirectional electrical ports, reflections)
   S3  TL line with its modulation output, short table (about 50 points)
   S4  TL line with its modulation output, full table, both cases
-  S5  S4 inside a Compound with scattering data analysis on, 1-port load
-  S6  the same, terminated by a connector with a free port
+  S5  S4 inside a Compound with scattering data analysis on; a second
+      Compound reads the element's far-end output instead (CMP_FE)
 
-If the script cannot draw the wire inside a Compound, S5/S6 are saved but not
-run. Draw that wire by hand, save the project, and run_saved_stages() runs the
-saved projects and adds their rows to the same report.
+Source and termination are scripted elements (source_setup.lsf,
+termination_setup.lsf) on the lines' reference R0. The Electrical Connector is
+not used: the third Step 0 run showed that a (Zs | R0) connector reflects with
+the opposite sign, i.e. behaves as a source of R0^2/Zs (and a (R0 | Rt)
+connector with a free port as a load of R0^2/Rt).
+
+Only the Compound row can pass on a mismatched line: outside a Compound every
+pass through an element's filter adds its latency, so reflections come back
+late. If the script cannot draw the wire inside the Compound, S5 is saved but
+not run; draw that wire by hand, save the project, and run_saved_stages() runs
+it and adds its rows to the same report.
 
 Every row is driven by its own Network Analyzer (impulse response) and
 measured electrically -- no optics, so nothing else can differ:
 
   REF   ENA -> TW (same loss/z0/nm tables, Zs and Rt inside) -> ENA
-  FLAT  ENA -> CNC(Zs|R0) -> TL line -> CNC(R0|Rt)      modulation -> ENA
+  FLAT  ENA -> SRC(Zs) -> TL line -> LOAD(Rt)      modulation -> ENA
   CMP   the FLAT row inside a Compound
+  CMP_FE  the same Compound, analyser on the TL line's 'far end' output
+          (the voltage across the termination), compared with the model's V(L)
 
 Cases: the GUI's Zs/Rt, and a deliberately mismatched 30/80 ohm pair.
 
@@ -53,10 +63,11 @@ from .interconnect import InterconnectBuilder, P_IN, P_IN1, P_OUT
 LSF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lumerical")
 SETUP_LSF = os.path.join(LSF_DIR, "tl_element_setup.lsf")
 LOAD_LSF = os.path.join(LSF_DIR, "termination_setup.lsf")
+SOURCE_LSF = os.path.join(LSF_DIR, "source_setup.lsf")
 FIR_TAPS = 1024        # the same for the TW block and the TL line, so neither is favoured
 
-P_CNC1 = ['port 1']
-P_CNC2 = ['port 2']
+P_PORT1 = ['port 1']
+P_PORT2 = ['port 2']
 P_TL1 = ['port 1']
 P_TL2 = ['port 2']
 P_TLMOD = ['modulation']
@@ -76,10 +87,9 @@ STAGES = [
     ("S4", "TL line with modulation output, full table",
      [dict(kind="TL", table="full", cases="all", label="FLAT")]),
     ("S5", "S4 inside a Compound, terminated by a 1-port load element",
-     [dict(kind="TL", table="full", cases="all", label="CMP", compound=True,
-           load="element")]),
-    ("S6", "S4 inside a Compound, terminated by a connector with a free port",
-     [dict(kind="TL", table="full", cases="all", label="CMP_CNC", compound=True)]),
+     [dict(kind="TL", table="full", cases="all", label="CMP", compound=True),
+      dict(kind="TL", table="full", cases="all", label="CMP_FE", compound=True,
+           output="far end")]),
 ]
 
 STAGE_MEANING = {
@@ -95,8 +105,6 @@ STAGE_MEANING = {
           "inside the Compound is wrong (check that the TL line's modulation output "
           "goes only to the relay 'External Port = modulation') or the Compound's "
           "S-parameter solver refuses the scripted element",
-    "S6": "the Compound runs with a 1-port load (S5) but not with a connector whose "
-          "second port is left free: the solver needs every internal port connected",
 }
 
 
@@ -139,11 +147,6 @@ class Step0Builder(InterconnectBuilder):
                   int(p["ic_ena_points"]), required=False)
         self.setp(name, ['remove dc', 'remove DC'], True, required=False)
         self.setp(name, ['peak analysis', 'peak_analysis'], 'disable', required=False)
-
-    def _cnc(self, name: str, x: int, y: int, z1: float, z2: float):
-        self.add(['Electrical Connector'], name, x, y)
-        self.setp(name, ['impedance 1'], float(z1))
-        self.setp(name, ['impedance 2'], float(z2))
 
     def make_tl(self, name: str, x: int, y: int, table: str, L: float, ng: float,
                 modulating: bool = True, far_end: bool = False,
@@ -202,6 +205,24 @@ class Step0Builder(InterconnectBuilder):
                           ("phase_convention", "physics")):
             self.setp(name, [prop], val)
 
+    def make_source(self, name: str, x: int, y: int, R: float):
+        """The source resistance as a scripted two-port (port 1 from the
+        analyser, port 2 into the line): launches 2 R0/(R + R0) of the incoming
+        wave and reflects (R - R0)/(R + R0) back into the line."""
+        self.add(['Scripted Element', 'scripted element', 'Scripted element'], name, x, y)
+        s = self.sim
+        s.addproperty(name, "source_resistance", "TL source", "Number", 0, 1e9, "FixedUnit",
+                      "ohm", R)
+        s.addproperty(name, "R0", "TL source", "Number", 1, 10000, "FixedUnit", "ohm", self.R0)
+        s.addport(name, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5)
+        s.addport(name, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5)
+        with open(SOURCE_LSF, encoding="utf-8") as fh:
+            code = fh.read()
+        if not self.setp(name, ['setup script', 'setup', 'script setup'], code, required=False):
+            raise ScriptedElementUnavailable(f"{name}: the setup script could not be set.")
+        self.setp(name, ['source_resistance'], float(R))
+        self.setp(name, ['R0'], self.R0)
+
     def make_load(self, name: str, x: int, y: int, R: float):
         """A one-port termination (scripted): reflects (R - R0)/(R + R0) and
         leaves no unconnected port, which a Compound's solver may refuse."""
@@ -228,7 +249,8 @@ class Step0Builder(InterconnectBuilder):
 
     ROOT_SCOPE = "::Root Element"
 
-    def _make_compound(self, name: str, members: list, out_from=None, out_to=None) -> bool:
+    def _make_compound(self, name: str, members: list, out_from=None, out_to=None,
+                       pname: str = "modulation") -> bool:
         """
         Group elements into a Compound, add its output port, and turn its
         S-parameter solver on.
@@ -259,7 +281,6 @@ class Step0Builder(InterconnectBuilder):
 
         if out_from is not None:
             el, port = out_from
-            pname = "modulation"
             before = self._elements_inside(name)
             try:
                 got = s.addport(name, pname, "Output", "Electrical Signal", "Right", 0.5)
@@ -385,29 +406,29 @@ class Step0Builder(InterconnectBuilder):
                     self.connect(ena, P_OUT, tw, P_IN)
                     self.connect(tw, P_OUT, ena, P_IN1)
                 elif kind == "TL2P":
-                    cs, tl = f"CNCS_{label}_{i}", f"TL_{label}_{i}"
-                    self._cnc(cs, 200, y, case["Zs"], self.R0)
+                    cs, tl = f"SRC_{label}_{i}", f"TL_{label}_{i}"
+                    self.make_source(cs, 200, y, case["Zs"])
                     self.make_tl(tl, 340, y, tables[spec["table"]], L, ng, modulating=False,
                                  library_name=library_name, fir_taps=FIR_TAPS)
-                    self.connect(ena, P_OUT, cs, P_CNC1)
-                    self.connect(cs, P_CNC2, tl, P_TL1)
+                    self.connect(ena, P_OUT, cs, P_PORT1)
+                    self.connect(cs, P_PORT2, tl, P_TL1)
                     self.connect(tl, P_TL2, ena, P_IN1)
                 else:
-                    cs, tl, ct = f"CNCS_{label}_{i}", f"TL_{label}_{i}", f"LOAD_{label}_{i}"
-                    self._cnc(cs, 200, y, case["Zs"], self.R0)
+                    cs, tl, ct = f"SRC_{label}_{i}", f"TL_{label}_{i}", f"LOAD_{label}_{i}"
+                    out = spec.get("output", "modulation")
+                    self.make_source(cs, 200, y, case["Zs"])
+                    # one output per row, so no output is left dangling in a Compound
                     self.make_tl(tl, 340, y, tables[spec["table"]], L, ng,
-                                 library_name=library_name)
-                    if spec.get("load") == "element":
-                        self.make_load(ct, 480, y, case["Rt"])
-                    else:
-                        self._cnc(ct, 480, y, self.R0, case["Rt"])
-                    self.connect(ena, P_OUT, cs, P_CNC1)
-                    self.connect(cs, P_CNC2, tl, P_TL1)
-                    self.connect(tl, P_TL2, ct, P_CNC1)
+                                 modulating=(out == "modulation"),
+                                 far_end=(out == "far end"), library_name=library_name)
+                    self.make_load(ct, 480, y, case["Rt"])
+                    self.connect(ena, P_OUT, cs, P_PORT1)
+                    self.connect(cs, P_PORT2, tl, P_TL1)
+                    self.connect(tl, P_TL2, ct, P_PORT1)
                     if not spec.get("compound"):
-                        self.connect(tl, P_TLMOD, ena, P_IN1)
+                        self.connect(tl, P_TLMOD if out == "modulation" else [out], ena, P_IN1)
                     elif not self._make_compound(f"LINE_{label}_{i}", [cs, tl, ct],
-                                                 out_from=(tl, "modulation"), out_to=ena):
+                                                 out_from=(tl, out), out_to=ena, pname=out):
                         raise RuntimeError(f"the Compound for {tl} could not be made")
                 built.append((case["name"], label, ena))
                 y += 150
@@ -467,7 +488,8 @@ def python_predictions(fit, p: dict, out_dir: str, L: float) -> dict:
         for case in step0_cases(p):
             r = SL.chain_response([el], case["Zs"], case["Rt"], R0)
             entry = r.H * np.exp(1j * w * ng * L / SL.C0)
-            d = dict(f_GHz=el["f_Hz"] / 1e9, exit=r.H, entry=entry, Zs=case["Zs"], Rt=case["Rt"])
+            d = dict(f_GHz=el["f_Hz"] / 1e9, exit=r.H, entry=entry, far=r.far_end[0],
+                     Zs=case["Zs"], Rt=case["Rt"])
             (pred["cases"] if key == "full" else pred["short"])[case["name"]] = d
     el2 = SL.tl_sparams_from_table(tables["short"], L, None, R0, modulating=False)
     case = step0_cases(p)[0]
@@ -503,22 +525,12 @@ def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> 
         A(f"  {sid}  {status:7s} {title}" + (f"\n        {detail}" if detail else ""))
         if status == "FAILED" and first_fail is None and sid != "S1":
             first_fail = sid
-    st = {sid: status for sid, _t, status, _d in stages}
-    if st.get("S5") in ("ran", "FAILED") and st.get("S6") in ("ran", "FAILED") \
-            and first_fail in ("S5", "S6"):
-        if st["S5"] != "ran" and st["S6"] == "ran":
-            A("  -> S5 failed but S6 ran: the Compound accepts the TL line; it refuses the "
-              "1-port load element. Use the connector termination (S6) inside Compounds.")
-            first_fail = None if all(st[k] == "ran" for k in st if k not in ("S5",)) else first_fail
-        elif st["S5"] == "ran" and st["S6"] != "ran":
-            A(f"  -> first failing stage S6: {STAGE_MEANING['S6']}.")
-            first_fail = None
     for sid, _t, status, _d in stages:
         if status == "SAVED":
             A(f"  -> {sid} was saved but not run: draw the wire named above, save the project, "
-              f"then press 'Step 0: run wired S5/S6' (CLI: tl-step0-saved).")
+              f"then press 'Step 0: run wired S5' (CLI: tl-step0-saved).")
     if not any(lb in ("CMP", "CMP_CNC") for (_c, lb) in meas):
-        A("  -> No Compound row (CMP, CMP_CNC) yet. Those are the rows that decide Step 0; "
+        A("  -> No Compound row (CMP) yet. It is the row that decides Step 0; "
           "the FLAT rows cannot pass on a mismatched line.")
     if first_fail:
         A(f"  -> first failing stage {first_fail}: {STAGE_MEANING[first_fail]}.")
@@ -568,6 +580,9 @@ def format_report(pred: dict, meas: dict, stages: list, band, fs_GHz: float) -> 
         for lab in tl_rows:
             if (cname, lab) in meas:
                 _row_line(A, cname, f"{lab} vs model", c, meas[(cname, lab)], band, conv)
+        if (cname, "CMP_FE") in meas:
+            _row_line(A, cname, "CMP_FE far end vs model V(L)",
+                      dict(f_GHz=c["f_GHz"], exit=c["far"]), meas[(cname, "CMP_FE")], band, conv)
         if (cname, "REF") in meas:
             fR, HR, cR, lR = meas[(cname, "REF")]
             ref = dict(f_GHz=fR, exit=HR)
@@ -610,7 +625,7 @@ def run_step0(fit, p: dict, out_dir: Optional[str] = None,
         f"line, up to {pred['table_top_GHz']:.1f} GHz.")
 
     todo = [s for s in STAGES if (stages is None or s[0] in stages)
-            and (compound or s[0] not in ("S5", "S6"))]
+            and (compound or s[0] != "S5")]
     meas, status = {}, []
     for sid, title, rows in todo:
         log(f"  --- {sid}: {title}")
@@ -709,14 +724,14 @@ def _write_traces(out_dir: str, meas: dict) -> None:
 
 
 # Stages that may need a wire drawn by hand, and the row label of their analysers.
-SAVED_STAGE_ROWS = {"S5": "CMP", "S6": "CMP_CNC"}
+SAVED_STAGE_ROWS = {"S5": ("CMP", "CMP_FE")}
 
 
-def run_saved_stages(fit, p: dict, out_dir: str, stages=("S5", "S6"),
+def run_saved_stages(fit, p: dict, out_dir: str, stages=("S5",),
                      log: Optional[Callable[[str], None]] = None) -> str:
     """
     Run the Compound stages from their saved projects, after the missing wire
-    has been drawn by hand and the project saved (TL_step0_S5.icp, _S6.icp).
+    has been drawn by hand and the project saved (TL_step0_S5.icp).
 
     Each project is opened in a fresh INTERCONNECT session and run; its
     analysers are read, added to step0_traces.csv next to the earlier rows, and
@@ -733,7 +748,7 @@ def run_saved_stages(fit, p: dict, out_dir: str, stages=("S5", "S6"),
                f"{n_old} traces")]
     for sid in stages:
         icp = os.path.join(out_dir, f"TL_step0_{sid}.icp")
-        label = SAVED_STAGE_ROWS[sid]
+        labels = SAVED_STAGE_ROWS[sid]
         if not os.path.exists(icp):
             status.append((sid, titles[sid], "MISSING", f"{icp} not found"))
             continue
@@ -744,7 +759,8 @@ def run_saved_stages(fit, p: dict, out_dir: str, stages=("S5", "S6"),
             b.sim.load(_fwd(icp))
             b.sim.run()
             got, empty = 0, []
-            for i, case in enumerate(step0_cases(p), start=1):
+            for (i, case), label in ((ic, lb) for lb in labels
+                                     for ic in enumerate(step0_cases(p), start=1)):
                 ena = f"ENA_{label}_{i}"
                 try:
                     tr = b.raw_trace(ena)
@@ -759,7 +775,8 @@ def run_saved_stages(fit, p: dict, out_dir: str, stages=("S5", "S6"),
                     continue
                 meas[(case["name"], label)] = tr
                 got += 1
-            detail = f"{got}/{len(step0_cases(p))} analysers read (project wired by hand)"
+            detail = (f"{got}/{len(labels) * len(step0_cases(p))} analysers read "
+                      f"(project wired by hand)")
             if empty:
                 detail += f"; no data from {', '.join(empty)}"
             status.append((sid, titles[sid], "ran" if got else "FAILED", detail))

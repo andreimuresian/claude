@@ -76,7 +76,7 @@ length, n_g, Zs and Rt, and ignores bends.
 
 **Command line:** `python -m mzm_interconnect.cli tl-step0 your_line.s2p`
 
-Step 0 runs as six small simulations. Each runs in a fresh INTERCONNECT
+Step 0 runs as five small simulations. Each runs in a fresh INTERCONNECT
 session and is saved as `TL_step0_S#.icp` **before** it runs, so a crash names
 its cause and leaves a project you can open and run by hand. INTERCONNECT's own
 error message then appears in its Output window.
@@ -84,11 +84,20 @@ error message then appears in its Output window.
 | Stage | What runs | If it is the first to fail |
 |---|---|---|
 | S1 | Ansys TW block alone | the session or the Network Analyzer, not the TL line |
-| S2 | TL line as a plain 2-port: ENA → CNC → TL → ENA | `setsparameter` on bidirectional electrical ports |
+| S2 | TL line as a plain 2-port: ENA → SRC → TL → ENA | `setsparameter` on bidirectional electrical ports |
 | S3 | TL line with its modulation output, short table (~50 points) | the Output port driven from bidirectional ports |
 | S4 | same, full table, both cases | table size or FIR design |
-| S5 | S4 inside a Compound, load = a 1-port scripted element (`termination_setup.lsf`) | the Compound's solver refuses the scripted element (if S6 also fails) or the 1-port load (if S6 runs) |
-| S6 | S4 inside a Compound, load = a connector with a free port | the Compound's solver needs every internal port connected (if S5 runs) |
+| S5 | S4 inside a Compound with *scattering data analysis* on; a second Compound reads the far-end output (CMP_FE) | a wire inside the Compound, or the Compound's solver refusing the scripted elements |
+
+Source and termination are scripted elements on the lines' reference R0:
+`source_setup.lsf` (Zs, a two-port) and `termination_setup.lsf` (Rt, a
+one-port). The Electrical Connector is not used; see the results below.
+
+If the script cannot draw the wire inside a Compound, S5 is saved but not run.
+Draw the wire from the TL line's output to the `input` pin of the relay labelled
+*External Port = modulation* (or *far end*), save, and press **Step 0: run
+wired S5** (CLI `tl-step0-saved`): it runs the saved project and adds its rows
+to the same report.
 
 A failed stage does not stop the next one: the Compound can work where the
 flat row does not. The element tables stop at the run's Nyquist frequency.
@@ -100,8 +109,9 @@ electrode's modulation output (electrical only, no optics):
 | Row | Contents |
 |---|---|
 | REF | Ansys TW block, same tables, Zs and Rt inside |
-| FLAT | Electrical Connector (Zs → R0) → TL line → Electrical Connector (R0 → Rt) |
+| FLAT | SRC (Zs) → TL line → LOAD (Rt), modulation output to the analyser |
 | CMP | the FLAT row inside a Compound with *scattering data analysis* on |
+| CMP_FE | the same Compound, analyser on the TL line's *far end* output (voltage across Rt), compared with the model's V(L) |
 
 **If the build stops** saying scripted elements cannot be created from a script:
 
@@ -138,19 +148,39 @@ line is mismatched: the latency is added on every round trip of the
 reflections, which moves the ripple. That is why the Compound row is the
 reference for chains.
 
-**Pass:** FLAT and CMP within about 0.05 dB and 1° of REF up to the top of the
-band, the same bandwidth to about 0.1 GHz, and a scale that is a known
-convention factor. For reflections between blocks, trust the CMP row.
+**Pass:** CMP and CMP_FE within about 0.05 dB and 1° of the model up to the
+top of the band, in both cases, and the same bandwidth to about 0.1 GHz. FLAT
+rows are diagnostics; they cannot pass on a mismatched line.
 
-### What Step 0 settles that the documentation does not
+### What the Step 0 runs established (Jerez line, 14 mm, 50/55 and 30/80 Ω)
 
-1. `setsparameter` on **electrical** ports, including reflections (port 1 → port 1).
-2. How a Network Analyzer or NRZ output entering an Electrical Connector is
-   interpreted: EMF or incident wave.
-3. Whether INTERCONNECT uses voltage or power waves.
-4. The TW block's phase reference.
-5. Whether the Compound row differs from the flat row (delays that INTERCONNECT
-   inserts on bidirectional ports outside a Compound).
+1. **The element is exact.** The plain 2-port matches the model to 0.0045 dB
+   and 0.005°. `setsparameter` works on bidirectional electrical ports,
+   reflections included, and INTERCONNECT works in the physics convention
+   e^{−iωt} (the LSF writes conjugated phases).
+2. **Outside a Compound, reflections are wrong.** Every pass through an
+   element's filter adds half its length (512 samples = 1365 ps for 1024 taps),
+   so a reflection returns late: the FLAT/REF ratio ripples with a 1.58 ns
+   period (50/55 Ω) and 2.95 ns (30/80 Ω), i.e. one or two extra filter
+   passes plus the 212 ps round trip. Errors: 0.45 dB and 2.8 dB.
+3. **Inside a Compound the line is solved correctly.** Latency is a single
+   128 samples (341 ps). With the scripted load, 0.043 dB / 0.39° at 50/55 Ω.
+4. **The Electrical Connector reflects with the opposite sign.** A
+   (Zs | R0) connector behaves as a source of R0²/Zs seen from its port 2, and a
+   (R0 | Rt) connector with a free port as a load of R0²/Rt. With those
+   impedances the Compound rows match the model to 0.04–0.10 dB and 0.4–0.6°
+   (30 Ω → 83.3 Ω, 55 Ω → 45.5 Ω, 80 Ω → 31.3 Ω). Hence the scripted source.
+5. **The Network Analyzer's output is an incident wave of EMF/2** (a matched
+   50 Ω source): every row, TW and TL, reads 2 × the model at low frequency.
+6. **The TW block references its modulation voltage to the light entering the
+   electrode** (its latency is 512 samples − n_g·L/c = 1258.8 ps); the TL line
+   and the model reference it to the light leaving. Irrelevant for one
+   electrode; the chain model handles it for bends.
+7. **The TW block is not an exact line.** Against the exact model it is off by
+   0.16 dB / 5.8° at 50/55 Ω (BW 98.2 vs 99.6 GHz) and 1.06 dB / 14° at
+   30/80 Ω (58.3 vs 65.5 GHz), mostly below 20 GHz, with the line's 4.7 GHz
+   round-trip ripple. Complex Z0 (conjugate, real part, modulus), n_g and
+   single-reflection simplifications were tested and none reproduces it.
 
 ## Checked offline (Python, no INTERCONNECT)
 

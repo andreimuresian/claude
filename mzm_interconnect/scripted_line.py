@@ -283,7 +283,8 @@ def bw_GHz(f_GHz, H, f_norm_GHz=1.0, level_dB=-3.0) -> float:
     f_GHz = np.asarray(f_GHz, float)
     ref = np.abs(np.interp(f_norm_GHz, f_GHz, np.abs(H)))
     dB = 20 * np.log10(np.maximum(np.abs(H), 1e-300) / ref)
-    return float(first_crossing(f_GHz, dB, level_dB, f_start=f_norm_GHz))
+    fc = first_crossing(f_GHz, dB, level_dB, f_start=f_norm_GHz)
+    return float(fc) if fc is not None else float("nan")     # never crosses in range
 
 
 def compare_traces(f_ref_GHz, H_ref, f_test_GHz, H_test, band=(1.0, 150.0),
@@ -311,7 +312,10 @@ def compare_traces(f_ref_GHz, H_ref, f_test_GHz, H_test, band=(1.0, 150.0),
     Hr = np.asarray(H_ref, complex)
     b = (f_ref >= band[0]) & (f_ref <= band[1])
     m = (f_ref >= scale_band[0]) & (f_ref <= scale_band[1])
-    w = 2 * np.pi * f_ref[b] * 1e9
+    # Angular frequency in rad/ns, so the latency is fitted in ns: with w in
+    # rad/s the two columns differ by ~1e12 and lstsq drops the constant one,
+    # forcing the phase offset to zero and biasing the latency.
+    w = 2 * np.pi * f_ref[b]
     A = np.column_stack([np.ones_like(w), -w])
 
     cands = (("engineering", Ht0), ("physics", np.conj(Ht0)))
@@ -328,12 +332,12 @@ def compare_traces(f_ref_GHz, H_ref, f_test_GHz, H_test, band=(1.0, 150.0),
     _, conv, Ht, ph0, tau, resid = best
 
     scale_abs = float(np.median(np.abs(Ht[m] / Hr[m])))
-    wf = 2 * np.pi * f_ref * 1e9
+    wf = 2 * np.pi * f_ref
     Ht_n = Ht * np.exp(1j * wf * tau) / scale_abs          # latency and scale removed
     ddB = 20 * np.log10(np.abs(Ht_n[b]) / np.abs(Hr[b]))
     ph0w = float(np.angle(np.exp(1j * ph0)))
     return dict(scale_abs=scale_abs, scale_deg=float(np.degrees(ph0w)), convention=conv,
-                latency_ps=float(tau * 1e12),
+                latency_ps=float(tau * 1e3),
                 max_dB=float(np.max(np.abs(ddB))),
                 max_deg=float(np.degrees(np.max(np.abs(resid)))),
                 bw_ref_GHz=bw_GHz(f_ref, Hr, f_norm_GHz),

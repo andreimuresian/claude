@@ -23,8 +23,10 @@
 #   ng               -      optical group index (used by electrodes only)
 #   R0               ohm    reference impedance of the S-matrix. Every element
 #                           in the chain must use the same value; source and
-#                           termination are Electrical Connectors that step
-#                           from Zs to R0 and from R0 to Rt.
+#                           termination are the scripted "TL source" and "TL
+#                           load" elements (source_setup.lsf,
+#                           termination_setup.lsf). Not Electrical Connectors:
+#                           they reflect with the opposite sign.
 #   table_file       path   columns: frequency (Hz), loss (dB/m), microwave
 #                           index, Re Z0 (ohm), Im Z0 (ohm). Header lines must
 #                           start with a letter (readdata skips those).

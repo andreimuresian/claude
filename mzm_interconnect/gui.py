@@ -748,7 +748,7 @@ class MZMStudio(tk.Tk):
                    command=self.action_build_interconnect_eye).pack(side="left", padx=3)
         ttk.Button(ctrl, text="Step 0: TL line vs TW",
                    command=self.action_tl_step0).pack(side="left", padx=3)
-        ttk.Button(ctrl, text="Step 0: run wired S5/S6",
+        ttk.Button(ctrl, text="Step 0: run wired S5",
                    command=self.action_tl_step0_saved).pack(side="left", padx=3)
         self.lum_keep = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl, text="Leave INTERCONNECT open afterwards",
@@ -1266,7 +1266,7 @@ class MZMStudio(tk.Tk):
             run_saved_stages(self.fit, p, out, log=lambda m: self.log(m))
             self.log(f"Step 0 report written to {os.path.join(out, 'step0_report.txt')}", "ok")
             self._ui(lambda: self.nb.select(self.tab_log))
-        self._run_async(work, "Step 0 (saved S5/S6)")
+        self._run_async(work, "Step 0 (saved S5)")
 
     def action_build_interconnect(self, mode: str = "ena"):
         p = self._get_params()

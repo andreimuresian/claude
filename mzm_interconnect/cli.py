@@ -315,7 +315,7 @@ def main(argv=None):
     tr.set_defaults(func=cmd_tl_step0_report)
 
     ts = sub.add_parser("tl-step0-saved", help="run the Step 0 Compound projects "
-                                               "(S5, S6) after the wire is drawn by hand")
+                                               "(S5) after the wire is drawn by hand")
     ts.add_argument("s2p")
     ts.add_argument("folder", help="the tl_step0 folder of that run")
     _add_param_args(ts)
