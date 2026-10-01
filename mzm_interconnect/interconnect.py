@@ -177,8 +177,10 @@ class InterconnectBuilder(TLElementsMixin):
         self.pending_manual = []
         self.electrode_model = "TW block"
         self.far_end = None             # where the far-end voltage is read, if anywhere
-        self.diagnose = False           # TL line: also read the modulation voltage (input 3)
+        self.diagnose = False           # also read the voltage driving the first OM
+        self.read_far_end = True        # TL line: far-end voltage on ENA_1 input 2
         self.ena_inputs = 1
+        self.probe_input = None
 
     # ---------------- low level helpers (from the original launcher) ----
     def setp(self, el, candidates, value, required=True):
@@ -517,10 +519,13 @@ class InterconnectBuilder(TLElementsMixin):
         else:
             self._add_ena(p)
             self.connect('PIN_1', P_OUT, 'ENA_1', P_IN1)
+            self.probe_input = None
             if tl:
                 self._build_tl_electrode(p, files, 'ENA_1', pushpull, mode)
             else:
                 self._drive_electrodes('ENA_1')
+                if self.diagnose:
+                    self._probe_tw_output()
         self.log(f"  Wiring resolved: {len(self._wiring)} links.")
         return topo
 
@@ -676,10 +681,12 @@ class InterconnectBuilder(TLElementsMixin):
         # run lost the photodetector on input 1 that way: a flat EO trace).
         self.ena_inputs = 1
         if uses_tl_line(p):
-            want = 3 if self.diagnose else 2
-            if self.setp('ENA_1', ['number of input ports', 'number of inputs',
-                                   'input ports'], want, required=False):
-                self.ena_inputs = want
+            want = (2 if self.read_far_end else 1) + (1 if self.diagnose else 0)
+        else:
+            want = 2 if self.diagnose else 1
+        if want > 1 and self.setp('ENA_1', ['number of input ports', 'number of inputs',
+                                            'input ports'], want, required=False):
+            self.ena_inputs = want
         self.setp('ENA_1', ['analysis type'], 'impulse response')
         self.setp('ENA_1', ['signal source', 'source'], 'internal', required=False)
         self.setp('ENA_1', ['source kind', 'kind'], 'power', required=False)
@@ -1182,9 +1189,11 @@ class InterconnectBuilder(TLElementsMixin):
             outputs.append((last, "far end", "far end", "EYE_2", P_IN))
             self.far_end = "EYE_2"
         else:
-            if self.ena_inputs >= 2:
+            if self.read_far_end and self.ena_inputs >= 2:
                 outputs.append((last, "far end", "far end", "ENA_1", ["input 2"]))
                 self.far_end = "ENA_1 input 2"
+            elif not self.read_far_end:
+                outputs.append((last, "far end", "far end", None, None))
             else:
                 # The output still has to end on a relay: an output left
                 # dangling inside the Compound makes its solver refuse it.
@@ -1203,10 +1212,12 @@ class InterconnectBuilder(TLElementsMixin):
                 self.log("  ENA_1 input 1 was not connected to PIN_1; reconnected.")
             if self.diagnose:
                 probe = self.tl_outputs[0]
-                if self.ena_inputs >= 3 and self.connect(
-                        self.COMPOUND, [f"to {probe[2]}"], 'ENA_1', ['input 3'],
+                k = self.ena_inputs
+                if k >= 2 and self.connect(
+                        self.COMPOUND, [f"to {probe[2]}"], 'ENA_1', [f'input {k}'],
                         required=False) is not None:
-                    self.log(f"  Diagnosis: ENA_1 input 3 reads {probe[0]} '{probe[1]}' "
+                    self.probe_input = k
+                    self.log(f"  Diagnosis: ENA_1 input {k} reads {probe[0]} '{probe[1]}' "
                              f"(the voltage driving {probe[2]}), fanned out from the "
                              f"Compound port.")
                 else:
@@ -1306,28 +1317,49 @@ class InterconnectBuilder(TLElementsMixin):
             return ('ATT_1', P_OUT)
         return ('PHS_1', P_BI2)
 
+    def _probe_tw_output(self):
+        """Diagnosis, TW build: the first TW block's modulation voltage, fanned
+        out to the last ENA input as well as to its OM."""
+        tw = self.tw_names[0] if self.tw_names else None
+        hit = next((w for w in self._wiring if tw and w.startswith(f"{tw}:")
+                    and ":modulation" in w.split(" -> ")[1]), None)
+        k = self.ena_inputs
+        if hit and k >= 2:
+            port = hit.split(" -> ")[0].split(":", 1)[1]
+            if self._try_connect(tw, port, 'ENA_1', f'input {k}'):
+                self.probe_input = k
+                self.log(f"  Diagnosis: ENA_1 input {k} reads {tw} '{port}' (the voltage "
+                         f"driving its OM).")
+                return
+        self.log("  Diagnosis: the TW output could not be routed to the ENA as well.")
+
     def dump_ena(self, path: str, element: str = 'ENA_1') -> list:
         """Every frequency-domain dataset of *element* to a CSV (result,
-        dataset, f_GHz, re, im). Returns the result names."""
+        dataset, f_GHz, re, im). Returns the result names read."""
         import csv
         names = []
         try:
             names = [str(n) for n in self.sim.getresultnames(element)]
         except Exception:
             pass
+        if not names:       # this build lists no result names: ask for the usual ones
+            names = [f"input {k}/{r}" for k in range(1, self.ena_inputs + 1)
+                     for r in ("transmission", "S21", "gain", "phase", "group delay")]
         with open(path, "w", newline="") as fh:
             wr = csv.writer(fh)
             wr.writerow(["result", "dataset", "f_GHz", "re", "im"])
+            read = []
             for n in names:
                 try:
                     res = self.sim.getresult(element, n)
                 except Exception:
                     continue
+                read.append(n)
                 for label, f, d in self._collect_datasets(res):
                     for fi, di in zip(f, d):
                         wr.writerow([n, label, f"{fi / 1e9:.6f}", f"{di.real:.9e}",
                                      f"{di.imag:.9e}"])
-        return names
+        return read
 
     # ---------------- run & read back -----------------------------------
     def run(self, save_path: Optional[str] = None):
@@ -1559,55 +1591,113 @@ def verify_points(builder: InterconnectBuilder, p: dict, key: str,
     return out
 
 
-def tl_diagnosis(b: InterconnectBuilder, files: dict, p: dict, res, out_dir: str) -> str:
+
+# Diagnosis runs: each is the ENA build of the current device, in a fresh
+# session, with one thing changed.
+DIAG_RUNS = [
+    ("A", "TL line, ENA with 3 inputs (EO, far end, voltage driving OM_1_1)",
+     dict(ic_electrode_model="TL line"), dict(read_far_end=True)),
+    ("B", "TL line, ENA with 2 inputs (EO, voltage driving OM_1_1), far end not read",
+     dict(ic_electrode_model="TL line"), dict(read_far_end=False)),
+    ("C", "TW block, ENA with 2 inputs (EO, voltage driving the first OM)",
+     dict(ic_electrode_model="TW block"), dict()),
+]
+
+
+def run_tl_diagnosis(fit, p: dict, res, out_dir: str,
+                     log: Optional[Callable[[str], None]] = None, runs=("A", "B", "C")) -> str:
     """
-    After a diagnostic TL line run (b.diagnose = True, ENA mode): every ENA_1
-    dataset to tl_diagnosis.csv, and each input compared with its Python
-    prediction -- input 1 the EO response, input 2 the voltage across the
-    termination, input 3 the modulation voltage of the first section, arm 1.
-    Says where the signal is lost: electrical (input 3 wrong) or optical
-    (input 3 right, input 1 wrong).
+    Run A, B and C (DIAG_RUNS) and compare, for each, the EO response on
+    ENA_1 input 1 and the voltage that drives the first optical modulator
+    with the Python model. Every analyser dataset goes to tl_diag_<run>.csv,
+    every build log to tl_diag_<run>_log.txt, the table to tl_diagnosis.txt.
+
+    A vs B says whether the extra analyser inputs change the EO trace; A/B vs
+    C says whether the Compound -> modulator link behaves like TW -> modulator.
     """
     from . import scripted_line as SL
-    lines = ["TL line build -- diagnosis"]
-    A = lines.append
-    names = b.dump_ena(os.path.join(out_dir, "tl_diagnosis.csv"))
-    A(f"ENA_1 results: {', '.join(names) or '(none)'}")
-    A(f"wiring: {len(b._wiring)} links; inside the Compound: "
-      + "; ".join(w for w in b._wiring if "RELAY" in w))
-    tl = files["tl"]
-    pushpull = str(p["drive_config"]) == "push-pull"
-    els, opt = SL.device_chain(tl, second=pushpull)
-    Zs, Zt = SL.device_terminations(tl, els[0]["f_Hz"])
-    r = SL.chain_response(els, Zs, Zt, opt_lengths=opt)
-    fP = r.f_Hz / 1e9
+    from .extractor import export_lumerical_tables
+    log = log or print
+    os.makedirs(out_dir, exist_ok=True)
     band = (1.0, 0.95 * float(p["f_max_GHz"]))
-    preds = {1: ("EO response vs Python device_response", res.f_GHz, res.H),
-             2: ("voltage across the termination vs model", fP, r.far_end[-1]),
-             3: ("modulation voltage EL_1 arm 1 vs model", fP, r.vavg[0])}
-    A(f"{'input':6s} {'what':42s} {'scale':>8s} {'max dB':>8s} {'max deg':>8s} "
-      f"{'BW ref':>8s} {'BW IC':>8s}   raw |H| dB at 1 / 20 / 50 / 90 GHz")
-    for k in range(1, b.ena_inputs + 1):
-        what, f_ref, H_ref = preds[k]
-        try:
-            f, H, cplx, label = b.complex_trace('ENA_1', input_port=k)
-        except Exception as exc:
-            A(f"{k:<6d} {what:42s} not readable: {exc}")
+    pushpull = str(p["drive_config"]) == "push-pull"
+    lines = ["TL line build -- diagnosis (each run in its own INTERCONNECT session)", ""]
+    A = lines.append
+    hdr = (f"{'run':3s} {'input':28s} {'scale':>8s} {'max dB':>8s} {'max deg':>8s} "
+           f"{'BW ref':>8s} {'BW IC':>8s}   raw |H| dB at 1 / 20 / 50 / 90 / 140 GHz")
+    rows = []
+    for rid, title, pmod, bmod in DIAG_RUNS:
+        if rid not in runs:
             continue
-        raw = " / ".join(f"{20 * np.log10(max(abs(np.interp(x, f, np.abs(H))), 1e-300)):.2f}"
-                         for x in (1, 20, 50, 90))
+        A(f"{rid}  {title}")
+        pr = P.normalise(dict(p, **pmod))
+        rdir = os.path.join(out_dir, f"diag_{rid}")
+        files = export_lumerical_tables(fit, pr, res, rdir)
+        blog = []
+
+        def rlog(m, _b=blog):
+            _b.append(m)
+            log(m)
+        b = None
         try:
-            c = SL.compare_traces(f_ref, H_ref, f, H, band,
-                                  convention="physics" if cplx else None)
-            A(f"{k:<6d} {what:42s} {c['scale_abs']:8.4f} {c['max_dB']:8.3f} "
-              f"{c['max_deg'] if cplx else float('nan'):8.2f} {c['bw_ref_GHz']:8.2f} "
-              f"{c['bw_test_GHz']:8.2f}   {raw}   [{label}]")
+            b = InterconnectBuilder(str(pr["lumapi_path"]), hide=bool(pr["ic_hide"]), log=rlog)
+            b.diagnose = True
+            for k, v in bmod.items():
+                setattr(b, k, v)
+            b.build(pr, files, mode="ena")
+            b.run(os.path.join(out_dir, f"tl_diag_{rid}.icp"))
+            read = b.dump_ena(os.path.join(out_dir, f"tl_diag_{rid}.csv"))
+            A(f"   ENA_1 inputs {b.ena_inputs}; results read: {', '.join(read) or '(none)'}")
+            if b.electrode_model == "TL line":
+                els, opt = SL.device_chain(files["tl"], second=pushpull)
+                Zs, Zt = SL.device_terminations(files["tl"], els[0]["f_Hz"])
+                r = SL.chain_response(els, Zs, Zt, opt_lengths=opt)
+                f_m, v_m = r.f_Hz / 1e9, r.vavg[0]
+            else:
+                # TW block: compared with the same exact line (its own error, Step 0 point 7)
+                tw_p = P.normalise(dict(pr, ic_electrode_model="TL line"))
+                tl = SL.export_tl_tables(fit, tw_p, os.path.join(rdir, "tl_ref"))
+                els, opt = SL.device_chain(tl, second=pushpull)
+                Zs, Zt = SL.device_terminations(tl, els[0]["f_Hz"])
+                r = SL.chain_response(els, Zs, Zt, opt_lengths=opt)
+                f_m, v_m = r.f_Hz / 1e9, r.vavg[0]
+            what = {1: ("EO (photodetector)", res.f_GHz, res.H)}
+            if b.probe_input:
+                what[b.probe_input] = ("voltage driving first OM", f_m, v_m)
+            if b.far_end == "ENA_1 input 2":
+                f_fe, v_fe = SL.far_end_model(files["tl"])
+                what[2] = ("far end", f_fe, v_fe)
+            for k in sorted(what):
+                name, f_ref, H_ref = what[k]
+                try:
+                    f, H, cplx, label = b.complex_trace('ENA_1', input_port=k)
+                except Exception as exc:
+                    A(f"   input {k} ({name}): not readable: {exc}")
+                    continue
+                raw = " / ".join(
+                    f"{20 * np.log10(max(abs(np.interp(x, f, np.abs(H))), 1e-300)):.2f}"
+                    for x in (1, 20, 50, 90, 140))
+                c = SL.compare_traces(f_ref, H_ref, f, H, band,
+                                      convention="physics" if cplx else None)
+                rows.append(f"{rid:3s} {f'{k} {name}':28s} {c['scale_abs']:8.4f} "
+                            f"{c['max_dB']:8.3f} {c['max_deg'] if cplx else float('nan'):8.2f} "
+                            f"{c['bw_ref_GHz']:8.2f} {c['bw_test_GHz']:8.2f}   {raw}")
         except Exception as exc:
-            A(f"{k:<6d} {what:42s} compare failed ({exc}); raw {raw} [{label}]")
-    A("Reading: scale is |IC / model| at 0.5-3 GHz (2 expected for inputs 2 and 3: the "
-      "ENA drives EMF/2). Input 3 right and input 1 flat -> the loss is between the "
-      "Compound and the photodetector; input 3 flat too -> inside the Compound.")
+            A(f"   FAILED: {type(exc).__name__}: {str(exc).strip().splitlines()[0]}")
+        finally:
+            with open(os.path.join(out_dir, f"tl_diag_{rid}_log.txt"), "w") as fh:
+                fh.write("\n".join(blog) + "\n")
+            if b is not None:
+                b.close()
+    A("")
+    A(hdr)
+    lines.extend(rows)
+    A("")
+    A("scale: |IC / model| at 0.5-3 GHz. For the voltages it is 2 (the ENA drives EMF/2); for")
+    A("the EO row it carries laser power, V_pi and the photodiode, the same in A, B and C.")
+    A("The EO row's BW IC must match BW ref (the Python device bandwidth) in every run.")
     rep = "\n".join(lines)
     with open(os.path.join(out_dir, "tl_diagnosis.txt"), "w") as fh:
         fh.write(rep + "\n")
+    log(rep)
     return rep

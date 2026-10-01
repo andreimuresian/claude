@@ -1271,15 +1271,30 @@ class MZMStudio(tk.Tk):
         self._run_async(work, "Step 0 (saved S5)")
 
     def action_tl_diagnose(self):
-        """The ENA build with the TL line, plus the first modulation voltage on
-        ENA_1 input 3; every analyser dataset is dumped and each input compared
-        with its Python prediction (tl_diagnosis.txt / .csv)."""
-        if not str(self._get_params().get("ic_electrode_model", "")).lower().startswith("tl"):
-            self.log("Set 'Electrode model' to 'TL line' first.", "warn")
+        """Three ENA runs of the current device -- TL line with the far end read,
+        TL line without it, TW block -- each with the voltage driving the first
+        modulator also on the analyser; every dataset dumped and compared with
+        the Python model (tl_diag/tl_diagnosis.txt)."""
+        p = self._get_params()
+        if self.result is None or self.fit is None:
+            self.log("Run 'Extract + analyse' first.", "warn")
             return
-        self.action_build_interconnect(mode="ena", diagnose=True)
 
-    def action_build_interconnect(self, mode: str = "ena", diagnose: bool = False):
+        def work():
+            from .interconnect import run_tl_diagnosis
+            out = os.path.join(self._resolve_out_dir(p), "tl_diag")
+            if self.ic_builder is not None:
+                try:
+                    self.ic_builder.close()
+                except Exception:
+                    pass
+                self.ic_builder = None
+            run_tl_diagnosis(self.fit, p, self.result, out, log=lambda m: self.log(m))
+            self.log(f"Diagnosis written to {os.path.join(out, 'tl_diagnosis.txt')}", "ok")
+            self._ui(lambda: self.nb.select(self.tab_log))
+        self._run_async(work, "Step 1 diagnosis")
+
+    def action_build_interconnect(self, mode: str = "ena"):
         p = self._get_params()
         if self.result is None or self.fit is None:
             self.log("Run 'Extract + analyse' first.", "warn")
@@ -1301,7 +1316,6 @@ class MZMStudio(tk.Tk):
             b = InterconnectBuilder(str(p["lumapi_path"]), hide=bool(p["ic_hide"]),
                                     log=lambda m: self.log(m))
             self.ic_builder = b            # keeps the process alive
-            b.diagnose = diagnose
             try:
                 topo = b.build(p, files, mode=mode)
             except Exception as exc:
@@ -1379,15 +1393,6 @@ class MZMStudio(tk.Tk):
                      f"({abs(py-bw)/max(py,1e-9)*100:.1f} %)",
                      "ok" if abs(py - bw) < 0.05 * max(py, 1e-9) else "warn")
             far = self._far_end_overlay(b, files, p)
-            if diagnose:
-                from .interconnect import tl_diagnosis
-                try:
-                    rep = tl_diagnosis(b, files, p, self.result, out)
-                    self.log(rep)
-                    self.log(f"Diagnosis written to {os.path.join(out, 'tl_diagnosis.txt')} "
-                             f"and tl_diagnosis.csv", "ok")
-                except Exception as exc:
-                    self.log(f"Diagnosis failed: {type(exc).__name__}: {exc}", "warn")
             fig = eo_figure(self.fit, self.result, p, self.theme["fig"],
                             lumerical=self.lumerical_overlay, far_end=far)
             fig2 = eo_figure(self.fit, self.result, p, self.theme["fig"],
