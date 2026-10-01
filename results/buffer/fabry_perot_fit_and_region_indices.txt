@@ -1,0 +1,10 @@
+Lisbon lifted, no buffer, gap 4.2 um: IL(x_lift) from results/lift_sweep.csv, 46 points 6.5-11.0 um.
+Model (lateral Fabry-Perot / Airy, L = x_lift - gap/2):
+  IL = IL_inf (1 - rho^2) / (1 - 2 rho cos(2 k_x L + phi) + rho^2),  rho = rho0 exp(-2 alpha_x L)
+  envelopes IL_inf (1 +- rho)/(1 -+ rho);  peak*dip = IL_inf^2 (measured sqrt(P*D) = 0.399-0.407)
+Free fit: IL_inf 0.4116 dB/cm, rho0 0.908, 2 alpha_x 0.1754 1/um, pi/k_x 0.8954 um, rms 0.0025 dB/cm
+1D prediction (n_Au-slab = 2.0723 - 0.0095i, n_rib = 1.8834): 2 alpha_x 0.181 1/um, pi/k_x 0.911 um
+1D indices of the lateral regions (eps_in = ne^2 / no^2):
+  Au / LN 275 nm / SiO2   TM 2.0646 / 2.0799 (> n_rib: propagates)   TE 1.49 / 1.53
+  air / LN / SiO2         TM 1.4847 / 1.4906                        TE 1.6986 / 1.7580
+  SiO2 / LN / SiO2        TM 1.6000 / 1.6044                        TE 1.7456 / 1.8015
