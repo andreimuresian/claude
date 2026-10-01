@@ -750,6 +750,8 @@ class MZMStudio(tk.Tk):
                    command=self.action_tl_step0).pack(side="left", padx=3)
         ttk.Button(ctrl, text="Step 0: run wired S5",
                    command=self.action_tl_step0_saved).pack(side="left", padx=3)
+        ttk.Button(ctrl, text="Step 1: diagnose TL build",
+                   command=self.action_tl_diagnose).pack(side="left", padx=3)
         self.lum_keep = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl, text="Leave INTERCONNECT open afterwards",
                         variable=self.lum_keep).pack(side="left", padx=14)
@@ -1268,7 +1270,16 @@ class MZMStudio(tk.Tk):
             self._ui(lambda: self.nb.select(self.tab_log))
         self._run_async(work, "Step 0 (saved S5)")
 
-    def action_build_interconnect(self, mode: str = "ena"):
+    def action_tl_diagnose(self):
+        """The ENA build with the TL line, plus the first modulation voltage on
+        ENA_1 input 3; every analyser dataset is dumped and each input compared
+        with its Python prediction (tl_diagnosis.txt / .csv)."""
+        if not str(self._get_params().get("ic_electrode_model", "")).lower().startswith("tl"):
+            self.log("Set 'Electrode model' to 'TL line' first.", "warn")
+            return
+        self.action_build_interconnect(mode="ena", diagnose=True)
+
+    def action_build_interconnect(self, mode: str = "ena", diagnose: bool = False):
         p = self._get_params()
         if self.result is None or self.fit is None:
             self.log("Run 'Extract + analyse' first.", "warn")
@@ -1290,6 +1301,7 @@ class MZMStudio(tk.Tk):
             b = InterconnectBuilder(str(p["lumapi_path"]), hide=bool(p["ic_hide"]),
                                     log=lambda m: self.log(m))
             self.ic_builder = b            # keeps the process alive
+            b.diagnose = diagnose
             try:
                 topo = b.build(p, files, mode=mode)
             except Exception as exc:
@@ -1367,6 +1379,15 @@ class MZMStudio(tk.Tk):
                      f"({abs(py-bw)/max(py,1e-9)*100:.1f} %)",
                      "ok" if abs(py - bw) < 0.05 * max(py, 1e-9) else "warn")
             far = self._far_end_overlay(b, files, p)
+            if diagnose:
+                from .interconnect import tl_diagnosis
+                try:
+                    rep = tl_diagnosis(b, files, p, self.result, out)
+                    self.log(rep)
+                    self.log(f"Diagnosis written to {os.path.join(out, 'tl_diagnosis.txt')} "
+                             f"and tl_diagnosis.csv", "ok")
+                except Exception as exc:
+                    self.log(f"Diagnosis failed: {type(exc).__name__}: {exc}", "warn")
             fig = eo_figure(self.fit, self.result, p, self.theme["fig"],
                             lumerical=self.lumerical_overlay, far_end=far)
             fig2 = eo_figure(self.fit, self.result, p, self.theme["fig"],
