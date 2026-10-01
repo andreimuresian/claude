@@ -11,6 +11,11 @@
 #                                           referenced to the light leaving the
 #                                           line (same definition as the TW
 #                                           element's "modulation voltage")
+#   modulation 2  output, electrical        (optional, electrodes only) the same
+#                                           integral for a second optical group
+#                                           index ng2: the other arm of a
+#                                           push-pull modulator rides the same
+#                                           line at its own n_g
 #   far end     output, electrical          (optional) the line voltage at port 2
 #
 # An electrode is this element with modulating = 1; a bend is the same element
@@ -21,6 +26,8 @@
 # Properties read here (created by create_tl_element.lsf):
 #   line_length      m      physical length of the line
 #   ng               -      optical group index (used by electrodes only)
+#   second_modulation 0/1   1 if the element has the "modulation 2" port
+#   ng2              -      optical group index of "modulation 2"
 #   R0               ohm    reference impedance of the S-matrix. Every element
 #                           in the chain must use the same value; source and
 #                           termination are the scripted "TL source" and "TL
@@ -105,40 +112,51 @@ T(:, 3) = ps * unwrap(angle(S21));
 setsparameter("port 2", "port 1", "transmission", T);
 setsparameter("port 1", "port 2", "transmission", T);
 
-# ---- 5. modulation output: exact integral over the line ----------------------
+# ---- 5. modulation output(s): exact integral over the line --------------------
 # Inside the line V(z) = Vp exp(-g z) + Vm exp(+g z). Vp and Vm follow from the
 # voltage and current at port 1, which follow from the incident waves. The
-# integral is closed-form: no slicing, no sampling error.
+# integral is closed-form: no slicing, no sampling error. Only the light's
+# group index differs between "modulation" (ng) and "modulation 2" (ng2): the
+# line voltage, and so Vp and Vm, are the same for both.
 if (modulating) {
-    bo = w * ng / c0;
-    q1 = -g + 1i * bo;
-    q1 = q1 + (abs(q1) < 1e-12) * 1e-12;
-    q2 = g + 1i * bo;
-    q2 = q2 + (abs(q2) < 1e-12) * 1e-12;
-    F1 = (exp(q1 * Lline) - 1) / q1;
-    F2 = (exp(q2 * Lline) - 1) / q2;
-    Xo = exp(-1i * bo * Lline) / Lline;
-
     # wave entering at port 1: a1 = 1, a2 = 0, so b1 = S11
     V1 = ws * (1 + S11);
     I1 = (1 - S11) / Rw;
-    Vp = (V1 + Zl * I1) / 2;
-    Vm = (V1 - Zl * I1) / 2;
-    T1 = (Vp * F1 + Vm * F2) * Xo;
-
+    Vp1 = (V1 + Zl * I1) / 2;
+    Vm1 = (V1 - Zl * I1) / 2;
     # wave entering at port 2: a1 = 0, a2 = 1, so b1 = S12 = S21
     V1 = ws * S21;
     I1 = -S21 / Rw;
-    Vp = (V1 + Zl * I1) / 2;
-    Vm = (V1 - Zl * I1) / 2;
-    T2 = (Vp * F1 + Vm * F2) * Xo;
+    Vp2 = (V1 + Zl * I1) / 2;
+    Vm2 = (V1 - Zl * I1) / 2;
 
-    T(:, 2) = abs(T1);
-    T(:, 3) = ps * unwrap(angle(T1));
-    setsparameter("modulation", "port 1", "transmission", T);
-    T(:, 2) = abs(T2);
-    T(:, 3) = ps * unwrap(angle(T2));
-    setsparameter("modulation", "port 2", "transmission", T);
+    nmod = 1;
+    if (second_modulation) { nmod = 2; }
+    for (km = 1:nmod) {
+        ngk = ng;
+        mport = "modulation";
+        if (km == 2) {
+            ngk = ng2;
+            mport = "modulation 2";
+        }
+        bo = w * ngk / c0;
+        q1 = -g + 1i * bo;
+        q1 = q1 + (abs(q1) < 1e-12) * 1e-12;
+        q2 = g + 1i * bo;
+        q2 = q2 + (abs(q2) < 1e-12) * 1e-12;
+        F1 = (exp(q1 * Lline) - 1) / q1;
+        F2 = (exp(q2 * Lline) - 1) / q2;
+        Xo = exp(-1i * bo * Lline) / Lline;
+        T1 = (Vp1 * F1 + Vm1 * F2) * Xo;
+        T2 = (Vp2 * F1 + Vm2 * F2) * Xo;
+
+        T(:, 2) = abs(T1);
+        T(:, 3) = ps * unwrap(angle(T1));
+        setsparameter(mport, "port 1", "transmission", T);
+        T(:, 2) = abs(T2);
+        T(:, 3) = ps * unwrap(angle(T2));
+        setsparameter(mport, "port 2", "transmission", T);
+    }
 }
 
 # ---- 6. optional far-end voltage: V2 = ws (a2 + b2), b2 = S21 a1 + S22 a2 ----

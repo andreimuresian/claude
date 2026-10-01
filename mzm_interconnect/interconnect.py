@@ -19,7 +19,23 @@ Two topologies are available:
                 optical group index; with no n_g imbalance the two are
                 identical. V_pi halves and the chirp goes to zero.
 
-With electrode bends (n_bends > 0) each arm is a chain of TW + OM sections.
+Two electrode models are available (parameter ic_electrode_model):
+
+  "TL line"     the scripted TL line element (lumerical/tl_element_setup.lsf),
+                validated against the exact line model by the Step 0 ladder.
+                The whole electrical network -- source (R+L+C), electrode
+                sections, bends, termination (R+L+C) -- is one Compound with
+                scattering data analysis on, so INTERCONNECT solves every
+                reflection itself. Each electrode section has one modulation
+                output per arm ("modulation" at arm 1's n_g, "modulation 2" at
+                arm 2's), feeding that arm's Optical Modulator Measured; the
+                last section also outputs the voltage across the termination
+                ("far end"), read by ENA_1 input 2 or by the electrical eye
+                EYE_2. No drive fan-out, no per-section drive files.
+
+  "TW block"    the Ansys Traveling Wave Electrode, as below.
+
+With the TW block and electrode bends (n_bends > 0) each arm is a chain of TW + OM sections.
 A TW element is one uniform line between a source and a load, so each section
 gets the exact Thevenin source and load of its position as impedance TABLES,
 and sections after the first are driven through an Electrical Delay and an
@@ -39,13 +55,15 @@ rather than silently building something different.
 from __future__ import annotations
 
 import os
+import re
 import sys
 from typing import Callable, Optional, Sequence
 
 import numpy as np
 
 from . import parameters as P
-from .physics import C0, normalise_and_measure, rlc_impedance
+from .physics import C0, electrode_layout, normalise_and_measure, rlc_impedance
+from .tl_schematic import TLElementsMixin
 
 
 class LumericalUnavailable(RuntimeError):
@@ -134,7 +152,17 @@ KNOWN_ENA_RESULTS = ['input 1/S21', 'input 1/transmission', 'input 1/gain',
                      'S21', 'transmission', 'gain', 'ENA_1', 'model']
 
 
-class InterconnectBuilder:
+def uses_tl_line(p: dict) -> bool:
+    """True when the schematic's electrode is the scripted TL line."""
+    return str(p.get("ic_electrode_model", "TW block")).strip().lower().startswith("tl")
+
+
+class ManualWiringNeeded(RuntimeError):
+    """The schematic was built, but a wire inside the Compound could not be
+    drawn from the script. The project is saved; the message says which wire."""
+
+
+class InterconnectBuilder(TLElementsMixin):
     """Builds, runs and reads back a traveling-wave MZM schematic."""
 
     def __init__(self, lumapi_path: str, hide: bool = False,
@@ -146,6 +174,9 @@ class InterconnectBuilder:
         self.mode = "ena"
         self.uses_y_branch = False
         self._wiring = []
+        self.pending_manual = []
+        self.electrode_model = "TW block"
+        self.far_end = None             # where the far-end voltage is read, if anywhere
 
     # ---------------- low level helpers (from the original launcher) ----
     def setp(self, el, candidates, value, required=True):
@@ -260,6 +291,15 @@ class InterconnectBuilder:
         """
         p = P.normalise(p)
         self.mode = mode
+        if uses_tl_line(p):
+            if not files.get("tl"):
+                raise RuntimeError("Electrode model 'TL line' needs the TL tables: export "
+                                   "them with export_lumerical_tables (it writes them when "
+                                   "ic_electrode_model is 'TL line').")
+            # One line, one output per arm: nothing to fan out, no fallback.
+            self.topology = self._build_once(
+                p, files, pushpull=str(p["drive_config"]) == "push-pull", mode=mode)
+            return self.topology
         if int(p.get("n_bends", 0)) > 0:
             if not files.get("bend_sections"):
                 raise BendsNotSupported("n_bends > 0 but the tables were exported "
@@ -298,8 +338,16 @@ class InterconnectBuilder:
         sim.switchtodesign()
         sim.deleteall()
         self._wiring = []
-        secs = files.get("bend_sections") if int(p.get("n_bends", 0)) > 0 else None
-        self._pos = self._bend_positions(len(secs)) if secs else {}
+        self.pending_manual = []
+        self.far_end = None
+        tl = uses_tl_line(p)
+        self.electrode_model = "TL line" if tl else "TW block"
+        if tl:
+            n_mod = sum(1 for x in electrode_layout(p) if x["kind"] == "mod")
+            self._pos = self._tl_positions(n_mod)
+        else:
+            secs = files.get("bend_sections") if int(p.get("n_bends", 0)) > 0 else None
+            self._pos = self._bend_positions(len(secs)) if secs else {}
         # In eye mode the sample rate has to resolve a symbol, not just the
         # top of the microwave band: the element folds the waveform on the
         # symbol period, and a handful of samples per symbol gives it nothing
@@ -399,8 +447,11 @@ class InterconnectBuilder:
         ng = float(p["ng"])
         dn = float(p.get("ng_imbalance", 0.0))
         ng1, ng2 = ng * (1.0 + dn / 2.0), ng * (1.0 - dn / 2.0)
-        self.bend_sections = files.get("bend_sections") if int(p.get("n_bends", 0)) > 0 else None
-        if self.bend_sections:
+        self.bend_sections = (files.get("bend_sections")
+                              if int(p.get("n_bends", 0)) > 0 and not tl else None)
+        if tl:
+            self.tw_names = []      # the TL line electrode is built after the drive
+        elif self.bend_sections:
             pass                    # electrodes are built per section in _wire_arms_bends
         elif pushpull:
             self.tw_names = ['TW_1', 'TW_2']
@@ -442,7 +493,9 @@ class InterconnectBuilder:
         # error instead of a schematic with no modulators in it.
         self.connect('CWL_1', P_OUT, 'SPLT_1', self.p_split_in)
         self.connect('SPLT_2', self.p_comb_out, 'PIN_1', P_IN)
-        if self.bend_sections:
+        if tl:
+            topo = self._wire_arms_tl(p, pushpull, add_modulator, c1, c2, ng1, ng2)
+        elif self.bend_sections:
             topo = self._wire_arms_bends(p, files, pushpull, add_modulator, c1, c2,
                                          ng1, ng2)
         else:
@@ -451,13 +504,21 @@ class InterconnectBuilder:
         if mode == "eye":
             self._add_eye_chain(p)
             self.connect('PIN_1', P_OUT, 'EYE_1', P_IN)
-            self._drive_electrodes('NRZ_1')
+            if tl:
+                self._build_tl_electrode(p, files, 'NRZ_1', pushpull, mode)
+            else:
+                self._drive_electrodes('NRZ_1')
             self._wire_eye_reference(p)
+            if tl:
+                self._wire_far_end_eye_reference()
             self._check_eye_wiring()
         else:
             self._add_ena(p)
             self.connect('PIN_1', P_OUT, 'ENA_1', P_IN1)
-            self._drive_electrodes('ENA_1')
+            if tl:
+                self._build_tl_electrode(p, files, 'ENA_1', pushpull, mode)
+            else:
+                self._drive_electrodes('ENA_1')
         self.log(f"  Wiring resolved: {len(self._wiring)} links.")
         return topo
 
@@ -989,6 +1050,188 @@ class InterconnectBuilder:
                  f"one drive S-parameter per electrode (SPAR_k = voltage reaching electrode k).")
         return ("push-pull" if pushpull else "single-arm") + f", {nb} bend(s)"
 
+    # ---------------- electrode model "TL line" -------------------------
+    @classmethod
+    def _tl_positions(cls, n_sec: int) -> dict:
+        """The bent-electrode grid, with the TL chain on the arm-1 electrode
+        row: SRC, then EL_k under each section's OMs and BEND_k between them,
+        then LOAD. createcompound later puts the Compound at their centroid."""
+        pos = cls._bend_positions(n_sec)
+        x0, pitch, y = 520, 300, -150
+        pos["SRC"] = (x0 - 260, y)
+        for k in range(1, n_sec + 1):
+            pos[f"EL_{k}"] = (x0 + (k - 1) * pitch - 110, y)
+            if k < n_sec:
+                pos[f"BEND_{k}"] = (x0 + (k - 1) * pitch + 40, y)
+        pos["LOAD"] = (x0 + (n_sec - 1) * pitch + 60, y)
+        pos["EYE_2"] = (x0 + n_sec * pitch + 420, -150)
+        return pos
+
+    def _wire_arms_tl(self, p, pushpull, add_modulator, c1, c2, ng1, ng2) -> str:
+        """
+        The optical half of the TL line build: per arm, one OM per modulating
+        section with the coefficient c L_k / L_mod, joined by Optical Delays of
+        n_g (optical length of the bends before the next section + that
+        section) / c. The TL line's modulation output is referenced to the
+        light LEAVING its section, like the TW block's, so each OM stands at
+        its section's exit, as in the TW build with bends.
+
+        Records in self.tl_outputs which element output drives which OM:
+        arm 1 takes 'modulation' (n_g1), arm 2 'modulation 2' (n_g2).
+        """
+        lay = electrode_layout(p)
+        L_mod = sum(x["L_rf"] for x in lay if x["kind"] == "mod") or 1.0
+        arms = [(1, c1, ng1)] + ([(2, c2, ng2)] if pushpull else [])
+        self.tl_outputs = []
+        for arm, c, ng_a in arms:
+            y_opt = 120 if arm == 1 else 300
+            prev, gap, k = None, 0.0, 0
+            for x in lay:
+                if x["kind"] != "mod":
+                    gap += x["L_opt"]
+                    continue
+                k += 1
+                om = f"OM_{arm}_{k}"
+                add_modulator(om, 560 + (k - 1) * 230, y_opt, c * x["L_rf"] / L_mod)
+                self.tl_outputs.append(
+                    (f"EL_{k}", "modulation" if arm == 1 else "modulation 2", om))
+                if prev is None:
+                    self.connect('SPLT_1', self.p_split_a if arm == 1 else self.p_split_b,
+                                 om, P_BI1)
+                else:
+                    dl = f"ODL_{arm}_{k - 1}"
+                    self.add(['Optical Delay'], dl, 445 + (k - 1) * 230, y_opt)
+                    self.setp(dl, ['delay'], ng_a * (gap + x["L_opt"]) / C0)
+                    self.connect(prev, P_BI2, dl, P_BI1)
+                    self.connect(dl, P_BI2, om, P_BI1)
+                prev, gap = om, 0.0
+            if arm == 1:
+                self.connect(prev, P_BI2, 'SPLT_2', self.p_comb_a)
+            else:
+                self.connect(prev, P_BI2, 'PHS_1', P_BI1)
+                tail, tail_port = self._wire_arm2_tail()
+                self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
+        if not pushpull:
+            self.connect('SPLT_1', self.p_split_b, 'PHS_1', P_BI1)
+            tail, tail_port = self._wire_arm2_tail()
+            self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
+        n_sec = sum(1 for x in lay if x["kind"] == "mod")
+        nb = n_sec - 1
+        kind = "PUSH-PULL" if pushpull else "SINGLE-ARM"
+        self.log(f"  Topology: {kind}, electrode model TL line: {n_sec} electrode section(s)"
+                 + (f" and {nb} bend(s)" if nb else "") + ", one modulator per section per "
+                 f"arm (n_g {ng1:.5f}" + (f" / {ng2:.5f}" if pushpull else "") + ").")
+        return ("push-pull" if pushpull else "single-arm") + \
+            (f", {nb} bend(s)" if nb else "") + ", TL line"
+
+    COMPOUND = "ELECTRODE"
+
+    def _build_tl_electrode(self, p, files, drive: str, pushpull: bool, mode: str):
+        """
+        The electrical half of the TL line build, as one Compound:
+
+            drive -> SRC (Zs) -> EL_1 -> BEND_1 -> EL_2 -> ... -> EL_N -> LOAD (Rt)
+
+        Built at root level and wired first (so the drive link enters the
+        selection and createcompound keeps it), then grouped; every
+        modulation output and the far-end output become Output ports of the
+        Compound, wired to their OMs and to the far-end reader.
+        """
+        tl = files["tl"]
+        meta, d = tl["meta"], os.path.dirname(tl["json"])
+        top_Hz = float(meta["table_top_GHz"]) * 1e9
+        n_freq = max(201, int(float(meta["table_top_GHz"]) * 4) + 1)
+        lib = str(p.get("tl_library_name", "")).strip() or None
+        els = meta["elements"]
+
+        self.make_source("SRC", 260, -150, float(p["Zs_R"]), float(p["Zs_L_pH"]) * 1e-12,
+                         float(p["Zs_C_fF"]) * 1e-15, top_Hz, n_freq)
+        names = ["SRC"]
+        for i, e in enumerate(els):
+            mod = bool(e["modulating"])
+            self.make_tl(e["name"], 400, -150, os.path.join(d, e["table"]),
+                         float(e["line_length"]), float(e["ng"]), modulating=mod,
+                         far_end=(i == len(els) - 1), library_name=lib,
+                         fir_taps=self.BEND_FIR_TAPS,
+                         ng2=float(e["ng2"]) if (mod and pushpull) else None)
+            names.append(e["name"])
+        self.make_load("LOAD", 900, -150, float(p["Rt_R"]), float(p["Rt_L_pH"]) * 1e-12,
+                       float(p["Rt_C_fF"]) * 1e-15, top_Hz, n_freq)
+        names.append("LOAD")
+        self.connect(drive, P_OUT, "SRC", ['port 1'])
+        for a, b in zip(names[:-1], names[1:]):
+            self.connect(a, ['port 2'], b, ['port 1'])
+
+        outputs = [(el, port, f"to {om}", om, P_MOD) for el, port, om in self.tl_outputs]
+        last = els[-1]["name"]
+        if mode == "eye":
+            self._add_far_end_eye(p)
+            outputs.append((last, "far end", "far end", "EYE_2", P_IN))
+            self.far_end = "EYE_2"
+        else:
+            if self.setp('ENA_1', ['number of input ports', 'number of inputs',
+                                   'input ports'], 2, required=False):
+                outputs.append((last, "far end", "far end", "ENA_1", ["input 2"]))
+                self.far_end = "ENA_1 input 2"
+            else:
+                # The output still has to end on a relay: an output left
+                # dangling inside the Compound makes its solver refuse it.
+                outputs.append((last, "far end", "far end", None, None))
+                self.log("  ENA_1 takes only one input in this build: the far-end "
+                         "voltage is a Compound output with nothing connected.")
+        if not self.make_compound(self.COMPOUND, names, outputs):
+            raise RuntimeError("the electrode Compound could not be made or its "
+                               "'scattering data analysis' could not be switched on")
+        taps = self.setp(self.COMPOUND, ['number of fir taps'], self.BEND_FIR_TAPS,
+                         required=False)
+        if taps:
+            self._fix_filter(self.COMPOUND)
+        self.log(f"  {self.COMPOUND}: {len(names)} elements (" + " -> ".join(names) + "), "
+                 f"{len(outputs)} outputs, scattering data analysis on; Compound filter "
+                 + (f"{self.BEND_FIR_TAPS} taps." if taps else
+                    "left at INTERCONNECT's default (no tap property on the Compound)."))
+        lc = [k for k in ("Zs_L_pH", "Zs_C_fF", "Rt_L_pH", "Rt_C_fF") if float(p[k]) != 0]
+        if lc:
+            self.log(f"  Source and termination carry their full frequency dependence "
+                     f"({', '.join(lc)}), not the value at one frequency.")
+        if self.pending_manual:
+            for m in self.pending_manual:
+                self.log(f"  MANUAL WIRE NEEDED: {m}")
+
+    def _add_far_end_eye(self, p: dict):
+        """An electrical eye on the voltage across the termination, with the
+        same symbol settings as EYE_1."""
+        levels = 4 if str(p["mod_format"]).upper() == "PAM4" else 2
+        rate_Hz = float(p["bitrate_Gbps"]) * 1e9 / (1 if levels == 2 else 2)
+        self.add(['Eye Diagram'], 'EYE_2', 1100, -150)
+        self.setp('EYE_2', ['bitrate', 'bit rate'], rate_Hz, required=False)
+        self.setp('EYE_2', ['number of levels'], levels, required=False)
+        self.setp('EYE_2', ['eye period'], 2, required=False)
+        self.setp('EYE_2', ['ignore start periods'], 4, required=False)
+        self.setp('EYE_2', ['calculate measurements'], True, required=False)
+        self.setp('EYE_2', ['bit pattern input'], False, required=False)
+        self.setp('EYE_2', ['signal reference input'], True, required=False)
+
+    def _wire_far_end_eye_reference(self):
+        src = 'NRZ_2' if any(w.startswith('NRZ_2:') for w in self._wiring) else 'NRZ_1'
+        if self._try_connect_any(src, P_OUT, 'EYE_2', P_EYE_REF):
+            self.log(f"  EYE_2 (voltage across the termination) reference: {src}.")
+        else:
+            self.log(f"  WARNING: EYE_2 has no timing reference ({src} would not fan out "
+                     f"once more). Connect {src}'s output to EYE_2 'reference' by hand.")
+
+    # The Network Analyzer's output stands for half the source EMF (Step 0:
+    # every row read 2x the model with EMF = 1), so V/EMF = (ENA ratio) / 2.
+    ENA_EMF_FACTOR = 0.5
+
+    def far_end_trace(self):
+        """(f_GHz, V_termination / EMF) from ENA_1 input 2, or None if the far
+        end is not read by the analyser in this build."""
+        if self.far_end != "ENA_1 input 2":
+            return None
+        f, H, _c, _l = self.complex_trace('ENA_1', input_port=2)
+        return f, H * self.ENA_EMF_FACTOR
+
     # Same digital-filter size for every table-driven element of a bent
     # electrode. INTERCONNECT turns each into an FIR filter; if their lengths
     # (and so any processing latency) differ, the sections are summed out of
@@ -1037,6 +1280,14 @@ class InterconnectBuilder:
     def run(self, save_path: Optional[str] = None):
         what = ("time-domain eye simulation" if self.mode == "eye"
                 else "impulse-response sweep")
+        if self.pending_manual:
+            # Running with an output that reaches nothing measures nothing.
+            if save_path:
+                self.sim.save(save_path)
+            raise ManualWiringNeeded(
+                "The schematic is built but not run: " + "; ".join(self.pending_manual)
+                + (f". Project saved: {save_path}" if save_path else "")
+                + ". Then press Run in INTERCONNECT.")
         if save_path:
             # Saved before the run too: if INTERCONNECT crashes, the project is
             # still there to open and run by hand, with its own error message.
@@ -1111,6 +1362,8 @@ class InterconnectBuilder:
         for n in KNOWN_ENA_RESULTS:
             if n not in cands:
                 cands.append(n)
+        # Input 2 (the TL line build's far-end voltage) is not an EO response.
+        cands = [n for n in cands if not re.match(r"\s*input\s*[2-9]", n.lower())]
 
         rows, seen = [], set()
         for n in cands:
@@ -1227,6 +1480,9 @@ def verify_points(builder: InterconnectBuilder, p: dict, key: str,
     """
     if key not in LUMERICAL_SWEEPABLE or LUMERICAL_SWEEPABLE[key][0] is None:
         raise ValueError(f"'{key}' cannot be re-swept in place; it needs a rebuild.")
+    if getattr(builder, "electrode_model", "TW block") == "TL line":
+        raise ValueError("In-place re-sweeps are available for the TW-block build only. "
+                         "With the TL line, rebuild at each point.")
     if getattr(builder, "bend_sections", None):
         raise ValueError("In-place re-sweeps are not available for a bent electrode: "
                          "its source/termination live in per-section tables. Rebuild "

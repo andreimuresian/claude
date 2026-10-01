@@ -10,6 +10,10 @@
 #    of tl_element_setup.lsf there.
 #
 # For a bend, use modulating = 0: the element then has no "modulation" port.
+# For a push-pull electrode, use second_mod = 1: "modulation" carries arm 1
+# (ng) and "modulation 2" arm 2 (ng2), both from the same line voltage.
+# Elements made before this version lack second_modulation and ng2 and stop
+# with an unknown-property error: create them again with this file.
 # Once it works, right-click the element and add it to the Custom library, so
 # the next ones are simply dragged in.
 # =============================================================================
@@ -18,11 +22,14 @@
 el = "TL_1";                     # name of the empty scripted element
 modulating = 1;                  # 1 = electrode, 0 = bend
 far_end = 0;                     # 1 = add the "far end" voltage output
+second_mod = 0;                  # 1 = add "modulation 2" (second arm, own n_g)
 setup_file = "tl_element_setup.lsf";   # full path if not in the working directory
 # ------------------------------------------------------------------------------
 
 addproperty(el, "line_length", "TL line", "Number", 0, 1, "FixedUnit", "m", 0.007);
 addproperty(el, "ng", "TL line", "Number", 0, 100, "FixedUnit", "-", 2.27);
+addproperty(el, "second_modulation", "TL line", "Logical", 0, 0, "NonQuantity", "", second_mod);
+addproperty(el, "ng2", "TL line", "Number", 0, 100, "FixedUnit", "-", 2.27);
 addproperty(el, "R0", "TL line", "Number", 1, 10000, "FixedUnit", "ohm", 50);
 addproperty(el, "table_file", "TL line", "FileOpen", 0, 0, "NonQuantity", "", "electrode_line.txt");
 addproperty(el, "modulating", "TL line", "Logical", 0, 0, "NonQuantity", "", modulating);
@@ -35,6 +42,9 @@ addport(el, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5);
 addport(el, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5);
 if (modulating) {
     addport(el, "modulation", "Output", "Electrical Signal", "Top", 0.5);
+    if (second_mod) {
+        addport(el, "modulation 2", "Output", "Electrical Signal", "Top", 0.75);
+    }
 }
 if (far_end) {
     addport(el, "far end", "Output", "Electrical Signal", "Bottom", 0.5);

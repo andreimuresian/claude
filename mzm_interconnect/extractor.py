@@ -431,6 +431,12 @@ def export_lumerical_tables(fit: LineFit, p: dict, res: EOResult,
     paths["extrapolated"] = extrapolated
     if int(p.get("n_bends", 0)) > 0:
         paths["bend_sections"] = _export_bend_tables(p, f_table, alpha, nm, Zc, out_dir, prov)
+    if str(p.get("ic_electrode_model", "")).strip().lower().startswith("tl"):
+        # The TL line elements read their own tables (electrode_line.txt,
+        # bend_line.txt, tl_elements.json), up to the simulation's Nyquist
+        # frequency rather than the sweep ceiling.
+        from .scripted_line import export_tl_tables
+        paths["tl"] = export_tl_tables(fit, p, out_dir)
     return paths
 
 
@@ -703,12 +709,31 @@ def diagnostic_figure(fit: LineFit, p: dict, theme=LIGHT) -> Figure:
 
 
 def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
-              lumerical=None) -> Figure:
-    """Normalised EO S21 with the bandwidth marker, plus electrical return loss."""
-    fig = Figure(figsize=(10.5, 4.6), dpi=100)
+              lumerical=None, far_end=None) -> Figure:
+    """Normalised EO S21 with the bandwidth marker, plus electrical return loss.
+
+    *far_end* = (f_GHz, V/EMF Python, f_GHz, V/EMF INTERCONNECT or None) adds a
+    third panel: the voltage across the termination relative to the source
+    EMF (the TL line build reads it from the Compound's 'far end' output)."""
+    rows = 3 if far_end is not None else 2
+    fig = Figure(figsize=(10.5, 4.6 if rows == 2 else 6.6), dpi=100)
     fig.patch.set_facecolor(theme["bg"])
-    ax = fig.add_subplot(2, 1, 1)
-    axr = fig.add_subplot(2, 1, 2, sharex=ax)
+    ax = fig.add_subplot(rows, 1, 1)
+    axr = fig.add_subplot(rows, 1, 2, sharex=ax)
+    axes = [ax, axr]
+    if far_end is not None:
+        axf = fig.add_subplot(rows, 1, 3, sharex=ax)
+        axes.append(axf)
+        f_p, v_p, f_i, v_i = far_end
+        db = lambda v: 20 * np.log10(np.maximum(np.abs(v), 1e-300))
+        axf.plot(f_p, db(v_p), "-", lw=1.8, color="#3f7fd0",
+                 label=f"Python model ({db(v_p[0]):.2f} dB at {f_p[0]:.2f} GHz)")
+        if f_i is not None:
+            axf.plot(f_i, db(v_i), "--", lw=1.6, color="#e2504a", label="INTERCONNECT")
+        axf.set_ylabel("$|V_{term}/V_{EMF}|$ (dB)")
+        axf.set_xlabel("Frequency (GHz)")
+        top = float(np.max(db(v_p)))
+        axf.set_ylim(top - 30, top + 3)
 
     level = float(p["bw_level_dB"])
     label = f"Python model (BW = {res.bw_GHz:.2f} GHz" + (" +" if res.bw_clipped else "") + ")"
@@ -757,10 +782,12 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
     axr.plot(res.f_GHz, res.s11_dB, "-", lw=1.8, color="#b06bd0",
              label=f"$S_{{11}}$ into the loaded line (worst {res.s11_worst_dB:.1f} dB)")
     axr.axhline(-10, color=theme["grid"], ls="--", lw=1.0, label="-10 dB")
-    axr.set_xlabel("Frequency (GHz)"), axr.set_ylabel("Electrical $S_{11}$ (dB)")
+    if far_end is None:
+        axr.set_xlabel("Frequency (GHz)")
+    axr.set_ylabel("Electrical $S_{11}$ (dB)")
     axr.set_ylim(-40, 0)
 
-    for a in (ax, axr):
+    for a in axes:
         _style(a, theme)
         leg = a.legend(fontsize=7, framealpha=0.25, loc="lower left")
         for t in leg.get_texts():

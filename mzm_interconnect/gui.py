@@ -1315,12 +1315,26 @@ class MZMStudio(tk.Tk):
                 raise
             self.log(f"Schematic built ({topo}, {mode} mode).")
             name = "TWMZM_eye.icp" if mode == "eye" else "TWMZM_EO_response.icp"
-            b.run(os.path.join(out, name))
+            from .interconnect import ManualWiringNeeded
+            try:
+                b.run(os.path.join(out, name))
+            except ManualWiringNeeded as exc:
+                msg = str(exc)
+                self.log(msg, "warn")
+                self._ui(lambda: (self.nb.select(self.tab_log),
+                                  messagebox.showwarning("One wire to draw by hand",
+                                                         msg[:1500])))
+                return
             if mode == "eye":
                 m = b.eye_metrics()
                 if m:
                     self.log("INTERCONNECT eye: " + "  ".join(
                         f"{k} {v:.4g}" for k, v in m.items()), "ok")
+                if b.far_end == "EYE_2":
+                    m2 = b.eye_metrics('EYE_2')
+                    self.log("Voltage across the termination (EYE_2): " + ("  ".join(
+                        f"{k} {v:.4g}" for k, v in m2.items()) if m2 else
+                        "no scalar metrics exposed; look at EYE_2 in INTERCONNECT."))
                 else:
                     self.log("The eye was built and run, but this INTERCONNECT "
                              "build exposed no scalar eye metrics to read back. "
@@ -1352,8 +1366,9 @@ class MZMStudio(tk.Tk):
                      f"difference {abs(py-bw):.2f} GHz "
                      f"({abs(py-bw)/max(py,1e-9)*100:.1f} %)",
                      "ok" if abs(py - bw) < 0.05 * max(py, 1e-9) else "warn")
+            far = self._far_end_overlay(b, files, p)
             fig = eo_figure(self.fit, self.result, p, self.theme["fig"],
-                            lumerical=self.lumerical_overlay)
+                            lumerical=self.lumerical_overlay, far_end=far)
             fig2 = eo_figure(self.fit, self.result, p, self.theme["fig"],
                              lumerical=self.lumerical_overlay)
             self._ui(lambda: (self.fig_lum.show(fig), self.fig_response.show(fig2),
@@ -1366,6 +1381,28 @@ class MZMStudio(tk.Tk):
                 b.close()
                 self.ic_builder = None
         self._run_async(work, "INTERCONNECT")
+
+    def _far_end_overlay(self, b, files, p):
+        """(f, V/EMF Python, f, V/EMF INTERCONNECT) for the TL line build, with
+        the low-frequency ratio logged as a check of the analyser's scale."""
+        if not files.get("tl"):
+            return None
+        from .scripted_line import far_end_model
+        f_p, v_p = far_end_model(files["tl"], float(p["f_max_GHz"]))
+        f_i = v_i = None
+        try:
+            tr = b.far_end_trace()
+        except Exception as exc:
+            tr = None
+            self.log(f"  far-end voltage could not be read from ENA_1 input 2: {exc}", "warn")
+        if tr is not None:
+            f_i, v_i = tr
+            band = (f_p >= 0.5) & (f_p <= 3.0)
+            ratio = float(np.median(np.abs(np.interp(f_p[band], f_i, np.abs(v_i)))
+                                    / np.abs(v_p[band])))
+            self.log(f"Voltage across the termination: INTERCONNECT / Python = {ratio:.3f} "
+                     f"at 0.5-3 GHz", "ok" if abs(ratio - 1) < 0.02 else "warn")
+        return f_p, v_p, f_i, v_i
 
     def action_close_interconnect(self):
         if self.ic_builder is None:

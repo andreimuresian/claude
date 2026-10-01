@@ -17,6 +17,7 @@ connected to.
 | `port 1` | bidirectional, electrical | input end of the line |
 | `port 2` | bidirectional, electrical | far end of the line |
 | `modulation` | output, electrical | electrodes only: the voltage the light integrates along the line. Same definition as the TW block's "modulation voltage". Goes to the OM `modulation` input. |
+| `modulation 2` | output, electrical | optional, electrodes only: the same integral at a second group index `ng2` (arm 2 of a push-pull modulator) |
 | `far end` | output, electrical | optional: the line voltage at port 2 |
 
 A **bend** is the same element with `modulating = 0` and its own table. It then
@@ -28,6 +29,8 @@ has only ports 1 and 2.
 |---|---|
 | `line_length` | physical length, m |
 | `ng` | optical group index (electrodes) |
+| `second_modulation` | 1 to have the `modulation 2` port |
+| `ng2` | optical group index of `modulation 2` |
 | `R0` | reference impedance of the S-matrix, 50 Ω. The same value for every element in a chain. |
 | `table_file` | frequency (Hz), loss (dB/m), microwave index, Re Z0, Im Z0 |
 | `modulating` | 1 electrode, 0 bend |
@@ -193,10 +196,70 @@ rows are diagnostics; they cannot pass on a mismatched line.
 `eo_transfer` returns −V_avg, an overall sign that affects neither |H| nor any
 bandwidth. The TL line uses the physical sign, positive at DC.
 
-## Next
+## Step 1: the modulator built with the TL line
 
-**Step 1:** electrode, bend and electrode as TL line elements in one Compound,
-driving OM, optical delay and OM, compared with the GUI:
-- the complex EO response from the Network Analyzer;
-- the Compound's exported S-parameters against `scripted_line.chain_response`;
-- the detected waveform, written by a Probe, against the Python eye.
+"Build + run in INTERCONNECT" and "Build eye in INTERCONNECT" use the TL line
+when **Electrode model** (Lumerical group) is `TL line`, the default. `TW block`
+builds the Ansys Traveling Wave Electrode as before, for comparison.
+
+```
+drive ── ELECTRODE (Compound, scattering data analysis on) ───────────────
+          SRC(Zs) ─ EL_1 ─ BEND_1 ─ EL_2 ─ … ─ EL_N ─ LOAD(Rt)
+                    │ │            │ │          │ │  └ far end ── ENA_1 input 2 / EYE_2
+                    │ └ modulation 2 → OM_2_1   │ └ modulation 2 → OM_2_N   (arm 2, n_g2)
+                    └── modulation  → OM_1_1    └── modulation  → OM_1_N    (arm 1, n_g1)
+          OM_a_k joined by Optical Delays n_g,a·(bends + next section)/c
+```
+
+- **One line for both arms.** Each electrode section has a second modulation
+  output, `modulation 2`. It integrates the same line voltage with the light at
+  arm 2's group index (`ng2`). With `ng_imbalance` = 0 both outputs are
+  identical, so no drive fan-out and no duplicated electrode are needed.
+- **Source and termination with parasitics.** `TL source` and `TL load`
+  compute Zs and Zt = (R + jωL) ∥ 1/(jωC), the GUI's formula
+  (`physics.rlc_impedance`), as tables up to the simulation's Nyquist
+  frequency. The TW block took one reactance at the probe frequency. With
+  L = C = 0 they are the constant Step 0 elements.
+- **Voltage across the termination.** The last section's `far end` output is
+  read back:
+  - In the ENA build it goes to ENA_1 input 2. The INTERCONNECT tab then shows
+    a third panel, |V_term/V_EMF| in dB, against the Python value
+    (`scripted_line.far_end_model`). The log gives their ratio at 0.5–3 GHz,
+    which should be 1.000. The ENA reading is divided by 2: its output is
+    EMF/2 (Step 0, point 5).
+  - In the eye build it goes to an electrical eye, EYE_2, with the same
+    reference as EYE_1. Its metrics are logged.
+- **Exactly the same optics as the TW build.** OM coefficients c·L_k/L_mod,
+  and the optical delays between sections. The TL output is referenced to the
+  light leaving its section, like the TW output, so the OMs stand at the
+  section exits.
+- **Wiring.** The electrical elements are built and wired at root level, so the
+  drive link enters the selection and `createcompound` keeps it. They are then
+  grouped. Each output becomes an Output port of the Compound, wired outside to
+  its OM, ENA or EYE_2, and inside to its own relay. If a relay wire cannot be
+  drawn from the script, the project is saved but not run, and the message
+  names the wire to draw by hand.
+- **Compound filter.** The build tries to set 1024 FIR taps on the Compound and
+  logs whether this INTERCONNECT accepts the property. The 0.04–0.1 dB residual
+  of Step 0 may come from the Compound's default, shorter filter.
+- **Library element.** A library element made with an older
+  `create_tl_element.lsf` lacks `second_modulation` and `ng2`. Make it again,
+  or leave "TL line library element" empty so the build creates the elements
+  itself.
+
+### Step 1 checks, in order
+
+1. **Straight electrode, ENA.** The TL build's EO bandwidth must match the
+   Python one. The far-end ratio must be 1.000. Compare with `TW block` at the
+   same settings: the difference is the TW block's own error (Step 0, point 7).
+2. **Split electrode.** Set `n_bends` = 1 with bend length 0 and two sections
+   summing to the straight length. The result must equal check 1.
+3. **Real bends** against the GUI's segmented model.
+4. **Group-index imbalance** (for example 0.02) against the GUI, which
+   includes it (`device_response`).
+5. **Eye** against the Python eye. EYE_2 shows the termination voltage.
+
+Offline (`tools/validate_tl_line.py`, 15 checks): the second output against
+the cascade at arm 2's n_g; `rlc_z` (as in the LSF) against
+`physics.rlc_impedance`; an R+L+C source and load against `eo_transfer`; the
+far-end voltage against the closed form V(0)/(cosh γL + Z0/Zt·sinh γL).

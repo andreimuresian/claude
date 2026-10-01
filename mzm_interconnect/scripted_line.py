@@ -84,8 +84,10 @@ def read_tl_table(path: str):
 # 2. The element itself (mirror of tl_element_setup.lsf)
 # ---------------------------------------------------------------------------
 def tl_sparams(f_Hz, loss_dB_m, nm, Z, L, ng=None, R0=50.0,
-               modulating=True, waves="voltage") -> dict:
-    """S-matrix entries of one TL line element, as the LSF sets them."""
+               modulating=True, waves="voltage", ng2=None) -> dict:
+    """S-matrix entries of one TL line element, as the LSF sets them. With
+    *ng2* the element also has the "modulation 2" output (T1_2, T2_2): the same
+    line voltage integrated by light at the second arm's group index."""
     f_Hz = np.asarray(f_Hz, float)
     w = 2 * np.pi * f_Hz
     g = np.asarray(loss_dB_m) * NP_PER_DB_EXACT + 1j * w * np.asarray(nm) / C0
@@ -102,30 +104,46 @@ def tl_sparams(f_Hz, loss_dB_m, nm, Z, L, ng=None, R0=50.0,
                modulating=bool(modulating),
                FE1=ws * S21, FE2=ws * (1 + S11))
     if modulating:
-        bo = w * float(ng) / C0
-        q1 = -g + 1j * bo
-        q1 = q1 + (np.abs(q1) < 1e-12) * 1e-12
-        q2 = g + 1j * bo
-        q2 = q2 + (np.abs(q2) < 1e-12) * 1e-12
-        F1 = (np.exp(q1 * L) - 1) / q1
-        F2 = (np.exp(q2 * L) - 1) / q2
-        Xo = np.exp(-1j * bo * L) / L
-
-        def vavg(V1, I1):
+        def vavg(V1, I1, ngk):
+            bo = w * float(ngk) / C0
+            q1 = -g + 1j * bo
+            q1 = q1 + (np.abs(q1) < 1e-12) * 1e-12
+            q2 = g + 1j * bo
+            q2 = q2 + (np.abs(q2) < 1e-12) * 1e-12
+            F1 = (np.exp(q1 * L) - 1) / q1
+            F2 = (np.exp(q2 * L) - 1) / q2
+            Xo = np.exp(-1j * bo * L) / L
             Vp = (V1 + Zl * I1) / 2
             Vm = (V1 - Zl * I1) / 2
             return (Vp * F1 + Vm * F2) * Xo
 
-        out["T1"] = vavg(ws * (1 + S11), (1 - S11) / Rw)
-        out["T2"] = vavg(ws * S21, -S21 / Rw)
+        port1 = (ws * (1 + S11), (1 - S11) / Rw)
+        port2 = (ws * S21, -S21 / Rw)
+        out["T1"] = vavg(*port1, ng)
+        out["T2"] = vavg(*port2, ng)
         out["ng"] = float(ng)
+        if ng2 is not None:
+            out["T1_2"] = vavg(*port1, ng2)
+            out["T2_2"] = vavg(*port2, ng2)
+            out["ng2"] = float(ng2)
     return out
 
 
+def rlc_z(f_Hz, R, L_H=0.0, C_F=0.0):
+    """Source / load impedance exactly as source_setup.lsf and
+    termination_setup.lsf compute it: (R + jwL) in parallel with C."""
+    f_Hz = np.asarray(f_Hz, float)
+    if L_H == 0 and C_F == 0:
+        return np.full(f_Hz.shape, complex(R))
+    w = 2 * np.pi * f_Hz
+    Zrl = R + 1j * w * L_H
+    return Zrl / (1 + 1j * w * C_F * Zrl)
+
+
 def tl_sparams_from_table(path: str, L, ng=None, R0=50.0, modulating=True,
-                          waves="voltage") -> dict:
+                          waves="voltage", ng2=None) -> dict:
     f, loss, nm, Z = read_tl_table(path)
-    return tl_sparams(f, loss, nm, Z, L, ng, R0, modulating, waves)
+    return tl_sparams(f, loss, nm, Z, L, ng, R0, modulating, waves, ng2)
 
 
 # ---------------------------------------------------------------------------
@@ -138,6 +156,8 @@ class ChainResult:
     far_end: list         # per element: voltage at its port 2
     s11_in: np.ndarray    # reflection seen by the source, reference Zs
     H: np.ndarray         # EO response: length-weighted sum at the device exit
+    vavg2: list = None    # per element: "modulation 2" (None if absent)
+    H2: np.ndarray = None  # the same sum for the second arm (its own n_g)
 
 
 def chain_response(elements: list, Zs, Rt, R0=50.0, ng=None,
@@ -146,7 +166,8 @@ def chain_response(elements: list, Zs, Rt, R0=50.0, ng=None,
     Source (EMF 1 V behind Zs) -> element 1 -> element 2 -> ... -> Rt.
 
     *elements* are tl_sparams dicts on a common grid, all with reference R0 and
-    voltage waves. Unknowns are the incident waves at every element port;
+    voltage waves. *Zs* and *Rt* are scalars or arrays on that grid (an R+L+C
+    network, see rlc_z). Unknowns are the incident waves at every element port;
     b = S a inside each element, a = b of the neighbour across each joint,
     a = G_s b + src at the source and a = G_t b at the termination.
 
@@ -155,6 +176,8 @@ def chain_response(elements: list, Zs, Rt, R0=50.0, ng=None,
     """
     f = elements[0]["f_Hz"]
     nf, n = len(f), len(elements)
+    Zs = np.broadcast_to(np.asarray(Zs, complex), f.shape)
+    Rt = np.broadcast_to(np.asarray(Rt, complex), f.shape)
     Gs = (Zs - R0) / (Zs + R0)
     Gt = (Rt - R0) / (Rt + R0)
     src = R0 / (Zs + R0)                         # voltage waves, EMF 1 V
@@ -165,20 +188,21 @@ def chain_response(elements: list, Zs, Rt, R0=50.0, ng=None,
             s11, s21 = el["S11"][i], el["S21"][i]
             S[2 * k:2 * k + 2, 2 * k:2 * k + 2] = [[s11, s21], [s21, s11]]
         C = np.zeros((2 * n, 2 * n), complex)
-        C[0, 0] = Gs
+        C[0, 0] = Gs[i]
         for k in range(n - 1):
             C[2 * k + 2, 2 * k + 1] = 1
             C[2 * k + 1, 2 * k + 2] = 1
-        C[2 * n - 1, 2 * n - 1] = Gt
+        C[2 * n - 1, 2 * n - 1] = Gt[i]
         rhs = np.zeros(2 * n, complex)
-        rhs[0] = src
+        rhs[0] = src[i]
         a[i] = np.linalg.solve(np.eye(2 * n) - C @ S, rhs)
 
-    vavg, far = [], []
+    vavg, vavg2, far = [], [], []
     for k, el in enumerate(elements):
         a1, a2 = a[:, 2 * k], a[:, 2 * k + 1]
         far.append(el["FE1"] * a1 + el["FE2"] * a2)
         vavg.append(el["T1"] * a1 + el["T2"] * a2 if el["modulating"] else None)
+        vavg2.append(el["T1_2"] * a1 + el["T2_2"] * a2 if "T1_2" in el else None)
     b1 = elements[0]["S11"] * a[:, 0] + elements[0]["S21"] * a[:, 1]
     V_in = a[:, 0] + b1
     I_in = (a[:, 0] - b1) / R0
@@ -189,16 +213,23 @@ def chain_response(elements: list, Zs, Rt, R0=50.0, ng=None,
     # element, so everything downstream delays it by n_g * (optical length)/c.
     opt = opt_lengths or [el["L"] for el in elements]
     w = 2 * np.pi * f
-    H = np.zeros(nf, complex)
     Lmod = sum(el["L"] for el in elements if el["modulating"])
-    tail = 0.0
-    for k in range(n - 1, -1, -1):
-        el = elements[k]
-        if el["modulating"]:
-            ngk = float(ng if ng is not None else el["ng"])
-            H += el["L"] / Lmod * vavg[k] * np.exp(-1j * w * ngk * tail / C0)
-        tail += opt[k]
-    return ChainResult(f, vavg, far, s11_in, H)
+
+    def light_sum(vs, key):
+        H = np.zeros(nf, complex)
+        tail = 0.0
+        for k in range(n - 1, -1, -1):
+            el = elements[k]
+            if el["modulating"]:
+                ngk = float(ng if ng is not None else el[key])
+                H += el["L"] / Lmod * vs[k] * np.exp(-1j * w * ngk * tail / C0)
+            tail += opt[k]
+        return H
+
+    H = light_sum(vavg, "ng")
+    two = all(v is not None for v, el in zip(vavg2, elements) if el["modulating"])
+    H2 = light_sum(vavg2, "ng2") if two and ng is None else None
+    return ChainResult(f, vavg, far, s11_in, H, vavg2, H2)
 
 
 # ---------------------------------------------------------------------------
@@ -241,20 +272,26 @@ def export_tl_tables(fit, p: dict, out_dir: str, f_top_GHz=None,
             ["bend line: its own loss, index and impedance, not the electrode's",
              f"Z = {b['bend_Z']:.2f} ohm flat, n = {b['bend_nm']:.3f}",
              "columns frequency Hz, loss dB per m, microwave index, Re Z0, Im Z0"])
+    # Arm 1 on "modulation" (ng1), arm 2 on "modulation 2" (ng2): the same
+    # split of ng_imbalance as physics.arm_models.
     ng = float(p["ng"])
+    dn = float(p.get("ng_imbalance", 0.0))
+    ng1, ng2 = ng * (1.0 + dn / 2.0), ng * (1.0 - dn / 2.0)
     els, k_el, k_b = [], 0, 0
     for x in lay:
         if x["kind"] == "mod":
             k_el += 1
             els.append(dict(name=f"EL_{k_el}", kind="electrode", table="electrode_line.txt",
-                            line_length=x["L_rf"], optical_length=x["L_opt"], ng=ng,
-                            modulating=1))
+                            line_length=x["L_rf"], optical_length=x["L_opt"], ng=ng1,
+                            ng2=ng2, modulating=1))
         else:
             k_b += 1
             els.append(dict(name=f"BEND_{k_b}", kind="bend", table="bend_line.txt",
-                            line_length=x["L_rf"], optical_length=x["L_opt"], ng=ng,
-                            modulating=0))
+                            line_length=x["L_rf"], optical_length=x["L_opt"], ng=ng1,
+                            ng2=ng2, modulating=0))
     meta = dict(R0=50.0, Zs=float(p["Zs_R"]), Rt=float(p["Rt_R"]),
+                Zs_L_pH=float(p.get("Zs_L_pH", 0.0)), Zs_C_fF=float(p.get("Zs_C_fF", 0.0)),
+                Rt_L_pH=float(p.get("Rt_L_pH", 0.0)), Rt_C_fF=float(p.get("Rt_C_fF", 0.0)),
                 wave_convention="voltage", elements=els,
                 table_top_GHz=top, points=len(f_GHz))
     paths["json"] = os.path.join(out_dir, "tl_elements.json")
@@ -264,16 +301,40 @@ def export_tl_tables(fit, p: dict, out_dir: str, f_top_GHz=None,
     return paths
 
 
-def device_chain(paths: dict, R0=50.0, waves="voltage"):
+def device_chain(paths: dict, R0=50.0, waves="voltage", second=False):
     """Build the element list from exported tables, exactly as INTERCONNECT
-    will see it, and return (elements, optical lengths)."""
+    will see it, and return (elements, optical lengths). With *second* the
+    electrodes also carry "modulation 2" at the second arm's n_g."""
     meta = paths["meta"]
     d = os.path.dirname(paths["json"])
     els = []
     for e in meta["elements"]:
         els.append(tl_sparams_from_table(os.path.join(d, e["table"]), e["line_length"],
-                                         e["ng"], R0, bool(e["modulating"]), waves))
+                                         e["ng"], R0, bool(e["modulating"]), waves,
+                                         e.get("ng2") if second else None))
     return els, [e["optical_length"] for e in meta["elements"]]
+
+
+def device_terminations(paths: dict, f_Hz):
+    """(Zs, Zt) on *f_Hz* from the exported metadata, as the scripted source
+    and load compute them."""
+    m = paths["meta"]
+    return (rlc_z(f_Hz, m["Zs"], m.get("Zs_L_pH", 0.0) * 1e-12, m.get("Zs_C_fF", 0.0) * 1e-15),
+            rlc_z(f_Hz, m["Rt"], m.get("Rt_L_pH", 0.0) * 1e-12, m.get("Rt_C_fF", 0.0) * 1e-15))
+
+
+def far_end_model(paths: dict, f_max_GHz=None):
+    """(f_GHz, V_termination / EMF): the voltage across the termination, from
+    the same tables, source and load the TL line build uses. The prediction
+    for ENA_1 input 2 (after its factor 1/2, see InterconnectBuilder)."""
+    els, opt = device_chain(paths)
+    if f_max_GHz is not None:
+        m = els[0]["f_Hz"] <= float(f_max_GHz) * 1e9 * 1.0001
+        els = [{k: (v[m] if isinstance(v, np.ndarray) and v.shape == m.shape else v)
+                for k, v in el.items()} for el in els]
+    Zs, Zt = device_terminations(paths, els[0]["f_Hz"])
+    r = chain_response(els, Zs, Zt, opt_lengths=opt)
+    return r.f_Hz / 1e9, r.far_end[-1]
 
 
 # ---------------------------------------------------------------------------

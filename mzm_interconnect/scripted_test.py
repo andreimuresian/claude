@@ -59,11 +59,9 @@ import numpy as np
 from . import parameters as P
 from . import scripted_line as SL
 from .interconnect import InterconnectBuilder, P_IN, P_IN1, P_OUT
+from .tl_schematic import (LOAD_LSF, SETUP_LSF, SOURCE_LSF,  # noqa: F401
+                           ScriptedElementUnavailable, first_line, fwd)
 
-LSF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lumerical")
-SETUP_LSF = os.path.join(LSF_DIR, "tl_element_setup.lsf")
-LOAD_LSF = os.path.join(LSF_DIR, "termination_setup.lsf")
-SOURCE_LSF = os.path.join(LSF_DIR, "source_setup.lsf")
 FIR_TAPS = 1024        # the same for the TW block and the TL line, so neither is favoured
 
 P_PORT1 = ['port 1']
@@ -108,29 +106,17 @@ STAGE_MEANING = {
 }
 
 
-class ScriptedElementUnavailable(RuntimeError):
-    """The scripted element could not be created or configured from Python."""
-
-
 def step0_cases(p: dict) -> list:
     return [dict(name="gui", Zs=float(p["Zs_R"]), Rt=float(p["Rt_R"])),
             dict(name="mismatch", Zs=30.0, Rt=80.0)]
 
 
-def _fwd(path: str) -> str:
-    """Forward slashes: Lumerical script reads them on every platform."""
-    return path.replace("\\", "/")
-
-
-def _first_line(exc: Exception) -> str:
-    s = str(exc).strip()
-    return s.splitlines()[0] if s else type(exc).__name__
+_fwd, _first_line = fwd, first_line
 
 
 class Step0Builder(InterconnectBuilder):
-    """One Step 0 stage. Reuses the main builder's element helpers."""
-
-    R0 = 50.0
+    """One Step 0 stage. Reuses the main builder's element helpers (the TL
+    elements and Compounds come from tl_schematic.TLElementsMixin)."""
 
     # ---- elements ------------------------------------------------------
     def _ena(self, name: str, x: int, y: int, p: dict):
@@ -148,97 +134,6 @@ class Step0Builder(InterconnectBuilder):
         self.setp(name, ['remove dc', 'remove DC'], True, required=False)
         self.setp(name, ['peak analysis', 'peak_analysis'], 'disable', required=False)
 
-    def make_tl(self, name: str, x: int, y: int, table: str, L: float, ng: float,
-                modulating: bool = True, far_end: bool = False,
-                library_name: Optional[str] = None, fir_taps: int = 1024):
-        """
-        One TL line element. With *library_name* it is taken from the Custom
-        library (create it once with create_tl_element.lsf); otherwise an empty
-        scripted element is created and configured here.
-        """
-        table = _fwd(table)
-        if library_name:
-            self.add([library_name], name, x, y)
-        else:
-            try:
-                self.add(['Scripted Element', 'scripted element', 'Scripted element'],
-                         name, x, y)
-            except Exception as exc:
-                raise ScriptedElementUnavailable(
-                    "This INTERCONNECT does not let a script create an empty scripted "
-                    "element. Create one by hand (right-click > Create scripted "
-                    "element), run lumerical/create_tl_element.lsf on it, add it to "
-                    "the Custom library, and give its library name here.") from exc
-            s = self.sim
-            s.addproperty(name, "line_length", "TL line", "Number", 0, 1, "FixedUnit", "m", L)
-            s.addproperty(name, "ng", "TL line", "Number", 0, 100, "FixedUnit", "-", ng)
-            s.addproperty(name, "R0", "TL line", "Number", 1, 10000, "FixedUnit", "ohm", self.R0)
-            s.addproperty(name, "table_file", "TL line", "FileOpen", 0, 0, "NonQuantity", "", table)
-            s.addproperty(name, "modulating", "TL line", "Logical", 0, 0, "NonQuantity", "",
-                          int(modulating))
-            s.addproperty(name, "far_end_output", "TL line", "Logical", 0, 0, "NonQuantity", "",
-                          int(far_end))
-            s.addproperty(name, "wave_convention", "TL line", "ComboChoice", 0, 0,
-                          "NonQuantity", "", "voltage;power")
-            s.addproperty(name, "fir_taps", "TL line", "Number", 0, 100000, "FixedUnit", "-",
-                          int(fir_taps))
-            s.addproperty(name, "phase_convention", "TL line", "ComboChoice", 0, 0,
-                          "NonQuantity", "", "physics;engineering")
-            s.addport(name, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5)
-            s.addport(name, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5)
-            if modulating:
-                s.addport(name, "modulation", "Output", "Electrical Signal", "Top", 0.5)
-            if far_end:
-                s.addport(name, "far end", "Output", "Electrical Signal", "Bottom", 0.5)
-            with open(SETUP_LSF, encoding="utf-8") as fh:
-                code = fh.read()
-            if not self.setp(name, ['setup script', 'setup', 'script setup'], code,
-                             required=False):
-                raise ScriptedElementUnavailable(
-                    f"{name}: the setup script could not be set from Python. Paste "
-                    f"lumerical/tl_element_setup.lsf into Edit > Scripts > Setup of one "
-                    f"element, add it to the Custom library, and give its library name.")
-        for prop, val in (("line_length", float(L)), ("ng", float(ng)),
-                          ("R0", self.R0), ("table_file", table),
-                          ("modulating", int(modulating)), ("far_end_output", int(far_end)),
-                          ("wave_convention", "voltage"), ("fir_taps", int(fir_taps)),
-                          ("phase_convention", "physics")):
-            self.setp(name, [prop], val)
-
-    def make_source(self, name: str, x: int, y: int, R: float):
-        """The source resistance as a scripted two-port (port 1 from the
-        analyser, port 2 into the line): launches 2 R0/(R + R0) of the incoming
-        wave and reflects (R - R0)/(R + R0) back into the line. Reciprocal, so
-        a Compound's solver finds a path from port 1 back to itself."""
-        self.add(['Scripted Element', 'scripted element', 'Scripted element'], name, x, y)
-        s = self.sim
-        s.addproperty(name, "source_resistance", "TL source", "Number", 0, 1e9, "FixedUnit",
-                      "ohm", R)
-        s.addproperty(name, "R0", "TL source", "Number", 1, 10000, "FixedUnit", "ohm", self.R0)
-        s.addport(name, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5)
-        s.addport(name, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5)
-        with open(SOURCE_LSF, encoding="utf-8") as fh:
-            code = fh.read()
-        if not self.setp(name, ['setup script', 'setup', 'script setup'], code, required=False):
-            raise ScriptedElementUnavailable(f"{name}: the setup script could not be set.")
-        self.setp(name, ['source_resistance'], float(R))
-        self.setp(name, ['R0'], self.R0)
-
-    def make_load(self, name: str, x: int, y: int, R: float):
-        """A one-port termination (scripted): reflects (R - R0)/(R + R0) and
-        leaves no unconnected port, which a Compound's solver may refuse."""
-        self.add(['Scripted Element', 'scripted element', 'Scripted element'], name, x, y)
-        s = self.sim
-        s.addproperty(name, "load_resistance", "TL load", "Number", 0, 1e9, "FixedUnit", "ohm", R)
-        s.addproperty(name, "R0", "TL load", "Number", 1, 10000, "FixedUnit", "ohm", self.R0)
-        s.addport(name, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5)
-        with open(LOAD_LSF, encoding="utf-8") as fh:
-            code = fh.read()
-        if not self.setp(name, ['setup script', 'setup', 'script setup'], code, required=False):
-            raise ScriptedElementUnavailable(f"{name}: the setup script could not be set.")
-        self.setp(name, ['load_resistance'], float(R))
-        self.setp(name, ['R0'], self.R0)
-
     def _fix_tw_filter(self, el):
         """Give the TW block the same FIR length as the TL line. Its default
         filter can be shorter than one round trip of the line (2 n L / c), and
@@ -248,134 +143,12 @@ class Step0Builder(InterconnectBuilder):
         self.setp(el, ['number of fir taps'], FIR_TAPS, required=False)
         self.setp(el, ['maximum number of fir taps'], max(4096, FIR_TAPS), required=False)
 
-    ROOT_SCOPE = "::Root Element"
-
     def _make_compound(self, name: str, members: list, out_from=None, out_to=None,
                        pname: str = "modulation") -> bool:
-        """
-        Group elements into a Compound, add its output port, and turn its
-        S-parameter solver on.
-
-        createcompound keeps a link that enters the selection from outside
-        (analyser output -> connector) but, as the first real Step 0 run showed,
-        drops the link that leaves it (TL modulation -> analyser input). So that
-        link is made afterwards: an Output port is added to the Compound, wired
-        to the analyser at root level, and wired to the TL line from inside the
-        Compound. Every spelling tried is logged; if none works the build stops
-        with instructions instead of running an analyser with no input.
-        """
-        s = self.sim
-        try:
-            s.select(members[0])
-            for m in members[1:]:
-                s.shiftselect(m)
-            s.createcompound()
-        except Exception as exc:
-            self.log(f"  createcompound failed: {exc}")
-            return False
-        for cand in ("COMPOUND_1", "Compound Element", "COMPOUND"):
-            try:
-                s.setnamed(cand, "name", name)
-                break
-            except Exception:
-                continue
-
-        if out_from is not None:
-            el, port = out_from
-            before = self._elements_inside(name)
-            try:
-                got = s.addport(name, pname, "Output", "Electrical Signal", "Right", 0.5)
-                if isinstance(got, str) and got:
-                    pname = got
-            except Exception as exc:
-                self.log(f"  {name}: addport failed: {exc}")
-                return False
-            self.connect(name, [pname], out_to, P_IN1)
-            # Inside the Compound every external port is a relay element
-            # (RELAY_n, "External Port = <name>"). createcompound already made
-            # RELAY_1 for the analyser's drive ('port 1'); the wire must go to the
-            # relay of the port just added, never to any other: wiring the
-            # modulation output onto RELAY_1 shorts it onto the drive and the run
-            # fails (the second Step 0 run did exactly that).
-            inner, refused, inside, relay = False, [], [], None
-            try:
-                s.groupscope(f"{self.ROOT_SCOPE}::{name}")
-                inside = self._scope_elements()
-                relay = self._find_relay(inside, pname, before, members)
-                if relay:
-                    for tport in ("input", "port", pname, "port 1"):
-                        try:
-                            s.connect(el, port, relay, tport)
-                        except Exception as exc:
-                            refused.append(f"{relay}:{tport} ({_first_line(exc)})")
-                            continue
-                        self._wiring.append(f"{el}:{port} -> {relay}:{tport}")
-                        self.log(f"  {name}: inside, {el}:{port} -> {relay}:{tport}")
-                        inner = True
-                        break
-            except Exception as exc:
-                refused.append(f"could not enter the Compound's scope ({_first_line(exc)})")
-            finally:
-                try:
-                    s.groupscope(self.ROOT_SCOPE)
-                except Exception:
-                    pass
-            if not inner:
-                self.log(f"  {name}: elements inside: {', '.join(inside) or 'could not be listed'}; "
-                         f"relay of '{pname}': {relay or 'not identified'}")
-                for r in refused:
-                    self.log(f"  {name}: refused {r}")
-                self.pending_manual.append(
-                    f"{name}: open the saved .icp, double-click {name}, draw the wire from "
-                    f"{el} '{port}' to the 'input' pin of the relay whose label reads "
-                    f"'External Port = {pname}' ({relay or 'RELAY_2 in earlier runs'}), "
-                    f"leave every other wire as it is, and save the project")
-
-        ok = self.setp(name, ['scattering data analysis'], True, required=False)
-        if not ok:
-            self.log(f"  {name}: could not switch 'scattering data analysis' on.")
-        return ok
-
-    def _elements_inside(self, name: str) -> list:
-        """Names of the elements inside Compound *name* (scope restored)."""
-        try:
-            self.sim.groupscope(f"{self.ROOT_SCOPE}::{name}")
-            return self._scope_elements()
-        except Exception:
-            return []
-        finally:
-            try:
-                self.sim.groupscope(self.ROOT_SCOPE)
-            except Exception:
-                pass
-
-    def _find_relay(self, inside: list, pname: str, before: list, members: list):
-        """The relay element of the Compound port *pname*, called from inside
-        the Compound's scope: the relay whose external port is *pname*, else
-        the one element that appeared when the port was added. None if neither
-        identifies it; nothing is wired to a guess."""
-        for x in inside:
-            for prop in ("external port", "External Port", "external_port"):
-                try:
-                    if str(self.sim.getnamed(x, prop)).strip() == pname:
-                        return x
-                except Exception:
-                    continue
-        new = [x for x in inside if x not in before and x not in members]
-        return new[0] if len(new) == 1 else None
-
-    def _scope_elements(self) -> list:
-        """Names of the elements in the current group scope (empty if the
-        script interface does not give them)."""
-        code = ('selectall; mzm_n = getnumber; mzm_names = ""; '
-                'for (mzm_i = 1:mzm_n) { mzm_names = mzm_names + get("name", mzm_i) + ";"; } '
-                'unselectall;')
-        try:
-            self.sim.eval(code)
-            return [x for x in str(self.sim.getv("mzm_names")).split(";") if x.strip()]
-        except Exception as exc:
-            self.log(f"  could not list the elements in this scope ({_first_line(exc)})")
-            return []
+        """One Compound with one output, wired to an analyser's 'input 1'
+        (see TLElementsMixin.make_compound)."""
+        outs = [(out_from[0], out_from[1], pname, out_to, P_IN1)] if out_from else []
+        return self.make_compound(name, members, outs)
 
     # ---- one stage -------------------------------------------------------
     def build_stage(self, p: dict, files: dict, tables: dict, L: float, rows: list,
@@ -437,33 +210,7 @@ class Step0Builder(InterconnectBuilder):
 
     # ---- read back -----------------------------------------------------
     def raw_trace(self, element: str):
-        """(f_GHz, complex H, is_complex, dataset label) from a Network
-        Analyzer. H is a magnitude if the analyser only exposes a gain, and
-        then phase checks are skipped."""
-        names = []
-        try:
-            names = [str(n) for n in self.sim.getresultnames(element)]
-        except Exception:
-            pass
-        best = None
-        for n in names + [x for x in ('input 1/transmission', 'input 1/S21',
-                                      'input 1/gain') if x not in names]:
-            try:
-                res = self.sim.getresult(element, n)
-            except Exception:
-                continue
-            for label, f, d in self._collect_datasets(res):
-                is_cplx = not np.allclose(np.imag(d), 0.0)
-                score = (2 if is_cplx else 0) + (1 if 'trans' in label.lower() else 0)
-                if best is None or score > best[0]:
-                    best = (score, label, f, d, is_cplx)
-        if best is None:
-            raise RuntimeError(f"No frequency-domain result could be read from {element}.")
-        _, label, f, d, is_cplx = best
-        if not is_cplx:
-            lin = 'gain' not in label.lower() or np.all(d > 0)
-            d = (np.abs(d) if lin else 10 ** (np.real(d) / 20)).astype(complex)
-        return np.asarray(f, float) / 1e9, np.asarray(d, complex), is_cplx, label
+        return self.complex_trace(element)
 
 
 # ---------------------------------------------------------------------------

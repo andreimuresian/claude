@@ -1,15 +1,38 @@
 # =============================================================================
 # SETUP script of the "TL load" scripted element (MZM Studio).
 #
-# A one-port termination: a resistor load_resistance seen from a line whose
-# S-matrix uses the reference R0. It reflects G = (R - R0) / (R + R0) and has
-# no dangling port, so it can sit inside a Compound whose S-parameter solver
-# needs every internal port connected.
+# A one-port termination Zt seen from a line whose S-matrix uses the reference
+# R0. It reflects G = (Zt - R0) / (Zt + R0) and has no dangling port, so it can
+# sit inside a Compound whose S-parameter solver needs every internal port
+# connected.
+#
+# Zt is the GUI's termination network: (R + jwL) in parallel with the pad
+# capacitance C (physics.rlc_impedance). With L = C = 0 the reflection is the
+# constant (R - R0) / (R + R0) (the Step 0 element); otherwise a table from 0 to
+# f_top, phases negated for INTERCONNECT's exp(-i w t) convention.
 #
 # Ports:       port 1   bidirectional, electrical
-# Properties:  load_resistance (ohm), R0 (ohm, the same as the TL lines)
+# Properties:  load_resistance (ohm), load_inductance (H), load_capacitance (F),
+#              f_top (Hz), n_freq (-), R0 (ohm, the same as the TL lines)
 # =============================================================================
 
-G = (load_resistance - R0) / (load_resistance + R0);
-setsparameter("port 1", "port 1", "constant", G);
-logmessage("TL load ready: R = " + num2str(load_resistance) + " ohm, R0 = " + num2str(R0) + " ohm, reflection " + num2str(G));
+Rl = load_resistance;
+Ll = load_inductance;
+Cl = load_capacitance;
+if (abs(Ll) + abs(Cl) == 0) {
+    G = (Rl - R0) / (Rl + R0);
+    setsparameter("port 1", "port 1", "constant", G);
+    logmessage("TL load ready: R = " + num2str(Rl) + " ohm, R0 = " + num2str(R0) + " ohm, reflection " + num2str(G));
+} else {
+    fr = linspace(0, f_top, n_freq);
+    w = 2 * pi * fr;
+    Zrl = Rl + 1i * w * Ll;
+    Zt = Zrl / (1 + 1i * w * Cl * Zrl);
+    G = (Zt - R0) / (Zt + R0);
+    T = matrix(n_freq, 3);
+    T(:, 1) = fr;
+    T(:, 2) = abs(G);
+    T(:, 3) = -unwrap(angle(G));
+    setsparameter("port 1", "port 1", "transmission", T);
+    logmessage("TL load ready: R = " + num2str(Rl) + " ohm, L = " + num2str(Ll * 1e12) + " pH, C = " + num2str(Cl * 1e15) + " fF, R0 = " + num2str(R0) + " ohm, " + num2str(n_freq) + " points up to " + num2str(f_top / 1e9) + " GHz");
+}

@@ -8,9 +8,15 @@
 #   port 2   bidirectional, electrical   into the first line
 #
 # A wave a1 arriving at port 1 stands for an EMF of 2 a1 behind the source
-# resistance (a matched 50-ohm source convention: with Rs = R0 the element is
-# transparent). It launches b2 = 2 R0 / (Rs + R0) a1 into the line, and a wave
-# coming back from the line is reflected with (Rs - R0) / (Rs + R0).
+# impedance Zs (a matched 50-ohm source convention: with Zs = R0 the element is
+# transparent). It launches b2 = 2 R0 / (Zs + R0) a1 into the line, and a wave
+# coming back from the line is reflected with (Zs - R0) / (Zs + R0).
+#
+# Zs is the GUI's source network: (R + jwL) in parallel with the pad
+# capacitance C, the same formula as physics.rlc_impedance. With L = C = 0 it is
+# the constant R and the entries are written as constants (the Step 0 element);
+# otherwise as tables from 0 to f_top, with phases negated for INTERCONNECT's
+# exp(-i w t) convention, as in tl_element_setup.lsf.
 #
 # The element is reciprocal (S12 = S21, S11 = -S22, as for an impedance step):
 # a Compound's scattering-data solver refuses a port with no path back to
@@ -23,13 +29,39 @@
 # opposite sign: an (impedance 1 = Zs | impedance 2 = R0) connector behaves as
 # a source of R0^2 / Zs seen from its port 2.
 #
-# Properties:  source_resistance (ohm), R0 (ohm, the same as the TL lines)
+# Properties:  source_resistance (ohm), source_inductance (H),
+#              source_capacitance (F), f_top (Hz), n_freq (-),
+#              R0 (ohm, the same as the TL lines)
 # =============================================================================
 
-Gs = (source_resistance - R0) / (source_resistance + R0);
-Tf = 2 * R0 / (source_resistance + R0);
-setsparameter("port 2", "port 2", "constant", Gs);
-setsparameter("port 2", "port 1", "constant", Tf);
-setsparameter("port 1", "port 2", "constant", Tf);
-setsparameter("port 1", "port 1", "constant", -Gs);
-logmessage("TL source ready: Rs = " + num2str(source_resistance) + " ohm, R0 = " + num2str(R0) + " ohm, reflection " + num2str(Gs) + ", launch " + num2str(Tf));
+Rs = source_resistance;
+Ls = source_inductance;
+Cs = source_capacitance;
+if (abs(Ls) + abs(Cs) == 0) {
+    Gs = (Rs - R0) / (Rs + R0);
+    Tf = 2 * R0 / (Rs + R0);
+    setsparameter("port 2", "port 2", "constant", Gs);
+    setsparameter("port 2", "port 1", "constant", Tf);
+    setsparameter("port 1", "port 2", "constant", Tf);
+    setsparameter("port 1", "port 1", "constant", -Gs);
+    logmessage("TL source ready: Rs = " + num2str(Rs) + " ohm, R0 = " + num2str(R0) + " ohm, reflection " + num2str(Gs) + ", launch " + num2str(Tf));
+} else {
+    fr = linspace(0, f_top, n_freq);
+    w = 2 * pi * fr;
+    Zrl = Rs + 1i * w * Ls;
+    Zs = Zrl / (1 + 1i * w * Cs * Zrl);
+    Gs = (Zs - R0) / (Zs + R0);
+    Tf = 2 * R0 / (Zs + R0);
+    T = matrix(n_freq, 3);
+    T(:, 1) = fr;
+    T(:, 2) = abs(Gs);
+    T(:, 3) = -unwrap(angle(Gs));
+    setsparameter("port 2", "port 2", "transmission", T);
+    T(:, 3) = -unwrap(angle(-Gs));
+    setsparameter("port 1", "port 1", "transmission", T);
+    T(:, 2) = abs(Tf);
+    T(:, 3) = -unwrap(angle(Tf));
+    setsparameter("port 2", "port 1", "transmission", T);
+    setsparameter("port 1", "port 2", "transmission", T);
+    logmessage("TL source ready: Rs = " + num2str(Rs) + " ohm, Ls = " + num2str(Ls * 1e12) + " pH, Cs = " + num2str(Cs * 1e15) + " fF, R0 = " + num2str(R0) + " ohm, " + num2str(n_freq) + " points up to " + num2str(f_top / 1e9) + " GHz");
+}

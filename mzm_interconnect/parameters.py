@@ -409,11 +409,21 @@ PARAMS: list[ParamSpec] = [
               affects="lumerical"),
     ParamSpec("ic_hide", "Run INTERCONNECT hidden", False, "Lumerical", kind="bool",
               affects="lumerical"),
+    ParamSpec("ic_electrode_model", "Electrode model", "TL line", "Lumerical",
+              kind="choice", choices=("TL line", "TW block"), affects="lumerical",
+              help="TL line: the scripted transmission-line element validated by Step 0. "
+                   "Source, electrode sections, bends and termination are one Compound, "
+                   "so INTERCONNECT solves every reflection, the source and termination "
+                   "keep their full R+L+C frequency dependence, each arm sees its own n_g "
+                   "on the same line, and the voltage across the termination is read "
+                   "back (ENA input 2 / eye EYE_2). TW block: the Ansys Traveling Wave "
+                   "Electrode, as before (reactances frozen at the probe frequency; "
+                   "bends through per-section drive files)."),
     ParamSpec("tl_library_name", "TL line library element", "", "Lumerical", kind="text",
               affects="lumerical",
               help="Name under which a TL line scripted element was saved in the Custom "
                    "library (made once with lumerical/create_tl_element.lsf). Leave empty "
-                   "to let the Step 0 build create the scripted elements itself."),
+                   "to let the build create the scripted elements itself."),
 ]
 
 BY_KEY: dict[str, ParamSpec] = {p.key: p for p in PARAMS}

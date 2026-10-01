@@ -194,8 +194,20 @@ def cmd_build(args):
     f_GHz, s_dB, bw = b.ena_trace(p, norm_window=res.norm_window_GHz)
     print(f"Python {res.bw_GHz:.2f} GHz | INTERCONNECT {bw:.2f} GHz | "
           f"difference {abs(res.bw_GHz-bw):.2f} GHz")
+    far = None
+    if files.get("tl"):
+        from .scripted_line import far_end_model
+        f_p, v_p = far_end_model(files["tl"], float(p["f_max_GHz"]))
+        tr = b.far_end_trace()
+        far = (f_p, v_p) + (tr if tr is not None else (None, None))
+        if tr is not None:
+            band = (f_p >= 0.5) & (f_p <= 3.0)
+            ratio = np.median(np.abs(np.interp(f_p[band], tr[0], np.abs(tr[1])))
+                              / np.abs(v_p[band]))
+            print(f"voltage across the termination: INTERCONNECT / Python = {ratio:.3f} "
+                  f"at 0.5-3 GHz")
     fig = eo_figure(fit, res, p, DARK if args.theme == "dark" else LIGHT,
-                    lumerical=(f_GHz, s_dB, bw))
+                    lumerical=(f_GHz, s_dB, bw), far_end=far)
     png = os.path.join(out, "EO_crosscheck.png")
     fig.savefig(png, dpi=180, facecolor=fig.get_facecolor())
     print(f"overlay written to {png}")
