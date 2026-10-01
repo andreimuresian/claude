@@ -1,0 +1,9 @@
+{
+ "IL_inf": 0.4173937766651088,
+ "rho0": 0.944000706753092,
+ "two_alpha_per_um": 0.1800737071600972,
+ "period_um_in_slab_edge": 0.8953573510571727,
+ "phase": 3.583625195728405,
+ "rms_dB_cm": 0.009529256932106513,
+ "note": "IL(d)=IL_inf(1-rho^2)/(1-2 rho cos(2 pi d/P+phi)+rho^2), rho=rho0 exp(-2alpha d); d = slab edge beyond gap edge"
+}
