@@ -392,6 +392,73 @@ assert not np.any(mat_of_el == None), (  # noqa: E711
     f"{int(np.sum(mat_of_el == None))} unassigned elements")  # noqa: E711
 print(f"[mesh OK] {skfem_mesh.nelements} triangles, {skfem_mesh.nvertices} vertices")
 
+# ---- Cross-section WITHOUT the mesh ------------------------------------------
+# Every triangle is filled with the colour of the material the SOLVER assigns to
+# it (mat_of_el), so this is what is simulated, not just what was drawn.  Thin
+# black lines are the material boundaries.
+from matplotlib.colors import ListedColormap
+
+_mkeys = list(MATERIALS)
+_midx = np.array([_mkeys.index(m) for m in mat_of_el], dtype=float)
+_mcmap = ListedColormap([MATERIALS[m]["color"] for m in _mkeys])
+_by_mat = {}
+for _n, _p in polygons.items():
+    _by_mat.setdefault(material_of(_n), []).append(_p)
+_mat_shapes = {m: unary_union(v) for m, v in _by_mat.items()}
+
+
+def _draw_materials(ax):
+    ax.tripcolor(skfem_mesh.p[0], skfem_mesh.p[1], skfem_mesh.t.T, facecolors=_midx,
+                 cmap=_mcmap, vmin=-0.5, vmax=len(_mkeys) - 0.5,
+                 edgecolors="face", linewidth=0.0, antialiased=False)
+    for _shape in _mat_shapes.values():
+        for _part in (_shape.geoms if hasattr(_shape, "geoms") else [_shape]):
+            for _ring in [_part.exterior, *_part.interiors]:
+                _xy = np.asarray(_ring.coords)
+                ax.plot(_xy[:, 0], _xy[:, 1], color="k", lw=0.6)
+
+
+def _dim(ax, x0, x1, y, label, color="k", above=True):
+    ax.annotate("", (x0, y), (x1, y),
+                arrowprops=dict(arrowstyle="<->", color=color, lw=1.0, shrinkA=0, shrinkB=0))
+    ax.text(0.5 * (x0 + x1), y + (0.08 if above else -0.08), label, color=color, fontsize=8.5,
+            ha="center", va="bottom" if above else "top",
+            bbox=dict(fc="white", ec="none", alpha=0.75, pad=0.6))
+
+
+_xs, _xg, _yst = SLAB_W / 2.0, GAP_BOT / 2.0, SLAB_H
+fig, (ax_a, ax_b) = plt.subplots(2, 1, figsize=(13, 8.6), gridspec_kw=dict(height_ratios=[1.45, 1]))
+_draw_materials(ax_a)
+_xl = max(12.0, _xs + 2.0)
+_dim(ax_a, -_xs, _xs, -0.45, rf"slab_w = {SLAB_W:.2f} $\mu$m", color="#34495e", above=False)
+_dim(ax_a, -_xg, _xg, _yst + EL_H - 0.35, rf"gap = {GAP_BOT:.2f} $\mu$m")
+_dim(ax_a, -GAP_TOP / 2.0, GAP_TOP / 2.0, _yst + BUFFER_H + 0.6, rf"top gap = {GAP_TOP:.1f} $\mu$m")
+_dim(ax_a, _xg, X_LIFT, _yst + EL_H + 0.35, rf"lower block {LOW_W:.1f} $\mu$m")
+ax_a.annotate(rf"gold / SiO$_2$ interface, x_lift = {X_LIFT:.1f} $\mu$m", (X_LIFT, _yst / 2),
+              (X_LIFT + 0.6, -0.85), fontsize=8.5, arrowprops=dict(arrowstyle="->", lw=0.8))
+ax_a.legend(handles=[mpatches.Patch(color=MATERIALS[m]["color"], label=f"{m}: {MATERIALS[m]['desc']}")
+                     for m in _mkeys if m in _mat_shapes],
+            loc="upper right", framealpha=0.95, fontsize=8)
+ax_a.set_xlim(-_xl, _xl); ax_a.set_ylim(-1.1, 6.3); ax_a.set_aspect("equal")
+ax_a.set_xlabel(r"$x$ ($\mu$m)"); ax_a.set_ylabel(r"$y$ ($\mu$m)")
+ax_a.set_title(rf"Cross-section as simulated (no mesh) | slab_w = {SLAB_W:.2f} $\mu$m: {_regime}")
+
+# zoom on the right-hand slab end: what surrounds the end of the LN slab
+_draw_materials(ax_b)
+_zx0, _zx1 = _xs - 1.2, _xs + 1.2
+for _xv, _lab, _c in [(_xg, "gold inner edge", "#b9770e"), (X_LIFT, "gold / SiO$_2$ interface", "#1f618d"),
+                      (_xs, "slab end", "#c0392b")]:
+    if _zx0 < _xv < _zx1:
+        ax_b.axvline(_xv, color=_c, ls="--", lw=1.0)
+        ax_b.text(_xv + 0.02, 0.86, _lab, color=_c, fontsize=8.5, rotation=90, va="top")
+ax_b.axhline(0.0, color="#555", lw=0.6, ls=":")
+ax_b.text(_zx0 + 0.03, -0.05, "BOX top (y = 0)", fontsize=8, va="top", color="#555")
+ax_b.set_xlim(_zx0, _zx1); ax_b.set_ylim(-0.45, 0.9); ax_b.set_aspect("equal")
+ax_b.set_xlabel(r"$x$ ($\mu$m)"); ax_b.set_ylabel(r"$y$ ($\mu$m)")
+ax_b.set_title(rf"Zoom on the slab end (x = {_xs:.2f} $\mu$m): LN slab {SLAB_H*1e3:.0f} nm on the BOX")
+plt.tight_layout()
+plt.show()
+
 # ---- Cross-section visualization ---------------------------------------------
 fig, ax = plt.subplots(figsize=(13, 4.8))
 legend_patches = []
