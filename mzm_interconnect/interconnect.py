@@ -152,6 +152,52 @@ KNOWN_ENA_RESULTS = ['input 1/S21', 'input 1/transmission', 'input 1/gain',
                      'S21', 'transmission', 'gain', 'ENA_1', 'model']
 
 
+def clean_eo_trace(f_GHz, H, fs_GHz: float, gate_ps: float = 25.0):
+    """
+    Remove from an ENA EO trace the two artefacts INTERCONNECT's optical path
+    adds, which the Step 1 diagnosis measured on the TW block and the TL line
+    alike (Jerez line, 14 mm, fs = 320 GHz):
+
+      * a delay-free term: the impulse response has a spike at t = 0, before
+        any signal can have crossed the electrode (its filter latency is
+        0.4-1.7 ns). It is ~10x the real EO response, so in frequency it is
+        a flat floor with the real response as a ripple of period 1/latency
+        on top. It is removed by a time gate of +-gate_ps around t = 0;
+      * a two-sample average, |H| x |cos(pi f / fs)| (-3 dB at fs/4, zero at
+        Nyquist): with the spike removed the trace equals the Python response
+        times this factor to 0.1 dB from 20 to 140 GHz. It is divided out.
+
+    Both are what an element computing y[n] = (x[n] + x[n-1]) / 2 on the
+    optical path gives, with x[-1] = 0 at the start of the run (half a sample
+    of missing photocurrent, which the ENA's DC removal turns into the
+    negative spike). The trace is cut at 0.95 x Nyquist, where the factor
+    falls below -16 dB and dividing by it would only amplify rounding.
+    Returns (f, corrected H, info).
+    """
+    f = np.asarray(f_GHz, float)
+    H = np.asarray(H, complex)
+    info = dict(spike_abs=0.0, spike_rel_dB=float("-inf"), cos_at_top_dB=0.0, gated=False)
+    df = np.diff(f)
+    if f.size > 8 and np.all(np.abs(df - df.mean()) < 1e-3 * max(df.mean(), 1e-12)):
+        T = 1.0 / (f.size * df.mean())                 # ns per one-sided time step
+        M = int(np.floor(gate_ps * 1e-3 / T))
+        G = np.zeros_like(H)
+        for m in range(-M, M + 1):
+            ph = np.exp(2j * np.pi * f * m * T)
+            G += np.mean(H * ph) / ph
+        H = H - G
+        g0 = np.interp(1.0, f, np.abs(G))
+        info["spike_abs"] = float(np.abs(np.mean(G)))
+        info["spike_rel_dB"] = float(20 * np.log10(max(g0, 1e-300) /
+                                                   max(np.interp(1.0, f, np.abs(H)), 1e-300)))
+        info["gated"] = True
+    keep = f <= 0.95 * 0.5 * float(fs_GHz)
+    f, H = f[keep], H[keep]
+    c = np.abs(np.cos(np.pi * f / float(fs_GHz)))
+    info["cos_at_top_dB"] = float(20 * np.log10(max(c[-1], 1e-300)))
+    return f, H / c, info
+
+
 def uses_tl_line(p: dict) -> bool:
     """True when the schematic's electrode is the scripted TL line."""
     return str(p.get("ic_electrode_model", "TW block")).strip().lower().startswith("tl")
@@ -181,6 +227,9 @@ class InterconnectBuilder(TLElementsMixin):
         self.read_far_end = True        # TL line: far-end voltage on ENA_1 input 2
         self.ena_inputs = 1
         self.probe_input = None
+        self.fs_GHz = None
+        self.correct_eo = True          # remove the optical path's two artefacts (clean_eo_trace)
+        self.eo_correction = None       # what the last correction removed
 
     # ---------------- low level helpers (from the original launcher) ----
     def setp(self, el, candidates, value, required=True):
@@ -369,6 +418,7 @@ class InterconnectBuilder(TLElementsMixin):
                          f"and {fs_GHz:.0f} GHz gives {fs_GHz/sym_rate:.1f}.")
                 fs_GHz = needed
         sim.set("sample rate", fs_GHz * 1e9)
+        self.fs_GHz = fs_GHz
 
         f_opt = 299792458.0 / (float(p["lambda_nm"]) * 1e-9)
 
@@ -1450,27 +1500,40 @@ class InterconnectBuilder(TLElementsMixin):
         # Input 2 (the TL line build's far-end voltage) is not an EO response.
         cands = [n for n in cands if not re.match(r"\s*input\s*[2-9]", n.lower())]
 
-        rows, seen = [], set()
+        sets, seen = [], set()
         for n in cands:
             try:
                 res = self.sim.getresult(element, n)
             except Exception:
                 continue
             for label, f, d in self._collect_datasets(res):
-                if label in seen:
-                    continue
-                seen.add(label)
-                is_real = np.allclose(d.imag, 0.0, atol=1e-12)
-                interps = [('dB', d.real)] if is_real else []
-                mag = np.abs(d)
-                mag[mag == 0] = 1e-300
-                interps.append(('lin', 20 * np.log10(mag)))
-                for tag, s_dB in interps:
-                    s, bw, _ref, clipped = normalise_and_measure(
-                        f / 1e9, s_dB, norm_window, level)
-                    rows.append({'label': f"{label} [{tag}]", 'f': f, 's': s,
-                                 'bw': None if clipped else bw,
-                                 'min': float(np.min(s))})
+                if label not in seen:
+                    seen.add(label)
+                    sets.append((label, f, d))
+        # The complex transmission is the only dataset the optical-path
+        # artefacts can be removed from (clean_eo_trace); when it exists, the
+        # magnitude-only datasets (gain in dB) are not used.
+        cplx = [x for x in sets if not np.allclose(x[2].imag, 0.0, atol=1e-12)]
+        self.eo_correction = None
+        if cplx and self.correct_eo and self.fs_GHz:
+            sets = []
+            for label, f, d in cplx:
+                f2, d2, info = clean_eo_trace(f / 1e9, d, self.fs_GHz)
+                sets.append((label + " [corrected]", f2 * 1e9, d2))
+                self.eo_correction = self.eo_correction or info
+        rows = []
+        for label, f, d in sets:
+            is_real = np.allclose(d.imag, 0.0, atol=1e-12)
+            interps = [('dB', d.real)] if is_real else []
+            mag = np.abs(d)
+            mag[mag == 0] = 1e-300
+            interps.append(('lin', 20 * np.log10(mag)))
+            for tag, s_dB in interps:
+                s, bw, _ref, clipped = normalise_and_measure(
+                    f / 1e9, s_dB, norm_window, level)
+                rows.append({'label': f"{label} [{tag}]", 'f': f, 's': s,
+                             'bw': None if clipped else bw,
+                             'min': float(np.min(s))})
 
         if not rows:
             raise RuntimeError(f"No frequency-domain dataset could be read from {element}.")
@@ -1479,6 +1542,15 @@ class InterconnectBuilder(TLElementsMixin):
         crossing = [r for r in rows if r['bw'] is not None and r['bw'] < f_max_GHz - 1.0]
         best = min(crossing, key=lambda r: r['min']) if crossing else min(rows, key=lambda r: r['min'])
         self.log(f"  ENA dataset selected: {best['label']}")
+        if self.eo_correction:
+            c = self.eo_correction
+            self.log(f"  EO trace corrected for the optical path of INTERCONNECT: "
+                     + (f"removed a delay-free start-of-run term of {c['spike_abs']:.4g} "
+                        f"({c['spike_rel_dB']:+.1f} dB relative to the response at 1 GHz), "
+                        if c['gated'] else "time gate NOT applied (non-uniform frequency grid), ")
+                     + f"divided by the two-sample average |cos(pi f/fs)| at fs = "
+                     f"{self.fs_GHz:.0f} GHz ({c['cos_at_top_dB']:.1f} dB at "
+                     f"{0.475 * self.fs_GHz:.0f} GHz, where the trace now ends).")
         return best['f'] / 1e9, best['s'], (best['bw'] if best['bw'] else f_max_GHz)
 
 
@@ -1677,6 +1749,11 @@ def run_tl_diagnosis(fit, p: dict, res, out_dir: str,
                 raw = " / ".join(
                     f"{20 * np.log10(max(abs(np.interp(x, f, np.abs(H))), 1e-300)):.2f}"
                     for x in (1, 20, 50, 90, 140))
+                if k == 1 and cplx and b.fs_GHz:
+                    f, H, info = clean_eo_trace(f, H, b.fs_GHz)
+                    name += " (corrected)"
+                    A(f"   input 1: removed the start-of-run term ({info['spike_rel_dB']:+.1f} dB "
+                      f"vs the response at 1 GHz) and the two-sample average.")
                 c = SL.compare_traces(f_ref, H_ref, f, H, band,
                                       convention="physics" if cplx else None)
                 rows.append(f"{rid:3s} {f'{k} {name}':28s} {c['scale_abs']:8.4f} "

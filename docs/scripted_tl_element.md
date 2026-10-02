@@ -247,6 +247,32 @@ drive ── ELECTRODE (Compound, scattering data analysis on) ─────�
   or leave "TL line library element" empty so the build creates the elements
   itself.
 
+### The EO read-back: two artefacts of INTERCONNECT's optical path
+
+The first Step 1 runs gave a flat EO trace (BW "159.8 GHz") for the TL line
+and for the TW block alike, while the voltage driving the modulators matched
+the model to 0.01 dB. The ENA's EO trace contains two things that are not the
+device:
+
+1. **A delay-free spike.** The impulse response has a term at t = 0 (−0.158,
+   about 10× the real response), before any signal can have crossed the
+   electrode (filter latency 0.4–1.7 ns). In frequency it is a flat floor at
+   about −16 dB; the real response is the ripple on top, with period
+   1/latency (2.5 GHz with the TW block, 0.59 GHz with the TL Compound).
+2. **A two-sample average.** With the spike removed, the trace equals the
+   Python response × |cos(πf/fs)| to 0.1 dB from 20 to 140 GHz (fs = 320 GHz:
+   −3 dB at 80 GHz, zero at Nyquist).
+
+Both are what an element computing y[n] = (x[n] + x[n−1])/2 on the optical
+path gives, with x[−1] = 0 at the start of the run. `ena_trace` now removes
+the spike with a ±25 ps time gate and divides by |cos(πf/fs)|
+(`clean_eo_trace`), and it logs what it removed. The trace ends at
+0.95 × Nyquist. On the TW run this gives 93.3 GHz against Python's 94.15 GHz;
+the 0.9 GHz difference is the TW block's own error (point 7 above). Which
+element does the averaging has not been identified. In the eye build it is
+negligible: at 16 samples per symbol the factor at half the symbol rate is
+cos(π/32) = −0.04 dB, and the eye skips the first periods.
+
 ### Step 1 checks, in order
 
 1. **Straight electrode, ENA.** The TL build's EO bandwidth must match the
