@@ -121,7 +121,7 @@ if rows:
     plt.tight_layout(); fig.savefig(OUT + "sweep2_buffered_overetch.png", dpi=150); plt.close(fig)
 
 # ============ Sweep 3: full etch, gold at slab level ===========================
-d3 = runs("s8_out.txt", "s8c_out.txt")
+d3 = runs("s8_out.txt", "s9_out.txt")
 new = sorted((float(k[3:]), v["IL"], v["VpiL"]) for k, v in d3.items() if k.startswith("GO_"))
 if new:
     new = np.array(new)

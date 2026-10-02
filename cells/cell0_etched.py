@@ -79,8 +79,9 @@ SLAB_W = 3.2                        # total width of the LN slab left after the 
 SLAB_RES = 0.0                      # LN left outside slab_w (partial second etch); 0 = full etch
 SPACER_W = 0.0                      # SiO2 spacer between the slab end and the gold (0 = none);
                                     # only for a slab ending inside the gold, same height as the slab
-GOLD_OUT = False                    # True: gold instead of the SiO2 lift at slab level, out to the
-                                    # pad end (no gold/SiO2 edge on the slab; lift kept above the block)
+GOLD_OUT = False                    # True: no SiO2 inside the electrodes: lower block, column and pad
+                                    # fuse into one solid gold body out to the pad end (Cordoba-like
+                                    # stepped electrode, no gold/SiO2 edge on the slab); air outside
 
 basetta = WG_H / np.tan(np.deg2rad(ALPHA))
 WG_BOTTOM = WG_TOP + 2.0 * basetta
@@ -245,11 +246,14 @@ def build_polygons():
     low_r = box(xg, 0.0, x_low_out, y_low_top).difference(slab).difference(spacer_r)
     col_r = box(x_col_in, y_low_top, x_col_out, y_el_top)
     pad_r = box(x_col_out, y_buf_top, x_el_outer, y_el_top)
+    if GOLD_OUT:                                    # former lift filled with gold
+        pad_r = box(x_col_in, y_low_top, x_el_outer, y_el_top)
     el_r = unary_union([low_r, col_r, pad_r])
     assert el_r.geom_type == "Polygon", "electrode blocks do not fuse into one body"
 
     # ---- 4. SiO2 under the lifted pad, down to the BOX where the slab is gone
-    buf_r = box(x_col_out, 0.0, x_dev_max, y_buf_top).difference(slab).difference(low_r)
+    buf_r = (Polygon() if GOLD_OUT else
+             box(x_col_out, 0.0, x_dev_max, y_buf_top).difference(slab).difference(low_r))
     buf_near_r = _areal(buf_r.intersection(box(x_col_out, 0.0, x_near, y_slab_top + 1.0)))
     buf_far_r = _areal(buf_r.difference(box(x_col_out, 0.0, x_near, y_slab_top + 1.0)))
 
@@ -410,8 +414,8 @@ print(f"              SLAB_W {SLAB_W:.2f} um (edge {SLAB_EXT:+.2f} um from the g
       + (f" | SiO2 spacer {SPACER_W*1e3:.0f} nm before the gold" if SPACER_W > 0 else "")
       + (f" | {SLAB_RES*1e3:.0f} nm LN left outside slab_w" if SLAB_RES > 0 else ""))
 print(f"              gaps: bottom {GAP_BOT:.2f} um / top {GAP_TOP:.2f} um | "
-      f"lower block {LOW_W:.2f} um | " + (f"gold at slab level out to x = {X_LOW_OUT:.2f} um "
-      f"(no gold/SiO2 edge on the slab), lift from x = {X_LIFT:.2f} um" if GOLD_OUT else
+      f"lower block {LOW_W:.2f} um | " + (f"solid gold electrode out to x = {X_LOW_OUT:.2f} um, "
+      f"no SiO2 inside the electrode (no gold/SiO2 edge on the slab)" if GOLD_OUT else
       f"gold/SiO2 interface at x = {X_LIFT:.2f} um"))
 
 raw_mesh = mesh_from_OrderedDict(
@@ -479,7 +483,7 @@ _dim(ax_a, -_xg, _xg, _yst + EL_H - 0.35, rf"gap = {GAP_BOT:.2f} $\mu$m")
 _dim(ax_a, -GAP_TOP / 2.0, GAP_TOP / 2.0, _yst + BUFFER_H + 0.6, rf"top gap = {GAP_TOP:.1f} $\mu$m")
 if not GOLD_OUT:
     _dim(ax_a, _xg, X_LIFT, _yst + EL_H + 0.35, rf"lower block {LOW_W:.1f} $\mu$m")
-ax_a.annotate(rf"lift starts above the block, x_lift = {X_LIFT:.1f} $\mu$m (gold at slab level)" if GOLD_OUT else
+ax_a.annotate(rf"no SiO$_2$ in the electrode: solid gold out to x = {X_LOW_OUT:.1f} $\mu$m" if GOLD_OUT else
               rf"gold / SiO$_2$ interface, x_lift = {X_LIFT:.1f} $\mu$m", (X_LIFT, _yst / 2 if not GOLD_OUT else _yst + EL_H),
               (X_LIFT + 0.6, -0.85), fontsize=8.5, arrowprops=dict(arrowstyle="->", lw=0.8))
 ax_a.legend(handles=[mpatches.Patch(color=MATERIALS[m]["color"], label=f"{m}: {MATERIALS[m]['desc']}")
