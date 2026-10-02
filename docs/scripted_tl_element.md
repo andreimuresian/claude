@@ -323,6 +323,21 @@ and writes `bends_check/bends_check.txt` (Python and INTERCONNECT bandwidths,
 the largest difference of the normalised curves down to −10 dB, far-end
 ratio) and `bends_check.png` (the curves).
 
+**"Step 1: eye bends 0-4 check"** does the same with the eye build: an
+Oscilloscope on the photodiode records the INTERCONNECT waveform, which is
+folded and measured by the same code as the Python eye (`eye_stats`), and
+writes `eye_check/eye_check.txt`, `eye_check.csv` and `eye_traces_<n>.npz`.
+The folding starts where the photocurrent first moves, plus 4 UI: the
+electrode Compound delivers nothing for its filter latency (512 samples =
+32 UI at 16 samples per symbol), and folding those flat traces zeroes the eye
+height. Traces saved by an earlier run are re-folded with
+`interconnect.reanalyse_eye_npz(path)`, with no new INTERCONNECT run.
+
+Result (Jerez line, 14 mm, 50/55 Ω, 100 Gb/s, 2 Vpp, 0–4 bends): eye height
+within 0.4 % of Python and OMA within 0.2 % for every N. The ER differs by up
+to 0.7 dB because the '0' level is only about 0.1 mA (near full extinction),
+so 0.01 mA moves it; the two tools also use different bit patterns.
+
 ### Step 1 checks, in order
 
 1. **Straight electrode, ENA.** The TL build's EO bandwidth must match the
