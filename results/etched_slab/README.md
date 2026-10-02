@@ -68,3 +68,36 @@ The reference mesh is about twice as dense: every near-mode size is ×0.7 and th
 - `IL_VpiL_vs_slab_w.png`: the plot.
 - `fabry_perot_fit_slab_in_gold.json`, `mesh_check.csv`.
 - `analysis_script.py`: the script that produced them from the run logs.
+
+## Follow-up: where the ripples come from
+
+### Same cavity, two mirrors (`ripple_facet_vs_interface.png`)
+
+IL is plotted against the cavity length L, measured from the gold inner edge to the mirror. Two sweeps are compared:
+- **Slab end as mirror:** the slab ends inside the gold. This is the slab_w sweep above, with x_lift = 7.
+- **Gold/SiO₂ interface as mirror:** the slab runs past the interface (slab_w = 24) and x_lift is swept from 6.5 to 11 µm. This is in `xlift_sweep_slab_past_interface.csv`.
+
+The same Airy model fits both (`ripple_comparison_facet_vs_interface.json`):
+
+| | slab end in gold | gold/SiO₂ interface |
+|---|---|---|
+| period (µm of mirror position) | 0.895 | 0.894 |
+| IL∞ (dB/cm) | 0.414 | 0.415 |
+| round-trip decay 2α (µm⁻¹) | 0.182 | 0.179 |
+| mirror reflectance ρ₀ | 0.957 | 0.922 |
+| fit rms (dB/cm) | 0.030 | 0.002 |
+
+The 1D model of the slab wave under the gold predicts both the period and the decay:
+- n_sw = 2.066–2.081 and n_rib = 1.884;
+- period π/Re(kₓ) = 0.89–0.93 µm;
+- round-trip decay 2·Im(kₓ) = 0.182 µm⁻¹.
+
+So the period, the asymptote and the envelope decay belong to the wave in the slab under the gold. The mirror sets only ρ₀ and the phase. The gold-wrapped slab end reflects more strongly, so its peaks are higher. The x_lift sweep with the slab past the interface lies on top of the previous unetched x_lift sweep.
+
+### Field cuts along the slab mid-height (`field_cuts_along_slab.png`)
+
+- **slab_w 3.2:** there is no slab under the gold, and the field drops below −60 dB at the gold wall.
+- **slab_w 6.75 and 7.6:** a standing wave forms under the gold. It is cut off at the slab end, the mirror.
+- **slab_w 20:** the standing wave forms between the gold inner edge and x_lift. Past x_lift the slab is under SiO₂: the field decays linearly in dB (evanescent, about 25 dB/µm), and the slab end at 10 µm is invisible.
+
+That is why the slab_w sweep is flat past the interface. The cavity is still there, but its length is set by x_lift (fixed at 7), not by slab_w.
