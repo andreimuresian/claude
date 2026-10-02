@@ -1,0 +1,20 @@
+import json, numpy as np, matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+plt.rcParams.update({"font.size": 13, "axes.spines.top": False, "axes.spines.right": False})
+d = np.array(json.load(open("/tmp/claude-0/-home-user-claude/fd41e088-2b12-5532-ab62-ef0605547492/scratchpad/nsw_vs_thickness.json")))
+t, a, b = d[:, 0] * 1e3, d[:, 1], d[:, 2]
+fig, ax = plt.subplots(figsize=(7.2, 4.6))
+ax.fill_between(t, a, b, color="#eb6834", alpha=0.25, lw=0)
+ax.plot(t, (a + b) / 2, color="#eb6834", lw=2.4, label=r"wave under the gold, $n_{sw}$")
+ax.axhline(1.884, color="#2a78d6", lw=2, ls="--", label=r"rib mode (275 nm slab), $n_{rib}$ = 1.884")
+tc = np.interp(1.884, (a + b) / 2, t)
+ax.axvspan(t.min(), tc, color="#1baf7a", alpha=0.10, lw=0)
+ax.text(70, 2.02, "no wave under the gold\n(no leak, no cavity)", fontsize=12.5, color="#0f7a55")
+ax.text(222, 1.70, "wave exists\n→ standing wave", fontsize=12.5, color="#b4471c")
+ax.axvline(tc, color="#555", lw=1, ls=":")
+ax.annotate(f"cutoff ≈ {tc:.0f} nm", (tc, 1.884), (188, 1.80), fontsize=12.5, arrowprops=dict(arrowstyle="->", lw=1.1))
+ax.plot([275], [np.interp(275, t, (a + b) / 2)], "o", color="#222", ms=8); ax.text(268, 2.10, "today\n275 nm", ha="right", fontsize=11.5)
+ax.set_xlabel("LN slab thickness under the gold (nm)"); ax.set_ylabel("effective index")
+ax.set_xlim(60, 300); ax.set_ylim(1.5, 2.15); ax.grid(alpha=0.25); ax.legend(loc="lower right", fontsize=11.5)
+fig.savefig("fig/nsw_vs_thickness.png", dpi=170, bbox_inches="tight"); print(round(tc, 1))

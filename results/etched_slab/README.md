@@ -101,3 +101,25 @@ So the period, the asymptote and the envelope decay belong to the wave in the sl
 - **slab_w 20:** the standing wave forms between the gold inner edge and x_lift. Past x_lift the slab is under SiO₂: the field decays linearly in dB (evanescent, about 25 dB/µm), and the slab end at 10 µm is invisible.
 
 That is why the slab_w sweep is flat past the interface. The cavity is still there, but its length is set by x_lift (fixed at 7), not by slab_w.
+
+## Deck and countermeasure study (`Etched_slab_vs_buffer.pptx`)
+
+The deck has 15 slides. Its sources are in `deck_src/`, and every new run is in `followup_runs.csv`.
+
+### slab_w sweep completed
+
+- **slab_w = gap region filled in (4.1–5.15 µm).** The first resonance, at slab_w 4.95 µm, reaches 7.4 dB/cm.
+- **Wider gold (x_lift = 11 µm), sweep to slab_w = 20 µm.** It reproduces the nominal geometry within 0.2% where they overlap. The ripple keeps decaying, with peaks of 0.96, 0.84, 0.75 and 0.68 dB/cm.
+
+### Countermeasures tested
+
+| countermeasure | result |
+|---|---|
+| SiO₂ spacer at the slab end, 100 / 300 / 600 nm | Peaks 2.88 / 2.93 / 3.04 dB/cm, only shifted. Wider spacers were not simulated: the spacer is not viable for fabrication. |
+| Full etch, slab ends in the gap, narrower gap | Gap 3.2 µm, slab_w 3.0 µm: IL 0.083 dB/cm, Vπ·L 2.47 V·cm |
+| Deeper rib etch, 150 nm slab | Flat in x_lift, IL 0.0034 dB/cm, but Vπ·L 3.15 V·cm at gap 4.2 µm. At gap 3.2 µm: 0.36 dB/cm, 2.22 V·cm. |
+| Partial second etch, 125 nm LN left outside slab_w | At gap 4.2 µm: flat at 0.0176 dB/cm, Vπ·L 2.54 V·cm. At narrower gaps: 0.057–0.75 dB/cm at 2.27–1.85 V·cm. The step must stay in the gap. |
+
+**Cutoff for any slab under the gold (1D):** about 180 nm.
+
+**Trade-off.** At equal Vπ·L the 200 nm buffer gives 2–3× lower IL than every alternative. That comparison uses the buffered gap scan (`../buffer/gap_scan_buffer200nm.csv`, previous SiO₂ constant). Recommendation: keep the buffer.

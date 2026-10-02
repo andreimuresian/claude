@@ -1,0 +1,244 @@
+tag,family,neff_re,IL_dB_per_cm,VpiL_Vcm
+DE0.350_x7.00,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.878132,0.065833,2.7217
+DE0.375_x6.50,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12335,2.9196
+DE0.375_x6.60,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12301,2.9196
+DE0.375_x6.70,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12246,2.9196
+DE0.375_x6.80,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12187,2.9196
+DE0.375_x6.90,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876738,0.12174,2.9196
+DE0.375_x7.00,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876738,0.12102,2.9197
+DE0.375_x7.10,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12163,2.9197
+DE0.375_x7.20,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12196,2.9198
+DE0.375_x7.30,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876738,0.12188,2.9198
+DE0.375_x7.40,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.1221,2.9198
+DE0.375_x7.50,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12224,2.9197
+DE0.375_x7.60,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12251,2.9199
+DE0.375_x7.70,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.123,2.9199
+DE0.375_x7.80,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12308,2.9199
+DE0.375_x7.90,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876738,0.12329,2.9199
+DE0.375_x8.00,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.876737,0.12337,2.9199
+DE0.400_g3.2,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875598,0.35687,2.2198
+DE0.400_g3.6,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875593,0.054831,2.5945
+DE0.400_x6.50,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875594,0.0034375,3.1513
+DE0.400_x6.60,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875594,0.0034367,3.1514
+DE0.400_x6.70,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034375,3.1514
+DE0.400_x6.80,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034377,3.1514
+DE0.400_x6.90,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.003438,3.1514
+DE0.400_x7.00,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034389,3.1515
+DE0.400_x7.10,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034389,3.1515
+DE0.400_x7.20,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034367,3.1516
+DE0.400_x7.30,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034361,3.1516
+DE0.400_x7.40,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034364,3.1516
+DE0.400_x7.50,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875594,0.0034366,3.1516
+DE0.400_x7.60,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034371,3.1517
+DE0.400_x7.70,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034348,3.1517
+DE0.400_x7.80,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034364,3.1517
+DE0.400_x7.90,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034351,3.1517
+DE0.400_x8.00,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.875595,0.0034365,3.1518
+DE0.425_g3.2,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.874658,0.080099,2.3969
+DE0.425_g3.6,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.874657,0.010973,2.8124
+DE0.425_x7.00,deeper rib etch, unetched slab (tag DE<etch depth um>_x<x_lift>|_g<gap>),1.874659,0.00058466,3.4283
+G3.2_2.8,etched slab ends in gap, narrower gap (tag G<gap>_<slab_w>),1.883848,0.032573,2.8808
+G3.2_3.0,etched slab ends in gap, narrower gap (tag G<gap>_<slab_w>),1.883951,0.082843,2.4711
+G3.6_3.2,etched slab ends in gap, narrower gap (tag G<gap>_<slab_w>),1.883980,0.0085342,3.1049
+G3.6_3.4,etched slab ends in gap, narrower gap (tag G<gap>_<slab_w>),1.884016,0.02174,2.7077
+L11_10.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884030,1.2521,2.2669
+L11_12.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.85806,2.2668
+L11_12.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,1.1185,2.2669
+L11_12.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,1.029,2.2669
+L11_12.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.7295,2.2669
+L11_12.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884026,0.49714,2.2670
+L11_12.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.3541,2.2669
+L11_12.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.26799,2.2669
+L11_12.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.21694,2.2669
+L11_12.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.18713,2.2669
+L11_12.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.17077,2.2669
+L11_13.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.1641,2.2669
+L11_13.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.16628,2.2669
+L11_13.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.17842,2.2669
+L11_13.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.20272,2.2669
+L11_13.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.2421,2.2669
+L11_13.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884034,0.30942,2.2669
+L11_13.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.41806,2.2669
+L11_13.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884034,0.58875,2.2669
+L11_13.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884034,0.79846,2.2669
+L11_13.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.95844,2.2669
+L11_14.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.87899,2.2669
+L11_14.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.68484,2.2670
+L11_14.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.49641,2.2670
+L11_14.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.37464,2.2669
+L11_14.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.29619,2.2669
+L11_14.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.24568,2.2669
+L11_14.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.21472,2.2669
+L11_14.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.19807,2.2669
+L11_14.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.19168,2.2669
+L11_14.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.19498,2.2669
+L11_15.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.20835,2.2669
+L11_15.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.23453,2.2669
+L11_15.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.2771,2.2669
+L11_15.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.34453,2.2669
+L11_15.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.4489,2.2669
+L11_15.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.5926,2.2669
+L11_15.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.75064,2.2669
+L11_15.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.8363,2.2669
+L11_15.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.77732,2.2669
+L11_15.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.63404,2.2669
+L11_16.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.49325,2.2670
+L11_16.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.38355,2.2669
+L11_16.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.31396,2.2669
+L11_16.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.26753,2.2669
+L11_16.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.23954,2.2669
+L11_16.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.22238,2.2669
+L11_16.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.21676,2.2669
+L11_16.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.22112,2.2669
+L11_16.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.23571,2.2669
+L11_16.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.26527,2.2669
+L11_17.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.3093,2.2669
+L11_17.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.37721,2.2669
+L11_17.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.47357,2.2669
+L11_17.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.59343,2.2669
+L11_17.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.70528,2.2669
+L11_17.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.7486,2.2669
+L11_17.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.69912,2.2669
+L11_17.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.59291,2.2669
+L11_17.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.48431,2.2669
+L11_17.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.3946,2.2669
+L11_18.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.33083,2.2669
+L11_18.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.28688,2.2669
+L11_18.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.26011,2.2669
+L11_18.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.2436,2.2669
+L11_18.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.24002,2.2669
+L11_18.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.24529,2.2669
+L11_18.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.26151,2.2669
+L11_18.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.29198,2.2669
+L11_18.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.3367,2.2669
+L11_18.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.3998,2.2669
+L11_19.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884034,0.48237,2.2669
+L11_19.1,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.57392,2.2669
+L11_19.2,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.654,2.2669
+L11_19.3,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884033,0.68092,2.2669
+L11_19.4,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.6426,2.2669
+L11_19.5,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.56069,2.2669
+L11_19.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884031,0.47281,2.2669
+L11_19.7,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.39706,2.2669
+L11_19.8,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.3424,2.2669
+L11_19.9,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.30273,2.2669
+L11_20.0,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884032,0.27866,2.2669
+L11_8.6,etched slab, wider gold x_lift 11 (GAP_TOP 18),1.884030,1.6368,2.2668
+PG3.2_2.6_0.1,partial 2nd etch, narrower gap (tag PG<gap>_<slab_w>_<residual um>),1.883789,0.20849,2.0328
+PG3.2_2.6_0.125,partial 2nd etch, narrower gap (tag PG<gap>_<slab_w>_<residual um>),1.883830,0.45476,1.9344
+PG3.2_2.8_0.125,partial 2nd etch, narrower gap (tag PG<gap>_<slab_w>_<residual um>),1.883947,0.74967,1.8511
+PG3.4_2.8_0.125,partial 2nd etch, narrower gap (tag PG<gap>_<slab_w>_<residual um>),1.883924,0.23814,2.0555
+PG3.6_3.0_0.1,partial 2nd etch, narrower gap (tag PG<gap>_<slab_w>_<residual um>),1.883966,0.056917,2.2733
+PG3.6_3.0_0.125,partial 2nd etch, narrower gap (tag PG<gap>_<slab_w>_<residual um>),1.883975,0.1244,2.1766
+PR125_2.4,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.883586,0.0018591,2.9972
+PR125_2.8,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.883915,0.0038144,2.8380
+PR125_3.2,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.883997,0.0079385,2.6887
+PR125_3.6,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.01757,2.5397
+PR125_4.0,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884026,0.059392,2.3750
+PR125_4.4,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,2.4184,2.2379
+PR125_4.8,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884024,0.67406,2.2631
+PR125_5.2,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884026,0.099133,2.2658
+PR125_6.0,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884033,0.083159,2.2665
+PR125_7.0,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884030,0.17294,2.2667
+PR125x_6.5,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.017572,2.5396
+PR125x_6.6,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.017569,2.5397
+PR125x_6.7,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.017574,2.5396
+PR125x_6.8,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.01757,2.5396
+PR125x_6.9,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884027,0.01756,2.5396
+PR125x_7.1,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.017569,2.5397
+PR125x_7.2,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.017572,2.5397
+PR125x_7.3,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884019,0.017571,2.5397
+PR125x_7.4,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.017571,2.5397
+PR125x_7.5,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884018,0.017575,2.5396
+PR150_3.2,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884002,0.028044,2.5791
+PR150_3.6,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884020,0.055181,2.4664
+PR150_4.0,partial 2nd etch, residual LN (tag PR<nm>_<slab_w> or PR125x_<x_lift> at slab_w 3.6),1.884027,0.1816,2.3432
+SP0.1_6.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884027,0.04928,2.2666
+SP0.1_6.1,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884027,0.0654,2.2666
+SP0.1_6.2,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884028,0.09661,2.2666
+SP0.1_6.3,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884034,0.16403,2.2666
+SP0.1_6.4,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884034,0.33926,2.2666
+SP0.1_6.5,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884036,0.95106,2.2665
+SP0.1_6.6,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,2.8817,2.2665
+SP0.1_6.7,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884028,1.4574,2.2668
+SP0.1_6.8,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884029,0.53227,2.2668
+SP0.1_6.9,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884030,0.27205,2.2668
+SP0.1_7.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.16991,2.2668
+SP0.1_7.1,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.12156,2.2668
+SP0.1_7.2,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.095117,2.2668
+SP0.1_7.3,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.080175,2.2668
+SP0.1_7.4,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.072344,2.2668
+SP0.1_7.5,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.069742,2.2668
+SP0.1_7.6,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.071627,2.2668
+SP0.1_7.7,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.078789,2.2668
+SP0.1_7.8,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.093266,2.2668
+SP0.1_7.9,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.12104,2.2668
+SP0.1_7.9,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.1212,2.2667
+SP0.1_8.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.17147,2.2668
+SP0.1_8.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.17174,2.2667
+SP0.3_6.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884026,0.06338,2.2669
+SP0.3_6.1,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884028,0.094146,2.2669
+SP0.3_6.2,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884029,0.16015,2.2669
+SP0.3_6.3,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884034,0.3329,2.2668
+SP0.3_6.4,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884037,0.94555,2.2667
+SP0.3_6.5,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,2.9349,2.2666
+SP0.3_6.6,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884028,1.4492,2.2669
+SP0.3_6.7,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884029,0.52593,2.2669
+SP0.3_6.8,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884030,0.26753,2.2669
+SP0.3_6.9,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884030,0.16717,2.2669
+SP0.3_7.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.11939,2.2669
+SP0.3_7.1,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.093484,2.2669
+SP0.3_7.2,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.079042,2.2669
+SP0.3_7.3,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.071149,2.2669
+SP0.3_7.4,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.068546,2.2669
+SP0.3_7.5,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.070473,2.2668
+SP0.3_7.6,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.077521,2.2668
+SP0.3_7.7,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.091856,2.2668
+SP0.3_7.8,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.11842,2.2668
+SP0.3_7.9,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884034,0.16947,2.2668
+SP0.3_8.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884034,0.27337,2.2668
+SP0.6_6.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884026,0.066297,2.2676
+SP0.6_6.1,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884028,0.099888,2.2675
+SP0.6_6.2,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884029,0.17446,2.2675
+SP0.6_6.3,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884035,0.37541,2.2673
+SP0.6_6.4,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884037,1.1312,2.2671
+SP0.6_6.5,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,3.0429,2.2671
+SP0.6_6.6,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884028,1.2278,2.2674
+SP0.6_6.7,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884029,0.47032,2.2673
+SP0.6_6.8,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884030,0.24763,2.2673
+SP0.6_6.9,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884030,0.15828,2.2672
+SP0.6_7.0,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.11491,2.2672
+SP0.6_7.1,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884031,0.090841,2.2672
+SP0.6_7.2,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.077517,2.2671
+SP0.6_7.3,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.07048,2.2671
+SP0.6_7.4,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.068394,2.2671
+SP0.6_7.5,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884032,0.070896,2.2671
+SP0.6_7.6,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.078723,2.2670
+SP0.6_7.7,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.094417,2.2670
+SP0.6_7.8,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884033,0.12373,2.2670
+SP0.6_7.9,SiO2 spacer, slab_w sweep (tag SP<w um>_<slab_w>),1.884034,0.17921,2.2670
+S_4.1,etched slab, slab_w sweep fill (x_lift 7),1.884030,0.0068435,2.7753
+S_4.15,etched slab, slab_w sweep fill (x_lift 7),1.884033,0.016259,2.5579
+S_4.2,etched slab, slab_w sweep fill (x_lift 7),1.884040,0.39921,2.1506
+S_4.25,etched slab, slab_w sweep fill (x_lift 7),1.884035,0.27519,2.1753
+S_4.3,etched slab, slab_w sweep fill (x_lift 7),1.884034,0.20289,2.1954
+S_4.4,etched slab, slab_w sweep fill (x_lift 7),1.884032,0.12714,2.2241
+S_4.5,etched slab, slab_w sweep fill (x_lift 7),1.884031,0.099458,2.2412
+S_4.6,etched slab, slab_w sweep fill (x_lift 7),1.884030,0.10403,2.2513
+S_4.7,etched slab, slab_w sweep fill (x_lift 7),1.884032,0.15987,2.2570
+S_4.75,etched slab, slab_w sweep fill (x_lift 7),1.884032,0.23638,2.2589
+S_4.8,etched slab, slab_w sweep fill (x_lift 7),1.884033,0.40673,2.2603
+S_4.85,etched slab, slab_w sweep fill (x_lift 7),1.884035,0.87285,2.2612
+S_4.9,etched slab, slab_w sweep fill (x_lift 7),1.884039,2.6909,2.2617
+S_4.95,etched slab, slab_w sweep fill (x_lift 7),1.884027,7.4014,2.2620
+S_5.0,etched slab, slab_w sweep fill (x_lift 7),1.884017,2.6137,2.2637
+S_5.05,etched slab, slab_w sweep fill (x_lift 7),1.884021,0.94995,2.2643
+S_5.1,etched slab, slab_w sweep fill (x_lift 7),1.884023,0.47863,2.2646
+S_5.15,etched slab, slab_w sweep fill (x_lift 7),1.884023,0.29344,2.2649
+W675_0.025,SiO2 spacer width sweep at slab_w 6.75,1.884029,2.6068,2.2666
+W675_0.05,SiO2 spacer width sweep at slab_w 6.75,1.884028,1.7236,2.2667
+W675_0.1,SiO2 spacer width sweep at slab_w 6.75,1.884028,0.84798,2.2668
+W675_0.2,SiO2 spacer width sweep at slab_w 6.75,1.884029,0.44467,2.2668
+W675_0.3,SiO2 spacer width sweep at slab_w 6.75,1.884030,0.3621,2.2669
+W675_0.5,SiO2 spacer width sweep at slab_w 6.75,1.884030,0.33339,2.2672
+W675_1.0,SiO2 spacer width sweep at slab_w 6.75,1.884030,0.32993,2.2678
