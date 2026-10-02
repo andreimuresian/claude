@@ -76,6 +76,7 @@ CAP_W = 2.0                         # SiO2 cap width
 EL_W = 30.0                         # total electrode width, from the gap edge outward
 MARGIN = 5.0
 SLAB_W = 3.2                        # total width of the LN slab left after the full etch
+SLAB_RES = 0.0                      # LN left outside slab_w (partial second etch); 0 = full etch
 SPACER_W = 0.0                      # SiO2 spacer between the slab end and the gold (0 = none);
                                     # only for a slab ending inside the gold, same height as the slab
 
@@ -88,6 +89,7 @@ SLAB_EXT = (SLAB_W - GAP_BOT) / 2.0         # slab edge beyond the gap edge (per
 assert CAP_W > WG_BOTTOM, "cap must be wider than the rib base"
 assert GAP_BOT > CAP_W, "cap must fit inside the bottom gap"
 assert SLAB_W > CAP_W, "the cap must sit on the slab"
+assert 0.0 <= SLAB_RES < SLAB_H and (SLAB_RES == 0.0 or SPACER_W == 0.0), "residual slab: 0 <= t < SLAB_H, no spacer"
 assert SPACER_W == 0.0 or GAP_BOT < SLAB_W < GAP_TOP + 2 * COL_W - 2 * SPACER_W, (
     "the SiO2 spacer needs a slab that ends inside the gold")
 assert OVERHANG > 0 and EL_W > LOW_W, "inconsistent electrode dimensions"
@@ -222,7 +224,10 @@ def build_polygons():
     core_poly = Polygon([
         (-WG_BOTTOM / 2.0, y_slab_top), (-WG_TOP / 2.0, y_slab_top + WG_H),
         (WG_TOP / 2.0, y_slab_top + WG_H), (WG_BOTTOM / 2.0, y_slab_top)])
+    t_r = SLAB_RES                                  # residual LN outside slab_w
     slab = box(-xs, 0.0, xs, y_slab_top)
+    if t_r > 0:
+        slab = unary_union([slab, box(-x_dev_max, 0.0, x_dev_max, t_r)])
 
     # ---- 2. SiO2 cap (2.0 x 1.4 um, on the slab) -----------------------------
     cap_poly = box(-CAP_W / 2.0, y_slab_top, CAP_W / 2.0, y_fine_top).difference(core_poly)
@@ -284,16 +289,29 @@ def build_polygons():
     # 7a. corner patches: every corner where gold touches the LN slab, plus the
     #     gold foot in the gap if the slab stops short of the gold.
     pts = []
-    if xs > xg - 1e-9:
+    if t_r > 0:                                      # partial etch: gold always sits on LN
+        if xs < xg - 1e-9:
+            pts.append((xg, t_r))                    # gold foot on the residual slab
+        else:
+            pts.append((xg, y_slab_top))
+            if xs < x_col_out - 1e-9:
+                pts.append((xs, t_r))                # thickness step under the gold
+        if xs < x_col_out - 1e-9:
+            pts.append((x_col_out, t_r))             # outer corner on the residual slab
+        else:
+            pts.append((x_col_out, y_slab_top))
+    elif xs > xg - 1e-9:
         pts.append((xg, y_slab_top))                 # inner corner: gold / LN / air
-    if xs < xg + 1e-9:
+    if t_r == 0 and xs < xg + 1e-9:
         pts.append((xg, 0.0))                        # gold foot on the BOX (slab_w <= gap)
-    if xg + 1e-9 < xs < x_col_out - 1e-9 and w_sp > 0:
+    if t_r > 0:
+        pass
+    elif xg + 1e-9 < xs < x_col_out - 1e-9 and w_sp > 0:
         pts += [(xs, y_slab_top),                    # slab end under the gold, on the spacer
                 (x_m, y_slab_top), (x_m, 0.0)]       # spacer wrapped by gold
     elif xg + 1e-9 < xs < x_col_out - 1e-9:
         pts += [(xs, y_slab_top), (xs, 0.0)]         # slab end wrapped by gold
-    elif xs >= x_col_out - 1e-9:
+    elif t_r == 0 and xs >= x_col_out - 1e-9:
         pts.append((x_col_out, y_slab_top))          # outer corner: gold / LN / SiO2
     patches_r = unary_union([box(px - r_c, py - r_c, px + r_c, py + r_c)
                              for px, py in pts])
@@ -383,7 +401,8 @@ _regime = ("slab ends in the air gap" if SLAB_EXT < -1e-9 else
            "slab runs past the gold/SiO2 interface")
 print(f"[geometry OK] {len(polygons)} regions tile exactly")
 print(f"              SLAB_W {SLAB_W:.2f} um (edge {SLAB_EXT:+.2f} um from the gap edge): {_regime}"
-      + (f" | SiO2 spacer {SPACER_W*1e3:.0f} nm before the gold" if SPACER_W > 0 else ""))
+      + (f" | SiO2 spacer {SPACER_W*1e3:.0f} nm before the gold" if SPACER_W > 0 else "")
+      + (f" | {SLAB_RES*1e3:.0f} nm LN left outside slab_w" if SLAB_RES > 0 else ""))
 print(f"              gaps: bottom {GAP_BOT:.2f} um / top {GAP_TOP:.2f} um | "
       f"lower block {LOW_W:.2f} um | gold/SiO2 interface at x = {X_LIFT:.2f} um")
 
