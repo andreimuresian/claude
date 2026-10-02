@@ -1838,6 +1838,9 @@ def run_bend_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
     from .physics import device_response, MAX_BENDS
     log = log or print
     os.makedirs(out_dir, exist_ok=True)
+    for name in ("bends_check.csv", "bends_far_end.csv"):
+        if os.path.exists(os.path.join(out_dir, name)):
+            os.remove(os.path.join(out_dir, name))
     rows, curves = [], []
     hdr = (f"{'bends':>5s}  {'sections (mm)':34s} {'Python BW':>9s} {'IC BW':>8s} {'diff':>7s} "
            f"{'max |dB| diff':>13s} {'far-end ratio':>13s}")
@@ -1870,6 +1873,18 @@ def run_bend_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
                 f_p, v_p = far_end_model(files["tl"], float(pk["f_max_GHz"]))
                 band = (f_p >= 0.5) & (f_p <= 3.0)
                 fe = f"{np.median(np.abs(np.interp(f_p[band], tr[0], np.abs(tr[1]))) / np.abs(v_p[band])):.3f}"
+            with open(os.path.join(out_dir, "bends_check.csv"), "a", newline="") as fh:
+                if fh.tell() == 0:
+                    fh.write("n_bends,f_GHz,python_dB,interconnect_dB\n")
+                for fi, a, c in zip(f, s_py, s):
+                    fh.write(f"{nb},{fi:.6f},{a:.6f},{c:.6f}\n")
+            if tr is not None and files.get("tl"):
+                with open(os.path.join(out_dir, "bends_far_end.csv"), "a", newline="") as fh:
+                    if fh.tell() == 0:
+                        fh.write("n_bends,f_GHz,python_abs,interconnect_abs\n")
+                    for fi, a in zip(f_p, v_p):
+                        fh.write(f"{nb},{fi:.6f},{abs(a):.8e},"
+                                 f"{np.interp(fi, tr[0], np.abs(tr[1])):.8e}\n")
             rows.append(f"{nb:5d}  {secs:34s} {res.bw_GHz:9.2f} {bw:8.2f} {bw - res.bw_GHz:+7.2f} "
                         f"{dmax:13.3f} {fe:>13s}")
             curves.append((nb, secs, res.f_GHz, res.s21_dB, f, s, res.bw_GHz, bw))
@@ -1907,5 +1922,155 @@ def run_bend_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
         ax.set_xlabel("Frequency (GHz)")
         fig.tight_layout()
         fig.savefig(os.path.join(out_dir, "bends_check.png"))
+    log(rep)
+    return rep
+
+
+# ---------------------------------------------------------------------------
+# Eye check with bends: the INTERCONNECT photocurrent, folded by the same code
+# as the Python eye
+# ---------------------------------------------------------------------------
+def eye_stats(traces) -> dict:
+    """Eye height, levels and ER of a folded eye (traces: n x samples), by a
+    mid-level threshold at every sampling instant; the best instant is kept.
+    Applied identically to the INTERCONNECT and the Python waveform, so their
+    numbers are comparable whatever each tool's own eye analyser reports."""
+    tr = np.asarray(traces, float)
+    best = None
+    for j in range(tr.shape[1]):
+        col = tr[:, j]
+        thr = 0.5 * (col.max() + col.min())
+        up, lo = col[col > thr], col[col <= thr]
+        if up.size < 3 or lo.size < 3:
+            continue
+        h = up.min() - lo.max()
+        if best is None or h > best[0]:
+            best = (h, j, up.mean(), lo.mean(), up.std(), lo.std())
+    if best is None:
+        return dict(height=float("nan"), j=0, mu1=float("nan"), mu0=float("nan"),
+                    er_dB=float("nan"), oma=float("nan"), sd1=float("nan"), sd0=float("nan"))
+    h, j, mu1, mu0, sd1, sd0 = best
+    return dict(height=float(h), j=int(j), mu1=float(mu1), mu0=float(mu0),
+                er_dB=float(10 * np.log10(mu1 / mu0)) if mu0 > 0 else float("inf"),
+                oma=float(mu1 - mu0), sd1=float(sd1), sd0=float(sd0))
+
+
+def _read_waveform(b: "InterconnectBuilder", element: str):
+    """(t_s, signal) from an Oscilloscope, whatever this build calls its result."""
+    names = []
+    try:
+        names = [str(n) for n in b.sim.getresultnames(element)]
+    except Exception:
+        pass
+    for n in names + [x for x in ("signal", "output", "waveform") if x not in names]:
+        try:
+            res = b.sim.getresult(element, n)
+        except Exception:
+            continue
+        stack = [res]
+        while stack:
+            d = stack.pop()
+            if not isinstance(d, dict):
+                continue
+            t = next((np.asarray(v, float).ravel() for k, v in d.items()
+                      if str(k).lower().startswith("time")), None)
+            if t is not None:
+                for k, v in d.items():
+                    if str(k).lower().startswith("time"):
+                        continue
+                    try:
+                        a = np.asarray(v, float).ravel()
+                    except Exception:
+                        continue
+                    if a.size == t.size and a.size > 16:
+                        return t, a
+            stack.extend(v for v in d.values() if isinstance(v, dict))
+    raise RuntimeError(f"no time-domain waveform could be read from {element} "
+                       f"(results: {', '.join(names) or 'none listed'})")
+
+
+def run_eye_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
+                   log: Optional[Callable[[str], None]] = None) -> str:
+    """
+    The Step 1 eye check: the current device with 0..4 bends (equal sections),
+    eye build with the TL line, each in a fresh session. An Oscilloscope on
+    the photodiode records the INTERCONNECT waveform; it is folded into a 2-UI
+    eye and measured by eye_stats, exactly like the Python eye of the same
+    device (simulate_eye, noise off, no receiver filter: INTERCONNECT has
+    none). Writes eye_check.txt, eye_check.csv, eye_traces_<n>.npz.
+    """
+    from .eye import simulate_eye
+    from .extractor import export_lumerical_tables
+    from .physics import device_response, MAX_BENDS
+    log = log or print
+    os.makedirs(out_dir, exist_ok=True)
+    levels = 4 if str(p.get("mod_format", "NRZ")).upper() == "PAM4" else 2
+    sym = float(p["bitrate_Gbps"]) / (1 if levels == 2 else 2)
+    rows = []
+    hdr = (f"{'bends':>5s} {'sections (mm)':34s} {'height IC/Py':>12s} {'OMA IC/Py':>10s} "
+           f"{'ER IC':>7s} {'ER Py':>7s} {'IC EYE_1 metrics'}")
+    csv_rows = ["n_bends,sections,height_ic,height_py,oma_ic,oma_py,er_ic,er_py,mu1_ic,mu0_ic,mu1_py,mu0_py"]
+    for nb in n_list:
+        nb = int(min(max(nb, 0), MAX_BENDS))
+        pk = dict(p, n_bends=nb, ic_electrode_model="TL line", eye_noise=False,
+                  samples_per_symbol=EYE_SAMPLES_PER_SYMBOL, rx_bw_GHz=0.45 * 16 * sym)
+        for k in range(1, MAX_BENDS + 2):
+            pk[f"tw_len_{k}_mm"] = 0.0
+        pk = P.normalise(pk)
+        secs = " + ".join(f"{x['L_rf'] * 1e3:.2f}" for x in electrode_layout(pk)
+                          if x["kind"] == "mod")
+        log(f"  --- eye, {nb} bend(s): sections {secs} mm")
+        b = None
+        try:
+            ey = simulate_eye(fit, pk)
+            st_py = eye_stats(ey.traces)
+            res = device_response(fit, pk)
+            files = export_lumerical_tables(fit, pk, res, os.path.join(out_dir, f"eye_{nb}"))
+            b = InterconnectBuilder(str(pk["lumapi_path"]), hide=bool(pk["ic_hide"]), log=log)
+            b.build(pk, files, mode="eye")
+            b.add(['Oscilloscope'], 'OSC_1', 1100, 400)
+            pin = next((w.split(" -> ")[0].split(":", 1)[1] for w in b._wiring
+                        if w.startswith("PIN_1:") and "EYE_1:" in w), P_OUT[0])
+            if not b._try_connect('PIN_1', pin, 'OSC_1', 'input'):
+                b.connect('PIN_1', [pin], 'OSC_1', P_IN)
+            b.run(os.path.join(out_dir, f"eye_{nb}.icp"))
+            m1 = b.eye_metrics('EYE_1')
+            t, i_t = _read_waveform(b, 'OSC_1')
+            fs = 1.0 / np.median(np.diff(t))
+            sps = int(round(fs / (sym * 1e9)))
+            skip = 8 * sps                                   # filter latency and start-up
+            i_t = i_t[skip:]
+            ntr = (i_t.size - 2 * sps) // sps
+            tr_ic = np.array([i_t[k * sps:k * sps + 2 * sps] for k in range(ntr)])
+            st_ic = eye_stats(tr_ic)
+            np.savez(os.path.join(out_dir, f"eye_traces_{nb}.npz"), ic=tr_ic, py=ey.traces,
+                     t_ps=np.arange(2 * sps) / fs * 1e12, t_py_ps=ey.t_ps)
+            rows.append(f"{nb:5d} {secs:34s} {st_ic['height'] / st_py['height']:12.3f} "
+                        f"{st_ic['oma'] / st_py['oma']:10.3f} {st_ic['er_dB']:7.2f} "
+                        f"{st_py['er_dB']:7.2f} " + "  ".join(f"{k} {v:.4g}" for k, v in m1.items()))
+            csv_rows.append(",".join(str(x) for x in (
+                nb, secs.replace(" ", ""), st_ic["height"], st_py["height"], st_ic["oma"],
+                st_py["oma"], st_ic["er_dB"], st_py["er_dB"], st_ic["mu1"], st_ic["mu0"],
+                st_py["mu1"], st_py["mu0"])))
+        except Exception as exc:
+            rows.append(f"{nb:5d} {secs:34s} FAILED: {type(exc).__name__}: "
+                        f"{str(exc).strip().splitlines()[0][:140]}")
+        finally:
+            if b is not None:
+                b.close()
+    lines = ["Step 1 eye check -- TL line eye build vs the Python eye",
+             f"{float(p['bitrate_Gbps']):g} Gb/s, {float(p['drive_Vpp_V']):g} Vpp, "
+             f"L = {float(p['L_target_mm']):g} mm, bend {float(p['bend_len_mm']):g} mm at "
+             f"{float(p['bend_Z_ohm']):g} ohm; noise off, no receiver filter on either side",
+             "", hdr] + rows + [
+             "",
+             "Both eyes are folded and measured by the same code (eye_stats): height = lowest",
+             "'1' minus highest '0' at the best instant, OMA = mean '1' - mean '0', ER = their",
+             "ratio. Pass: ratios ~1.00 and the same trend with the number of bends."]
+    rep = "\n".join(lines)
+    with open(os.path.join(out_dir, "eye_check.txt"), "w") as fh:
+        fh.write(rep + "\n")
+    with open(os.path.join(out_dir, "eye_check.csv"), "w") as fh:
+        fh.write("\n".join(csv_rows) + "\n")
     log(rep)
     return rep
