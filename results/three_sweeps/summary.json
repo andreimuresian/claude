@@ -88,8 +88,16 @@
   }
  },
  "sweep3_vs_previous_slab_in_gold": {
-  "n": 5,
-  "max_rel_dev": 0.9448,
-  "median_rel_dev": 0.0012
+  "n": 28,
+  "max_rel_dev": 0.0213,
+  "median_rel_dev": 0.00032
+ },
+ "sweep3_fit_slab_end_in_gold": {
+  "IL_inf_dB_cm": 0.4148,
+  "rho0": 0.9478,
+  "two_alpha_per_um": 0.1788,
+  "period_um": 0.8944,
+  "phase_rad": -2.735,
+  "rms_log10": 0.0085
  }
 }

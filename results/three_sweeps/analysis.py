@@ -153,7 +153,7 @@ if new:
     for ax, xl in zip(axs, ((2.2, 50.5), (2.2, 25))):
         ax.axvspan(2.2, 4.2, color="#eaf2fb", lw=0)
         ax.plot(pw[:, 0], pw[:, 1], "-", color=C["grey"], lw=1.0, label="previous: SiO₂ lift at slab level (gold/SiO₂ edge at slab_w = 14)")
-        ax.plot(new[:, 0], new[:, 1], "o-", ms=2.2, lw=0.9, color=C["orange"], label="gold at slab level (no gold/SiO₂ edge)")
+        ax.plot(new[:, 0], new[:, 1], "o-", ms=2.2, lw=0.9, color=C["orange"], label="solid gold electrodes, no SiO₂ inside (no gold/SiO₂ edge anywhere)")
         if m.sum() > 40:
             ww = np.linspace(5.0, 50, 4000); Lw = (ww - 4.2) / 2
             rho = p3[1] * np.exp(-p3[2] * Lw)
@@ -166,7 +166,7 @@ if new:
     axs[0].text(2.35, 0.0006, "slab ends\nin the gap", color="#555", fontsize=8.5)
     axs[0].legend(loc="lower right", fontsize=8.5); axs[0].set_ylim(1e-4, 12)
     axs[1].set_ylim(0.02, 12); axs[1].set_xlabel("slab_w (µm)   [gap 4.2 µm, x_lift 7 µm]")
-    axs[0].set_title("Full etch: removing the gold/SiO₂ edge at slab level (dotted = Airy envelope)")
+    axs[0].set_title("Full etch, gap 4.2 µm: oxide removed from the electrodes vs previous lifted geometry (dotted = Airy envelope)")
     plt.tight_layout(); fig.savefig(OUT + "sweep3_IL_vs_slab_w_gold_at_slab_level.png", dpi=150); plt.close(fig)
 
 json.dump(summary, open(OUT + "summary.json", "w"), indent=1)
