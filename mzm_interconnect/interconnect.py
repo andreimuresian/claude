@@ -1955,6 +1955,37 @@ def eye_stats(traces) -> dict:
                 oma=float(mu1 - mu0), sd1=float(sd1), sd0=float(sd0))
 
 
+def fold_ic_waveform(i_t, sps: int, margin_ui: int = 4):
+    """Fold an INTERCONNECT photocurrent into 2-UI traces, starting where the
+    modulation has arrived. Before that the photodiode sits at its bias level
+    for the whole filter latency of the electrode Compound (512 samples = 32 UI
+    at 16 samples per symbol with 1024 taps); folding those flat traces into
+    the eye puts samples between the levels and zeroes the eye height (the
+    first eye check did that, skipping only 8 UI). Returns (traces, start)."""
+    i_t = np.asarray(i_t, float)
+    ref = np.median(i_t[:sps])
+    span = np.ptp(i_t)
+    moved = np.nonzero(np.abs(i_t - ref) > 0.2 * span)[0]
+    start = int(moved[0]) if moved.size else 0
+    start += margin_ui * sps
+    x = i_t[start:]
+    ntr = (x.size - 2 * sps) // sps
+    return np.array([x[k * sps:k * sps + 2 * sps] for k in range(max(ntr, 0))]), start
+
+
+def reanalyse_eye_npz(path: str) -> dict:
+    """Re-fold the INTERCONNECT traces saved by an earlier eye check
+    (eye_traces_<n>.npz) and compare them with the saved Python eye again."""
+    d = np.load(path)
+    tr = d["ic"]
+    sps = tr.shape[1] // 2
+    wave = np.concatenate([tr[:, :sps].ravel(), tr[-1, sps:]])
+    tr_ic, start = fold_ic_waveform(wave, sps)
+    st_ic, st_py = eye_stats(tr_ic), eye_stats(d["py"])
+    return dict(ic=st_ic, py=st_py, start_ui=start / sps, traces_ic=tr_ic,
+                t_ps=d["t_ps"], traces_py=d["py"], t_py_ps=d["t_py_ps"])
+
+
 def _read_waveform(b: "InterconnectBuilder", element: str):
     """(t_s, signal) from an Oscilloscope, whatever this build calls its result."""
     names = []
@@ -2038,13 +2069,13 @@ def run_eye_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
             t, i_t = _read_waveform(b, 'OSC_1')
             fs = 1.0 / np.median(np.diff(t))
             sps = int(round(fs / (sym * 1e9)))
-            skip = 8 * sps                                   # filter latency and start-up
-            i_t = i_t[skip:]
-            ntr = (i_t.size - 2 * sps) // sps
-            tr_ic = np.array([i_t[k * sps:k * sps + 2 * sps] for k in range(ntr)])
+            tr_ic, start = fold_ic_waveform(i_t, sps)
+            log(f"  modulation reaches the photodiode after {start / sps - 4:.0f} UI; "
+                f"folding from UI {start / sps:.0f}")
             st_ic = eye_stats(tr_ic)
             np.savez(os.path.join(out_dir, f"eye_traces_{nb}.npz"), ic=tr_ic, py=ey.traces,
-                     t_ps=np.arange(2 * sps) / fs * 1e12, t_py_ps=ey.t_ps)
+                     t_ps=np.arange(2 * sps) / fs * 1e12, t_py_ps=ey.t_ps,
+                     wave=i_t, sps=sps)
             rows.append(f"{nb:5d} {secs:34s} {st_ic['height'] / st_py['height']:12.3f} "
                         f"{st_ic['oma'] / st_py['oma']:10.3f} {st_ic['er_dB']:7.2f} "
                         f"{st_py['er_dB']:7.2f} " + "  ".join(f"{k} {v:.4g}" for k, v in m1.items()))
