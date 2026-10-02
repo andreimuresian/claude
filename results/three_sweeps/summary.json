@@ -1,4 +1,40 @@
 {
+ "sweep1_gap4.2": {
+  "IL_inf_dB_cm": 0.4116,
+  "rho0": 0.9196,
+  "two_alpha_per_um": 0.1771,
+  "period_um": 0.8954,
+  "phase_rad": 1.164,
+  "rms_log10": 0.0026,
+  "VpiL_Vcm": 2.2649,
+  "IL_min": 0.1807,
+  "IL_max": 0.8827,
+  "IL_far_xlift": 0.4086
+ },
+ "sweep1_gap3.9": {
+  "IL_inf_dB_cm": 1.1027,
+  "rho0": 0.934,
+  "two_alpha_per_um": 0.1795,
+  "period_um": 0.8954,
+  "phase_rad": 1.163,
+  "rms_log10": 0.0025,
+  "VpiL_Vcm": 2.0801,
+  "IL_min": 0.4723,
+  "IL_max": 2.1614,
+  "IL_far_xlift": 1.1037
+ },
+ "sweep1_gap5.0": {
+  "IL_inf_dB_cm": 0.0295,
+  "rho0": 0.9322,
+  "two_alpha_per_um": 0.1792,
+  "period_um": 0.896,
+  "phase_rad": 1.191,
+  "rms_log10": 0.003,
+  "VpiL_Vcm": 2.7578,
+  "IL_min": 0.0129,
+  "IL_max": 0.0735,
+  "IL_far_xlift": 0.03
+ },
  "sweep2": {
   "275": {
    "IL": 0.02603,
@@ -52,8 +88,8 @@
   }
  },
  "sweep3_vs_previous_slab_in_gold": {
-  "n": 1,
-  "max_rel_dev": 0.0002,
-  "median_rel_dev": 0.00017
+  "n": 5,
+  "max_rel_dev": 0.9448,
+  "median_rel_dev": 0.0012
  }
 }

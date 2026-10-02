@@ -82,16 +82,20 @@ if len(S1) > 1:
         for g, a in sorted(S1.items()):
             m = a[:, 0] <= 11.05
             xx = a[m, 0] - (g / 2 if xkey == "L" else 0)
-            ax.plot(xx, a[m, 1], "o-", ms=2.5, lw=0.9, color=cols[g],
-                    label=f"gap {g} µm  (Vπ·L {np.median(a[:, 2]):.2f} V·cm)")
-            if g in fits1 and xkey == "L":
+            yy = a[m, 1] / (fits1[g][0] if xkey == "L" else 1.0)
+            ax.plot(xx, yy, "o-", ms=4 if g == 4.2 else 2.5, lw=0.9, color=cols[g], zorder=4 if g == 4.2 else 2,
+                    mfc="none" if g == 4.2 else cols[g],
+                    label=(f"gap {g} µm  (Vπ·L {np.median(a[:, 2]):.2f} V·cm)" if xkey == "x" else
+                           f"gap {g} µm: IL∞ {fits1[g][0]:.3f} dB/cm, period {fits1[g][3]:.3f} µm, 2α {fits1[g][2]:.3f}/µm"))
+            if xkey == "x":
                 ax.axhline(fits1[g][0], color=cols[g], lw=0.7, ls="--")
         ax.set_yscale("log"); ax.grid(alpha=0.3, which="both", lw=0.4)
-        ax.set_ylabel("IL (dB/cm)")
+        ax.set_ylabel("IL (dB/cm)" if xkey == "x" else "IL / IL∞")
     axs[0].set_xlabel("x_lift (µm)"); axs[0].legend(loc="upper right", fontsize=9)
-    axs[0].set_title("Legacy lifted design: IL vs x_lift for three bottom gaps (top gap varied, 1575 nm)")
+    axs[0].set_title("Legacy lifted design: IL vs x_lift for three bottom gaps (dashed = fitted IL∞)")
     axs[1].set_xlabel("cavity length L = x_lift − gap/2 (µm)")
-    axs[1].set_title("Same data vs cavity length: dashed = fitted IL∞ (no-reflection level)")
+    axs[1].legend(loc="upper right", fontsize=8.5)
+    axs[1].set_title("Normalised to IL∞ and plotted vs cavity length: the three curves collapse onto one")
     plt.tight_layout(); fig.savefig(OUT + "sweep1_IL_vs_xlift_gaps.png", dpi=150); plt.close(fig)
 
 # ============ Sweep 2: buffered, slab thickness ===============================
