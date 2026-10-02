@@ -79,12 +79,15 @@ SLAB_W = 3.2                        # total width of the LN slab left after the 
 SLAB_RES = 0.0                      # LN left outside slab_w (partial second etch); 0 = full etch
 SPACER_W = 0.0                      # SiO2 spacer between the slab end and the gold (0 = none);
                                     # only for a slab ending inside the gold, same height as the slab
+GOLD_OUT = False                    # True: gold instead of the SiO2 lift at slab level, out to the
+                                    # pad end (no gold/SiO2 edge on the slab; lift kept above the block)
 
 basetta = WG_H / np.tan(np.deg2rad(ALPHA))
 WG_BOTTOM = WG_TOP + 2.0 * basetta
 OVERHANG = (GAP_TOP - GAP_BOT) / 2.0        # 2.9 um: lower block beyond the column
 LOW_W = OVERHANG + COL_W                    # 4.9 um: lower-block width
 X_LIFT = GAP_TOP / 2.0 + COL_W              # 7.0 um: gold / SiO2 interface
+X_LOW_OUT = GAP_BOT / 2.0 + EL_W if GOLD_OUT else X_LIFT   # outer edge of the gold at slab level
 SLAB_EXT = (SLAB_W - GAP_BOT) / 2.0         # slab edge beyond the gap edge (per side)
 assert CAP_W > WG_BOTTOM, "cap must be wider than the rib base"
 assert GAP_BOT > CAP_W, "cap must fit inside the bottom gap"
@@ -93,6 +96,7 @@ assert 0.0 <= SLAB_RES < SLAB_H and (SLAB_RES == 0.0 or SPACER_W == 0.0), "resid
 assert SPACER_W == 0.0 or GAP_BOT < SLAB_W < GAP_TOP + 2 * COL_W - 2 * SPACER_W, (
     "the SiO2 spacer needs a slab that ends inside the gold")
 assert OVERHANG > 0 and EL_W > LOW_W, "inconsistent electrode dimensions"
+assert not GOLD_OUT or SLAB_W / 2.0 < X_LOW_OUT - 1.0, "GOLD_OUT: the slab must end inside the gold"
 
 # ---- Material dispersion: every optical constant is computed at `wl` ---------
 def n_LN(lam):
@@ -194,7 +198,9 @@ def _areal(g, tol=1e-10):
 def build_polygons():
     xg = GAP_BOT / 2.0                              # 2.10 um  lower-block inner edge
     x_col_in = GAP_TOP / 2.0                        # 5.00 um  column inner edge
-    x_col_out = X_LIFT                              # 7.00 um  lower-block outer edge
+    x_col_out = X_LIFT                              # 7.00 um  column outer edge (lift starts)
+    x_low_out = X_LOW_OUT                           # gold outer edge at slab level (= x_col_out
+                                                    # unless GOLD_OUT)
     xs = SLAB_W / 2.0                               # slab edge
     x_el_outer = xg + EL_W                          # 32.10 um end of the lifted pad
     DEV_W = 2.0 * x_el_outer + 2.0 * MARGIN         # 74.20 um
@@ -215,7 +221,7 @@ def build_polygons():
     w_sp = SPACER_W
     x_m = xs + w_sp                                 # where the gold starts beyond the slab
     r_c = CORNER_R
-    for _p, _a in [(xs, xg), (x_m, x_col_out)] + ([(xs, x_m)] if w_sp > 0 else []):
+    for _p, _a in [(xs, xg), (x_m, x_low_out)] + ([(xs, x_m)] if w_sp > 0 else []):
         if abs(_p - _a) > 1e-9:
             r_c = min(r_c, abs(_p - _a) / 2.5)    # patches never touch
     assert r_c >= 0.01, f"slab edge {xs:.3f} um within 20 nm of a gold edge: not meshable"
@@ -236,14 +242,14 @@ def build_polygons():
     # ---- 3. Electrode (right = signal): the lower block reaches down to the
     #         BOX wherever the slab has been etched away.
     spacer_r = box(xs, 0.0, x_m, y_slab_top) if w_sp > 0 else Polygon()
-    low_r = box(xg, 0.0, x_col_out, y_low_top).difference(slab).difference(spacer_r)
+    low_r = box(xg, 0.0, x_low_out, y_low_top).difference(slab).difference(spacer_r)
     col_r = box(x_col_in, y_low_top, x_col_out, y_el_top)
     pad_r = box(x_col_out, y_buf_top, x_el_outer, y_el_top)
     el_r = unary_union([low_r, col_r, pad_r])
     assert el_r.geom_type == "Polygon", "electrode blocks do not fuse into one body"
 
     # ---- 4. SiO2 under the lifted pad, down to the BOX where the slab is gone
-    buf_r = box(x_col_out, 0.0, x_dev_max, y_buf_top).difference(slab)
+    buf_r = box(x_col_out, 0.0, x_dev_max, y_buf_top).difference(slab).difference(low_r)
     buf_near_r = _areal(buf_r.intersection(box(x_col_out, 0.0, x_near, y_slab_top + 1.0)))
     buf_far_r = _areal(buf_r.difference(box(x_col_out, 0.0, x_near, y_slab_top + 1.0)))
 
@@ -294,25 +300,25 @@ def build_polygons():
             pts.append((xg, t_r))                    # gold foot on the residual slab
         else:
             pts.append((xg, y_slab_top))
-            if xs < x_col_out - 1e-9:
+            if xs < x_low_out - 1e-9:
                 pts.append((xs, t_r))                # thickness step under the gold
-        if xs < x_col_out - 1e-9:
-            pts.append((x_col_out, t_r))             # outer corner on the residual slab
+        if xs < x_low_out - 1e-9:
+            pts.append((x_low_out, t_r))             # outer corner on the residual slab
         else:
-            pts.append((x_col_out, y_slab_top))
+            pts.append((x_low_out, y_slab_top))
     elif xs > xg - 1e-9:
         pts.append((xg, y_slab_top))                 # inner corner: gold / LN / air
     if t_r == 0 and xs < xg + 1e-9:
         pts.append((xg, 0.0))                        # gold foot on the BOX (slab_w <= gap)
     if t_r > 0:
         pass
-    elif xg + 1e-9 < xs < x_col_out - 1e-9 and w_sp > 0:
+    elif xg + 1e-9 < xs < x_low_out - 1e-9 and w_sp > 0:
         pts += [(xs, y_slab_top),                    # slab end under the gold, on the spacer
                 (x_m, y_slab_top), (x_m, 0.0)]       # spacer wrapped by gold
-    elif xg + 1e-9 < xs < x_col_out - 1e-9:
+    elif xg + 1e-9 < xs < x_low_out - 1e-9:
         pts += [(xs, y_slab_top), (xs, 0.0)]         # slab end wrapped by gold
-    elif t_r == 0 and xs >= x_col_out - 1e-9:
-        pts.append((x_col_out, y_slab_top))          # outer corner: gold / LN / SiO2
+    elif t_r == 0 and xs >= x_low_out - 1e-9:
+        pts.append((x_low_out, y_slab_top))          # outer corner: gold / LN / SiO2
     patches_r = unary_union([box(px - r_c, py - r_c, px + r_c, py + r_c)
                              for px, py in pts])
     patches = unary_union([patches_r, mirror(patches_r)])
@@ -324,8 +330,8 @@ def build_polygons():
     skin_zone_r = unary_union([
         unary_union([slab, spacer_r]).buffer(SKIN_T, join_style=2),
         box(xg, 0.0, xg + SKIN_T, y_low_top),
-        box(x_col_out - SKIN_T, 0.0, x_col_out, y_slab_top + OUTER_WALL_SKIN_H),
-        box(x_e, 0.0, min(x_e + BOT_SKIN_L, x_col_out), SKIN_T) if x_e < x_col_out else Polygon(),
+        box(x_low_out - SKIN_T, 0.0, x_low_out, y_slab_top + OUTER_WALL_SKIN_H),
+        box(x_e, 0.0, min(x_e + BOT_SKIN_L, x_low_out), SKIN_T) if x_e < x_low_out else Polygon(),
     ])
     skin_zone = unary_union([skin_zone_r, mirror(skin_zone_r)])
 
@@ -396,7 +402,7 @@ assert abs(_tot - DEV_W * (BOX_H + Y_TOP)) < 1e-8, "tiling gap"
 
 _regime = ("slab ends in the air gap" if SLAB_EXT < -1e-9 else
            "slab ends at the gold inner edge" if abs(SLAB_EXT) < 1e-9 else
-           "slab ends inside the gold" if SLAB_W / 2 < X_LIFT - 1e-9 else
+           "slab ends inside the gold" if SLAB_W / 2 < X_LOW_OUT - 1e-9 else
            "slab ends at the gold/SiO2 interface" if abs(SLAB_W / 2 - X_LIFT) < 1e-9 else
            "slab runs past the gold/SiO2 interface")
 print(f"[geometry OK] {len(polygons)} regions tile exactly")
@@ -404,7 +410,9 @@ print(f"              SLAB_W {SLAB_W:.2f} um (edge {SLAB_EXT:+.2f} um from the g
       + (f" | SiO2 spacer {SPACER_W*1e3:.0f} nm before the gold" if SPACER_W > 0 else "")
       + (f" | {SLAB_RES*1e3:.0f} nm LN left outside slab_w" if SLAB_RES > 0 else ""))
 print(f"              gaps: bottom {GAP_BOT:.2f} um / top {GAP_TOP:.2f} um | "
-      f"lower block {LOW_W:.2f} um | gold/SiO2 interface at x = {X_LIFT:.2f} um")
+      f"lower block {LOW_W:.2f} um | " + (f"gold at slab level out to x = {X_LOW_OUT:.2f} um "
+      f"(no gold/SiO2 edge on the slab), lift from x = {X_LIFT:.2f} um" if GOLD_OUT else
+      f"gold/SiO2 interface at x = {X_LIFT:.2f} um"))
 
 raw_mesh = mesh_from_OrderedDict(
     polygons,
@@ -469,8 +477,10 @@ _xl = max(12.0, _xs + 2.0)
 _dim(ax_a, -_xs, _xs, -0.45, rf"slab_w = {SLAB_W:.2f} $\mu$m", color="#34495e", above=False)
 _dim(ax_a, -_xg, _xg, _yst + EL_H - 0.35, rf"gap = {GAP_BOT:.2f} $\mu$m")
 _dim(ax_a, -GAP_TOP / 2.0, GAP_TOP / 2.0, _yst + BUFFER_H + 0.6, rf"top gap = {GAP_TOP:.1f} $\mu$m")
-_dim(ax_a, _xg, X_LIFT, _yst + EL_H + 0.35, rf"lower block {LOW_W:.1f} $\mu$m")
-ax_a.annotate(rf"gold / SiO$_2$ interface, x_lift = {X_LIFT:.1f} $\mu$m", (X_LIFT, _yst / 2),
+if not GOLD_OUT:
+    _dim(ax_a, _xg, X_LIFT, _yst + EL_H + 0.35, rf"lower block {LOW_W:.1f} $\mu$m")
+ax_a.annotate(rf"lift starts above the block, x_lift = {X_LIFT:.1f} $\mu$m (gold at slab level)" if GOLD_OUT else
+              rf"gold / SiO$_2$ interface, x_lift = {X_LIFT:.1f} $\mu$m", (X_LIFT, _yst / 2 if not GOLD_OUT else _yst + EL_H),
               (X_LIFT + 0.6, -0.85), fontsize=8.5, arrowprops=dict(arrowstyle="->", lw=0.8))
 ax_a.legend(handles=[mpatches.Patch(color=MATERIALS[m]["color"], label=f"{m}: {MATERIALS[m]['desc']}")
                      for m in _mkeys if m in _mat_shapes],
@@ -482,7 +492,7 @@ ax_a.set_title(rf"Cross-section as simulated (no mesh) | slab_w = {SLAB_W:.2f} $
 # zoom on the right-hand slab end: what surrounds the end of the LN slab
 _draw_materials(ax_b)
 _zx0, _zx1 = _xs - 1.2, _xs + 1.2
-for _xv, _lab, _c in [(_xg, "gold inner edge", "#b9770e"), (X_LIFT, "gold / SiO$_2$ interface", "#1f618d"),
+for _xv, _lab, _c in [(_xg, "gold inner edge", "#b9770e"), (X_LOW_OUT, "gold / SiO$_2$ interface", "#1f618d"),
                       (_xs, "slab end", "#c0392b")]:
     if _zx0 < _xv < _zx1:
         ax_b.axvline(_xv, color=_c, ls="--", lw=1.0)
