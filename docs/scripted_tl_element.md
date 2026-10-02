@@ -273,6 +273,56 @@ element does the averaging has not been identified. In the eye build it is
 negligible: at 16 samples per symbol the factor at half the symbol rate is
 cos(π/32) = −0.04 dB, and the eye skips the first periods.
 
+### Bends: one TL electrode element, no Optical Delay
+
+The first bend run (14 mm as 7 + 0.8 + 7 mm) gave nulls every 16.5 GHz and a
+"bandwidth" of 5.5 GHz. The cause was the Optical Delay between the two
+modulators of each arm (n_g·7.8 mm/c = 59 ps = 18.9 samples). An Optical
+Delay emits no light for its first τ, so at the start of the run the
+photodiode was dark for 59 ps instead of half a sample. After the ENA's DC
+removal that is a rectangle of length τ, 38× the straight-case spike and about
+400× the real EO response. Its spectrum is a sinc: +15.5 dB at DC (measured
++15.8), nulls every 1/τ = 16.9 GHz, sidelobes −13.3/−17.8/−20.8 dB at
+24/42/59 GHz (measured +2.5/−2/−5 dB from +15.8). The electrode was not
+involved.
+
+With bends the TL build now uses one **TL electrode** element
+(`lumerical/tl_electrode_setup.lsf`, Python twin
+`scripted_line.tl_electrode_sparams`) for the whole bent electrode:
+
+- S-matrix from the product of the pieces' ABCD matrices (S22 ≠ S11 for an
+  asymmetric electrode).
+- Per modulating section, the exact integral of V(z) (V and I at its entry
+  from stepping through the cascade), referenced to the light leaving it,
+  delayed by n_g·(optical length after it)/c, weighted L_k/L_mod and summed:
+  one `modulation` output per arm (`modulation 2` at n_g2), referenced to the
+  light leaving the electrode. The optical delays are phases inside the
+  Compound, not elements.
+- `far end` = the voltage at port 2.
+- The pieces come from `electrode_layout.txt` (L_rf, L_opt, modulating per
+  row), with the tables `electrode_line.txt` and `bend_line.txt`.
+
+A bent modulator then has the same schematic as a straight one:
+SRC → TL electrode → LOAD in a Compound, and one Optical Modulator per arm with
+the full coefficient. The straight build is unchanged (TL line element).
+
+The TW-block build with bends keeps its Optical Delays. The EO read-back now
+widens its time gate by the longest delay chain (`optical_transient_ps`), so
+that build reads correctly too: in a synthetic test, 8 GHz uncorrected and
+within 0.25 GHz of Python after correction, for 1, 2 and 4 bends.
+
+Offline (`tools/validate_tl_line.py`, check 6): for 0–4 bends (equal and
+unequal sections, 0 mm bend, bend impedance 35–80 Ω, n_g imbalance ±0.02–0.03,
+R+L+C terminations), the TL electrode equals the chain of separate elements to
+1e-14 for both arms, the far end and S11, and the GUI's device response to
+2e-4 dB up to 150 GHz.
+
+In INTERCONNECT: **"Step 1: bends 0-4 check"** builds the current device with
+0, 1, 2, 3 and 4 bends (equal sections, the GUI's bend settings), runs each,
+and writes `bends_check/bends_check.txt` (Python and INTERCONNECT bandwidths,
+the largest difference of the normalised curves down to −10 dB, far-end
+ratio) and `bends_check.png` (the curves).
+
 ### Step 1 checks, in order
 
 1. **Straight electrode, ENA.** The TL build's EO bandwidth must match the

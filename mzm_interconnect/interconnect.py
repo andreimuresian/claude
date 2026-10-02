@@ -152,7 +152,7 @@ KNOWN_ENA_RESULTS = ['input 1/S21', 'input 1/transmission', 'input 1/gain',
                      'S21', 'transmission', 'gain', 'ENA_1', 'model']
 
 
-def clean_eo_trace(f_GHz, H, fs_GHz: float, gate_ps: float = 25.0):
+def clean_eo_trace(f_GHz, H, fs_GHz: float, gate_ps: float = 25.0, transient_ps: float = 0.0):
     """
     Remove from an ENA EO trace the two artefacts INTERCONNECT's optical path
     adds, which the Step 1 diagnosis measured on the TW block and the TL line
@@ -170,7 +170,9 @@ def clean_eo_trace(f_GHz, H, fs_GHz: float, gate_ps: float = 25.0):
     Both are what an element computing y[n] = (x[n] + x[n-1]) / 2 on the
     optical path gives, with x[-1] = 0 at the start of the run (half a sample
     of missing photocurrent, which the ENA's DC removal turns into the
-    negative spike). The trace is cut at 0.95 x Nyquist, where the factor
+    negative spike). An Optical Delay on the light's path does the same for
+    its whole delay (no light for its first tau): *transient_ps* widens the
+    gate to |t| <= transient_ps + gate_ps. The trace is cut at 0.95 x Nyquist, where the factor
     falls below -16 dB and dividing by it would only amplify rounding.
     Returns (f, corrected H, info).
     """
@@ -178,16 +180,21 @@ def clean_eo_trace(f_GHz, H, fs_GHz: float, gate_ps: float = 25.0):
     H = np.asarray(H, complex)
     info = dict(spike_abs=0.0, spike_rel_dB=float("-inf"), cos_at_top_dB=0.0, gated=False)
     df = np.diff(f)
-    if f.size > 8 and np.all(np.abs(df - df.mean()) < 1e-3 * max(df.mean(), 1e-12)):
-        T = 1.0 / (f.size * df.mean())                 # ns per one-sided time step
-        M = int(np.floor(gate_ps * 1e-3 / T))
-        G = np.zeros_like(H)
-        for m in range(-M, M + 1):
-            ph = np.exp(2j * np.pi * f * m * T)
-            G += np.mean(H * ph) / ph
+    if (f.size > 8 and abs(f[0]) < 1e-9 * f[-1]
+            and np.all(np.abs(df - df.mean()) < 1e-3 * max(df.mean(), 1e-12))):
+        # The real (two-sided) impulse response, with the grid read as 0 ..
+        # Nyquist. Gating the one-sided transform instead also removes the
+        # band-edge leakage of the real response near t = 0 (0.4 dB).
+        n_fft = 2 * (f.size - 1)
+        h = np.fft.irfft(H, n_fft)
+        dt_ps = 1e3 / (n_fft * df.mean())
+        M = int(np.ceil((gate_ps + transient_ps) / dt_ps))
+        g = np.zeros_like(h)
+        g[:M + 1], g[-M:] = h[:M + 1], h[-M:]      # both signs of t: either phase convention
+        G = np.fft.rfft(g, n_fft)[:f.size]
         H = H - G
         g0 = np.interp(1.0, f, np.abs(G))
-        info["spike_abs"] = float(np.abs(np.mean(G)))
+        info["spike_abs"] = float(abs(np.sum(g)))
         info["spike_rel_dB"] = float(20 * np.log10(max(g0, 1e-300) /
                                                    max(np.interp(1.0, f, np.abs(H)), 1e-300)))
         info["gated"] = True
@@ -228,6 +235,7 @@ class InterconnectBuilder(TLElementsMixin):
         self.ena_inputs = 1
         self.probe_input = None
         self.fs_GHz = None
+        self.optical_transient_ps = 0.0  # longest Optical Delay chain on the light's path
         self.correct_eo = True          # remove the optical path's two artefacts (clean_eo_trace)
         self.eo_correction = None       # what the last correction removed
 
@@ -393,6 +401,7 @@ class InterconnectBuilder(TLElementsMixin):
         self._wiring = []
         self.pending_manual = []
         self.far_end = None
+        self.optical_transient_ps = 0.0
         tl = uses_tl_line(p)
         self.electrode_model = "TL line" if tl else "TW block"
         if tl:
@@ -1065,6 +1074,11 @@ class InterconnectBuilder(TLElementsMixin):
         secs = self.bend_sections
         L_mod = sum(s["L_m"] for s in secs) or 1.0
         arms = [(1, c1, ng1)] + ([(2, c2, ng2)] if pushpull else [])
+        # The Optical Delays leave the photodiode dark for their total delay at
+        # the start of the run; the EO read-back gates that interval out.
+        self.optical_transient_ps = max(
+            sum(ng_a * (s["bend_opt_m"] + s["L_m"]) / C0 for s in secs[1:])
+            for _a, _c, ng_a in arms) * 1e12
         self.tw_names, self.drive_chains = [], []
         dx = 230
         for arm, c, ng_a in arms:
@@ -1150,6 +1164,17 @@ class InterconnectBuilder(TLElementsMixin):
         arm 1 takes 'modulation' (n_g1), arm 2 'modulation 2' (n_g2).
         """
         lay = electrode_layout(p)
+        n_sec = sum(1 for x in lay if x["kind"] == "mod")
+        self.tl_bent = n_sec > 1
+        if self.tl_bent:
+            # The whole bent electrode is one TL electrode element whose
+            # modulation outputs already carry the light's delays between
+            # sections, so each arm is ONE modulator, as for a straight
+            # electrode. No Optical Delay: it emits no light for its first tau,
+            # and the Network Analyzer read that as a 40x larger, sinc-shaped
+            # "response" (the first bend run).
+            L_all = sum(x["L_rf"] for x in lay if x["kind"] == "mod")
+            lay = [dict(kind="mod", L_rf=L_all, L_opt=L_all)]
         L_mod = sum(x["L_rf"] for x in lay if x["kind"] == "mod") or 1.0
         arms = [(1, c1, ng1)] + ([(2, c2, ng2)] if pushpull else [])
         self.tl_outputs = []
@@ -1185,12 +1210,12 @@ class InterconnectBuilder(TLElementsMixin):
             self.connect('SPLT_1', self.p_split_b, 'PHS_1', P_BI1)
             tail, tail_port = self._wire_arm2_tail()
             self.connect(tail, tail_port, 'SPLT_2', self.p_comb_b)
-        n_sec = sum(1 for x in lay if x["kind"] == "mod")
         nb = n_sec - 1
         kind = "PUSH-PULL" if pushpull else "SINGLE-ARM"
         self.log(f"  Topology: {kind}, electrode model TL line: {n_sec} electrode section(s)"
-                 + (f" and {nb} bend(s)" if nb else "") + ", one modulator per section per "
-                 f"arm (n_g {ng1:.5f}" + (f" / {ng2:.5f}" if pushpull else "") + ").")
+                 + (f" and {nb} bend(s) in one TL electrode element" if nb else "")
+                 + ", one modulator per arm (n_g " + f"{ng1:.5f}"
+                 + (f" / {ng2:.5f}" if pushpull else "") + ").")
         return ("push-pull" if pushpull else "single-arm") + \
             (f", {nb} bend(s)" if nb else "") + ", TL line"
 
@@ -1217,14 +1242,26 @@ class InterconnectBuilder(TLElementsMixin):
         self.make_source("SRC", 260, -150, float(p["Zs_R"]), float(p["Zs_L_pH"]) * 1e-12,
                          float(p["Zs_C_fF"]) * 1e-15, top_Hz, n_freq)
         names = ["SRC"]
-        for i, e in enumerate(els):
-            mod = bool(e["modulating"])
-            self.make_tl(e["name"], 400, -150, os.path.join(d, e["table"]),
-                         float(e["line_length"]), float(e["ng"]), modulating=mod,
-                         far_end=(i == len(els) - 1), library_name=lib,
-                         fir_taps=self.BEND_FIR_TAPS,
-                         ng2=float(e["ng2"]) if (mod and pushpull) else None)
-            names.append(e["name"])
+        if getattr(self, "tl_bent", False):
+            e0 = next(e for e in els if e["modulating"])
+            self.make_tl_electrode("EL_1", 400, -150, os.path.join(d, "electrode_line.txt"),
+                                   os.path.join(d, "bend_line.txt"), tl["layout"],
+                                   float(e0["ng"]),
+                                   float(e0["ng2"]) if pushpull else None,
+                                   far_end=True, fir_taps=self.BEND_FIR_TAPS)
+            names.append("EL_1")
+            els = [dict(name="EL_1")]
+            self.log(f"  EL_1: TL electrode, {len(meta['elements'])} pieces from "
+                     f"{os.path.basename(tl['layout'])}.")
+        else:
+            for i, e in enumerate(els):
+                mod = bool(e["modulating"])
+                self.make_tl(e["name"], 400, -150, os.path.join(d, e["table"]),
+                             float(e["line_length"]), float(e["ng"]), modulating=mod,
+                             far_end=(i == len(els) - 1), library_name=lib,
+                             fir_taps=self.BEND_FIR_TAPS,
+                             ng2=float(e["ng2"]) if (mod and pushpull) else None)
+                names.append(e["name"])
         self.make_load("LOAD", 900, -150, float(p["Rt_R"]), float(p["Rt_L_pH"]) * 1e-12,
                        float(p["Rt_C_fF"]) * 1e-15, top_Hz, n_freq)
         names.append("LOAD")
@@ -1518,7 +1555,8 @@ class InterconnectBuilder(TLElementsMixin):
         if cplx and self.correct_eo and self.fs_GHz:
             sets = []
             for label, f, d in cplx:
-                f2, d2, info = clean_eo_trace(f / 1e9, d, self.fs_GHz)
+                f2, d2, info = clean_eo_trace(f / 1e9, d, self.fs_GHz,
+                                              transient_ps=self.optical_transient_ps)
                 sets.append((label + " [corrected]", f2 * 1e9, d2))
                 self.eo_correction = self.eo_correction or info
         rows = []
@@ -1721,7 +1759,10 @@ def run_tl_diagnosis(fit, p: dict, res, out_dir: str,
             read = b.dump_ena(os.path.join(out_dir, f"tl_diag_{rid}.csv"))
             A(f"   ENA_1 inputs {b.ena_inputs}; results read: {', '.join(read) or '(none)'}")
             if b.electrode_model == "TL line":
-                els, opt = SL.device_chain(files["tl"], second=pushpull)
+                if getattr(b, "tl_bent", False):
+                    els, opt = [SL.tl_electrode_from_paths(files["tl"], second=pushpull)], None
+                else:
+                    els, opt = SL.device_chain(files["tl"], second=pushpull)
                 Zs, Zt = SL.device_terminations(files["tl"], els[0]["f_Hz"])
                 r = SL.chain_response(els, Zs, Zt, opt_lengths=opt)
                 f_m, v_m = r.f_Hz / 1e9, r.vavg[0]
@@ -1750,7 +1791,8 @@ def run_tl_diagnosis(fit, p: dict, res, out_dir: str,
                     f"{20 * np.log10(max(abs(np.interp(x, f, np.abs(H))), 1e-300)):.2f}"
                     for x in (1, 20, 50, 90, 140))
                 if k == 1 and cplx and b.fs_GHz:
-                    f, H, info = clean_eo_trace(f, H, b.fs_GHz)
+                    f, H, info = clean_eo_trace(f, H, b.fs_GHz,
+                                                transient_ps=b.optical_transient_ps)
                     name += " (corrected)"
                     A(f"   input 1: removed the start-of-run term ({info['spike_rel_dB']:+.1f} dB "
                       f"vs the response at 1 GHz) and the two-sample average.")
@@ -1776,5 +1818,94 @@ def run_tl_diagnosis(fit, p: dict, res, out_dir: str,
     rep = "\n".join(lines)
     with open(os.path.join(out_dir, "tl_diagnosis.txt"), "w") as fh:
         fh.write(rep + "\n")
+    log(rep)
+    return rep
+
+
+def run_bend_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
+                    log: Optional[Callable[[str], None]] = None) -> str:
+    """
+    The Step 1 bend check in INTERCONNECT: the current device built with the
+    TL line and 0, 1, ... 4 bends (sections of equal length, the GUI's bend
+    settings), each in a fresh session, each compared with the Python device
+    response on the same normalisation: bandwidths, the largest difference of
+    the normalised EO curves up to the -10 dB point of the Python curve (or the
+    sweep ceiling), and the far-end voltage ratio. Writes bends_check.txt and
+    bends_check.png in *out_dir*.
+    """
+    from matplotlib.figure import Figure
+    from .extractor import export_lumerical_tables
+    from .physics import device_response, MAX_BENDS
+    log = log or print
+    os.makedirs(out_dir, exist_ok=True)
+    rows, curves = [], []
+    hdr = (f"{'bends':>5s}  {'sections (mm)':34s} {'Python BW':>9s} {'IC BW':>8s} {'diff':>7s} "
+           f"{'max |dB| diff':>13s} {'far-end ratio':>13s}")
+    for nb in n_list:
+        nb = int(min(max(nb, 0), MAX_BENDS))
+        pk = dict(p, n_bends=nb, ic_electrode_model="TL line")
+        for k in range(1, MAX_BENDS + 2):
+            pk[f"tw_len_{k}_mm"] = 0.0           # equal sections
+        pk = P.normalise(pk)
+        secs = " + ".join(f"{x['L_rf'] * 1e3:.2f}" for x in electrode_layout(pk)
+                          if x["kind"] == "mod")
+        log(f"  --- {nb} bend(s): sections {secs} mm")
+        b = None
+        try:
+            res = device_response(fit, pk)
+            files = export_lumerical_tables(fit, pk, res, os.path.join(out_dir, f"bends_{nb}"))
+            b = InterconnectBuilder(str(pk["lumapi_path"]), hide=bool(pk["ic_hide"]), log=log)
+            b.build(pk, files, mode="ena")
+            b.run(os.path.join(out_dir, f"bends_{nb}.icp"))
+            f, s, bw = b.ena_trace(pk, norm_window=res.norm_window_GHz)
+            s_py = np.interp(f, res.f_GHz, res.s21_dB)
+            below = np.nonzero(s_py < -10.0)[0]
+            top = f[below[0]] if below.size else min(f[-1], float(pk["f_max_GHz"]))
+            m = (f >= 1.0) & (f <= top)
+            dmax = float(np.max(np.abs(s[m] - s_py[m]))) if m.any() else float("nan")
+            fe = "n/a"
+            tr = b.far_end_trace()
+            if tr is not None and files.get("tl"):
+                from .scripted_line import far_end_model
+                f_p, v_p = far_end_model(files["tl"], float(pk["f_max_GHz"]))
+                band = (f_p >= 0.5) & (f_p <= 3.0)
+                fe = f"{np.median(np.abs(np.interp(f_p[band], tr[0], np.abs(tr[1]))) / np.abs(v_p[band])):.3f}"
+            rows.append(f"{nb:5d}  {secs:34s} {res.bw_GHz:9.2f} {bw:8.2f} {bw - res.bw_GHz:+7.2f} "
+                        f"{dmax:13.3f} {fe:>13s}")
+            curves.append((nb, secs, res.f_GHz, res.s21_dB, f, s, res.bw_GHz, bw))
+        except Exception as exc:
+            rows.append(f"{nb:5d}  {secs:34s} FAILED: {type(exc).__name__}: "
+                        f"{str(exc).strip().splitlines()[0][:120]}")
+        finally:
+            if b is not None:
+                b.close()
+    lines = ["Step 1 bend check -- TL line build vs the Python device response",
+             f"device: L = {float(p['L_target_mm']):g} mm, bend {float(p['bend_len_mm']):g} mm "
+             f"at {float(p['bend_Z_ohm']):g} ohm, Zs {float(p['Zs_R']):g} ohm, "
+             f"Rt {float(p['Rt_R']):g} ohm, sample rate {float(p['ic_sample_rate_GHz']):g} GHz",
+             "", hdr] + rows + [
+             "",
+             "max |dB| diff: normalised EO curves, from 1 GHz to where the Python curve reaches",
+             "-10 dB (or the sweep ceiling). Pass: about 0.1 dB and the same bandwidth to a few",
+             "tenths of a GHz (the straight Step 0 residual), far-end ratio 1.000."]
+    rep = "\n".join(lines)
+    with open(os.path.join(out_dir, "bends_check.txt"), "w") as fh:
+        fh.write(rep + "\n")
+    if curves:
+        fig = Figure(figsize=(11, 2.6 * len(curves)), dpi=100)
+        for i, (nb, secs, fp, sp, fi, si, bwp, bwi) in enumerate(curves, start=1):
+            ax = fig.add_subplot(len(curves), 1, i)
+            ax.plot(fp, sp, "-", lw=2, color="#3f7fd0", label=f"Python (BW {bwp:.2f} GHz)")
+            ax.plot(fi, si, "--", lw=1.6, color="#e2504a", label=f"INTERCONNECT (BW {bwi:.2f} GHz)")
+            ax.axhline(float(p["bw_level_dB"]), color="0.5", ls=":", lw=1)
+            ax.set_ylim(-20, 3)
+            ax.set_xlim(0, float(p["f_max_GHz"]))
+            ax.set_ylabel("EO S21 (dB)")
+            ax.set_title(f"{nb} bend(s): sections {secs} mm", fontsize=9)
+            ax.legend(fontsize=8, loc="lower left")
+            ax.grid(alpha=0.3)
+        ax.set_xlabel("Frequency (GHz)")
+        fig.tight_layout()
+        fig.savefig(os.path.join(out_dir, "bends_check.png"))
     log(rep)
     return rep

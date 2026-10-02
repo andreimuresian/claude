@@ -1,0 +1,238 @@
+# =============================================================================
+# SETUP script of the "TL electrode" scripted element (MZM Studio).
+#
+# A whole bent electrode -- modulating sections and bends, in order -- as ONE
+# element, so that a bent modulator has the same schematic as a straight one:
+# SRC -> TL electrode -> LOAD in a Compound, one Optical Modulator per arm.
+#
+#   port 1        bidirectional, electrical   RF input of the electrode
+#   port 2        bidirectional, electrical   end of the last section
+#   modulation    output, electrical          arm 1: sum over the modulating
+#                                             sections of (L_k / L_mod) x the
+#                                             voltage the light integrates on
+#                                             section k, delayed by the light's
+#                                             transit through everything after
+#                                             it (n_g x optical length / c);
+#                                             referenced to the light leaving
+#                                             the electrode
+#   modulation 2  output, electrical          (optional) the same at ng2 (arm 2)
+#   far end       output, electrical          (optional) the voltage at port 2
+#
+# Why one element: the light's delay between sections used to be an Optical
+# Delay element. An Optical Delay emits no light for its first tau, so the
+# photodiode lost its DC for tau at the start of the run; the Network Analyzer's
+# DC removal turned that into a rectangle of length tau, 40x the real response
+# (a sinc with nulls every 1/tau: every 16.9 GHz for 7.8 mm). Here the delays
+# are phases of the modulation outputs, solved with the rest of the Compound.
+#
+# Properties:
+#   table_file        electrode line table (as tl_element_setup.lsf)
+#   bend_table_file   bend line table, same frequency column (may be absent
+#                     when there are no bends)
+#   layout_file       one row per piece from the RF input: L_rf (m), L_opt (m),
+#                     modulating (1 section / 0 bend). Header lines start with
+#                     a letter.
+#   ng, ng2, second_modulation, far_end_output, R0, wave_convention, fir_taps,
+#   phase_convention  as in tl_element_setup.lsf
+#
+# Maths (mirrored line for line in scripted_line.tl_electrode_sparams):
+#   S-matrix from the product of the pieces' ABCD matrices (S22 differs from
+#   S11 unless the electrode is symmetric); V and I at each section's entry by
+#   stepping the port voltage and current through the cascade.
+#
+# No user-defined functions and one statement per line, on purpose. Reserved
+# names (c, e, h, pi, i, eps0, mu0) are not used as variables.
+# =============================================================================
+
+c0 = 299792458;
+NP_PER_DB = log(10) / 20;
+
+# ---- 1. tables -----------------------------------------------------------------
+if (fileexists(table_file) == 0) {
+    logmessage("TL electrode: table file not found: " + table_file);
+    break;
+}
+M = readdata(table_file);
+fr = M(:, 1);
+lossE = M(:, 2);
+nmE = M(:, 3);
+ZE = M(:, 4) + 1i * M(:, 5);
+if (fr(1) > 0) {
+    fr = [0; fr];
+    lossE = [lossE(1); lossE];
+    nmE = [nmE(1); nmE];
+    ZE = [ZE(1); ZE];
+}
+nf = length(fr);
+w = 2 * pi * fr;
+gE = lossE * NP_PER_DB + 1i * w * nmE / c0;
+gB = gE;
+ZB = ZE;
+if (fileexists(bend_table_file)) {
+    MB = readdata(bend_table_file);
+    lossB = MB(:, 2);
+    nmB = MB(:, 3);
+    ZB = MB(:, 4) + 1i * MB(:, 5);
+    if (MB(1, 1) > 0) {
+        lossB = [lossB(1); lossB];
+        nmB = [nmB(1); nmB];
+        ZB = [ZB(1); ZB];
+    }
+    if (length(lossB) != nf) {
+        logmessage("TL electrode: the bend table and the electrode table must share one frequency column");
+        break;
+    }
+    gB = lossB * NP_PER_DB + 1i * w * nmB / c0;
+}
+if (fileexists(layout_file) == 0) {
+    logmessage("TL electrode: layout file not found: " + layout_file);
+    break;
+}
+LAY = readdata(layout_file);
+szl = size(LAY);
+nsec = szl(1);
+Lmod = 0;
+Ltail = 0;
+for (k = 1:nsec) {
+    Ltail = Ltail + LAY(k, 2);
+    if (LAY(k, 3) > 0.5) { Lmod = Lmod + LAY(k, 1); }
+}
+
+# ---- 2. cascade: total ABCD, then S-matrix in R0 -------------------------------
+tA = 1 + 0 * w;
+tB = 0 * w;
+tC = 0 * w;
+tD = 1 + 0 * w;
+for (k = 1:nsec) {
+    Lk = LAY(k, 1);
+    gk = gB;
+    Zk = ZB;
+    if (LAY(k, 3) > 0.5) {
+        gk = gE;
+        Zk = ZE;
+    }
+    ep = exp(gk * Lk);
+    em = exp(-gk * Lk);
+    chk = (ep + em) / 2;
+    shk = (ep - em) / 2;
+    nA = tA * chk + tB * shk / Zk;
+    nB = tA * Zk * shk + tB * chk;
+    nC = tC * chk + tD * shk / Zk;
+    nD = tC * Zk * shk + tD * chk;
+    tA = nA;
+    tB = nB;
+    tC = nC;
+    tD = nD;
+}
+den = tA + tB / R0 + tC * R0 + tD;
+S11 = (tA + tB / R0 - tC * R0 - tD) / den;
+S22 = (-tA + tB / R0 - tC * R0 + tD) / den;
+S21 = 2 / den;
+
+ws = 1;
+if (wave_convention == "power") { ws = sqrt(R0); }
+Rw = R0 / ws;
+ps = -1;
+if (phase_convention == "engineering") { ps = 1; }
+
+T = matrix(nf, 3);
+T(:, 1) = fr;
+T(:, 2) = abs(S11);
+T(:, 3) = ps * unwrap(angle(S11));
+setsparameter("port 1", "port 1", "transmission", T);
+T(:, 2) = abs(S22);
+T(:, 3) = ps * unwrap(angle(S22));
+setsparameter("port 2", "port 2", "transmission", T);
+T(:, 2) = abs(S21);
+T(:, 3) = ps * unwrap(angle(S21));
+setsparameter("port 2", "port 1", "transmission", T);
+setsparameter("port 1", "port 2", "transmission", T);
+
+# ---- 3. modulation outputs -----------------------------------------------------
+# Port-1 excitation (a1 = 1, a2 = 0): V = 1 + S11, I = (1 - S11)/R0 at the input.
+# Port-2 excitation (a1 = 0, a2 = 1): V = S21, I = -S21/R0. Both are stepped
+# through the pieces; each modulating section adds its integral.
+V1 = ws * (1 + S11);
+I1 = (1 - S11) / Rw;
+V2 = ws * S21;
+I2 = -S21 / Rw;
+nmod = 1;
+if (second_modulation) { nmod = 2; }
+T1a = 0 * w;
+T2a = 0 * w;
+T1b = 0 * w;
+T2b = 0 * w;
+for (k = 1:nsec) {
+    Lk = LAY(k, 1);
+    Ltail = Ltail - LAY(k, 2);
+    gk = gB;
+    Zk = ZB;
+    if (LAY(k, 3) > 0.5) {
+        gk = gE;
+        Zk = ZE;
+        Vp1 = (V1 + Zk * I1) / 2;
+        Vm1 = (V1 - Zk * I1) / 2;
+        Vp2 = (V2 + Zk * I2) / 2;
+        Vm2 = (V2 - Zk * I2) / 2;
+        for (km = 1:nmod) {
+            ngk = ng;
+            if (km == 2) { ngk = ng2; }
+            bo = w * ngk / c0;
+            q1 = -gk + 1i * bo;
+            q1 = q1 + (abs(q1) < 1e-12) * 1e-12;
+            q2 = gk + 1i * bo;
+            q2 = q2 + (abs(q2) < 1e-12) * 1e-12;
+            F1 = (exp(q1 * Lk) - 1) / q1;
+            F2 = (exp(q2 * Lk) - 1) / q2;
+            Xo = exp(-1i * bo * Lk) / Lmod * exp(-1i * bo * Ltail);
+            if (km == 1) {
+                T1a = T1a + (Vp1 * F1 + Vm1 * F2) * Xo;
+                T2a = T2a + (Vp2 * F1 + Vm2 * F2) * Xo;
+            } else {
+                T1b = T1b + (Vp1 * F1 + Vm1 * F2) * Xo;
+                T2b = T2b + (Vp2 * F1 + Vm2 * F2) * Xo;
+            }
+        }
+    }
+    ep = exp(gk * Lk);
+    em = exp(-gk * Lk);
+    chk = (ep + em) / 2;
+    shk = (ep - em) / 2;
+    nV = chk * V1 - Zk * shk * I1;
+    I1 = -shk / Zk * V1 + chk * I1;
+    V1 = nV;
+    nV = chk * V2 - Zk * shk * I2;
+    I2 = -shk / Zk * V2 + chk * I2;
+    V2 = nV;
+}
+T(:, 2) = abs(T1a);
+T(:, 3) = ps * unwrap(angle(T1a));
+setsparameter("modulation", "port 1", "transmission", T);
+T(:, 2) = abs(T2a);
+T(:, 3) = ps * unwrap(angle(T2a));
+setsparameter("modulation", "port 2", "transmission", T);
+if (second_modulation) {
+    T(:, 2) = abs(T1b);
+    T(:, 3) = ps * unwrap(angle(T1b));
+    setsparameter("modulation 2", "port 1", "transmission", T);
+    T(:, 2) = abs(T2b);
+    T(:, 3) = ps * unwrap(angle(T2b));
+    setsparameter("modulation 2", "port 2", "transmission", T);
+}
+
+# ---- 4. far end: V2 = ws (a2 + b2) -----------------------------------------------
+if (far_end_output) {
+    T(:, 2) = abs(ws * S21);
+    T(:, 3) = ps * unwrap(angle(S21));
+    setsparameter("far end", "port 1", "transmission", T);
+    T(:, 2) = abs(ws * (1 + S22));
+    T(:, 3) = ps * unwrap(angle(1 + S22));
+    setsparameter("far end", "port 2", "transmission", T);
+}
+
+# ---- 5. time-domain filter -----------------------------------------------------
+if (fir_taps > 0) {
+    setfir("rectangular", fir_taps, 0, 0.01, max([fir_taps, 4096]));
+}
+
+logmessage("TL electrode ready: " + num2str(nsec) + " pieces, modulating length " + num2str(Lmod * 1e3) + " mm, " + num2str(nf) + " points up to " + num2str(fr(nf) / 1e9) + " GHz, second modulation output = " + num2str(second_modulation));

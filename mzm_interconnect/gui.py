@@ -752,6 +752,8 @@ class MZMStudio(tk.Tk):
                    command=self.action_tl_step0_saved).pack(side="left", padx=3)
         ttk.Button(ctrl, text="Step 1: diagnose TL build",
                    command=self.action_tl_diagnose).pack(side="left", padx=3)
+        ttk.Button(ctrl, text="Step 1: bends 0-4 check",
+                   command=self.action_bend_ladder).pack(side="left", padx=3)
         self.lum_keep = tk.BooleanVar(value=True)
         ttk.Checkbutton(ctrl, text="Leave INTERCONNECT open afterwards",
                         variable=self.lum_keep).pack(side="left", padx=14)
@@ -1269,6 +1271,29 @@ class MZMStudio(tk.Tk):
             self.log(f"Step 0 report written to {os.path.join(out, 'step0_report.txt')}", "ok")
             self._ui(lambda: self.nb.select(self.tab_log))
         self._run_async(work, "Step 0 (saved S5)")
+
+    def action_bend_ladder(self):
+        """The current device with 0..4 bends (TL line build), each run in
+        INTERCONNECT and compared with the Python response (bends_check.txt/png)."""
+        p = self._get_params()
+        if self.fit is None:
+            self.log("Run 'Extract + analyse' first.", "warn")
+            return
+
+        def work():
+            from .interconnect import run_bend_ladder
+            out = os.path.join(self._resolve_out_dir(p), "bends_check")
+            if self.ic_builder is not None:
+                try:
+                    self.ic_builder.close()
+                except Exception:
+                    pass
+                self.ic_builder = None
+            run_bend_ladder(self.fit, p, out, log=lambda m: self.log(m))
+            self.log(f"Bend check written to {os.path.join(out, 'bends_check.txt')} and "
+                     f"bends_check.png", "ok")
+            self._ui(lambda: self.nb.select(self.tab_log))
+        self._run_async(work, "Step 1 bend check")
 
     def action_tl_diagnose(self):
         """Three ENA runs of the current device -- TL line with the far end read,

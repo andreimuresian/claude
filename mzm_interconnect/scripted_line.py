@@ -129,6 +129,114 @@ def tl_sparams(f_Hz, loss_dB_m, nm, Z, L, ng=None, R0=50.0,
     return out
 
 
+def tl_electrode_sparams(f_Hz, layout, el_tab, bend_tab=None, ng=2.27, ng2=None,
+                        R0=50.0, waves="voltage") -> dict:
+    """
+    The "TL electrode" element (lumerical/tl_electrode_setup.lsf), line for
+    line: a whole bent electrode -- modulating sections and bends -- as ONE
+    element. *layout* rows are (L_rf, L_opt, modulating); *el_tab* and
+    *bend_tab* are (loss_dB_m, nm, Z) on the grid *f_Hz*.
+
+    S-matrix: product of the sections' ABCD matrices (exact cascade; S22 differs
+    from S11 when the electrode is not symmetric). Modulation outputs: per
+    modulating section the exact integral of V(z) (V and I at its entry found by
+    stepping through the cascade), referenced to the light leaving it, delayed
+    by the light's transit through everything after it, weighted L_k / L_mod and
+    summed -- one output per arm, referenced to the light leaving the electrode.
+    The optical delays between sections are phases here, not Optical Delay
+    elements: in INTERCONNECT those emit no light for their first tau, which
+    swamped the EO trace (the first bend run).
+    """
+    f_Hz = np.asarray(f_Hz, float)
+    w = 2 * np.pi * f_Hz
+    lay = [tuple(map(float, r)) for r in layout]
+
+    def line(tab):
+        loss, nm, Z = tab
+        return (np.asarray(loss) * NP_PER_DB_EXACT + 1j * w * np.asarray(nm) / C0,
+                np.asarray(Z, complex))
+    ge, Ze = line(el_tab)
+    gb, Zb = line(bend_tab) if bend_tab is not None else (ge, Ze)
+    tA, tB, tC, tD = (np.ones_like(w, complex), np.zeros_like(w, complex),
+                      np.zeros_like(w, complex), np.ones_like(w, complex))
+    for L, _Lo, mod in lay:
+        g, Z = (ge, Ze) if mod > 0.5 else (gb, Zb)
+        e1, e2 = np.exp(g * L), np.exp(-g * L)
+        ch, sh = (e1 + e2) / 2, (e1 - e2) / 2
+        tA, tB, tC, tD = (tA * ch + tB * sh / Z, tA * Z * sh + tB * ch,
+                          tC * ch + tD * sh / Z, tC * Z * sh + tD * ch)
+    den = tA + tB / R0 + tC * R0 + tD
+    S11 = (tA + tB / R0 - tC * R0 - tD) / den
+    S22 = (-tA + tB / R0 - tC * R0 + tD) / den
+    S21 = 2 / den
+    ws = np.sqrt(R0) if waves == "power" else 1.0
+    Rw = R0 / ws
+    Lmod = sum(L for L, _o, m in lay if m > 0.5)
+    ngs = [ng] + ([ng2] if ng2 is not None else [])
+    T = [[np.zeros_like(w, complex), np.zeros_like(w, complex)] for _ in ngs]
+    exc = [[ws * (1 + S11), (1 - S11) / Rw], [ws * S21, -S21 / Rw]]   # V, I at the entry
+    tail = sum(Lo for _L, Lo, _m in lay)
+    for L, Lo, mod in lay:
+        g, Z = (ge, Ze) if mod > 0.5 else (gb, Zb)
+        tail -= Lo
+        if mod > 0.5:
+            for km, ngk in enumerate(ngs):
+                bo = w * float(ngk) / C0
+                q1 = -g + 1j * bo
+                q1 = q1 + (np.abs(q1) < 1e-12) * 1e-12
+                q2 = g + 1j * bo
+                q2 = q2 + (np.abs(q2) < 1e-12) * 1e-12
+                F1 = (np.exp(q1 * L) - 1) / q1
+                F2 = (np.exp(q2 * L) - 1) / q2
+                Xo = np.exp(-1j * bo * L) / L * np.exp(-1j * bo * tail) * (L / Lmod)
+                for j, (V, I) in enumerate(exc):
+                    T[km][j] = T[km][j] + ((V + Z * I) / 2 * F1 + (V - Z * I) / 2 * F2) * Xo
+        e1, e2 = np.exp(g * L), np.exp(-g * L)
+        ch, sh = (e1 + e2) / 2, (e1 - e2) / 2
+        exc = [[ch * V - Z * sh * I, -sh / Z * V + ch * I] for V, I in exc]
+    out = dict(f_Hz=f_Hz, S11=S11, S22=S22, S21=S21, L=Lmod, R0=R0, waves=waves,
+               modulating=True, FE1=ws * S21, FE2=ws * (1 + S22),
+               T1=T[0][0], T2=T[0][1], ng=float(ng))
+    if ng2 is not None:
+        out.update(T1_2=T[1][0], T2_2=T[1][1], ng2=float(ng2))
+    return out
+
+
+def tl_electrode_from_paths(paths: dict, R0=50.0, waves="voltage", second=False) -> dict:
+    """The TL electrode element exactly as the build configures it from the
+    exported tables and electrode_layout.txt."""
+    meta = paths["meta"]
+    d = os.path.dirname(paths["json"])
+    f, le, ne, Ze = read_tl_table(os.path.join(d, "electrode_line.txt"))
+    bend = None
+    if os.path.exists(os.path.join(d, "bend_line.txt")):
+        fb, lb, nb, Zb = read_tl_table(os.path.join(d, "bend_line.txt"))
+        bend = (lb, nb, Zb)
+    lay = read_layout(os.path.join(d, "electrode_layout.txt"))
+    e0 = next(e for e in meta["elements"] if e["modulating"])
+    return tl_electrode_sparams(f, lay, (le, ne, Ze), bend, e0["ng"],
+                                e0.get("ng2") if second else None, R0, waves)
+
+
+def write_layout(path: str, layout) -> str:
+    with open(path, "w", encoding="ascii") as fh:
+        fh.write("Note one row per piece, from the RF input to the termination\n")
+        fh.write("L_rf_m L_opt_m modulating\n")
+        for L, Lo, m in layout:
+            fh.write(f"{L:.12e} {Lo:.12e} {int(m)}\n")
+    return path
+
+
+def read_layout(path: str):
+    rows = []
+    with open(path, encoding="ascii") as fh:
+        for line in fh:
+            t = line.strip()
+            if t and not t[0].isalpha():
+                rows.append(tuple(float(x) for x in t.split()))
+    return rows
+
+
 def rlc_z(f_Hz, R, L_H=0.0, C_F=0.0):
     """Source / load impedance exactly as source_setup.lsf and
     termination_setup.lsf compute it: (R + jwL) in parallel with C."""
@@ -186,7 +294,8 @@ def chain_response(elements: list, Zs, Rt, R0=50.0, ng=None,
         S = np.zeros((2 * n, 2 * n), complex)
         for k, el in enumerate(elements):
             s11, s21 = el["S11"][i], el["S21"][i]
-            S[2 * k:2 * k + 2, 2 * k:2 * k + 2] = [[s11, s21], [s21, s11]]
+            s22 = el["S22"][i] if "S22" in el else s11
+            S[2 * k:2 * k + 2, 2 * k:2 * k + 2] = [[s11, s21], [s21, s22]]
         C = np.zeros((2 * n, 2 * n), complex)
         C[0, 0] = Gs[i]
         for k in range(n - 1):
@@ -289,6 +398,9 @@ def export_tl_tables(fit, p: dict, out_dir: str, f_top_GHz=None,
             els.append(dict(name=f"BEND_{k_b}", kind="bend", table="bend_line.txt",
                             line_length=x["L_rf"], optical_length=x["L_opt"], ng=ng1,
                             ng2=ng2, modulating=0))
+    paths["layout"] = write_layout(os.path.join(out_dir, "electrode_layout.txt"),
+                                   [(x["L_rf"], x["L_opt"], 1 if x["kind"] == "mod" else 0)
+                                    for x in lay])
     meta = dict(R0=50.0, Zs=float(p["Zs_R"]), Rt=float(p["Rt_R"]),
                 Zs_L_pH=float(p.get("Zs_L_pH", 0.0)), Zs_C_fF=float(p.get("Zs_C_fF", 0.0)),
                 Rt_L_pH=float(p.get("Rt_L_pH", 0.0)), Rt_C_fF=float(p.get("Rt_C_fF", 0.0)),

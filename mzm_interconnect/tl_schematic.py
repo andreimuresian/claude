@@ -34,6 +34,7 @@ LSF_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lumerical")
 SETUP_LSF = os.path.join(LSF_DIR, "tl_element_setup.lsf")
 LOAD_LSF = os.path.join(LSF_DIR, "termination_setup.lsf")
 SOURCE_LSF = os.path.join(LSF_DIR, "source_setup.lsf")
+ELECTRODE_LSF = os.path.join(LSF_DIR, "tl_electrode_setup.lsf")
 
 SCRIPTED = ['Scripted Element', 'scripted element', 'Scripted element']
 
@@ -139,6 +140,50 @@ class TLElementsMixin:
         if not ok and modulating:
             self.log(f"  {name}: this library element has no 'second_modulation'/'ng2' "
                      f"properties; make it again with create_tl_element.lsf.")
+
+    def make_tl_electrode(self, name: str, x: int, y: int, table: str, bend_table: str,
+                          layout: str, ng: float, ng2: Optional[float] = None,
+                          far_end: bool = True, fir_taps: int = 1024):
+        """A whole bent electrode as one scripted element (tl_electrode_setup.lsf):
+        ports 1 and 2, 'modulation' (arm 1), optionally 'modulation 2' (arm 2,
+        *ng2*) and 'far end'. The light's delays between sections are inside
+        the modulation outputs, so no Optical Delay is needed."""
+        second = ng2 is not None
+        self._new_scripted(name, x, y)
+        s = self.sim
+        cat = "TL electrode"
+        for prop, kind, val in (("table_file", "FileOpen", fwd(table)),
+                                ("bend_table_file", "FileOpen", fwd(bend_table)),
+                                ("layout_file", "FileOpen", fwd(layout))):
+            s.addproperty(name, prop, cat, kind, 0, 0, "NonQuantity", "", val)
+        s.addproperty(name, "ng", cat, "Number", 0, 100, "FixedUnit", "-", float(ng))
+        s.addproperty(name, "second_modulation", cat, "Logical", 0, 0, "NonQuantity", "",
+                      int(second))
+        s.addproperty(name, "ng2", cat, "Number", 0, 100, "FixedUnit", "-",
+                      float(ng2 if second else ng))
+        s.addproperty(name, "R0", cat, "Number", 1, 10000, "FixedUnit", "ohm", self.R0)
+        s.addproperty(name, "far_end_output", cat, "Logical", 0, 0, "NonQuantity", "",
+                      int(far_end))
+        s.addproperty(name, "wave_convention", cat, "ComboChoice", 0, 0, "NonQuantity", "",
+                      "voltage;power")
+        s.addproperty(name, "fir_taps", cat, "Number", 0, 100000, "FixedUnit", "-", int(fir_taps))
+        s.addproperty(name, "phase_convention", cat, "ComboChoice", 0, 0, "NonQuantity", "",
+                      "physics;engineering")
+        s.addport(name, "port 1", "Bidirectional", "Electrical Signal", "Left", 0.5)
+        s.addport(name, "port 2", "Bidirectional", "Electrical Signal", "Right", 0.5)
+        s.addport(name, "modulation", "Output", "Electrical Signal", "Top", 0.3)
+        if second:
+            s.addport(name, "modulation 2", "Output", "Electrical Signal", "Top", 0.7)
+        if far_end:
+            s.addport(name, "far end", "Output", "Electrical Signal", "Bottom", 0.5)
+        self._set_setup(name, ELECTRODE_LSF)
+        for prop, val in (("table_file", fwd(table)), ("bend_table_file", fwd(bend_table)),
+                          ("layout_file", fwd(layout)), ("ng", float(ng)),
+                          ("second_modulation", int(second)),
+                          ("ng2", float(ng2 if second else ng)), ("R0", self.R0),
+                          ("far_end_output", int(far_end)), ("wave_convention", "voltage"),
+                          ("fir_taps", int(fir_taps)), ("phase_convention", "physics")):
+            self.setp(name, [prop], val)
 
     def _make_rlc(self, name, x, y, kind, R, L_H, C_F, f_top, n_freq, ports, lsf):
         self._new_scripted(name, x, y)

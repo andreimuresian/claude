@@ -14,6 +14,8 @@ against INTERCONNECT:
   3. the table written for the element reads back to the same numbers
   4. the second modulation output (arm 2, its own n_g) vs the cascade at that n_g
   5. R + L + C source and load, and the far-end voltage, vs closed forms
+  6. the TL electrode element (a whole bent electrode in one element), 0-4 bends:
+     against the chain of TL line elements and against the GUI's device response
 
     python tools/validate_tl_line.py [path/to/line.s2p --L-meas 2.5]
 
@@ -147,6 +149,44 @@ def main(argv=None) -> int:
     check("far end of the last element = V across the termination (closed form)",
           float(np.max(np.abs(r.far_end[-1][m] / VL - 1))), tol,
           f"|V(L)/EMF| at 1 GHz {abs(np.interp(1.0, f[m], np.abs(VL))):.4f}")
+
+    print("6. TL electrode element (one element per bent electrode) for 0-4 bends")
+    from mzm_interconnect.physics import device_response
+    cases = [(0, dict()),
+             (1, dict(tw_len_1_mm=7, tw_len_2_mm=7, bend_len_mm=0.8, bend_Z_ohm=60.0)),
+             (1, dict(tw_len_1_mm=7, tw_len_2_mm=7, bend_len_mm=0.0, bend_Z_ohm=60.0)),
+             (2, dict(tw_len_1_mm=3, tw_len_2_mm=6, tw_len_3_mm=5, bend_len_mm=1.2,
+                      bend_opt_len_mm=1.5, bend_Z_ohm=35.0, ng_imbalance=0.02)),
+             (3, dict(bend_len_mm=0.6, bend_Z_ohm=80.0, Zs_L_pH=40.0, Rt_C_fF=25.0)),
+             (4, dict(tw_len_1_mm=2, tw_len_2_mm=4, tw_len_3_mm=3, tw_len_4_mm=2.5,
+                      tw_len_5_mm=2.5, bend_len_mm=1.0, bend_Z_ohm=45.0, ng_imbalance=-0.03))]
+    for nb, extra in cases:
+        p = P.normalise(dict(base, L_target_mm=14.0, Zs_R=50.0, Rt_R=55.0, n_bends=nb, **extra))
+        paths = SL.export_tl_tables(fit, p, out)
+        el = SL.tl_electrode_from_paths(paths, second=True)
+        els, opt = SL.device_chain(paths, second=True)
+        Zs_f, Zt_f = SL.device_terminations(paths, el["f_Hz"])
+        r_el = SL.chain_response([el], Zs_f, Zt_f)
+        r_ch = SL.chain_response(els, Zs_f, Zt_f, opt_lengths=opt)
+        f = el["f_Hz"] / 1e9
+        m = (f > 0) & (f <= 150)
+        tag = f"{nb} bend(s)" + (", 0 mm bend" if nb and extra.get("bend_len_mm") == 0 else "")
+        err = max(float(np.max(np.abs(r_el.H[m] / r_ch.H[m] - 1))),
+                  float(np.max(np.abs(r_el.H2[m] / r_ch.H2[m] - 1))),
+                  float(np.max(np.abs(r_el.far_end[0][m] / r_ch.far_end[-1][m] - 1))),
+                  float(np.max(np.abs(r_el.s11_in[m] - r_ch.s11_in[m]))))
+        check(f"{tag}: one element = chain of elements (both arms, far end, S11)", err, 1e-9, "")
+        res = device_response(fit, p)
+        from mzm_interconnect.physics import arm_models
+        a1, a2 = arm_models(p)
+        Hd = (a1.g * r_el.H - a2.g * r_el.H2) / (a1.g - a2.g)
+        fr = res.f_GHz
+        k = (fr >= 0.5) & (fr <= 150.0)
+        mag = np.interp(fr[k], f, np.abs(Hd)) / np.abs(res.H[k])
+        mag = mag / np.median(mag[fr[k] <= 3.0])
+        check(f"{tag}: element vs GUI device response, |H| shape to 150 GHz",
+              float(np.max(np.abs(20 * np.log10(mag)))), 2e-3,
+              f"(GUI BW {res.bw_GHz:.3f} GHz)")
 
     print(f"\n{sum(results)}/{len(results)} checks passed.")
     return 0 if all(results) else 1
