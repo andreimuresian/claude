@@ -1,0 +1,14 @@
+{
+ "sweep2": {
+  "150": {
+   "IL": 0.00242,
+   "VpiL": 2.8901
+  }
+ },
+ "sweep2_flatness_150nm": {},
+ "sweep3_vs_previous_slab_in_gold": {
+  "n": 1,
+  "max_rel_dev": 0.0002,
+  "median_rel_dev": 0.00017
+ }
+}
