@@ -106,9 +106,99 @@ function stateAt(keys,i,T){
       // il gomito non entra nei busti (proprio e dell'avversario): lo spingiamo fuori dalla superficie
       for(const O of ['A','B'])pushOut(res.mid,J[O],O===W?5:7);
       const grip=lerp(t0?1:0,t1?1:0,eh);
-      H[W][s]={sh,el:res.mid,wr:res.end,tgt,grip,appr};
+      H[W][s]={sh,el:res.mid,wr:res.end,tgt,grip,appr,t0,t1,eh};
       j['elb'+s]=res.mid;j['tri'+s]=sh.clone().lerp(res.mid,.55);j['wr'+s]=res.end;j['hand'+s]=add(res.end,res.end.clone().sub(res.mid).normalize(),5);}}
+  physics(J,H,S);
   return {J,S,H};
+}
+
+
+/* ---------- vincoli fisici rigidi ----------
+   1) corpo inscindibile: busto rigido (shape matching) + ossa a lunghezza fissa;
+   2) nessuna compenetrazione: capsule di collisione fra i due lottatori, braccia contro il proprio busto, pavimento. */
+const CLUSTER=['P','N','shL','shR','hipL','hipR','head','chest','back','_tc0','_tc1'];
+const SEGS=[['_tc0','_tc1',12.5,'T'],['head','head',10.5,'H'],
+  ['shL','elbL',6,'U'],['elbL','wrL',5,'A'],['wrL','handL',3.8,'A'],['shR','elbR',6,'U'],['elbR','wrR',5,'A'],['wrR','handR',3.8,'A'],
+  ['hipL','kneeL',9.2,'L'],['kneeL','ankleL',6.2,'L'],['ankleL','toeL',4.6,'L'],['hipR','kneeR',9.2,'L'],['kneeR','ankleR',6.2,'L'],['ankleR','toeR',4.6,'L']];
+const CHAINS=[['shL','elbL','wrL','handL'],['shR','elbR','wrR','handR'],['hipL','kneeL','ankleL','toeL'],['hipR','kneeR','ankleR','toeR']];
+const BLEN={elbL:LEN.ua,wrL:LEN.fa,handL:8,elbR:LEN.ua,wrR:LEN.fa,handR:8,kneeL:LEN.th,ankleL:LEN.sh,kneeR:LEN.th,ankleR:LEN.sh};
+const _a=V(0,0,0),_b=V(0,0,0),_c=V(0,0,0),_d=V(0,0,0),_e=V(0,0,0);
+function closestSS(p1,q1,p2,q2){const d1=_a.subVectors(q1,p1),d2=_b.subVectors(q2,p2),r=_c.subVectors(p1,p2);
+  const a=d1.dot(d1),e=d2.dot(d2),f=d2.dot(r);let s,t;
+  if(a<1e-6&&e<1e-6)return [0,0];
+  if(a<1e-6){s=0;t=clamp(f/e,0,1)}else{const c=d1.dot(r);if(e<1e-6){t=0;s=clamp(-c/a,0,1)}else{const b=d1.dot(d2),den=a*e-b*b;
+    s=den>1e-6?clamp((b*f-c*e)/den,0,1):0;t=(b*s+f)/e;if(t<0){t=0;s=clamp(-c/a,0,1)}else if(t>1){t=1;s=clamp((b-c)/a,0,1)}}}
+  return [s,t]}
+function derive(j){const {r,u,fw}=j.F,P=j.P;const set=(k,v)=>{if(j[k])j[k].copy(v);else j[k]=v};
+  set('c',add(P,u,10));set('belly',add(P,u,14,fw,12));set('waistBack',add(P,u,14,fw,-11));
+  set('sideL',add(P,u,26,r,-17));set('sideR',add(P,u,26,r,17));set('armpitL',add(j.N,u,-13,r,-14));set('armpitR',add(j.N,u,-13,r,14));
+  set('neck',add(j.N,u,5,fw,-4));
+  for(const s of ['L','R']){set('tri'+s,j['sh'+s].clone().lerp(j['elb'+s],.55));
+    const fd=j['toe'+s].clone().sub(j['ankle'+s]);fd.y=0;if(fd.lengthSq()<1e-6)fd.copy(j.F.fw);fd.normalize();
+    set('heel'+s,add(j['ankle'+s],fd,-4,V(0,1,0),-4));set('foot'+s,V(j['ankle'+s].x,0,j['ankle'+s].z));}}
+function physics(J,H,S){
+  const parts=[],idx={},segs=[],tpl={},q={},init={};
+  const P=(W,k)=>idx[W+'.'+k];
+  for(const W of ['A','B']){const j=J[W],{r,u,fw}=j.F;
+    j._tc0=add(j.P,u,-2);j._tc1=add(j.P,u,40);
+    const names=CLUSTER.concat(['elbL','wrL','handL','elbR','wrR','handR','kneeL','ankleL','toeL','kneeR','ankleR','toeR']);
+    for(const k of names){idx[W+'.'+k]=parts.length;parts.push({v:j[k],w:CLUSTER.includes(k)?.15:1,r:0,W,k});init[W+'.'+k]=j[k].clone()}
+    tpl[W]=CLUSTER.map(k=>{const d=j[k].clone().sub(j.P);return V(d.dot(r),d.dot(u),d.dot(fw))});
+    q[W]=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(r,u,fw));
+    for(const [a,b,rad,kind] of SEGS){const s={a:P(W,a),b:P(W,b),r:rad,kind,W};segs.push(s);
+      parts[s.a].r=Math.max(parts[s.a].r,rad);parts[s.b].r=Math.max(parts[s.b].r,rad)}}
+  const flen={};for(const W of ['A','B'])for(const s of ['L','R'])flen[W+s]=J[W]['toe'+s].distanceTo(J[W]['ankle'+s]);
+  const pairs=[];
+  for(const s1 of segs)for(const s2 of segs){if(s1===s2)continue;
+    if(s1.W==='A'&&s2.W==='B')pairs.push([s1,s2]);
+    else if(s1.W===s2.W&&s1.kind==='A'&&(s2.kind==='T'||s2.kind==='H'))pairs.push([s1,s2]);}
+  // il busto è un'unica capsula a sezione ellittica (larga 39, profonda 25): niente punti morti fra due capsule
+  function rad(sg,n){if(sg.kind!=='T')return sg.r;const F=J[sg.W].F;const x=n.dot(F.r)/19.5,z=n.dot(F.fw)/12.5,y=n.dot(F.u)/12.5;return 1/Math.sqrt(x*x+y*y+z*z)}
+  function collide(){for(const [s1,s2] of pairs){const p0=parts[s1.a],p1=parts[s1.b],q0=parts[s2.a],q1=parts[s2.b];
+      const [s,t]=closestSS(p0.v,p1.v,q0.v,q1.v);const cp=_d.copy(p0.v).lerp(p1.v,s),cq=_e.copy(q0.v).lerp(q1.v,t);
+      const n=cp.sub(cq);let dist=n.length();
+      if(dist<1e-4){n.subVectors(J[s1.W].P,J[s2.W].P);n.y=0;if(n.lengthSq()<1e-6)n.set(1,0,0);n.normalize();dist=0}else n.multiplyScalar(1/dist);
+      const rs=rad(s1,n)+rad(s2,n);if(dist>=rs)continue;
+      const w0=(s1.a===s1.b?1:1-s)*p0.w,w1=(s1.a===s1.b?0:s)*p1.w,w2=(s2.a===s2.b?1:1-t)*q0.w,w3=(s2.a===s2.b?0:t)*q1.w;
+      const den=w0*(s1.a===s1.b?1:1-s)+w1*s+w2*(s2.a===s2.b?1:1-t)+w3*t;if(den<1e-9)continue;const lam=(rs-dist)/den;
+      p0.v.addScaledVector(n,lam*w0);if(s1.a!==s1.b)p1.v.addScaledVector(n,lam*w1);
+      q0.v.addScaledVector(n,-lam*w2);if(s2.a!==s2.b)q1.v.addScaledVector(n,-lam*w3);}
+    for(const p of parts){const m=p.r||4;if(p.v.y<m)p.v.y=m}}
+  function bones(){for(const W of ['A','B'])for(const ch of CHAINS)for(let k=1;k<ch.length;k++){
+      const a=parts[P(W,ch[k-1])],b=parts[P(W,ch[k])];const L=BLEN[ch[k]]||flen[W+ch[0].slice(-1)];
+      const d=b.v.clone().sub(a.v);const dl=d.length()||1e-4;const c=(dl-L)/dl/(a.w+b.w);
+      a.v.addScaledVector(d,c*a.w);b.v.addScaledVector(d,-c*b.w)}}
+  function rigid(){for(const W of ['A','B']){const ids=CLUSTER.map(k=>P(W,k)),T=tpl[W];
+      const cx=V(0,0,0),qc=V(0,0,0);ids.forEach((id,i)=>{cx.add(parts[id].v);qc.add(T[i])});cx.multiplyScalar(1/ids.length);qc.multiplyScalar(1/ids.length);
+      const A=[V(0,0,0),V(0,0,0),V(0,0,0)];
+      ids.forEach((id,i)=>{const dx=parts[id].v.clone().sub(cx),dq=T[i].clone().sub(qc);A[0].addScaledVector(dx,dq.x);A[1].addScaledVector(dx,dq.y);A[2].addScaledVector(dx,dq.z)});
+      const Q=q[W];for(let it=0;it<12;it++){const R=[V(1,0,0),V(0,1,0),V(0,0,1)].map(e=>e.applyQuaternion(Q));
+        const om=V(0,0,0);let dd=0;for(let c=0;c<3;c++){om.add(R[c].clone().cross(A[c]));dd+=R[c].dot(A[c])}
+        om.multiplyScalar(1/(Math.abs(dd)+1e-9));const wl=om.length();if(wl<1e-9)break;
+        Q.premultiply(new THREE.Quaternion().setFromAxisAngle(om.multiplyScalar(1/wl),wl)).normalize()}
+      ids.forEach((id,i)=>parts[id].v.copy(T[i].clone().sub(qc).applyQuaternion(Q).add(cx)));
+      const j=J[W];const r=V(1,0,0).applyQuaternion(Q),u=V(0,1,0).applyQuaternion(Q),fw=V(0,0,1).applyQuaternion(Q);
+      const f=fw.clone().setY(0);if(f.lengthSq()<1e-4)f.copy(u).setY(0);f.normalize();j.F={r,u,fw,f};derive(j)}}
+  function live(W,s){const h=H[W][s],j=J[W];const rest=()=>add(j.chest,j.F.fw,18,j.F.r,s==='L'?-14:14,j.F.u,-14);
+    const r0=h.t0?resolve(h.t0,J,W,S[W].b0):rest(),r1=h.t1?resolve(h.t1,J,W,S[W].b1):rest();return r0.lerp(r1,h.eh)}
+  function pull(k,target,st){const p=parts[k];p.v.lerp(target,st)}
+  const NI=95,NP=45;
+  for(let it=0;it<NI;it++){const kf=it<NP?1-it/NP:0;
+    if(kf>0)for(const W of ['A','B']){
+      for(const s of ['L','R']){pull(P(W,'ankle'+s),init[W+'.ankle'+s],.5*kf);pull(P(W,'toe'+s),init[W+'.toe'+s],.5*kf);
+        pull(P(W,'knee'+s),init[W+'.knee'+s],.08);pull(P(W,'elb'+s),init[W+'.elb'+s],.05);
+        pull(P(W,'hand'+s),live(W,s),(H[W][s].grip>.3?.45:.2)*kf)}
+      for(const k of CLUSTER)pull(P(W,k),init[W+'.'+k],.04*kf);}
+    bones();rigid();collide();bones();rigid();collide();}
+  bones();
+  // passaggio finale esatto: ossa a lunghezza fissa partendo dal busto rigido
+  for(const W of ['A','B'])for(const ch of CHAINS)for(let k=1;k<ch.length;k++){const a=J[W][ch[k-1]],b=J[W][ch[k]];const L=BLEN[ch[k]]||flen[W+ch[0].slice(-1)];
+    const d=b.clone().sub(a);if(d.lengthSq()<1e-6)d.set(0,-1,0);b.copy(a).addScaledVector(d.normalize(),L)}
+  let pen=0,pw='';for(const [s1,s2] of pairs){const [s,t]=closestSS(parts[s1.a].v,parts[s1.b].v,parts[s2.a].v,parts[s2.b].v);
+    const dd=parts[s1.a].v.clone().lerp(parts[s1.b].v,s).distanceTo(parts[s2.a].v.clone().lerp(parts[s2.b].v,t));const nn=parts[s1.a].v.clone().lerp(parts[s1.b].v,s).sub(parts[s2.a].v.clone().lerp(parts[s2.b].v,t)).normalize();const x=rad(s1,nn)+rad(s2,nn)-dd;if(x>pen){pen=x;pw=s1.W+parts[s1.a].k+'/'+s2.W+parts[s2.a].k}}
+  J.pen=pen;J.penWhere=pw;
+  for(const W of ['A','B']){derive(J[W]);for(const s of ['L','R']){const h=H[W][s],j=J[W];h.el=j['elb'+s];h.wr=j['wr'+s];h.hd=j['hand'+s];
+    const tg=live(W,s);const ap=tg.sub(h.wr);if(h.grip>.3&&ap.lengthSq()>1)h.appr=ap.normalize();else h.appr=h.hd.clone().sub(h.wr).normalize()}}
 }
 
 /* ---------- modello del lottatore ---------- */
@@ -189,7 +279,7 @@ function poseWrestler(w,J,H,W){
   w.headG.position.copy(j.head);w.headG.quaternion.copy(q);
   for(const s of ['L','R']){const L=w.limb[s],h=H[W][s];
     L.delt.position.copy(j['sh'+s]);L.ua.set(j['sh'+s],h.el);L.fa.set(h.el,h.wr);
-    poseHand(L.hand,h.wr,h.el,h.appr,h.grip);
+    poseHand(L.hand,h.wr,h.hd?h.wr.clone().multiplyScalar(2).sub(h.hd):h.el,h.appr,h.grip);
     const hip=j['hip'+s],kn=j['knee'+s];const mid=hip.clone().lerp(kn,.45);
     L.th.set(hip,mid);L.thLow.set(mid,kn);L.knee.position.copy(kn);L.sh.set(kn,j['ankle'+s]);L.shoe.set(j['ankle'+s],j['toe'+s]);}
 }
