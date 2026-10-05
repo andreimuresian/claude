@@ -42,8 +42,14 @@ h2{font-family:var(--display);font-weight:800;font-size:clamp(1.7rem,4vw,2.4rem)
 .tab[data-side="def"][aria-selected="true"]{box-shadow:inset 0 4px 0 var(--blue)}
 .panel{background:var(--surface);border:2px solid var(--ink);border-radius:0 10px 10px 10px;padding:16px}
 .sideintro{margin:0 0 12px;color:var(--muted);max-width:80ch}
-.main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}
+.main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
 svg.stage{width:100%;height:auto;display:block;border-radius:8px;border:1px solid var(--line)}
+.view3d{position:relative;width:100%;aspect-ratio:4/3;max-height:72vh;border-radius:8px;overflow:hidden;border:1px solid var(--line);touch-action:none;background:#dfe5ec}
+.view3d canvas{display:block}
+.hint{position:absolute;left:10px;bottom:10px;font-size:.8rem;background:rgba(20,26,34,.72);color:#fff;padding:4px 10px;border-radius:6px;pointer-events:none;transition:opacity .4s}
+.cams{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;font-size:.85rem;color:var(--muted)}
+.chip{all:unset;box-sizing:border-box;cursor:pointer;padding:4px 10px;border:1.5px solid var(--line);border-radius:999px;color:var(--ink);background:var(--surface);font-size:.85rem;display:inline-flex;gap:5px;align-items:center}
+.chip:hover{border-color:var(--ink)}.chip:focus-visible{outline:2px solid var(--force)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--muted);margin-top:8px}
 .legend i{display:inline-block;vertical-align:-2px;margin-right:4px}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
@@ -99,14 +105,14 @@ h4{font-family:var(--display);font-size:1rem;letter-spacing:.1em;text-transform:
     <p class="sideintro" id="sideIntro"></p>
     <div class="main">
       <div style="min-width:0">
-        <svg class="stage" id="stage" viewBox="0 0 300 200" role="img" aria-label="Vista dall'alto della tecnica"></svg>
-        <div class="legend">
-          <span><i style="width:10px;height:10px;border-radius:50%;background:var(--red)"></i>Tu</span>
-          <span><i style="width:10px;height:10px;border-radius:50%;background:var(--blue)"></i>Avversario</span>
-          <span>S/D = sinistra/destra · mano piena = presa</span>
-          <span>impronta tratteggiata = sulle punte · G = ginocchio a terra</span>
-          <span><i style="width:16px;height:3px;background:var(--force)"></i>direzione della forza</span>
-          <span>la punta sulla testa indica dove guarda</span>
+        <div class="view3d" id="view"><div class="hint" id="hint">Trascina per girare attorno · pizzica o rotella per avvicinarti</div></div>
+        <div class="cams" role="group" aria-label="Punto di vista">
+          <span>Guarda da:</span>
+          <button class="chip" data-cam="lato">Lato S</button><button class="chip" data-cam="lato2">Lato D</button>
+          <button class="chip" data-cam="dietro">Dietro di te</button><button class="chip" data-cam="davanti">Davanti a te</button>
+          <button class="chip" data-cam="alto">Dall'alto</button><button class="chip" data-cam="mani">Zoom mani</button>
+          <label class="chip"><input type="checkbox" id="autoRot"> Giro automatico</label>
+          <label class="chip"><input type="checkbox" id="showLab" checked> Etichette S/D</label>
         </div>
         <div class="controls">
           <button class="btn" id="bPrev" aria-label="Fase precedente">◀</button>
@@ -140,12 +146,14 @@ h4{font-family:var(--display);font-size:1rem;letter-spacing:.1em;text-transform:
   <p class="note"><b>Fonti e limiti.</b> Le sequenze uniscono le indicazioni standard degli allenatori di lotta libera e folkstyle con i riassunti di guide tecniche online (Fanatic Wrestling, Evolve MMA, JitsuIQ, Digitsu, Coaches Insider). I video completi non erano accessibili da qui. Lati, prese e tempi seguono la versione più insegnata, ma possono cambiare da club a club: confrontali con il tuo istruttore e segnami le differenze. Le proiezioni e il ritorno a terra vanno provati solo su tappeto e con supervisione.</p>
 </div>
 
-<script src="engine.js"></script>
+<script src="lib/three.min.js"></script>
+<script src="lib/OrbitControls.js"></script>
+<script src="scena3d.js"></script>
 <script src="tecniche.js"></script>
 <script>
 const $=id=>document.getElementById(id);
-const {render,makeStage,changed,windowOf,ELEMS,fitView}=window.TOPV;
-const st=makeStage($('stage'),{w:300,h:200,id:'m'});
+const {createView,changed,windowOf,ELEMS}=window.LOTTA3D;
+const view=createView($('view'));let lastT=performance.now(),curSt=null;
 let cur=0,side='att',i=0,T=1,playing=true,speed=.6,mode='hold',t0=performance.now();
 const MOVE=1900,HOLD=2200;
 const keys=()=>TECHS[cur][side];
@@ -177,7 +185,7 @@ function phaseCard(){const K=keys(),k=K[i];
   $('pRows').innerHTML=Object.keys(L).filter(x=>k.d[x]).map(x=>'<div><dt>'+L[x]+'</dt><dd>'+k.d[x]+'</dd></div>').join('');
   const g=[];for(const W of ['A','B'])for(const s of ['L','R']){const h=k[W]['h'+s];if(h&&h.g)g.push('<li><span style="background:var(--'+(W==='A'?'red':'blue')+')">'+(s==='L'?'S':'D')+'</span><span>'+h.g+'</span></li>')}
   $('pGrips').innerHTML=g.length?'<li style="display:block;font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Prese</li>'+g.join(''):'';}
-function draw(){render(st,keys(),i,T,true);placeHead()}
+function draw(){curSt=view.pose(keys(),i,T);view.setArrows(T>=.15||i===0?keys()[i].arrows:null,curSt);placeHead()}
 function jump(k){setPlaying(false);i=k;T=1;mode='hold';phaseCard();draw()}
 function load(){const t=TECHS[cur];renderTechs();$('title').textContent=t.it;$('en').textContent=t.en;$('intro').textContent=t.intro;
   $('tabAtt').setAttribute('aria-selected',side==='att');$('tabDef').setAttribute('aria-selected',side==='def');
@@ -187,14 +195,14 @@ function load(){const t=TECHS[cur];renderTechs();$('title').textContent=t.it;$('
     :'<h5>Situazione</h5><ul><li>'+t.defIntro+'</li></ul>';
   const tips=side==='att'?t.attTips:t.defTips,errs=side==='att'?t.attErr:t.defErr;
   $('tips').innerHTML=tips.map(x=>'<li>'+x+'</li>').join('');$('errs').innerHTML=errs.map(x=>'<li>'+x+'</li>').join('');
-  fitView(st,keys());buildTimeline();i=0;T=1;mode='hold';t0=performance.now();phaseCard();draw();
+  buildTimeline();i=0;T=1;mode='hold';t0=performance.now();phaseCard();draw();view.frameOn(curSt);if(!view.started){view.started=1;view.camPreset('lato',curSt)}
   try{history.replaceState(null,'','#'+t.id+(side==='def'?'-difesa':''))}catch(e){}}
 function setPlaying(p){playing=p;$('bPlay').textContent=p?'Pausa':'Play';t0=performance.now()}
 function tick(now){
   if(playing){const el=now-t0,n=keys().length;
     if(mode==='hold'&&el>HOLD/speed){if(i<n-1){i++;T=0;mode='move';t0=now;phaseCard()}else{i=0;T=1;t0=now;phaseCard();draw()}}
     else if(mode==='move'){T=Math.min(1,el/(MOVE/speed));draw();if(T>=1){mode='hold';t0=now}}}
-  requestAnimationFrame(tick)}
+  view.tick(now-lastT);lastT=now;requestAnimationFrame(tick)}
 function animate(k){setPlaying(false);i=k;T=0;phaseCard();const s=performance.now();
   const step=n=>{T=Math.min(1,(n-s)/(MOVE/speed));draw();if(T<1&&!playing)requestAnimationFrame(step)};requestAnimationFrame(step)}
 $('bPlay').onclick=()=>setPlaying(!playing);
@@ -204,6 +212,9 @@ $('bRep').onclick=()=>{if(i>0)animate(i)};
 $('speedSel').onchange=e=>{speed=+e.target.value};
 $('tabAtt').onclick=()=>{side='att';load()};$('tabDef').onclick=()=>{side='def';load()};
 addEventListener('resize',placeHead);
+document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>view.camPreset(b.dataset.cam,curSt));
+$('autoRot').onchange=e=>{view.autoRot=e.target.checked};$('showLab').onchange=e=>{view.showLabels=e.target.checked;draw()};
+$('view').addEventListener('pointerdown',()=>{$('hint').style.opacity=0},{once:true});
 const h=location.hash.slice(1);TECHS.forEach((t,k)=>{if(h.startsWith(t.id)){cur=k;if(h.endsWith('-difesa'))side='def'}});
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)playing=false;
 load();setPlaying(playing);requestAnimationFrame(tick);
