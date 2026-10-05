@@ -87,8 +87,9 @@ print(json.dumps(summary, indent=1))
 
 # ---- Figure --------------------------------------------------------------------
 fig, (a1, a2) = plt.subplots(2, 1, figsize=(11, 7.4), sharex=True, gridspec_kw=dict(height_ratios=[2.3, 1]))
-a1.plot(cor[:, 0], cor[:, 1], "-", color=C["blue"], lw=1.6, label="Cordoba (flat electrodes), etched slab: this study")
-a1.plot(go[:, 0], go[:, 1], "s", ms=5.5, color=C["orange"], label="filled lifted (no SiO₂ in the electrodes)")
+a1.plot(cor[:, 0], cor[:, 1], "o-", color=C["blue"], lw=0.8, ms=3.2, zorder=2,
+        label=f"Cordoba (flat electrodes), etched slab: {len(cor)} simulated points")
+a1.plot(go[:, 0], go[:, 1], "s", ms=5.5, color=C["orange"], label=f"filled lifted (no SiO₂ in the electrodes): {len(go)} simulated points", zorder=3, mec="white", mew=0.6)
 a1.axhline(noetch["IL"], color=C["grey"], ls="--", lw=1)
 a1.text(4.45, noetch["IL"] * 1.25, f"Cordoba, no etch {noetch['IL']:.3f} dB/cm  |  fitted IL∞ of the ripple {p[0]:.3f} dB/cm",
         color=C["grey"], fontsize=9)
@@ -98,7 +99,7 @@ a1.set_title(f"Slab ending inside the gold, gap {GAP} µm, 1575 nm: Cordoba vs f
              f"(ripple period {2 * p[3]:.2f} µm in slab_w)", fontsize=10.5)
 a = cmp["filled_lifted_GOLD_OUT"]
 a2.plot(a[:, 0], 100 * (a[:, 2] / a[:, 1] - 1), "s", ms=5.5, color=C["orange"],
-        label=f"median |Δ| {100 * summary['filled_lifted_GOLD_OUT']['median_rel_dIL']:.2f} %, "
+        label=f"{len(a)} points at the same slab_w: median |Δ| {100 * summary['filled_lifted_GOLD_OUT']['median_rel_dIL']:.2f} %, "
               f"max {100 * summary['filled_lifted_GOLD_OUT']['max_rel_dIL']:.2f} %")
 a2.set_ylim(-1, 1)
 a2.axhline(0, color="k", lw=0.6)
