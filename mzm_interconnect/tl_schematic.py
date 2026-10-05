@@ -271,14 +271,14 @@ class TLElementsMixin:
             if dest is not None and \
                     self.connect(name, [pname], dest, dest_ports, required=False) is None:
                 self.log(f"  {name}: '{pname}' could not be wired to {dest} {dest_ports}")
-            self._wire_relay(name, el, port, pname, before, members)
+            self._wire_relay(name, el, port, pname, before, members, k)
 
         ok = self.setp(name, ['scattering data analysis'], True, required=False)
         if not ok:
             self.log(f"  {name}: could not switch 'scattering data analysis' on.")
         return ok
 
-    def _wire_relay(self, name, el, port, pname, before, members) -> bool:
+    def _wire_relay(self, name, el, port, pname, before, members, k: int = 0) -> bool:
         s = self.sim
         inner, refused, inside, relay = False, [], [], None
         try:
@@ -296,6 +296,13 @@ class TLElementsMixin:
                     self.log(f"  {name}: inside, {el}:{port} -> {relay}:{tport}")
                     inner = True
                     break
+                # INTERCONNECT drops every new relay at the same spot; spread the
+                # output relays so each label can be read (cosmetic only).
+                try:
+                    y0 = float(s.getnamed(relay, "y position"))
+                    s.setnamed(relay, "y position", y0 + 110 * k)
+                except Exception:
+                    pass
         except Exception as exc:
             refused.append(f"could not enter the Compound's scope ({first_line(exc)})")
         finally:
