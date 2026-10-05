@@ -42,3 +42,20 @@ The slab always ends inside the gold. Gap 4.2 µm, top gap 10 µm.
   - at slab_w 40–50 µm, IL is 0.38–0.44 dB/cm.
 - **Grid:** steps are 0.1–0.4 µm up to 30 µm, then 1.6 µm. Above 30 µm the 1.6 µm step is close to the 1.79 µm ripple period in slab_w, so the slow wave visible there is aliasing; the dotted envelope gives the true ripple range.
 - **Not meshable:** slab_w 4.25 µm (slab end 25 nm from the gold edge).
+
+## Sweep 1 add-on: IL vs gap at fixed x_lift (no new simulations)
+
+`gap_cut.py` -> `sweep1_IL_vs_gap_fixed_xlift.png` / `.csv`. Simulated points are taken from sweep 1
+(gap 3.9 / 5.0) and `lift_sweep.csv` (gap 4.2) at x_lift = 7.0 / 7.1 / 7.2 um. Dotted lines are a model
+between the simulated gaps, IL = IL_inf(gap) * f(L) with L = x_lift - gap/2. IL_inf(gap) ~ e^(-3.29 gap) is fitted to
+the three fitted IL_inf, and f is the gap-averaged Airy cavity factor. The model reproduces all 9 simulated points within 1 %.
+
+| x_lift (um) | gap 3.9 | gap 4.2 | gap 5.0 (dB/cm) |
+|---|---|---|---|
+| 7.0 | 1.185 | 0.222 | 0.0253 |
+| 7.1 | 2.111 | 0.335 | 0.0163 |
+| 7.2 | 2.161 | 0.602 | 0.0131 |
+
+Vpi*L: 2.08 / 2.26 / 2.76 V*cm. Changing the gap at fixed x_lift does two things. It scales IL_inf by
+~27x per um. It also moves the cavity length by -gap/2, i.e. by about half a ripple period for 3.9 -> 5.0, so the
+ordering in x_lift flips: 7.2 um is worst at gap 3.9 and best at gap 5.0.
