@@ -22,9 +22,6 @@ notebook with:
 - **vs filled lifted** (no SiO2 in the electrodes, sweep 3), 19 shared slab_w:
   - IL: median |dIL| 0.04 %, max 0.28 %.
   - Vpi*L: max difference 0.03 %.
-- **vs lifted etched slab with the SiO2 lift**, 60 shared points: median 0.05 %.
-  - The max, 1.5 %, is at slab_w 13.8 um. There the slab end is less than 0.4 um from that design's
-    gold/SiO2 edge at x = 7 um, which the Cordoba and filled designs do not have.
 - **Ripple:** period 1.80 um in slab_w (0.898 um of cavity length), 2alpha 0.172/um.
   - Fitted IL_inf 0.415 dB/cm.
   - Cordoba without etch: 0.4163 dB/cm, Vpi*L 2.267 V*cm.

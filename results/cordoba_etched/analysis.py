@@ -63,17 +63,12 @@ with open(OUT + "cordoba_etched_slab_w_sweep.csv", "w") as f:
 # GOLD_OUT (solid stepped gold, no SiO2 in the electrodes): sweep 3
 go = np.genfromtxt(RES + "three_sweeps/sweep3_full_etch_gold_at_slab_level.csv", delimiter=",", names=True)
 go = np.c_[go["slab_w_um"], go["IL_dB_per_cm"], go["VpiL_Vcm"]]
-# lifted etched sweep (SiO2 lift beyond x = 7 um): identical to GOLD_OUT while the slab
-# ends inside the gold (median 0.03 %, sweep 3), so it fills in the 0.05-0.2 um grid
-lf = np.genfromtxt(RES + "etched_slab/slab_w_sweep.csv", delimiter=",", names=True, dtype=None, encoding=None)
-lf = np.c_[lf["slab_w_um"], lf["IL_dB_per_cm"], lf["VpiL_Vcm"]]
 lo, hi = cor[:, 0].min() - 1e-9, cor[:, 0].max() + 1e-9
 go = go[(go[:, 0] >= lo) & (go[:, 0] <= hi)]
-lf = lf[(lf[:, 0] >= lo) & (lf[:, 0] <= min(hi, 13.96))]
 
 summary = dict(n_cordoba=len(cor), no_etch_IL=round(noetch["IL"], 4), no_etch_VpiL=round(noetch["VpiL"], 4))
 cmp = {}
-for name, ref in (("filled_lifted_GOLD_OUT", go), ("lifted_etched_slab_in_gold", lf)):
+for name, ref in (("filled_lifted_GOLD_OUT", go),):
     rows = [(w, il, cor[np.isclose(cor[:, 0], w), 1][0], vp, cor[np.isclose(cor[:, 0], w), 2][0])
             for w, il, vp in ref if np.isclose(cor[:, 0], w).any()]
     a = np.array(rows)
@@ -93,24 +88,20 @@ print(json.dumps(summary, indent=1))
 # ---- Figure --------------------------------------------------------------------
 fig, (a1, a2) = plt.subplots(2, 1, figsize=(11, 7.4), sharex=True, gridspec_kw=dict(height_ratios=[2.3, 1]))
 a1.plot(cor[:, 0], cor[:, 1], "-", color=C["blue"], lw=1.6, label="Cordoba (flat electrodes), etched slab: this study")
-a1.plot(lf[:, 0], lf[:, 1], "o", ms=5, mfc="none", mec=C["orange"], mew=1.1,
-        label="lifted, etched slab (SiO₂ lift from x = 7 µm)")
-a1.plot(go[:, 0], go[:, 1], "s", ms=4.5, color=C["orange"], label="filled lifted (no SiO₂ in the electrodes)")
+a1.plot(go[:, 0], go[:, 1], "s", ms=5.5, color=C["orange"], label="filled lifted (no SiO₂ in the electrodes)")
 a1.axhline(noetch["IL"], color=C["grey"], ls="--", lw=1)
-a1.text(4.45, noetch["IL"] * 1.13, f"Cordoba, no etch {noetch['IL']:.3f} dB/cm  |  fitted IL∞ of the ripple {p[0]:.3f} dB/cm",
+a1.text(4.45, noetch["IL"] * 1.25, f"Cordoba, no etch {noetch['IL']:.3f} dB/cm  |  fitted IL∞ of the ripple {p[0]:.3f} dB/cm",
         color=C["grey"], fontsize=9)
 a1.set_yscale("log"); a1.set_ylabel("IL (dB/cm)"); a1.grid(alpha=0.3, which="both", lw=0.4)
 a1.legend(loc="upper right", fontsize=8.5)
-a1.set_title(f"Slab ending inside the gold, gap {GAP} µm, 1575 nm: Cordoba vs lifted electrodes "
+a1.set_title(f"Slab ending inside the gold, gap {GAP} µm, 1575 nm: Cordoba vs filled lifted electrodes "
              f"(ripple period {2 * p[3]:.2f} µm in slab_w)", fontsize=10.5)
-for name, mk, col in (("lifted_etched_slab_in_gold", "o", C["orange"]), ("filled_lifted_GOLD_OUT", "s", C["orange"])):
-    a = cmp[name]
-    a2.plot(a[:, 0], 100 * (a[:, 2] / a[:, 1] - 1), mk, ms=4.5, color=col, mfc="none" if mk == "o" else col,
-            label=(f"vs filled lifted: median |Δ| {100 * summary[name]['median_rel_dIL']:.2f} %, max {100 * summary[name]['max_rel_dIL']:.2f} %"
-                   if "GOLD" in name else
-                   f"vs lifted with SiO₂ lift: median |Δ| {100 * summary[name]['median_rel_dIL']:.2f} % "
-                   f"(−1.5 % only for a slab end < 0.4 µm from the SiO₂ at x = 7 µm)"))
+a = cmp["filled_lifted_GOLD_OUT"]
+a2.plot(a[:, 0], 100 * (a[:, 2] / a[:, 1] - 1), "s", ms=5.5, color=C["orange"],
+        label=f"median |Δ| {100 * summary['filled_lifted_GOLD_OUT']['median_rel_dIL']:.2f} %, "
+              f"max {100 * summary['filled_lifted_GOLD_OUT']['max_rel_dIL']:.2f} %")
+a2.set_ylim(-1, 1)
 a2.axhline(0, color="k", lw=0.6)
-a2.set_ylabel("IL Cordoba / lifted − 1 (%)"); a2.set_xlabel("slab_w (µm)")
+a2.set_ylabel("IL Cordoba / filled lifted − 1 (%)", fontsize=9); a2.set_xlabel("slab_w (µm)")
 a2.grid(alpha=0.3, lw=0.4); a2.legend(fontsize=8.5, loc="lower left")
 plt.tight_layout(); fig.savefig(OUT + "cordoba_vs_filled_lifted_IL_vs_slab_w.png", dpi=150); plt.close(fig)

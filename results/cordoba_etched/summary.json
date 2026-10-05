@@ -9,13 +9,6 @@
   "at_slab_w": 14.2,
   "max_rel_dVpiL": 0.00035
  },
- "lifted_etched_slab_in_gold": {
-  "n_shared": 60,
-  "median_rel_dIL": 0.00047,
-  "max_rel_dIL": 0.01487,
-  "at_slab_w": 13.8,
-  "max_rel_dVpiL": 0.00013
- },
  "airy_fit_cordoba": {
   "IL_inf_dB_cm": 0.4148,
   "rho0": 0.9373,
