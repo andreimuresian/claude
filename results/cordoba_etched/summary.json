@@ -1,0 +1,27 @@
+{
+ "n_cordoba": 103,
+ "no_etch_IL": 0.4163,
+ "no_etch_VpiL": 2.2672,
+ "filled_lifted_GOLD_OUT": {
+  "n_shared": 19,
+  "median_rel_dIL": 0.00039,
+  "max_rel_dIL": 0.00279,
+  "at_slab_w": 14.2,
+  "max_rel_dVpiL": 0.00035
+ },
+ "lifted_etched_slab_in_gold": {
+  "n_shared": 60,
+  "median_rel_dIL": 0.00047,
+  "max_rel_dIL": 0.01487,
+  "at_slab_w": 13.8,
+  "max_rel_dVpiL": 0.00013
+ },
+ "airy_fit_cordoba": {
+  "IL_inf_dB_cm": 0.4148,
+  "rho0": 0.9373,
+  "two_alpha_per_um": 0.1717,
+  "period_um": 0.8984,
+  "phase_rad": -2.646,
+  "rms_log10": 0.0311
+ }
+}

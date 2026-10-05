@@ -49,7 +49,7 @@ def fitdict(p, r):
 
 
 # ---- Cordoba etched (this study) ---------------------------------------------
-d = runs("c1_out.txt", "c2_out.txt")
+d = runs("c1_out.txt", "c2_out.txt", "c3_out.txt")
 cor = np.array(sorted((float(k[2:]), v["IL"], v["VpiL"], v["tri"]) for k, v in d.items()
                       if re.fullmatch(r"C_\d+\.\d+", k)))
 noetch = d["C_noetch"]
@@ -92,25 +92,24 @@ print(json.dumps(summary, indent=1))
 
 # ---- Figure --------------------------------------------------------------------
 fig, (a1, a2) = plt.subplots(2, 1, figsize=(11, 7.4), sharex=True, gridspec_kw=dict(height_ratios=[2.3, 1]))
-ww = np.linspace(cor[m, 0].min(), cor[:, 0].max(), 2000); Lw = (ww - GAP) / 2
-rho = p[1] * np.exp(-p[2] * Lw)
-a1.fill_between(ww, p[0] * (1 - rho) / (1 + rho), p[0] * (1 + rho) / (1 - rho), color=C["blue"], alpha=0.07, lw=0)
-a1.plot(cor[:, 0], cor[:, 1], "-", color=C["blue"], lw=1.6, label="Cordoba (flat electrodes), etched slab — this study")
+a1.plot(cor[:, 0], cor[:, 1], "-", color=C["blue"], lw=1.6, label="Cordoba (flat electrodes), etched slab: this study")
 a1.plot(lf[:, 0], lf[:, 1], "o", ms=5, mfc="none", mec=C["orange"], mew=1.1,
-        label="lifted, etched slab (slab ends in the gold; = filled lifted to 0.03 %)")
+        label="lifted, etched slab (SiO₂ lift from x = 7 µm)")
 a1.plot(go[:, 0], go[:, 1], "s", ms=4.5, color=C["orange"], label="filled lifted (no SiO₂ in the electrodes)")
 a1.axhline(noetch["IL"], color=C["grey"], ls="--", lw=1)
-a1.text(cor[-1, 0], noetch["IL"] * 1.07, f"Cordoba, no etch: {noetch['IL']:.3f} dB/cm", ha="right", color=C["grey"], fontsize=9)
-a1.axhline(p[0], color=C["blue"], ls=":", lw=1)
-a1.text(cor[-1, 0], p[0] * 0.86, f"fitted IL∞ {p[0]:.3f} dB/cm", ha="right", va="top", color=C["blue"], fontsize=9)
+a1.text(4.45, noetch["IL"] * 1.13, f"Cordoba, no etch {noetch['IL']:.3f} dB/cm  |  fitted IL∞ of the ripple {p[0]:.3f} dB/cm",
+        color=C["grey"], fontsize=9)
 a1.set_yscale("log"); a1.set_ylabel("IL (dB/cm)"); a1.grid(alpha=0.3, which="both", lw=0.4)
 a1.legend(loc="upper right", fontsize=8.5)
-a1.set_title(f"Etched slab ending inside the gold, gap {GAP} µm, 1575 nm: Cordoba vs filled lifted "
-             f"(shaded = Airy envelope, period {p[3]:.3f} µm in L = {2 * p[3]:.2f} µm in slab_w)", fontsize=10)
+a1.set_title(f"Slab ending inside the gold, gap {GAP} µm, 1575 nm: Cordoba vs lifted electrodes "
+             f"(ripple period {2 * p[3]:.2f} µm in slab_w)", fontsize=10.5)
 for name, mk, col in (("lifted_etched_slab_in_gold", "o", C["orange"]), ("filled_lifted_GOLD_OUT", "s", C["orange"])):
     a = cmp[name]
     a2.plot(a[:, 0], 100 * (a[:, 2] / a[:, 1] - 1), mk, ms=4.5, color=col, mfc="none" if mk == "o" else col,
-            label=f"vs {name.replace('_', ' ')}: median |Δ| {100 * summary[name]['median_rel_dIL']:.2f} %")
+            label=(f"vs filled lifted: median |Δ| {100 * summary[name]['median_rel_dIL']:.2f} %, max {100 * summary[name]['max_rel_dIL']:.2f} %"
+                   if "GOLD" in name else
+                   f"vs lifted with SiO₂ lift: median |Δ| {100 * summary[name]['median_rel_dIL']:.2f} % "
+                   f"(−1.5 % only for a slab end < 0.4 µm from the SiO₂ at x = 7 µm)"))
 a2.axhline(0, color="k", lw=0.6)
 a2.set_ylabel("IL Cordoba / lifted − 1 (%)"); a2.set_xlabel("slab_w (µm)")
 a2.grid(alpha=0.3, lw=0.4); a2.legend(fontsize=8.5, loc="lower left")
