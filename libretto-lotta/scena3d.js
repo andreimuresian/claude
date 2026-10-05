@@ -51,6 +51,10 @@ function ik(root,target,l1,l2,pole){
   return {mid,end};
 }
 
+function pushOut(pt,J,m){const F=J.F,a0=add(J.P,F.u,-6),ax=F.u;
+  const t=clamp(pt.clone().sub(a0).dot(ax),0,56);const C=a0.clone().addScaledVector(ax,t);const v=pt.clone().sub(C);
+  const x=v.dot(F.r),z=v.dot(F.fw),rx=19+m,rz=13+m;const e=(x*x)/(rx*rx)+(z*z)/(rz*rz);
+  if(e<1&&e>1e-6){const k=1/Math.sqrt(e);pt.copy(C).addScaledVector(F.r,x*k).addScaledVector(F.fw,z*k).addScaledVector(ax,v.dot(ax))}}
 /* ---------- stato a un istante ---------- */
 function resolve(spec,J,owner,bodyN){
   if(!spec)return null;if(typeof spec==='string')spec=[spec];
@@ -99,6 +103,8 @@ function stateAt(keys,i,T){
       const wrap=typeof partName==='string'&&/belly|waistBack|back|side/.test(partName);
       const pole=wrap?add(V(0,0,0),V(0,1,0),-.25,j.F.r,s==='L'?-1.6:1.6):add(V(0,0,0),V(0,1,0),-1,j.F.r,s==='L'?-.8:.8,j.F.fw,-.5);
       const res=ik(sh,wrist,LEN.ua,LEN.fa,pole);
+      // il gomito non entra nei busti (proprio e dell'avversario): lo spingiamo fuori dalla superficie
+      for(const O of ['A','B'])pushOut(res.mid,J[O],O===W?5:7);
       const grip=lerp(t0?1:0,t1?1:0,eh);
       H[W][s]={sh,el:res.mid,wr:res.end,tgt,grip,appr};
       j['elb'+s]=res.mid;j['tri'+s]=sh.clone().lerp(res.mid,.55);j['wr'+s]=res.end;j['hand'+s]=add(res.end,res.end.clone().sub(res.mid).normalize(),5);}}
@@ -108,12 +114,12 @@ function stateAt(keys,i,T){
 /* ---------- modello del lottatore ---------- */
 function mats(team){
   const singlet=team==='A'?0xc9302c:0x2457b0;
-  return {skin:new THREE.MeshStandardMaterial({color:team==='A'?0xe3b48f:0xd09a72,roughness:.62}),
+  return {skin:new THREE.MeshStandardMaterial({color:team==='A'?0xf3d6c2:0x3b2418,roughness:team==='A'?.6:.45}),
     suit:new THREE.MeshStandardMaterial({color:singlet,roughness:.45,metalness:.05}),
     shoe:new THREE.MeshStandardMaterial({color:0x1d1f24,roughness:.5}),
     sole:new THREE.MeshStandardMaterial({color:singlet,roughness:.5}),
-    hair:new THREE.MeshStandardMaterial({color:team==='A'?0x3a2a1e:0x1c1714,roughness:.9}),
-    dark:new THREE.MeshStandardMaterial({color:0x222222,roughness:.4})};
+    hair:new THREE.MeshStandardMaterial({color:team==='A'?0x8a5a2b:0x0d0b0a,roughness:.9}),
+    dark:new THREE.MeshStandardMaterial({color:team==='A'?0x222222:0xeeeeee,roughness:.4})};
 }
 const UPY=V(0,1,0);
 function seg(group,r,mat){const geo=new THREE.CapsuleGeometry(r,1,6,12);const m=new THREE.Mesh(geo,mat);m.castShadow=true;m.receiveShadow=true;group.add(m);
@@ -191,7 +197,7 @@ function poseWrestler(w,J,H,W){
 /* ---------- etichette S/D e frecce ---------- */
 function labelSprite(txt,col){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d');
   x.fillStyle=col;x.beginPath();x.arc(32,32,28,0,7);x.fill();x.fillStyle='#fff';x.font='bold 36px Arial';x.textAlign='center';x.textBaseline='middle';x.fillText(txt,32,34);
-  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:false,transparent:true}));s.scale.set(7,7,1);s.renderOrder=9;return s}
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),depthTest:true,transparent:true}));s.scale.set(7,7,1);s.renderOrder=9;return s}
 
 /* ---------- scena ---------- */
 function createView(container){

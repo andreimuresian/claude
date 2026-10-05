@@ -189,7 +189,7 @@ function draw(){curSt=view.pose(keys(),i,T);view.setArrows(T>=.15||i===0?keys()[
 function jump(k){setPlaying(false);i=k;T=1;mode='hold';phaseCard();draw()}
 function load(){const t=TECHS[cur];renderTechs();$('title').textContent=t.it;$('en').textContent=t.en;$('intro').textContent=t.intro;
   $('tabAtt').setAttribute('aria-selected',side==='att');$('tabDef').setAttribute('aria-selected',side==='def');
-  $('sideIntro').textContent=side==='att'?'Tu (rosso) esegui la tecnica.':t.defIntro;
+  $('sideIntro').textContent=side==='att'?'Tu (pelle chiara, body rosso) esegui la tecnica. L\'avversario ha pelle scura e body blu.':'Tu: pelle chiara, body rosso. Lui: pelle scura, body blu. '+t.defIntro;
   $('startCard').innerHTML=side==='att'
     ?'<h5>Posizione di partenza</h5><b>Tu</b><ul>'+t.start.tu.map(x=>'<li>'+x+'</li>').join('')+'</ul><b>Lui</b><ul>'+t.start.lui.map(x=>'<li>'+x+'</li>').join('')+'</ul>'
     :'<h5>Situazione</h5><ul><li>'+t.defIntro+'</li></ul>';
