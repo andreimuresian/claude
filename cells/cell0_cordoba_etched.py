@@ -196,6 +196,9 @@ def build_polygons():
         for _a in (xg, x_out):
             if abs(xs - _a) > 1e-9:
                 r_c = min(r_c, abs(xs - _a) / 2.5)
+        _d = abs(xs - (xg + 1.0))                   # fine-BOX block edge: a patch edge landing
+        if 1e-9 < _d < r_c + 1e-9:                  # exactly on it makes a zero-length gmsh line
+            r_c = 0.8 * _d
     assert r_c >= 0.01, f"slab edge {xs:.3f} um within 20 nm of a gold edge: not meshable"
 
     # ---- 1. LN: rib core and the (etched) slab ------------------------------
