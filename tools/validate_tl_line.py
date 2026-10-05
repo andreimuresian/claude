@@ -16,6 +16,11 @@ against INTERCONNECT:
   5. R + L + C source and load, and the far-end voltage, vs closed forms
   6. the TL electrode element (a whole bent electrode in one element), 0-4 bends:
      against the chain of TL line elements and against the GUI's device response
+  7. bend skew (RF transit n_b.L_b/c vs the bend optical delay): on an ideal
+     electrode (lossless, matched, velocity-matched) the response is the closed
+     form sum_k (L_k/L_mod) exp(-jw.dt_k), dt_k = RF minus light arrival at
+     section k. GUI cascade and TL electrode element against it, at the
+     matched bend length and away from it
 
     python tools/validate_tl_line.py [path/to/line.s2p --L-meas 2.5]
 
@@ -156,7 +161,7 @@ def main(argv=None) -> int:
              (1, dict(tw_len_1_mm=7, tw_len_2_mm=7, bend_len_mm=0.8, bend_Z_ohm=60.0)),
              (1, dict(tw_len_1_mm=7, tw_len_2_mm=7, bend_len_mm=0.0, bend_Z_ohm=60.0)),
              (2, dict(tw_len_1_mm=3, tw_len_2_mm=6, tw_len_3_mm=5, bend_len_mm=1.2,
-                      bend_opt_len_mm=1.5, bend_Z_ohm=35.0, ng_imbalance=0.02)),
+                      bend_opt_delay_ps=8.0, bend_nm=2.3, bend_Z_ohm=35.0, ng_imbalance=0.02)),
              (3, dict(bend_len_mm=0.6, bend_Z_ohm=80.0, Zs_L_pH=40.0, Rt_C_fF=25.0)),
              (4, dict(tw_len_1_mm=2, tw_len_2_mm=4, tw_len_3_mm=3, tw_len_4_mm=2.5,
                       tw_len_5_mm=2.5, bend_len_mm=1.0, bend_Z_ohm=45.0, ng_imbalance=-0.03))]
@@ -187,6 +192,56 @@ def main(argv=None) -> int:
         check(f"{tag}: element vs GUI device response, |H| shape to 150 GHz",
               float(np.max(np.abs(20 * np.log10(mag)))), 2e-3,
               f"(GUI BW {res.bw_GHz:.3f} GHz)")
+
+    print("7. Bend skew against the closed form (ideal electrode)")
+    from mzm_interconnect.physics import C0, bend_matched_length_mm, bend_skew_ps
+    fk = np.linspace(0.1, 200.0, 800)
+    wk = 2 * np.pi * fk * 1e9
+    zero = np.zeros_like(fk)
+    R = 50.0
+    for nbends, ngk, Lb_mm in ((2, 2.27, None), (2, 2.27, 0.3), (3, 2.27, 1.6), (2, 2.29, 0.5)):
+        pk = dict(bend_opt_delay_ps=5.0, bend_nm=1.7, ng=2.27,
+                  bend_len_mm=Lb_mm if Lb_mm is not None else 0.0)
+        if Lb_mm is None:
+            pk["bend_len_mm"] = bend_matched_length_mm(pk)
+        Lb = pk["bend_len_mm"] * 1e-3
+        Lo = 5e-12 * C0 / 2.27
+        secs = [14e-3 / (nbends + 1)] * (nbends + 1)
+        lay = []
+        for k, Ls in enumerate(secs):
+            lay.append(dict(kind="mod", L_rf=Ls, L_opt=Ls))
+            if k < nbends:
+                lay.append(dict(kind="bend", L_rf=Lb, L_opt=Lo))
+        # closed form: the RF runs at n_m = 2.27 in the sections (velocity-matched
+        # for n_g = 2.27) and at n_b in the bends; the light at ngk everywhere
+        trf = topt = 0.0
+        Han = np.zeros_like(wk, complex)
+        for x in lay:
+            if x["kind"] == "mod":
+                Ls = x["L_rf"]
+                d = (2.27 - ngk) * Ls / C0          # walk-off inside the section (0 if matched)
+                sinc = np.where(np.abs(wk * d) < 1e-12, 1.0,
+                                (1 - np.exp(-1j * wk * d)) / (1j * wk * d + (np.abs(wk * d) < 1e-12)))
+                Han += Ls / sum(secs) * np.exp(-1j * wk * (trf - topt)) * sinc
+                trf += 2.27 * Ls / C0
+            else:
+                trf += 1.7 * x["L_rf"] / C0
+            topt += ngk * x["L_opt"] / C0
+        Han *= 0.5 * np.exp(-1j * wk * topt)
+        seg = segmented_transfer(fk, zero, np.full_like(fk, 2.27), np.full_like(fk, R, complex),
+                                 lay, ngk, R + 0j, R + 0j, bend_alpha_dB_cm=zero, bend_nm=1.7, bend_Z=R)
+        el = SL.tl_electrode_sparams(fk * 1e9, [(x["L_rf"], x["L_opt"], 1 if x["kind"] == "mod" else 0)
+                                                for x in lay],
+                                     (zero, np.full_like(fk, 2.27), np.full_like(fk, R)),
+                                     (zero, np.full_like(fk, 1.7), np.full_like(fk, R)), ng=ngk)
+        rr = SL.chain_response([el], np.full_like(fk, R, complex), np.full_like(fk, R, complex))
+        tag = (f"{nbends} bends, L_b {pk['bend_len_mm']:.3f} mm (skew {bend_skew_ps(pk):+.2f} ps), "
+               f"n_g {ngk}")
+        check(f"{tag}: GUI cascade vs closed form", float(np.max(np.abs(seg.H - Han))), 1e-9, "")
+        # chain_response's H = -eo_transfer's = segmented_transfer's (positive at DC)
+        check(f"{tag}: TL electrode element vs closed form",
+              float(np.max(np.abs(rr.H - Han))), 1e-9,
+              f"|H| at 100 GHz {np.interp(100.0, fk, np.abs(Han)) / 0.5:.4f}")
 
     print(f"\n{sum(results)}/{len(results)} checks passed.")
     return 0 if all(results) else 1

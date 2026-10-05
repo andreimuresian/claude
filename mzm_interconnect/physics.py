@@ -213,6 +213,30 @@ def eo_transfer(f_GHz, alpha_dB_cm, nm, Zc, L_device_m, ng, Zs, Zt):
 MAX_BENDS = 4
 
 
+def bend_optical_length_m(p: dict) -> float:
+    """Optical path through one bend, from the bend optical delay: the light
+    crosses it in bend_opt_delay_ps at the nominal group index n_g. The layout
+    stores lengths (the cascade and the INTERCONNECT element multiply them by
+    each arm's n_g), so an arm at n_g + d sees the delay scaled by (n_g + d)/n_g."""
+    return float(p.get("bend_opt_delay_ps", 5.0)) * 1e-12 * C0 / float(p.get("ng", 2.27))
+
+
+def bend_matched_length_mm(p: dict) -> float:
+    """RF length of a bend whose RF transit n_b.L_b/c equals the bend optical
+    delay: the length compensation that makes the bend skew-free."""
+    return float(p.get("bend_opt_delay_ps", 5.0)) * 1e-12 * C0 / float(p.get("bend_nm", 1.7)) * 1e3
+
+
+def bend_skew_ps(p: dict) -> float:
+    """RF transit minus optical delay through one bend (ps): positive means the RF
+    reaches the next electrode after the light. Transit at the bend's flat
+    microwave index; reflections at the bend's ends add a little phase on top,
+    which the cascade includes."""
+    sk = (float(p.get("bend_nm", 1.7)) * float(p.get("bend_len_mm", 0.0)) * 1e-3 / C0 * 1e12
+          - float(p.get("bend_opt_delay_ps", 5.0)))
+    return round(sk, 6) + 0.0          # no "-0.00 ps" at the matched length
+
+
 def electrode_layout(p: dict) -> list:
     """
     The electrode as an ordered list of pieces, from the RF input to the load.
@@ -231,7 +255,7 @@ def electrode_layout(p: dict) -> list:
         Lk = float(p.get(f"tw_len_{k}_mm", 0.0)) * 1e-3
         secs.append(Lk if Lk > 0 else auto)
     Lb = float(p.get("bend_len_mm", 0.0)) * 1e-3
-    Lbo = float(p.get("bend_opt_len_mm", 0.0)) * 1e-3 or Lb
+    Lbo = bend_optical_length_m(p)
     out = []
     for k, Lk in enumerate(secs):
         out.append(dict(kind="mod", L_rf=Lk, L_opt=Lk))
@@ -414,7 +438,7 @@ def bend_line(p: dict, f_GHz) -> dict:
     f = np.maximum(np.asarray(f_GHz, dtype=float), 0.0)
     a, b, _ = bend_loss_coefficients(p)
     return dict(bend_alpha_dB_cm=a * np.sqrt(f) + b * f,
-                bend_nm=float(p.get("bend_nm", 2.3)),
+                bend_nm=float(p.get("bend_nm", 1.7)),
                 bend_Z=float(p.get("bend_Z_ohm", 60.0)))
 
 

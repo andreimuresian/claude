@@ -536,6 +536,7 @@ class MZMStudio(tk.Tk):
             for spec in specs:
                 self._add_param_row(box.body, spec)
         self._refresh_visibility()
+        self._update_bend_match()
 
     def _refresh_visibility(self):
         """Show only the parameters that exist for the current settings, e.g.
@@ -595,6 +596,47 @@ class MZMStudio(tk.Tk):
             Tooltip(w, f"{spec.label}\n\n{spec.tooltip}", t)
         self.vars[spec.key] = var
         self._rows.append((spec, row))
+        if spec.key == "bend_len_mm":
+            # Matched-length calculator, on its own line under the bend length (it
+            # shows and hides with it): the bend length at which the RF crosses the
+            # bend in the bend optical delay, n_b.L_b/c = tau.
+            row2 = ttk.Frame(parent, style="Panel.TFrame")
+            row2.pack(fill="x", pady=2)
+            ttk.Label(row2, text="  -> matched bend length", style="Muted.TLabel", width=24,
+                      anchor="w").pack(side="left", padx=(4, 4))
+            self.bend_match_lbl = ttk.Label(row2, text="", style="Muted.TLabel")
+            self.bend_match_lbl.pack(side="left", fill="x", expand=True)
+            ttk.Button(row2, text="use", width=4,
+                       command=self._use_matched_bend).pack(side="left", padx=2)
+            Tooltip(self.bend_match_lbl,
+                    "Matched bend length = bend optical delay x c / bend microwave index. "
+                    "At this length the RF reaches the next electrode together with the "
+                    "light. Skew = RF transit minus optical delay, per bend: positive = "
+                    "RF late. 'use' copies the matched length into Bend length; you stay "
+                    "free to type any other value.", t)
+            self._rows.append((spec, row2))
+
+    def _update_bend_match(self, p=None):
+        lbl = getattr(self, "bend_match_lbl", None)
+        if lbl is None:
+            return
+        try:
+            from .physics import bend_matched_length_mm, bend_skew_ps
+            p = p or self._get_params()
+            lbl.configure(text=f"{bend_matched_length_mm(p):.3f} mm   "
+                               f"(now: skew {bend_skew_ps(p):+.2f} ps/bend)")
+        except Exception:
+            lbl.configure(text="matched: -")
+
+    def _use_matched_bend(self):
+        from .physics import bend_matched_length_mm
+        try:
+            p = self._get_params()
+            self.vars["bend_len_mm"].set(f"{bend_matched_length_mm(p):.4f}")
+        except Exception as exc:
+            self.log(f"Could not compute the matched bend length: {exc}", "warn")
+            return
+        self._on_change()
 
     def _browse(self, spec, var):
         if spec.kind == "dirpath":
@@ -966,6 +1008,7 @@ class MZMStudio(tk.Tk):
     def _on_change(self):
         self._sync_bend_lengths()
         self._refresh_visibility()
+        self._update_bend_match()
         if self.auto_var.get() and self.fit is not None and not self._busy:
             self.action_analyse()
 
@@ -995,12 +1038,16 @@ class MZMStudio(tk.Tk):
                 from .physics import bend_efficiency_dB, electrode_layout
                 lay = electrode_layout(p)
                 secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in lay if x["kind"] == "mod")
-                from .physics import bend_loss_coefficients
+                from .physics import (bend_loss_coefficients, bend_matched_length_mm,
+                                      bend_skew_ps)
                 a_b, b_b, src = bend_loss_coefficients(p)
                 self.log(f"  {int(p['n_bends'])} bend(s): electrodes {secs} mm "
                          f"(total {sum(x['L_rf'] for x in lay if x['kind'] == 'mod')*1e3:.2f} mm); "
                          f"bend {float(p['bend_len_mm']):.2f} mm, {float(p['bend_Z_ohm']):.1f} ohm, "
-                         f"n = {float(p['bend_nm']):.2f}, loss {a_b:.4f}.sqrt(f) + {b_b:.5f}.f dB/cm "
+                         f"n = {float(p['bend_nm']):.2f}, optical delay "
+                         f"{float(p['bend_opt_delay_ps']):.2f} ps (matched length "
+                         f"{bend_matched_length_mm(p):.3f} mm, skew {bend_skew_ps(p):+.2f} ps "
+                         f"per bend, RF minus light), loss {a_b:.4f}.sqrt(f) + {b_b:.5f}.f dB/cm "
                          f"[{src}] = {(a_b*10**0.5+b_b*10)*float(p['bend_len_mm'])/10:.3f} / "
                          f"{(a_b*100**0.5+b_b*100)*float(p['bend_len_mm'])/10:.3f} dB per bend at 10 / 100 GHz. "
                          f"Low-frequency modulation vs the same electrodes without bends: "

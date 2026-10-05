@@ -338,6 +338,34 @@ within 0.4 % of Python and OMA within 0.2 % for every N. The ER differs by up
 to 0.7 dB because the '0' level is only about 0.1 mA (near full extinction),
 so 0.01 mA moves it; the two tools also use different bit patterns.
 
+### Bend skew: matched bend length
+
+The light crosses each bend (waveguide U-turn with its crossing) in a fixed
+time, **Bend optical delay** (default 5 ps). The RF crosses it in
+n_b · L_b / c, with **Bend microwave index** n_b (default 1.7: over the
+crossing the electrodes sit on the SiO2 buffer, not on the LN slab) and
+**Bend length** L_b (RF length along the signal electrode: bent part plus the
+straight compensation lengths). The skew per bend is
+
+    skew = n_b · L_b / c − tau        (positive: RF late)
+
+and the bend is skew-free at the **matched bend length** L_b = c · tau / n_b
+(0.882 mm for 5 ps and 1.7). The GUI shows it under Bend length, with the
+current skew; "use" copies it, and any other length can still be typed.
+
+The optical delay enters the layout as an optical length c · tau / n_g, so the
+cascade, the TL electrode element and the TW-block build all use it. An arm at
+n_g + d (group-index imbalance) sees tau · (n_g + d) / n_g.
+
+Effect (Jerez line, 5 + 5 + 4 mm, 2 bends of 60 ohm, 100 Gb/s): EO bandwidth
+82.5 GHz at the matched length (straight 14 mm: 94.0 GHz; the rest is bend
+loss), 62.7 GHz at −1.5 ps per bend, about 40 GHz at ±3 ps. The eye height goes
+from 17.5 mA to 16.7 mA at −1.5 ps and about 13 mA at ±3 ps. The skew acts as a
+delay-and-add filter, sections at delays 0, skew, 2·skew, ...: it cuts the
+bandwidth hard, and the eye less, because most of a 100 Gb/s eye's energy is
+below 50 GHz. Check 7 of `tools/validate_tl_line.py` compares the cascade and the
+TL electrode with the closed form on an ideal electrode.
+
 ### Step 1 checks, in order
 
 1. **Straight electrode, ENA.** The TL build's EO bandwidth must match the
@@ -350,7 +378,7 @@ so 0.01 mA moves it; the two tools also use different bit patterns.
    includes it (`device_response`).
 5. **Eye** against the Python eye. EYE_2 shows the termination voltage.
 
-Offline (`tools/validate_tl_line.py`, 15 checks): the second output against
+Offline (`tools/validate_tl_line.py`, 35 checks): the second output against
 the cascade at arm 2's n_g; `rlc_z` (as in the LSF) against
 `physics.rlc_impedance`; an R+L+C source and load against `eo_transfer`; the
 far-end voltage against the closed form V(0)/(cosh γL + Z0/Zt·sinh γL).

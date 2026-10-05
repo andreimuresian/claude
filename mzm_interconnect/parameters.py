@@ -142,8 +142,11 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("bend_len_mm", "Bend length", 0.8, "Device geometry", "mm",
               sweepable=True, sweep_default=(0.0, 3.0, 31), affects="circuit", vmin=0.0,
               visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
-              help="Length of each bend, measured along the electrode. The bend is a "
-                   "transmission line that carries the RF but does not modulate."),
+              help="RF length of each bend, measured along the signal electrode: the "
+                   "bent part plus the straight compensation lengths. The bend is a "
+                   "transmission line that carries the RF but does not modulate. The "
+                   "readout on the right is the length at which the RF crosses the bend "
+                   "in the same time as the light (bend optical delay); 'use' copies it."),
     ParamSpec("bend_Z_ohm", "Bend impedance", 60.0, "Device geometry", "ohm",
               sweepable=True, sweep_default=(30.0, 80.0, 51), affects="circuit", vmin=1.0,
               visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
@@ -174,18 +177,23 @@ PARAMS: list[ParamSpec] = [
               visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and bool(p.get("bend_loss_file")),
               help="Physical length of the bend the file was simulated for; turns "
                    "its dB into dB/cm."),
-    ParamSpec("bend_nm", "Bend microwave index", 2.3, "Device geometry", "-",
-              sweepable=True, sweep_default=(1.8, 3.0, 25), affects="circuit", vmin=1.0,
+    ParamSpec("bend_nm", "Bend microwave index", 1.7, "Device geometry", "-",
+              sweepable=True, sweep_default=(1.4, 2.6, 25), affects="circuit", vmin=1.0,
               visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
               help="Microwave index of the bend line: sets how long the RF takes to "
-                   "cross the bend. Placeholder until the bend simulation gives it "
-                   "(the S21 phase of the bend)."),
-    ParamSpec("bend_opt_len_mm", "Bend optical length", 0.0, "Device geometry", "mm",
-              sweepable=True, sweep_default=(0.0, 3.0, 31), affects="circuit", vmin=0.0,
+                   "cross the bend (n_b x bend length / c). Where the waveguides "
+                   "cross, the electrodes sit on the SiO2 buffer instead of the LN "
+                   "slab, and the index drops to about 1.7."),
+    ParamSpec("bend_opt_delay_ps", "Bend optical delay", 5.0, "Device geometry", "ps",
+              sweepable=True, sweep_default=(0.0, 10.0, 41), affects="circuit", vmin=0.0,
               visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
-              help="Length of the optical waveguide through one bend: sets how long "
-                   "the light takes to reach the next electrode. 0 = same as the "
-                   "bend length."),
+              help="Time the light takes through one bend (waveguide U-turn with its "
+                   "crossing), from the end of one electrode to the start of the next. "
+                   "The RF takes n_b x bend length / c; when the two are equal the bend "
+                   "is skew-free. The 'matched' readout next to the bend length gives "
+                   "the bend length that achieves it. Default 5 ps. With an arm "
+                   "group-index imbalance, an arm at n_g + d sees this delay scaled "
+                   "by (n_g + d) / n_g."),
 
     # ---------------- Microwave line 'what-if' knobs ---------------------
     ParamSpec("alpha_scale", "Total loss scale", 1.0, "Microwave line", "x",

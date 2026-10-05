@@ -178,12 +178,16 @@ for (k = 1:nsec) {
             ngk = ng;
             if (km == 2) { ngk = ng2; }
             bo = w * ngk / c0;
+            # (exp(qL) - 1)/q, by its series where |qL| < 1e-6: there exp(qL) - 1
+            # cancels (q = 0 for a lossless, velocity-matched section).
             q1 = -gk + 1i * bo;
-            q1 = q1 + (abs(q1) < 1e-12) * 1e-12;
+            qL = q1 * Lk;
+            sm = abs(qL) < 1e-6;
+            F1 = sm * Lk * (1 + qL / 2 + qL * qL / 6) + (1 - sm) * (exp(qL) - 1) / (q1 + sm);
             q2 = gk + 1i * bo;
-            q2 = q2 + (abs(q2) < 1e-12) * 1e-12;
-            F1 = (exp(q1 * Lk) - 1) / q1;
-            F2 = (exp(q2 * Lk) - 1) / q2;
+            qL = q2 * Lk;
+            sm = abs(qL) < 1e-6;
+            F2 = sm * Lk * (1 + qL / 2 + qL * qL / 6) + (1 - sm) * (exp(qL) - 1) / (q2 + sm);
             Xo = exp(-1i * bo * Lk) / Lmod * exp(-1i * bo * Ltail);
             if (km == 1) {
                 T1a = T1a + (Vp1 * F1 + Vm1 * F2) * Xo;

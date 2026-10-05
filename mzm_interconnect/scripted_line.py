@@ -83,6 +83,16 @@ def read_tl_table(path: str):
 # ---------------------------------------------------------------------------
 # 2. The element itself (mirror of tl_element_setup.lsf)
 # ---------------------------------------------------------------------------
+def _int_lin(q, L):
+    """(exp(q L) - 1) / q, the integral of exp(q z) over 0..L, as the LSF
+    computes it: the series L (1 + qL/2 + (qL)^2/6) where |qL| < 1e-6, because
+    there exp(qL) - 1 cancels (a lossless, velocity-matched section has q = 0
+    and lost 2 % that way)."""
+    qL = q * L
+    sm = np.abs(qL) < 1e-6
+    return np.where(sm, L * (1 + qL / 2 + qL * qL / 6), (np.exp(qL) - 1) / (q + sm))
+
+
 def tl_sparams(f_Hz, loss_dB_m, nm, Z, L, ng=None, R0=50.0,
                modulating=True, waves="voltage", ng2=None) -> dict:
     """S-matrix entries of one TL line element, as the LSF sets them. With
@@ -106,12 +116,8 @@ def tl_sparams(f_Hz, loss_dB_m, nm, Z, L, ng=None, R0=50.0,
     if modulating:
         def vavg(V1, I1, ngk):
             bo = w * float(ngk) / C0
-            q1 = -g + 1j * bo
-            q1 = q1 + (np.abs(q1) < 1e-12) * 1e-12
-            q2 = g + 1j * bo
-            q2 = q2 + (np.abs(q2) < 1e-12) * 1e-12
-            F1 = (np.exp(q1 * L) - 1) / q1
-            F2 = (np.exp(q2 * L) - 1) / q2
+            F1 = _int_lin(-g + 1j * bo, L)
+            F2 = _int_lin(g + 1j * bo, L)
             Xo = np.exp(-1j * bo * L) / L
             Vp = (V1 + Zl * I1) / 2
             Vm = (V1 - Zl * I1) / 2
@@ -182,12 +188,8 @@ def tl_electrode_sparams(f_Hz, layout, el_tab, bend_tab=None, ng=2.27, ng2=None,
         if mod > 0.5:
             for km, ngk in enumerate(ngs):
                 bo = w * float(ngk) / C0
-                q1 = -g + 1j * bo
-                q1 = q1 + (np.abs(q1) < 1e-12) * 1e-12
-                q2 = g + 1j * bo
-                q2 = q2 + (np.abs(q2) < 1e-12) * 1e-12
-                F1 = (np.exp(q1 * L) - 1) / q1
-                F2 = (np.exp(q2 * L) - 1) / q2
+                F1 = _int_lin(-g + 1j * bo, L)
+                F2 = _int_lin(g + 1j * bo, L)
                 Xo = np.exp(-1j * bo * L) / L * np.exp(-1j * bo * tail) * (L / Lmod)
                 for j, (V, I) in enumerate(exc):
                     T[km][j] = T[km][j] + ((V + Z * I) / 2 * F1 + (V - Z * I) / 2 * F2) * Xo
