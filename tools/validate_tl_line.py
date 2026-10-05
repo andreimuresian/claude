@@ -21,6 +21,9 @@ against INTERCONNECT:
      form sum_k (L_k/L_mod) exp(-jw.dt_k), dt_k = RF minus light arrival at
      section k. GUI cascade and TL electrode element against it, at the
      matched bend length and away from it
+  8. walk-off compensated bend: with n_m != n_g in the sections, the bend skew
+     -(n_m - n_g).L/c re-aligns equal sections exactly, so the ideal electrode
+     responds like ONE section of length L (|sinc|), whatever the number of bends
 
     python tools/validate_tl_line.py [path/to/line.s2p --L-meas 2.5]
 
@@ -242,6 +245,32 @@ def main(argv=None) -> int:
         check(f"{tag}: TL electrode element vs closed form",
               float(np.max(np.abs(rr.H - Han))), 1e-9,
               f"|H| at 100 GHz {np.interp(100.0, fk, np.abs(Han)) / 0.5:.4f}")
+
+    print("8. Walk-off compensated bend length (ideal electrode, n_m != n_g)")
+    from mzm_interconnect.physics import bend_walkoff_skew_ps, bend_walkoff_length_mm
+
+    class _Line:                         # a line with a flat n_m, for the formula
+        def __init__(self, n):
+            self.n = n
+
+        def nm(self, f, offset=0.0):
+            return np.full(np.shape(f), self.n) + offset
+
+    for nbends, nm_line in ((1, 2.30), (2, 2.30), (3, 2.24)):
+        Ls = 12e-3 / (nbends + 1)
+        pk = P.normalise(dict(base, n_bends=nbends, L_target_mm=12.0, ng=2.27, bend_nm=1.7,
+                              bend_opt_delay_ps=5.0, nm_offset=0.0,
+                              **{f"tw_len_{k}_mm": Ls * 1e3 for k in range(1, nbends + 2)}))
+        line = _Line(nm_line)
+        pk["bend_len_mm"] = bend_walkoff_length_mm(line, pk, 50.0)
+        lay = electrode_layout(pk)
+        seg = segmented_transfer(fk, zero, np.full_like(fk, nm_line), np.full_like(fk, R, complex),
+                                 lay, 2.27, R + 0j, R + 0j, bend_alpha_dB_cm=zero, bend_nm=1.7, bend_Z=R)
+        d = (nm_line - 2.27) * Ls / C0
+        one = np.abs(np.sinc(fk * 1e9 * d))          # |sin(pi f d)/(pi f d)|: one section
+        check(f"{nbends} bend(s), n_m {nm_line}: skew {bend_walkoff_skew_ps(line, pk, 50.0):+.3f} ps "
+              f"-> |H| = one section", float(np.max(np.abs(np.abs(seg.H) / 0.5 - one))), 1e-9,
+              f"(L_b {pk['bend_len_mm']:.4f} mm)")
 
     print(f"\n{sum(results)}/{len(results)} checks passed.")
     return 0 if all(results) else 1

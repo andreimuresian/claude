@@ -366,6 +366,25 @@ bandwidth hard, and the eye less, because most of a 100 Gb/s eye's energy is
 below 50 GHz. Check 7 of `tools/validate_tl_line.py` compares the cascade and the
 TL electrode with the closed form on an ideal electrode.
 
+**Walk-off compensated length.** Zero skew at the bend is the optimum only when
+the sections are velocity-matched. Inside a section the RF drifts from the
+light by (n_m − n_g)·L/c, and a section's contribution is centred on its
+middle, so the bend that re-aligns consecutive sections is
+
+    skew_opt = −(n_m − n_g) · (L_k + L_k+1)/2 / c        (averaged over the bends)
+
+with n_m at the −3 dB frequency. On the 5NK0050 line (n_m ≈ 2.286 at 75 GHz,
+n_g = 2.27) this is −0.26 ps for 5 + 5 + 4 mm and −0.37 ps for 7 + 7 mm: the
+bandwidth peaks at a bend delay 0.25–0.4 ps above the skew-free value, which
+is what a sweep of the bend optical delay shows. With n_m shifted to n_g the
+peak moves to exactly zero skew. The GUI shows this length on a second line
+("walk-off compensated", after the first analysis). It is within 0.01–0.07 mm
+of the numerical optimum when the bend impedance is close to the line's; with a
+strongly mismatched bend, reflections shift the optimum further and the
+bandwidth curve is flat and rippled there. Check 8 of `tools/validate_tl_line.py`:
+with this skew, equal sections on an ideal electrode respond exactly like one
+section.
+
 ### Step 1 checks, in order
 
 1. **Straight electrode, ENA.** The TL build's EO bandwidth must match the
@@ -378,7 +397,7 @@ TL electrode with the closed form on an ideal electrode.
    includes it (`device_response`).
 5. **Eye** against the Python eye. EYE_2 shows the termination voltage.
 
-Offline (`tools/validate_tl_line.py`, 35 checks): the second output against
+Offline (`tools/validate_tl_line.py`, 38 checks): the second output against
 the cascade at arm 2's n_g; `rlc_z` (as in the LSF) against
 `physics.rlc_impedance`; an R+L+C source and load against `eo_transfer`; the
 far-end voltage against the closed form V(0)/(cosh γL + Z0/Zt·sinh γL).

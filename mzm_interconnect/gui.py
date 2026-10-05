@@ -615,6 +615,29 @@ class MZMStudio(tk.Tk):
                     "RF late. 'use' copies the matched length into Bend length; you stay "
                     "free to type any other value.", t)
             self._rows.append((spec, row2))
+            # Walk-off compensated length: when n_m differs from n_g the sections
+            # drift from the light, and the best bend makes up the drift between
+            # section centres (physics.bend_walkoff_skew_ps). Needs the line fit,
+            # so it appears after the first analysis.
+            row3 = ttk.Frame(parent, style="Panel.TFrame")
+            row3.pack(fill="x", pady=2)
+            ttk.Label(row3, text="  -> walk-off compensated", style="Muted.TLabel", width=24,
+                      anchor="w").pack(side="left", padx=(4, 4))
+            self.bend_walk_lbl = ttk.Label(row3, text="", style="Muted.TLabel")
+            self.bend_walk_lbl.pack(side="left", fill="x", expand=True)
+            ttk.Button(row3, text="use", width=4,
+                       command=self._use_walkoff_bend).pack(side="left", padx=2)
+            Tooltip(self.bend_walk_lbl,
+                    "Bend length that maximises the bandwidth when the line's microwave "
+                    "index n_m differs from the optical group index n_g. Inside each "
+                    "section the RF drifts from the light by (n_m - n_g) x L / c; the bend "
+                    "then has to make up the drift between the centres of the sections "
+                    "before and after it, so the best skew is -(n_m - n_g) x (mean of the "
+                    "two section lengths) / c, with n_m at the current -3 dB frequency. "
+                    "Close to the numerical optimum when the bend impedance is near the "
+                    "line's; with a strongly mismatched bend, reflections shift the "
+                    "optimum further (sweep the bend length to find it).", t)
+            self._rows.append((spec, row3))
 
     def _update_bend_match(self, p=None):
         lbl = getattr(self, "bend_match_lbl", None)
@@ -627,6 +650,38 @@ class MZMStudio(tk.Tk):
                                f"(now: skew {bend_skew_ps(p):+.2f} ps/bend)")
         except Exception:
             lbl.configure(text="matched: -")
+        wl = getattr(self, "bend_walk_lbl", None)
+        if wl is None:
+            return
+        fit, f_ref = self._walkoff_ref()
+        if fit is None:
+            wl.configure(text="(after the first analysis)")
+            return
+        try:
+            from .physics import bend_walkoff_length_mm, bend_walkoff_skew_ps
+            wl.configure(text=f"{bend_walkoff_length_mm(fit, p, f_ref):.3f} mm   "
+                              f"(skew {bend_walkoff_skew_ps(fit, p, f_ref):+.2f} ps, "
+                              f"n_m at {f_ref:.0f} GHz)")
+        except Exception:
+            wl.configure(text="-")
+
+    def _walkoff_ref(self):
+        """(fit, f_ref) for the walk-off length: the last analysis' -3 dB
+        frequency, or 50 GHz before one has run."""
+        fit = getattr(self, "fit", None)
+        res = getattr(self, "result", None)
+        f_ref = float(res.bw_GHz) if res is not None and np.isfinite(res.bw_GHz) else 50.0
+        return fit, f_ref
+
+    def _use_walkoff_bend(self):
+        from .physics import bend_walkoff_length_mm
+        fit, f_ref = self._walkoff_ref()
+        if fit is None:
+            self.log("Run an analysis first: the walk-off length needs the line's n_m.", "warn")
+            return
+        p = self._get_params()
+        self.vars["bend_len_mm"].set(f"{bend_walkoff_length_mm(fit, p, f_ref):.4f}")
+        self._on_change()
 
     def _use_matched_bend(self):
         from .physics import bend_matched_length_mm
@@ -1039,7 +1094,8 @@ class MZMStudio(tk.Tk):
                 lay = electrode_layout(p)
                 secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in lay if x["kind"] == "mod")
                 from .physics import (bend_loss_coefficients, bend_matched_length_mm,
-                                      bend_skew_ps)
+                                      bend_skew_ps, bend_walkoff_length_mm,
+                                      bend_walkoff_skew_ps)
                 a_b, b_b, src = bend_loss_coefficients(p)
                 self.log(f"  {int(p['n_bends'])} bend(s): electrodes {secs} mm "
                          f"(total {sum(x['L_rf'] for x in lay if x['kind'] == 'mod')*1e3:.2f} mm); "
@@ -1047,7 +1103,10 @@ class MZMStudio(tk.Tk):
                          f"n = {float(p['bend_nm']):.2f}, optical delay "
                          f"{float(p['bend_opt_delay_ps']):.2f} ps (matched length "
                          f"{bend_matched_length_mm(p):.3f} mm, skew {bend_skew_ps(p):+.2f} ps "
-                         f"per bend, RF minus light), loss {a_b:.4f}.sqrt(f) + {b_b:.5f}.f dB/cm "
+                         f"per bend, RF minus light; walk-off compensated length "
+                         f"{bend_walkoff_length_mm(fit, p, res.bw_GHz):.3f} mm, skew "
+                         f"{bend_walkoff_skew_ps(fit, p, res.bw_GHz):+.2f} ps), "
+                         f"loss {a_b:.4f}.sqrt(f) + {b_b:.5f}.f dB/cm "
                          f"[{src}] = {(a_b*10**0.5+b_b*10)*float(p['bend_len_mm'])/10:.3f} / "
                          f"{(a_b*100**0.5+b_b*100)*float(p['bend_len_mm'])/10:.3f} dB per bend at 10 / 100 GHz. "
                          f"Low-frequency modulation vs the same electrodes without bends: "
@@ -1079,7 +1138,8 @@ class MZMStudio(tk.Tk):
             f_dg = diagnostic_figure(fit, p, fig_theme)
             self._ui(lambda: (self.kpi.update_values(res, lm, res.bw_clipped),
                               self.fig_response.show(f_eo),
-                              self.fig_diag.show(f_dg)))
+                              self.fig_diag.show(f_dg),
+                              self._update_bend_match(p)))
             if bool(self.eye_auto.get()):
                 self._ui(self.action_eye)
 

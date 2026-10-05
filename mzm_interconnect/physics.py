@@ -237,6 +237,32 @@ def bend_skew_ps(p: dict) -> float:
     return round(sk, 6) + 0.0          # no "-0.00 ps" at the matched length
 
 
+def bend_walkoff_skew_ps(fit, p: dict, f_ref_GHz: float) -> float:
+    """Bend skew (RF minus light, ps) that best re-aligns the electrode when the
+    sections themselves walk off. Inside a section the RF drifts from the light
+    by (n_m - n_g).L/c; a section's contribution is centred on its middle, so
+    consecutive sections are aligned when the bend makes up the drift between
+    their centres: skew = -(n_m - n_g).(L_k + L_k+1)/2 / c, averaged over the
+    bends (all bends share one length). n_m is taken at f_ref (the -3 dB
+    frequency is the natural choice: that is where the alignment matters).
+    Zero when n_m = n_g; reflections and loss weighting move the true optimum a
+    little further, which the cascade includes."""
+    lay = electrode_layout(p)
+    secs = [x["L_rf"] for x in lay if x["kind"] == "mod"]
+    if len(secs) < 2:
+        return 0.0
+    dn = float(fit.nm(np.array([float(f_ref_GHz)]), offset=float(p.get("nm_offset", 0.0)))[0]) \
+        - float(p.get("ng", 2.27))
+    lbar = float(np.mean([(a + b) / 2 for a, b in zip(secs[:-1], secs[1:])]))
+    return -dn * lbar / C0 * 1e12
+
+
+def bend_walkoff_length_mm(fit, p: dict, f_ref_GHz: float) -> float:
+    """Bend length giving bend_walkoff_skew_ps: (tau + skew) . c / n_b."""
+    tau = float(p.get("bend_opt_delay_ps", 5.0)) + bend_walkoff_skew_ps(fit, p, f_ref_GHz)
+    return max(tau, 0.0) * 1e-12 * C0 / float(p.get("bend_nm", 1.7)) * 1e3
+
+
 def electrode_layout(p: dict) -> list:
     """
     The electrode as an ordered list of pieces, from the RF input to the load.
