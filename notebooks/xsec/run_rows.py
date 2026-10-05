@@ -5,8 +5,10 @@ notebook's full-wave eigen solve + IBC correction (finger as plain metal, as a
 2D port solve sees it).  Writes run_rows.json; report.py prints the tables.
 Run: python run_rows.py [rows...]
 """
-import json
 import os
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")      # one BLAS thread per worker; oversubscription ran 20x slower
+import json
 import resource
 import sys
 import time
@@ -43,7 +45,7 @@ def main():
     path = os.path.join(HERE, "run_rows.json")
     out = json.load(open(path)) if os.path.exists(path) else {}
     jobs = [(r, s) for r in rows for s in "CAB" if f"{r}_{s}" not in out]
-    with Pool(3, maxtasksperchild=1) as p:
+    with Pool(4, maxtasksperchild=1) as p:
         for row, sec, res in p.imap_unordered(job, jobs):
             out[f"{row}_{sec}"] = res
             json.dump(out, open(path, "w"), indent=1)
