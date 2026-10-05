@@ -1,0 +1,8 @@
+[corner 0.025] mesh    159560 triangles, 79844 nodes, built in 6.5 s
+[corner 0.025]   microwave index   n_m                     1.70808
+[corner 0.025]   Z0_IBC          (power-current)           62.6502 ohm
+[corner 0.025]   Attenuation                                2.2642 dB/cm
+[corner 0.0125] mesh    196436 triangles, 98282 nodes, built in 7.5 s
+[corner 0.0125]   microwave index   n_m                     1.70891
+[corner 0.0125]   Z0_IBC          (power-current)           62.6658 ohm
+[corner 0.0125]   Attenuation                                2.3296 dB/cm
