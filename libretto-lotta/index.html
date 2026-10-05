@@ -1,724 +1,210 @@
 <title>Libretto di Lotta</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
 <style>
-/* Layout: indice tecniche a sinistra (sopra su telefono), scheda tecnica con "tappeto" animato a destra */
+/* Layout: scheda tecnica = vista dall'alto animata + scheda della fase, sotto la cronologia dei movimenti */
 :root{
   --bg:#eef1f4; --surface:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d5dbe2;
-  --mat:#dfe7ef; --matline:#9fb2c6; --accent:#c99a1c;
-  --red:#d2382c; --blue:#2a5db0; --redsoft:#f8e1de; --bluesoft:#dfe8f7;
-  --ok:#2e8a57;
+  --mat:#e4ebf2; --grid:#b3c3d4; --force:#d99a00;
+  --red:#d2382c; --blue:#2a5db0; --redsoft:#f9dcd8; --bluesoft:#d9e5f7;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
   --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#11161c; --surface:#1a2129; --ink:#e6ebf0; --muted:#97a4b2; --line:#2c3743;
-  --mat:#1f2a36; --matline:#4b6178; --accent:#e0b440;
-  --red:#ef5a4c; --blue:#5b8de0; --redsoft:#3a2020; --bluesoft:#1c2840; --ok:#4cbf80; color-scheme:dark}}
+  --mat:#1d2732; --grid:#3d5064; --force:#f0b429;
+  --red:#ef5a4c; --blue:#6a9ae8; --redsoft:#4a2622; --bluesoft:#1f3152; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#11161c; --surface:#1a2129; --ink:#e6ebf0; --muted:#97a4b2; --line:#2c3743;
-  --mat:#1f2a36; --matline:#4b6178; --accent:#e0b440;
-  --red:#ef5a4c; --blue:#5b8de0; --redsoft:#3a2020; --bluesoft:#1c2840; --ok:#4cbf80; color-scheme:dark}
+  --mat:#1d2732; --grid:#3d5064; --force:#f0b429;
+  --red:#ef5a4c; --blue:#6a9ae8; --redsoft:#4a2622; --bluesoft:#1f3152; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
 .wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
-header.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:8px 20px;border-bottom:3px solid var(--ink);padding-bottom:10px;margin-bottom:20px}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(2rem,5vw,3rem);line-height:1;margin:0;letter-spacing:.01em;text-transform:uppercase}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px;border-bottom:3px solid var(--ink);padding-bottom:10px;margin-bottom:16px}
+h1{font-family:var(--display);font-weight:800;font-size:clamp(2rem,5vw,3rem);line-height:1;margin:0;text-transform:uppercase}
 h1 span{color:var(--red)}
-.club{font-family:var(--display);font-weight:600;font-size:1.1rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
-.legend{display:flex;gap:14px;font-size:.9rem;color:var(--muted);align-items:center;flex-wrap:wrap}
-.dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:5px;vertical-align:-1px}
-.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:28px;align-items:start}
-nav.index{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px);max-height:calc(100vh - 24px);overflow:auto}
-.idx-group{margin-bottom:16px}
-.idx-group h3{font-family:var(--display);font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 6px;font-weight:700}
-.idx-group ol{list-style:none;margin:0;padding:0}
-.idx-group button{all:unset;cursor:pointer;display:flex;gap:10px;align-items:baseline;width:100%;padding:5px 8px;border-radius:6px;font-size:.95rem;box-sizing:border-box}
-.idx-group button:hover{background:var(--surface)}
-.idx-group button[aria-current="true"]{background:var(--ink);color:var(--bg)}
-.idx-group button:focus-visible{outline:2px solid var(--accent)}
-.num{font-family:var(--mono);font-size:.78rem;opacity:.7;min-width:1.6em;font-variant-numeric:tabular-nums}
-.done-mark{margin-left:auto;color:var(--ok);font-size:.85rem}
-.btn.idx-toggle{display:none;box-sizing:border-box}
-.progress{font-size:.85rem;color:var(--muted);margin-bottom:12px}
-.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:4px}
-.bar i{display:block;height:100%;background:var(--ok);width:0}
-
-.card-head{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
-.eyebrow{font-family:var(--mono);font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-h2{font-family:var(--display);font-weight:800;font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.05;margin:2px 0 0;text-wrap:balance}
-.en{font-family:var(--display);font-weight:600;color:var(--muted);font-size:1.15rem}
-.tags{display:flex;gap:6px;flex-wrap:wrap}
-.tag{font-family:var(--display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:.8rem;padding:2px 9px;border-radius:999px;border:1.5px solid var(--ink)}
-.tag.low{background:var(--accent);border-color:var(--accent);color:#1b1404}
-.intro{max-width:68ch;margin:0 0 14px;color:var(--ink)}
-
-.tabs{display:flex;gap:0;margin-bottom:0}
-.tab{all:unset;cursor:pointer;font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;padding:9px 18px;border:2px solid var(--ink);border-bottom:none;border-radius:8px 8px 0 0;background:transparent;color:var(--muted)}
+.club{font-family:var(--display);font-weight:600;font-size:1.05rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
+.techs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.tbtn{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 14px;border:2px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;min-width:0}
+.tbtn small{font-family:var(--mono);font-size:.72rem;color:var(--muted);text-transform:uppercase}
+.tbtn b{font-family:var(--display);font-size:1.15rem;line-height:1.15}
+.tbtn[aria-current="true"]{border-color:var(--ink);box-shadow:inset 0 -4px 0 var(--red)}
+.tbtn:focus-visible,.btn:focus-visible,.tab:focus-visible{outline:2px solid var(--force);outline-offset:2px}
+h2{font-family:var(--display);font-weight:800;font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.05;margin:0;text-wrap:balance}
+.en{font-family:var(--display);font-weight:600;color:var(--muted);font-size:1.1rem}
+.intro{max-width:72ch;margin:6px 0 14px}
+.tabs{display:flex}
+.tab{all:unset;cursor:pointer;font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;padding:9px 18px;border:2px solid var(--ink);border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted)}
 .tab+.tab{margin-left:-2px}
 .tab[aria-selected="true"]{background:var(--surface);color:var(--ink)}
 .tab[data-side="att"][aria-selected="true"]{box-shadow:inset 0 4px 0 var(--red)}
 .tab[data-side="def"][aria-selected="true"]{box-shadow:inset 0 4px 0 var(--blue)}
-.tab:focus-visible{outline:2px solid var(--accent)}
-.panel{background:var(--surface);border:2px solid var(--ink);border-radius:0 10px 10px 10px;padding:16px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:20px}
-.stage-wrap{min-width:0}
-svg.stage{width:100%;height:auto;display:block;background:var(--mat);border-radius:8px}
+.panel{background:var(--surface);border:2px solid var(--ink);border-radius:0 10px 10px 10px;padding:16px}
+.sideintro{margin:0 0 12px;color:var(--muted);max-width:80ch}
+.main{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px}
+svg.stage{width:100%;height:auto;display:block;border-radius:8px;border:1px solid var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--muted);margin-top:8px}
+.legend i{display:inline-block;vertical-align:-2px;margin-right:4px}
 .controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
-.btn{all:unset;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:.95rem;padding:7px 14px;border-radius:6px;border:2px solid var(--ink);color:var(--ink);background:var(--surface)}
+.btn{all:unset;box-sizing:border-box;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:.95rem;padding:7px 14px;border-radius:6px;border:2px solid var(--ink);color:var(--ink);background:var(--surface)}
 .btn.primary{background:var(--ink);color:var(--surface)}
-.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .speed{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);margin-left:auto}
 .speed select{font:inherit;padding:4px;border-radius:6px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
-.caption{margin-top:10px;font-weight:600;min-height:3em;font-size:1.02rem}
-.caption b{font-family:var(--mono);color:var(--muted);font-weight:500;margin-right:6px}
-.steps{list-style:none;padding:0;margin:0 0 16px;counter-reset:s;display:grid;gap:4px}
-.steps li{counter-increment:s;display:grid;grid-template-columns:2em minmax(0,1fr);gap:6px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:.95rem}
-.steps li::before{content:counter(s);font-family:var(--mono);font-size:.8rem;width:1.7em;height:1.7em;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--line);color:var(--muted)}
-.steps li.on{background:var(--redsoft)}
-.panel.def .steps li.on{background:var(--bluesoft)}
-.steps li.on::before{background:var(--ink);color:var(--surface);border-color:var(--ink)}
-.side h4{font-family:var(--display);font-size:.95rem;letter-spacing:.1em;text-transform:uppercase;margin:0 0 6px;color:var(--muted)}
-.tips{margin:0 0 14px;padding-left:1.1em;font-size:.95rem}
-.tips li{margin-bottom:3px}
-.tips.err li::marker{content:"✕  ";color:var(--red)}
-.foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-top:16px}
-.learned{display:flex;gap:8px;align-items:center;font-weight:600;cursor:pointer}
-.learned input{width:18px;height:18px;accent-color:var(--ok)}
-.note{font-size:.85rem;color:var(--muted);max-width:70ch;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
-@media (max-width:900px){
-  .layout{grid-template-columns:1fr}
-  nav.index{position:static;max-height:none}
-  .btn.idx-toggle{display:block;width:100%;margin-bottom:10px;text-align:center}
-  nav.index.closed .idx-body{display:none}
-  .panel{grid-template-columns:1fr}
-}
-@media (prefers-reduced-motion:reduce){.btn,.tab{transition:none}}
+.phase .num{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
+.phase h3{font-family:var(--display);font-size:1.6rem;line-height:1.1;margin:2px 0 8px}
+.when{display:inline-block;font-size:.88rem;font-weight:600;padding:4px 10px;border-radius:6px;background:var(--bg);border-left:4px solid var(--force);margin-bottom:10px}
+.rows{display:grid;gap:8px;margin:0}
+.rows div{display:grid;grid-template-columns:6.4em minmax(0,1fr);gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+.rows dt{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.88rem;color:var(--muted);padding-top:2px}
+.rows dd{margin:0}
+.grips{margin:10px 0 0;padding:0;list-style:none;font-size:.88rem}
+.grips li{display:grid;grid-template-columns:1.6em minmax(0,1fr);gap:6px;margin-bottom:4px}
+.grips span:first-child{display:inline-grid;place-items:center;width:1.4em;height:1.4em;border-radius:50%;font-family:var(--display);font-weight:700;font-size:.8rem;color:var(--surface)}
+h4{font-family:var(--display);font-size:1rem;letter-spacing:.1em;text-transform:uppercase;margin:22px 0 8px;color:var(--muted)}
+.tl{overflow-x:auto}
+.tlwrap{position:relative;min-width:640px}
+.tlg{display:grid;font-size:.78rem}
+.tlg .lab{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:4px 6px 4px 0;white-space:nowrap;align-self:center}
+.tlg .hd{font-family:var(--mono);font-size:.72rem;color:var(--muted);padding:2px 4px;border-left:1px solid var(--line);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tlg .hd.on{color:var(--ink);font-weight:700;background:var(--bg)}
+.tlg .cell{position:relative;height:22px;border-left:1px solid var(--line);border-top:1px dashed var(--line);cursor:pointer}
+.bar{position:absolute;top:4px;height:14px;border-radius:4px}
+.bar.A{background:var(--red);opacity:.85}.bar.B{background:var(--blue);opacity:.75}
+.ph{position:absolute;top:0;bottom:0;width:2px;background:var(--force);pointer-events:none}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
+.card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--bg)}
+.card h5{margin:0 0 6px;font-family:var(--display);font-size:1.05rem;text-transform:uppercase;letter-spacing:.06em}
+.card ul{margin:0 0 6px;padding-left:1.1em}
+.card li{margin-bottom:4px}
+.err li::marker{content:"✕  ";color:var(--red)}
+.note{font-size:.88rem;color:var(--muted);max-width:80ch;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
+@media (max-width:860px){.main{grid-template-columns:1fr}.speed{margin-left:0}}
 </style>
 
 <div class="wrap">
   <header class="top">
-    <div>
-      <div class="club">Lotta Club Seggiano</div>
-      <h1>Libretto di <span>Lotta</span></h1>
-    </div>
-    <div class="legend">
-      <span><i class="dot" style="background:var(--red)"></i>Rosso = tu</span>
-      <span><i class="dot" style="background:var(--blue)"></i>Blu = avversario</span>
-      <span>Arti chiari = lato lontano</span>
-    </div>
+    <div><div class="club">Lotta Club Seggiano</div><h1>Libretto di <span>Lotta</span></h1></div>
+    <div style="color:var(--muted);font-size:.9rem;max-width:44ch">Tutte le tecniche sono descritte in <b>guardia sinistra</b> (piede S avanti). Per l'altro lato inverti S e D.</div>
   </header>
+  <nav class="techs" id="techs" aria-label="Tecniche"></nav>
+  <h2 id="title"></h2><div class="en" id="en"></div>
+  <p class="intro" id="intro"></p>
 
-  <div class="layout">
-    <nav class="index closed" id="index" aria-label="Indice tecniche">
-      <button class="btn idx-toggle" id="idxToggle" aria-expanded="false">Indice delle 20 tecniche</button>
-      <div class="idx-body">
-        <div class="progress"><span id="progText"></span><div class="bar"><i id="progBar"></i></div></div>
-        <div id="idxList"></div>
-      </div>
-    </nav>
-
-    <main id="main" style="min-width:0">
-      <div class="card-head">
-        <div style="min-width:0">
-          <div class="eyebrow" id="eyebrow"></div>
-          <h2 id="title"></h2>
-          <div class="en" id="enName"></div>
-        </div>
-        <div class="tags" id="tags"></div>
-      </div>
-      <p class="intro" id="intro"></p>
-
-      <div class="tabs" role="tablist">
-        <button class="tab" role="tab" data-side="att" id="tabAtt" aria-selected="true">Attacco</button>
-        <button class="tab" role="tab" data-side="def" id="tabDef" aria-selected="false">Difesa</button>
-      </div>
-      <section class="panel" id="panel">
-        <div class="stage-wrap">
-          <svg class="stage" id="stage" viewBox="30 50 360 240" role="img" aria-label="Animazione della tecnica"></svg>
-          <div class="controls">
-            <button class="btn" id="bPrev" aria-label="Fase precedente">◀</button>
-            <button class="btn primary" id="bPlay">Pausa</button>
-            <button class="btn" id="bNext" aria-label="Fase successiva">▶</button>
-            <label class="speed" for="speedSel">Velocità
-              <select id="speedSel"><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option></select>
-            </label>
-          </div>
-          <div class="caption" id="caption"></div>
-        </div>
-        <div class="side" style="min-width:0">
-          <h4 id="stepsHead">Sequenza</h4>
-          <ol class="steps" id="steps"></ol>
-          <h4>Consigli chiave</h4>
-          <ul class="tips" id="tips"></ul>
-          <h4>Errori comuni</h4>
-          <ul class="tips err" id="errs"></ul>
-        </div>
-      </section>
-
-      <div class="foot">
-        <label class="learned" for="learned"><input type="checkbox" id="learned"> L'ho imparata</label>
-        <div style="display:flex;gap:8px">
-          <button class="btn" id="tPrev">← Tecnica prec.</button>
-          <button class="btn" id="tNext">Tecnica succ. →</button>
-        </div>
-      </div>
-      <p class="note">Le animazioni sono schematiche: servono a ricordare la sequenza, non sostituiscono l'istruttore. Le proiezioni (suplex, cravatta, ippon) vanno provate solo su tappeto e con supervisione.</p>
-    </main>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-side="att" id="tabAtt">Attacco</button>
+    <button class="tab" role="tab" data-side="def" id="tabDef">Difesa</button>
   </div>
+  <section class="panel">
+    <p class="sideintro" id="sideIntro"></p>
+    <div class="main">
+      <div style="min-width:0">
+        <svg class="stage" id="stage" viewBox="0 0 300 200" role="img" aria-label="Vista dall'alto della tecnica"></svg>
+        <div class="legend">
+          <span><i style="width:10px;height:10px;border-radius:50%;background:var(--red)"></i>Tu</span>
+          <span><i style="width:10px;height:10px;border-radius:50%;background:var(--blue)"></i>Avversario</span>
+          <span>S/D = sinistra/destra · mano piena = presa</span>
+          <span>impronta tratteggiata = sulle punte · G = ginocchio a terra</span>
+          <span><i style="width:16px;height:3px;background:var(--force)"></i>direzione della forza</span>
+          <span>la punta sulla testa indica dove guarda</span>
+        </div>
+        <div class="controls">
+          <button class="btn" id="bPrev" aria-label="Fase precedente">◀</button>
+          <button class="btn primary" id="bPlay">Pausa</button>
+          <button class="btn" id="bNext" aria-label="Fase successiva">▶</button>
+          <button class="btn" id="bRep">Ripeti fase</button>
+          <label class="speed" for="speedSel">Velocità
+            <select id="speedSel"><option value="0.35">0.35×</option><option value="0.6" selected>0.6×</option><option value="1">1×</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="phase" style="min-width:0">
+        <div class="num" id="pNum"></div>
+        <h3 id="pTitle"></h3>
+        <div class="when" id="pWhen"></div>
+        <dl class="rows" id="pRows"></dl>
+        <ul class="grips" id="pGrips"></ul>
+      </div>
+    </div>
+
+    <h4>Cronologia: cosa si muove, e quando</h4>
+    <div class="tl"><div class="tlwrap"><div class="tlg" id="tl"></div><div class="ph" id="playhead"></div></div></div>
+    <p style="font-size:.82rem;color:var(--muted);margin:6px 0 0">Ogni colonna è il passaggio verso la fase indicata. Barre sovrapposte in verticale = movimenti simultanei; barre una dopo l'altra = in sequenza. Tocca una colonna per vedere quella fase.</p>
+
+    <div class="cols" style="margin-top:20px">
+      <div class="card" id="startCard"></div>
+      <div class="card"><h5>Consigli chiave</h5><ul id="tips"></ul></div>
+      <div class="card err"><h5>Errori comuni</h5><ul id="errs"></ul></div>
+    </div>
+  </section>
+  <p class="note"><b>Fonti e limiti.</b> Le sequenze uniscono le indicazioni standard degli allenatori di lotta libera e folkstyle con i riassunti di guide tecniche online (Fanatic Wrestling, Evolve MMA, JitsuIQ, Digitsu, Coaches Insider). I video completi non erano accessibili da qui. Lati, prese e tempi seguono la versione più insegnata, ma possono cambiare da club a club: confrontali con il tuo istruttore e segnami le differenze. Le proiezioni e il ritorno a terra vanno provati solo su tappeto e con supervisione.</p>
 </div>
 
+<script src="engine.js"></script>
+<script src="tecniche.js"></script>
 <script>
-/* ===================== MOTORE OMINI ===================== */
-const G=262, W=420;
-const L={T:58,NK:16,HR:11,UA:30,FA:29,TH:41,SH:41};
-const LIMBS={hn:{root:'neck',mid:'en',arm:1},hf:{root:'neck',mid:'ef',arm:1},fn:{root:'pel',mid:'kn',arm:0},ff:{root:'pel',mid:'kf',arm:0}};
-const rad=a=>a*Math.PI/180, deg=r=>r*180/Math.PI;
-const dv=(a,f)=>[f*Math.sin(rad(a)),Math.cos(rad(a))];
-const add=(p,v,s)=>[p[0]+v[0]*s,p[1]+v[1]*s];
-function torso(s){const u=[s.f*Math.sin(rad(s.t)),-Math.cos(rad(s.t))],pel=[s.x,s.y];
-  return {pel,neck:add(pel,u,L.T),head:add(pel,u,L.T+L.NK),mid:add(pel,u,L.T*.5)}}
-function lens(k){return LIMBS[k].arm?[L.UA,L.FA]:[L.TH,L.SH]}
-function isTarget(sp){return Array.isArray(sp)||typeof sp==='string'}
-function tgtPoint(sp,J){
-  if(typeof sp==='string') sp=[sp,0,0];
-  if(typeof sp[0]==='number') return sp;
-  const [fig,j]=sp[0].split('.'); const p=J[fig][j]; return [p[0]+(sp[1]||0),p[1]+(sp[2]||0)];
-}
-function ik(root,t,l1,l2,leg,f,flip){
-  let dx=t[0]-root[0],dy=t[1]-root[1],d=Math.hypot(dx,dy)||0.001;
-  const dc=Math.min(Math.max(d,Math.abs(l1-l2)+.5),l1+l2-.5);
-  const base=Math.atan2(dy,dx), a=Math.acos((l1*l1+dc*dc-l2*l2)/(2*l1*dc));
-  const c1=[root[0]+l1*Math.cos(base+a),root[1]+l1*Math.sin(base+a)];
-  const c2=[root[0]+l1*Math.cos(base-a),root[1]+l1*Math.sin(base-a)];
-  const sc=leg?(p=>p[0]*(f>=0?1:-1)):(p=>p[1]);
-  let m=sc(c1)>=sc(c2)?c1:c2; if(flip) m=(m===c1?c2:c1);
-  const vx=t[0]-m[0],vy=t[1]-m[1],vl=Math.hypot(vx,vy)||1;
-  return [m,[m[0]+vx/vl*l2,m[1]+vy/vl*l2]];
-}
-function limbAngles(k,sp){ // {a:[u,l]} -> [uAbs, lowAbs]
-  const [u,l]=sp.a; return LIMBS[k].arm?[u,u+l]:[u,u-l];
-}
-function fkLimb(J,k,ang,f){const [l1,l2]=lens(k),r=J[LIMBS[k].root];
-  const m=add(r,dv(ang[0],f),l1); J[LIMBS[k].mid]=m; J[k]=add(m,dv(ang[1],f),l2);}
-function ikLimb(J,Jall,k,sp,f,flip){const [l1,l2]=lens(k);
-  const [m,e]=ik(J[LIMBS[k].root],tgtPoint(sp,Jall),l1,l2,!LIMBS[k].arm,f,flip); J[LIMBS[k].mid]=m; J[k]=e;}
-const DEF={hn:{a:[20,20]},hf:{a:[15,20]},fn:{a:[5,5]},ff:{a:[-5,5]}};
-function solveKey(sc){
-  const J={A:torso(sc.A),B:torso(sc.B)};
-  for(const F of ['A','B']) for(const k in LIMBS){const sp=sc[F][k]||DEF[k];
-    fkLimb(J[F],k,isTarget(sp)?limbAngles(k,DEF[k]):limbAngles(k,sp),sc[F].f);}
-  for(let it=0;it<3;it++) for(const F of ['A','B']) for(const k in LIMBS){const sp=sc[F][k];
-    if(sp&&isTarget(sp)) ikLimb(J[F],J,k,sp,sc[F].f,(sc[F].flip||'').includes(k));}
-  return J;
-}
-const ang=(a,b,f)=>deg(Math.atan2(f*(b[0]-a[0]),b[1]-a[1]));
-function unwrap(a,ref){while(a-ref>180)a-=360;while(a-ref<-180)a+=360;return a}
-function toPose(sc,J,prev){const P={};
-  for(const F of ['A','B']){const s=sc[F],j=J[F],p={x:s.x,y:s.y,t:s.t,f:s.f,L:{}};
-    for(const k in LIMBS){let u=ang(j[LIMBS[k].root],j[LIMBS[k].mid],s.f),w=ang(j[LIMBS[k].mid],j[k],s.f);
-      if(prev){u=unwrap(u,prev[F].L[k][0]);w=unwrap(w,prev[F].L[k][1]);} else {w=unwrap(w,u);}
-      p.L[k]=[u,w];}
-    P[F]=p;}
-  return P;
-}
-function compile(seq){let prev=null;return seq.map(ph=>{const J=solveKey(ph.s);const P=toPose(ph.s,J,prev);prev=P;return {...ph,P,J}})}
-const lerp=(a,b,e)=>a+(b-a)*e;
-function frame(c0,c1,e){ // returns joints for both figs
-  const J={};
-  for(const F of ['A','B']){const a=c0.P[F],b=c1.P[F];
-    const s={x:lerp(a.x,b.x,e),y:lerp(a.y,b.y,e),t:lerp(a.t,b.t,e),f:lerp(a.f,b.f,e)};
-    const j=torso(s);
-    for(const k in LIMBS) fkLimb(j,k,[lerp(a.L[k][0],b.L[k][0],e),lerp(a.L[k][1],b.L[k][1],e)],s.f);
-    j._f=s.f; J[F]=j;}
-  if(e>0&&e<1) for(let it=0;it<2;it++) for(const F of ['A','B']) for(const k in LIMBS){
-    const s0=c0.s[F][k],s1=c1.s[F][k];
-    if(s0&&s1&&isTarget(s0)&&JSON.stringify(s0)===JSON.stringify(s1)&&Math.abs(J[F]._f)>.6)
-      ikLimb(J[F],J,k,s0,J[F]._f,(c0.s[F].flip||'').includes(k));}
-  return J;
-}
-/* ---- disegno ---- */
-const NS='http://www.w3.org/2000/svg';
-function el(n,a,p){const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
-function buildStage(svg){
-  svg.innerHTML='';
-  el('rect',{x:0,y:G+2,width:W,height:290-G,fill:'var(--matline)',opacity:.35},svg);
-  el('line',{x1:0,y1:G+2,x2:W,y2:G+2,stroke:'var(--matline)','stroke-width':2},svg);
-  for(let x=30;x<W;x+=60) el('line',{x1:x,y1:G+6,x2:x+18,y2:G+6,stroke:'var(--matline)','stroke-width':1.5,opacity:.6},svg);
-  const fig={};
-  for(const F of ['A','B']){const col=F==='A'?'var(--red)':'var(--blue)';
-    const mk=(op,w)=>el('polyline',{fill:'none',stroke:col,'stroke-width':w,'stroke-linecap':'round','stroke-linejoin':'round',opacity:op});
-    fig[F]={shadow:el('ellipse',{rx:26,ry:4,fill:'var(--ink)',opacity:.12},svg),
-      far:[mk(.45,8),mk(.45,8)],body:mk(1,11),head:el('circle',{r:L.HR,fill:col}),near:[mk(1,8.5),mk(1,8.5)]};}
-  const layers={far:el('g',{},svg),body:el('g',{},svg),near:el('g',{},svg)};
-  return {svg,fig,layers};
-}
-const pts=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
-function draw(st,J,top){
-  const order=top==='B'?['A','B']:['B','A'];
-  for(const F of order){const f=st.fig[F],j=J[F];
-    st.layers.far.appendChild(f.far[0]);st.layers.far.appendChild(f.far[1]);
-    st.layers.body.appendChild(f.body);st.layers.body.appendChild(f.head);
-    st.layers.near.appendChild(f.near[0]);st.layers.near.appendChild(f.near[1]);
-    f.far[0].setAttribute('points',pts([j.neck,j.ef,j.hf]));
-    f.far[1].setAttribute('points',pts([j.pel,j.kf,j.ff]));
-    f.near[0].setAttribute('points',pts([j.pel,j.kn,j.fn]));
-    f.near[1].setAttribute('points',pts([j.neck,j.en,j.hn]));
-    f.body.setAttribute('points',pts([j.pel,j.neck]));
-    f.head.setAttribute('cx',j.head[0].toFixed(1));f.head.setAttribute('cy',j.head[1].toFixed(1));
-    f.shadow.setAttribute('cx',j.pel[0].toFixed(1));f.shadow.setAttribute('cy',G+3);}
-}
-
-/* ===================== POSE BASE ===================== */
-const O=(b,o)=>Object.assign(b,o||{});
-// guardia di lotta
-const S=(x,f,o)=>O({x,y:192,t:28,f,fn:[x+24*f,G],ff:[x-26*f,G],hn:{a:[70,50]},hf:{a:[60,60]}},o);
-// in piedi dritto
-const U=(x,f,o)=>O({x,y:184,t:8,f,fn:[x+14*f,G],ff:[x-14*f,G],hn:{a:[20,30]},hf:{a:[15,35]}},o);
-// quattro zampe (par terre sotto)
-const Q=(x,f,o)=>O({x,y:222,t:80,f,fn:{a:[4,94]},ff:{a:[-4,86]},hn:[x+58*f,G],hf:[x+50*f,G]},o);
-// in ginocchio sopra (par terre sopra)
-const K=(x,f,o)=>O({x,y:221,t:62,f,fn:{a:[6,96]},ff:{a:[-18,72]},hn:{a:[60,40]},hf:{a:[50,40]}},o);
-// supino: testa dal lato opposto a f
-const B=(x,f,o)=>O({x,y:G-10,t:-86,f,hn:{a:[88,0]},hf:{a:[84,0]},fn:{a:[132,112]},ff:{a:[120,100]}},o);
-// prono / piatto a pancia in giù (testa verso f)
-const P=(x,f,o)=>O({x,y:G-9,t:87,f,hn:[x+70*f,G-2],hf:[x+64*f,G-2],fn:{a:[-86,0]},ff:{a:[-90,0]}},o);
-// specchio di una scena (per le difese: blu esegue la stessa azione)
-function mirSpec(sp){if(!sp)return sp;if(typeof sp==='string')sp=[sp,0,0];
-  if(Array.isArray(sp)){if(typeof sp[0]==='number')return [W-sp[0],sp[1]];
-    const [f,j]=sp[0].split('.');return [(f==='A'?'B':'A')+'.'+j,-(sp[1]||0),sp[2]||0];}
-  return sp;}
-function mirFig(s){const r={...s,x:W-s.x,f:-s.f};for(const k in LIMBS)if(s[k])r[k]=mirSpec(s[k]);return r}
-const M=(ph,txt)=>({s:{A:mirFig(ph.s.B),B:mirFig(ph.s.A),top:ph.s.top==='B'?'A':'B'},c:txt});
-const ph=(A,Bv,c,top)=>({s:{A,B:Bv,top},c});
-
-/* ===================== LE 20 TECNICHE ===================== */
-const TECH=[];
-const T=o=>TECH.push(o);
-// fasi comuni
-const guardTie=()=>ph(S(150,1,{hn:'B.neck'}),S(270,-1,{hf:'A.neck'}),"Guardia: piedi larghi, ginocchia piegate, mani avanti. Prendi il collo (collar tie).");
-const behindTurtle=(c)=>ph({x:262,y:206,t:60,f:-1,fn:[270,G],ff:[298,G],hn:['B.pel',-8,6],hf:['B.pel',-16,8]},Q(215,-1),c);
-
-/* ---------- TAKEDOWN BASSI ---------- */
-{const a=[
-  guardTie(),
-  ph(S(160,1,{y:214,t:30,fn:[192,G],ff:[132,G],hn:{a:[85,30]},hf:{a:[80,35]}}),S(270,-1,{hf:'A.neck'}),"Cambio di livello: abbassa le anche piegando le gambe, schiena dritta, testa alta."),
-  ph({x:212,y:222,t:50,f:1,fn:{a:[40,130]},ff:[148,G],hn:'B.kn',hf:'B.kf'},S(272,-1,{t:12,y:188,fn:[252,G],ff:[294,G],hn:{a:[40,40]},hf:{a:[30,40]}}),"Passo di penetrazione: il ginocchio avanti scende tra i suoi piedi, mani dietro le sue ginocchia, testa sul petto."),
-  ph({x:240,y:205,t:50,f:1,fn:[264,G],ff:[214,G],hn:'B.kn',hf:'B.kf'},{x:292,y:178,t:-30,f:-1,fn:{a:[25,20]},ff:[312,G],hn:{a:[-60,40]},hf:{a:[-90,30]}},"Porta il piede dietro sotto di te, stringi le ginocchia al petto e spingi in avanti."),
-  ph({x:298,y:222,t:78,f:1,fn:{a:[25,105]},ff:{a:[-15,95]},hn:'B.pel',hf:['B.neck',0,4]},B(318,-1),"Taglia l'angolo e porta giù l'avversario: finisci sopra, petto contro petto."),
-];
-T({it:"Doppia gamba",en:"Double leg takedown",cat:"Takedown bassi",lvl:"Basso",
-intro:"Il takedown più importante della lotta: entri sotto il baricentro dell'avversario, prendi entrambe le gambe e lo porti a terra.",
-att:a,attTips:["Il cambio di livello si fa con le gambe, non piegando la schiena.","La testa resta alta, appoggiata sul suo petto o di lato, mai in basso a guardare il tappeto.","Il passo di penetrazione deve arrivare tra i suoi piedi: devi andare attraverso, non verso di lui.","Dopo l'entrata non fermarti: guida con le gambe e taglia l'angolo."],
-attErr:["Tuffarsi da lontano senza preparare (collar tie, finta).","Mani alle caviglie invece che dietro le ginocchia.","Testa bassa: ti fa schiacciare con lo sprawl."],
-def:[M(a[0],"Guardia: tieni la distanza e le mani attive."),M(a[1],"L'avversario cambia livello: è il segnale, reagisci subito."),
-  ph({x:118,y:236,t:76,f:1,fn:[52,G],ff:[62,G],hn:['B.pel',4,-4],hf:'B.neck'},{x:205,y:226,t:80,f:-1,fn:{a:[20,110]},ff:{a:[-10,100]},hn:[150,G],hf:[160,G]},"Sprawl: spara le gambe indietro, anche giù sulle sue spalle, sulle punte dei piedi."),
-  behindTurtle("Pesa sulla sua testa e gira dietro (go-behind) per il controllo."),],
-defTips:["Prima difesa: le mani. Blocca testa e spalle prima che arrivi alle gambe.","Le anche vanno indietro e in basso, il petto pesa sulla sua schiena.","Gambe larghe e distese, peso sulle punte, non sulle ginocchia.","Appena è fermo, gira dietro: lo sprawl da solo non dà punti."],
-defErr:["Arretrare in piedi invece di abbassare le anche.","Cadere sulle ginocchia: ti prende ancora le gambe.","Restare fermo nello sprawl senza girare dietro."]});
-}
-{const a=[
-  guardTie(),
-  ph({x:205,y:218,t:48,f:1,fn:{a:[40,130]},ff:[145,G],hn:'B.kn',hf:['B.fn',0,-22]},S(270,-1,{t:12,y:188,fn:[248,G],ff:[294,G]}),"Cambio di livello e passo di penetrazione all'esterno della sua gamba avanti; testa sul suo fianco."),
-  ph({x:226,y:196,t:24,f:1,fn:[244,G],ff:[204,G],hn:'B.kn',hf:'B.fn'},{x:284,y:182,t:-5,f:-1,fn:{a:[62,72]},ff:[302,G],hn:'A.head',hf:{a:[60,60]}},"Rialzati con la gamba: il suo ginocchio stretto tra le tue cosce, testa alta, schiena dritta."),
-  ph({x:268,y:208,t:52,f:1,fn:[290,G],ff:[240,G],hn:'B.kn',hf:'B.fn'},B(305,-1,{fn:{a:[120,40]}}),"Finisci: fai un passo indietro e ruota (run the pipe) o sgambetta la gamba d'appoggio."),
-];
-T({it:"Presa di una gamba",en:"Single leg takedown",cat:"Takedown bassi",lvl:"Basso",
-intro:"Attacco a una sola gamba: richiede meno spazio della doppia gamba e lascia tante finalizzazioni diverse.",
-att:a,attTips:["Entra all'esterno della gamba avanti, la tua testa sul suo fianco.","Appena hai la gamba, rialzati subito: a terra sei più vulnerabile.","Stringi la gamba tra le cosce e tieni le mani chiuse sotto il suo ginocchio.","Finalizza sempre in movimento: girare, tirare o sgambettare."],
-attErr:["Restare in ginocchio troppo a lungo.","Testa all'interno senza controllo: rischi la ghigliottina o il whizzer.","Tirare la gamba con le braccia invece di usare le anche."],
-def:[M(a[0],"Guardia."),M(a[1],"Entra sulla tua gamba avanti."),
-  ph({x:132,y:212,t:50,f:1,fn:[96,G],ff:[112,G],hn:'B.head',hf:['B.pel',2,-8]},{x:205,y:224,t:72,f:-1,fn:{a:[30,120]},ff:{a:[-20,100]},hn:'A.kn',hf:'A.fn'},"Sprawl con la gamba presa, mano sulla sua testa per allontanarla, braccio sopra la sua spalla (whizzer)."),
-  ph(S(140,1,{hn:'B.head'}),{x:242,y:214,t:52,f:-1,fn:{a:[30,110]},ff:[292,G],hn:{a:[30,30]},hf:{a:[20,30]}},"Ruota l'anca, abbassa e strappa la gamba fuori dalla presa: torna in guardia."),],
-defTips:["Il whizzer (sopra la spalla) pesa sulla sua schiena: anca vicina e bassa.","Spingi la testa lontano: senza testa non finalizza.","Gamba 'morta': piede in punta verso il basso, non fargli sollevare il ginocchio."],
-defErr:["Saltellare su un piede senza fare nulla.","Abbracciargli il collo cadendo all'indietro.","Lasciargli rialzarsi con la gamba alta."]});
-}
-{const a=[
-  guardTie(),
-  ph(S(146,1,{hn:['B.neck',0,8]}),S(262,-1,{t:44,y:198}),"Tira la sua testa in basso e in diagonale: il suo peso va sulla gamba avanti."),
-  ph({x:186,y:212,t:44,f:1,fn:[220,G],ff:[150,G],hn:'B.neck',hf:'B.kn'},S(262,-1,{t:44,y:198}),"Passo avanti all'esterno, abbassati e blocca il suo ginocchio avanti con la mano libera."),
-  ph({x:218,y:210,t:55,f:1,fn:[244,G],ff:[182,G],hn:'B.neck',hf:'B.kn'},{x:262,y:234,t:-58,f:-1,fn:{a:[70,30]},ff:{a:[40,10]},hn:{a:[-40,20]},hf:{a:[-30,10]}},"Spingi la testa verso il ginocchio bloccato: non ha il piede per riprendersi e cade."),
-  ph({x:262,y:222,t:76,f:1,fn:{a:[20,110]},ff:{a:[-18,95]},hn:'B.pel',hf:'B.neck'},B(285,-1),"Segui subito e finisci sopra in controllo."),
-];
-T({it:"Tocco al ginocchio",en:"Knee tap",cat:"Takedown bassi",lvl:"Basso",
-intro:"Takedown rapido e sicuro: con il collar tie gli carichi il peso su una gamba e gli blocchi il ginocchio.",
-att:a,attTips:["Tutto parte dal collar tie: senza tirare la testa non funziona.","Testa e ginocchio vanno nella stessa direzione: verso di te e in basso.","Il passo è all'esterno, così la caduta è di lato e non addosso a te."],
-attErr:["Bloccare il ginocchio senza aver caricato il peso.","Abbassarsi troppo: ti espone allo snap down.","Non seguire a terra: dopo la caduta deve esserci il controllo."],
-def:[M(a[0],"Guardia."),M(a[1],"Ti tira la testa in basso: tieni la postura, testa alta."),
-  ph(S(138,1,{fn:[148,G],ff:[108,G],t:20,hn:'B.head'}),{x:236,y:212,t:44,f:-1,fn:[202,G],ff:[270,G],hn:'A.neck',hf:{a:[60,20]}},"Appena scende sul ginocchio: arretra il piede avanti e spingi la sua testa."),
-  ph(S(148,1,{hn:'B.neck',hf:'B.neck'}),Q(226,-1),"È sbilanciato in avanti: contrattacca con lo snap down."),],
-defTips:["Postura: testa alta, schiena dritta, anche sotto le spalle.","Il piede avanti 'sfila' all'indietro appena senti la mano sul ginocchio.","Usa la sua testa bassa per contrattaccare."],
-defErr:["Lasciarsi trascinare la testa verso il basso.","Peso tutto sul piede avanti."]});
-}
-{const a=[
-  guardTie(),
-  ph(S(155,1,{hn:['B.neck',0,6]}),S(268,-1,{t:36}),"Muovi l'avversario: tira il collo, fai un passo laterale e fagli caricare il piede avanti."),
-  ph({x:196,y:220,t:40,f:1,fn:{a:[30,120]},ff:[160,G],hn:'B.neck',hf:['B.fn',2,-5]},S(268,-1,{t:36}),"Scendi su un ginocchio, la mano a coppa dietro il tallone del suo piede avanti."),
-  ph({x:214,y:212,t:45,f:1,fn:[238,G],ff:[180,G],hn:'B.neck',hf:'B.fn'},{x:286,y:226,t:-55,f:-1,fn:{a:[72,20]},ff:[300,G],hn:{a:[-80,30]},hf:{a:[-60,20]}},"Insieme: spingi la testa indietro e tira il tallone verso di te. Cade seduto."),
-  ph({x:262,y:214,t:60,f:1,fn:[286,G],ff:[236,G],hn:'B.pel',hf:'B.fn'},B(302,-1,{fn:{a:[100,10]}}),"Tieni il piede e passa sopra in controllo."),
-];
-T({it:"Presa alla caviglia",en:"Ankle pick",cat:"Takedown bassi",lvl:"Basso",
-intro:"Si sfrutta il momento in cui l'avversario mette il peso sul piede avanti: testa spinta indietro, tallone tirato via.",
-att:a,attTips:["Il tempo è tutto: attacca quando il piede avanti è carico.","Tirare il tallone e spingere la testa sono un'unica azione.","Mano a coppa dietro il tallone, non sulla punta del piede."],
-attErr:["Abbassarsi senza aver mosso l'avversario.","Lasciare la testa durante la presa: lui si rialza."],
-def:[M(a[0],"Guardia."),M(a[1],"Ti muove con la testa: non caricare tutto il peso avanti."),
-  ph(S(140,1,{fn:[150,G],ff:[102,G],y:204,t:44,hn:'B.neck',hf:'B.head'}),{x:226,y:220,t:50,f:-1,fn:{a:[30,120]},ff:[262,G],hn:'A.neck',hf:{a:[50,20]}},"Appena cerca il tallone: piede indietro, anche basse, pesa sulla sua testa."),
-  behindTurtle("Spingi giù la testa e gira dietro."),],
-defTips:["Peso distribuito su entrambi i piedi.","Se ti tocca il tallone, il piede scappa indietro e le anche scendono.","La sua testa è vicina a te: usala."],
-defErr:["Stare dritto con le gambe tese.","Reagire con le braccia invece che con le gambe."]});
-}
-{const a=[
-  ph(S(150,1,{hn:'B.en'}),S(270,-1,{hn:'A.neck'}),"Controlla il braccio: la tua mano sul suo tricipite, vicino al gomito."),
-  ph({x:228,y:222,t:30,f:1,fn:{a:[10,100]},ff:{a:[-25,90]},hn:'B.hn',hf:['B.pel',4,12]},S(258,-1,{t:50,y:198,hn:['A.neck',4,-2]}),"Cambio di livello in ginocchio: testa sotto la sua ascella, braccio libero tra le sue gambe."),
-  ph({x:238,y:222,t:30,f:1,fn:{a:[10,100]},ff:{a:[-25,90]},hn:'B.hn',hf:['B.pel',0,6]},{x:288,y:160,t:95,f:-1,fn:{a:[-40,10]},ff:{a:[-30,5]},hn:{a:[10,10]},hf:{a:[0,10]}},"Carica il suo peso sulle spalle: tira giù il braccio, solleva con la mano tra le gambe."),
-  ph({x:262,y:224,t:70,f:1,fn:{a:[15,105]},ff:{a:[-20,95]},hn:'B.neck',hf:'B.pel'},B(300,-1),"Ruota verso il lato del braccio tenuto: cade di schiena davanti a te."),
-];
-T({it:"Presa del pompiere",en:"Fireman's carry",cat:"Takedown bassi",lvl:"Basso",
-intro:"Si entra sotto il braccio dell'avversario, lo si carica sulle spalle e lo si fa rotolare a terra. Spettacolare ma molto tecnica.",
-att:a,attTips:["Il braccio va controllato prima: senza braccio non c'è leva.","Entra in profondità: la tua testa sotto la sua ascella, le spalle sotto le sue anche.","Tira il braccio verso il basso mentre ruoti."],
-attErr:["Entrare da troppo lontano: lui fa sprawl.","Lasciare il braccio durante la rotazione."],
-def:[M(a[0],"Ti controlla il braccio: tieni i gomiti stretti."),M(a[1],"Entra sotto il tuo braccio."),
-  ph({x:112,y:232,t:72,f:1,fn:[48,G],ff:[56,G],hn:'B.pel',hf:'B.neck'},{x:200,y:224,t:70,f:-1,fn:{a:[5,95]},ff:{a:[-5,90]},hn:[160,G],hf:[150,G]},"Sprawl: gambe indietro, anche giù, peso su di lui; libera il braccio."),
-  behindTurtle("Gira dietro."),],
-defTips:["Gomiti vicini al corpo: niente braccio da afferrare.","Sprawl immediato, anche pesanti sulla sua schiena.","Libera il braccio tirandolo verso il tuo fianco."],
-defErr:["Lasciare il braccio lungo e disteso.","Restare in piedi dritto sopra di lui."]});
-}
-{const a=[
-  guardTie(),
-  ph({x:192,y:234,t:70,f:1,fn:{a:[30,125]},ff:[118,G],hn:['B.fn',0,-6],hf:['B.fn',0,-16]},S(270,-1,{y:190,fn:[246,G]}),"Tuffo basso: testa all'interno, mani al polpaccio e alla caviglia del suo piede avanti."),
-  ph({x:205,y:212,t:35,f:1,fn:[226,G],ff:[178,G],hn:'B.fn',hf:['B.fn',4,-10]},{x:268,y:188,t:-10,f:-1,fn:{a:[70,20]},ff:[288,G],hn:{a:[-20,30]},hf:{a:[-40,30]}},"Porta il suo piede al petto e rialzati con la gamba sollevata."),
-  ph({x:262,y:214,t:58,f:1,fn:[282,G],ff:[236,G],hn:'B.fn',hf:'B.kn'},B(300,-1,{fn:{a:[110,20]}}),"Spingi in avanti e taglia l'angolo: cade di schiena."),
-];
-T({it:"Gamba bassa",en:"Low single",cat:"Takedown bassi",lvl:"Basso",
-intro:"Attacco in tuffo al piede avanti, utile contro avversari che stanno alti e lontani.",
-att:a,attTips:["Va fatta in un'unica esplosione, dalla distanza.","Abbraccia il piede al petto: senza il piede non può difendersi bene.","Rialzati in fretta, la gamba alta, e finisci tagliando l'angolo."],
-attErr:["Restare sdraiato a terra sul piede.","Testa all'esterno: lui ti schiaccia."],
-def:[M(a[0],"Guardia."),
-  ph(S(128,1,{fn:[96,G],ff:[120,G],y:205,t:50,hn:'B.head',hf:'B.neck'}),{x:228,y:236,t:70,f:-1,fn:{a:[30,125]},ff:[300,G],hn:[176,G],hf:[170,G]},"Si tuffa: estendi la gamba attaccata indietro e spingi la testa verso il basso."),
-  ph(S(140,1),Q(240,-1),"Spinta sulla testa e ritorno in guardia (o go-behind)."),],
-defTips:["Il piede attaccato scappa indietro e in alto, le anche scendono.","La mano sulla sua testa la spinge verso il tappeto."],
-defErr:["Sollevare il piede senza abbassare le anche."]});
-}
-
-/* ---------- CONTROLLI E PASSAGGI DIETRO ---------- */
-{const a=[
-  ph(S(150,1),S(270,-1,{hn:'A.neck'}),"Guardia: l'avversario allunga il braccio verso di te."),
-  ph(S(160,1,{hn:'B.hn',hf:'B.en'}),S(270,-1,{hn:'A.neck'}),"Afferra il suo polso con una mano e il tricipite (dietro il gomito) con l'altra."),
-  ph({x:198,y:196,t:24,f:1,fn:[226,G],ff:[168,G],hn:'B.hn',hf:'B.en'},{x:236,y:202,t:46,f:-1,fn:[206,G],ff:[262,G],hn:[190,206],hf:{a:[30,40]}},"Trascina il braccio verso il tuo fianco mentre fai un passo avanti: lui ruota e si sbilancia."),
-  ph({x:244,y:194,t:18,f:-1,fn:[228,G],ff:[264,G],hn:['B.pel',-12,-8],hf:['B.pel',-18,-4]},S(206,-1,{t:26,y:194,fn:[184,G],ff:[226,G],hn:{a:[50,30]},hf:{a:[40,30]}}),"Gira dietro di lui: il tuo petto sulla sua schiena."),
-  ph({x:234,y:204,t:16,f:-1,fn:[220,G],ff:[262,G],hn:['B.pel',-12,-8],hf:['B.pel',-18,-4]},S(204,-1,{t:24,y:192,fn:[182,G],ff:[226,G],hn:{a:[50,30]},hf:{a:[40,30]}}),"Chiudi le mani attorno alla sua vita (cintura da dietro), anche basse e attaccate alle sue."),
-];
-T({it:"Trascinamento del braccio",en:"Arm drag to back",cat:"Controlli e passaggi dietro",lvl:"Alto",
-intro:"Prendi il braccio, lo trascini davanti a te e l'avversario ruota: tu passi dietro e lo chiudi in vita. È la base per la cintura posteriore (n. 16).",
-att:a,attTips:["Il trascinamento è verso il basso e verso il tuo fianco opposto, non verso l'alto.","Fai il passo nello stesso momento in cui tiri.","Appena sei dietro, chiudi le mani sopra l'ombelico e attacca le anche."],
-attErr:["Tirare solo con le braccia senza muovere i piedi.","Lasciare il braccio prima di essere dietro."],
-def:[M(a[1],"Ti afferra polso e tricipite."),
-  ph(S(150,1,{hn:{a:[28,120]}}),S(270,-1,{hn:'A.hn',hf:'A.en'}),"Gomito stretto al corpo e braccio piegato: non lasciarlo distendere."),
-  ph(S(196,1,{t:22,hn:{a:[28,120]}}),S(286,-1,{hn:'A.en'}),"Se tira, ruota verso di lui seguendo la trazione: non dargli mai il fianco o la schiena."),
-  ph(S(200,1,{hn:'B.hn',hf:'B.en'}),S(288,-1),"Di fronte a lui: rispondi con il tuo arm drag o con un attacco."),],
-defTips:["Braccia corte e gomiti dentro.","Ruota il corpo per restare di fronte a lui.","Liberare il polso: ruotalo verso il suo pollice."],
-defErr:["Allungare le braccia per afferrare.","Girarsi di schiena quando ti tira."]});
-}
-{const a=[
-  ph(S(150,1,{hn:'B.neck'}),S(270,-1,{hn:'A.neck'}),"Collar tie reciproco: lui ha la mano sul tuo collo."),
-  ph(S(152,1,{hn:'B.en',hf:'B.neck'}),S(270,-1,{hn:'A.neck'}),"Spingi in alto il suo gomito con la mano."),
-  ph({x:214,y:212,t:36,f:1,fn:[246,G],ff:[180,G],hn:'B.en',hf:'B.pel'},S(268,-1,{t:30}),"Cambio di livello: la testa passa sotto la sua ascella, passo in avanti."),
-  ph({x:300,y:198,t:20,f:-1,fn:[284,G],ff:[320,G],hn:['B.pel',-12,-8],hf:['B.pel',-18,-4]},S(264,-1,{t:26}),"Esci dietro di lui: petto sulla sua schiena, chiudi le mani in vita."),
-];
-T({it:"Passaggio sotto il braccio",en:"Duck under",cat:"Controlli e passaggi dietro",lvl:"Alto",
-intro:"Contro chi ti tiene il collo: sollevi il suo gomito, passi con la testa sotto l'ascella e vai dietro.",
-att:a,attTips:["Il gomito si solleva solo quando lui spinge: usa la sua forza.","La testa passa vicina al suo corpo, quasi strisciando.","Il passo è avanti e oltre, non solo di lato."],
-attErr:["Passare lontano dal suo corpo: lui si gira.","Non abbassare le anche."],
-def:[M(a[0],"Collar tie reciproco."),
-  ph(S(150,1,{hn:{a:[25,110]},hf:'B.neck'}),S(266,-1,{hn:'A.en',hf:'A.neck'}),"Quando ti alza il gomito: abbassalo sul fianco e chiudi lo spazio."),
-  ph({x:152,y:202,t:30,f:1,fn:[180,G],ff:[124,G],hn:'B.neck',hf:{a:[30,90]}},{x:202,y:214,t:36,f:-1,fn:[176,G],ff:[236,G],hn:'A.en',hf:'A.pel'},"Se la testa è già passata: girati verso di lui e abbassa le anche."),
-  ph(S(140,1),S(252,-1),"Ritorna di fronte, in guardia."),],
-defTips:["Gomiti sempre vicini ai fianchi.","Se ti passa sotto, gira subito: ognuno vuole il petto contro il petto."],
-defErr:["Tenere il braccio alto e teso sul suo collo."]});
-}
-{const a=[
-  ph(S(150,1,{hn:'B.neck',hf:'B.head'}),S(270,-1,{hn:'A.neck'}),"Collar tie con una o due mani sulla sua testa."),
-  ph(S(136,1,{t:22,y:188,fn:[152,G],ff:[110,G],hn:'B.neck',hf:'B.head'}),Q(225,-1),"Lui spinge in avanti: tira di scatto la testa verso il basso e fai un passo indietro."),
-  ph({x:126,y:226,t:66,f:1,fn:[86,G],ff:[96,G],hn:'B.neck',hf:['B.mid',0,6]},Q(225,-1),"Front headlock: il tuo petto sulla sua testa, braccio sotto la sua ascella."),
-  behindTurtle("Gira sul fianco e vai dietro: mani attorno alla vita."),
-];
-T({it:"Snap down e giro dietro",en:"Snap down to go-behind",cat:"Controlli e passaggi dietro",lvl:"Alto",
-intro:"Trascini di scatto la testa dell'avversario verso il tappeto, lo controlli dal davanti e giri dietro.",
-att:a,attTips:["Lo snap è uno strappo breve e secco, combinato con un passo indietro.","Il petto pesa sulla sua testa: la sua testa resta più bassa delle sue anche.","Gira dietro dal lato del braccio che controlli."],
-attErr:["Tirare lentamente: lui si rialza.","Stare in ginocchio davanti a lui invece che sulle punte."],
-def:[M(a[0],"Ti tiene la testa."),
-  ph({x:180,y:205,t:50,f:1,fn:[205,G],ff:[150,G],hn:'B.pel',hf:'B.kn'},S(285,-1,{hn:'A.neck',hf:'A.head',fn:[270,G],ff:[310,G]}),"Ti tira giù: testa alta, mani avanti su anche e gambe (posta), anche sotto di te."),
-  ph(S(165,1,{hn:'B.en'}),S(275,-1),"Rialzati e libera il collo: torna in guardia."),],
-defTips:["La testa segue la colonna: occhi avanti, mai al tappeto.","Le mani si appoggiano su di lui per bloccarlo (posting).","Piedi sotto le anche: non cadere in ginocchio."],
-defErr:["Cadere sulle ginocchia.","Lasciare la testa bassa e immobile."]});
-}
-{const a=[
-  ph(S(150,1),S(270,-1,{hn:'A.neck'}),"Guardia: lui allunga il braccio."),
-  ph(S(176,1,{t:22,hn:'B.hn',hf:'B.en'}),S(270,-1,{hn:{a:[72,8]}}),"Due mani su un braccio: una al polso, l'altro braccio sopra il suo tricipite."),
-  ph({x:202,y:200,t:26,f:1,fn:[228,G],ff:[176,G],hn:'B.hn',hf:'B.en'},S(250,-1,{t:46,y:200,hn:{a:[25,0]}}),"Anche attaccate al suo fianco, abbassa il suo braccio: lui si piega in avanti."),
-  ph({x:286,y:198,t:20,f:-1,fn:[270,G],ff:[306,G],hn:['B.pel',-12,-8],hf:['B.pel',-18,-4]},S(250,-1,{t:34}),"Lascia il braccio, vai dietro e chiudi le mani in vita."),
-];
-T({it:"Due contro uno",en:"Russian tie (2-on-1)",cat:"Controlli e passaggi dietro",lvl:"Alto",
-intro:"Usi due braccia contro un solo braccio dell'avversario: da qui puoi andare dietro o attaccare le gambe.",
-att:a,attTips:["Il tuo petto è sul suo braccio, non solo le mani.","Le anche si attaccano al suo fianco: sei di lato, non di fronte.","Abbassa il braccio verso il tappeto per piegarlo."],
-attErr:["Tirare senza avvicinare le anche.","Restare fermi nella presa: è una posizione di passaggio."],
-def:[ph(S(150,1,{hn:{a:[60,10]}}),S(244,-1,{hn:'A.hn',hf:'A.en'}),"Ti prende due contro uno."),
-  ph(S(150,1,{hn:{a:[25,120]}}),S(226,-1,{t:34,hn:'A.hn',hf:'A.en'}),"Gomito giù e dentro, mano al tuo petto: riprendi il braccio."),
-  ph(S(156,1,{hn:{a:[25,120]},hf:'B.head'}),S(232,-1,{t:34,hn:'A.hn'}),"Gira verso di lui e metti la mano libera sulla sua testa."),
-  ph(S(140,1),S(256,-1),"Braccio libero: torna in guardia."),],
-defTips:["Non opporti tirando dritto: ruota il gomito verso il basso.","Girati verso di lui per eliminare l'angolo."],
-defErr:["Lasciare il braccio teso.","Girarsi dalla parte opposta."]});
-}
-
-/* ---------- PROIEZIONI ALTE ---------- */
-const clinch=(c)=>ph(S(186,1,{t:12,y:188,fn:[202,G],ff:[160,G],hn:['B.mid',0,-6],hf:['B.mid',6,2]}),S(240,-1,{t:12,y:188,fn:[224,G],ff:[266,G],hn:'A.neck',hf:{a:[40,60]}}),c);
-{const a=[
-  clinch("Clinch: ottieni i due sottobracci (mani sotto le sue ascelle)."),
-  ph({x:198,y:192,t:8,f:1,fn:[214,G],ff:[172,G],hn:['B.mid',18,-4],hf:['B.mid',22,0]},S(236,-1,{t:10,y:186,fn:[222,G],ff:[262,G],hn:'A.neck',hf:{a:[40,60]}}),"Chiudi le mani dietro la sua schiena (cintura), anche contro le sue, petto alto."),
-  ph({x:204,y:192,t:4,f:1,fn:['B.fn',6,-6],ff:[178,G],hn:['B.mid',18,-4],hf:['B.mid',22,0]},S(238,-1,{t:6,y:186,fn:[224,G],ff:[262,G],hn:'A.neck',hf:{a:[40,60]}}),"Con il tuo piede avanti aggancia da fuori il suo tallone (sgambetto esterno)."),
-  ph({x:236,y:208,t:40,f:1,fn:[262,G],ff:[206,G],hn:['B.mid',10,0],hf:['B.mid',14,4]},{x:270,y:228,t:-62,f:-1,fn:{a:[60,30]},ff:{a:[40,10]},hn:{a:[-60,30]},hf:{a:[-80,30]}},"Spingi in avanti e in diagonale col petto: senza piede d'appoggio cade all'indietro."),
-  ph({x:266,y:224,t:78,f:1,fn:{a:[20,110]},ff:{a:[-20,90]},hn:'B.neck',hf:'B.pel'},B(290,-1),"Atterra sopra di lui in controllo."),
-];
-T({it:"Cintura e sgambetto esterno",en:"Body lock outside trip",cat:"Proiezioni alte",lvl:"Alto",
-intro:"Dal clinch chiudi le mani dietro la schiena, gli togli un piede da fuori e lo spingi all'indietro.",
-att:a,attTips:["Mani chiuse in alto sulla schiena, gomiti stretti.","Le tue anche sono attaccate alle sue: senza contatto non c'è leva.","Spingi in diagonale, verso il lato del piede che hai tolto."],
-attErr:["Agganciare con le anche lontane.","Spingere dritto all'indietro: lui fa un passo e si salva."],
-def:[M(a[0],"Clinch."),
-  ph(S(160,1,{t:36,y:196,fn:[180,G],ff:[126,G],hn:['B.mid',0,-4],hf:'B.neck'}),S(232,-1,{t:30,hn:'A.mid',hf:'A.neck'}),"Anche indietro e lontane: non lasciargli chiudere le mani."),
-  ph(S(166,1,{t:28,y:200,fn:[196,G],ff:[128,G],hn:['B.mid',4,0],hf:['B.mid',8,4]}),S(234,-1,{t:24}),"Prendi tu i sottobracci: chi ha i sottobracci comanda."),
-  ph(S(160,1,{t:20,y:204,fn:[196,G],ff:[118,G]}),S(240,-1,{t:24}),"Se ti aggancia: allarga la base, abbassati e ruota le anche fuori."),],
-defTips:["La distanza delle anche è la tua difesa.","Base larga e ginocchia piegate: con lo sgambetto non ti sbilancia."],
-defErr:["Stare a gambe tese e vicine.","Mettersi petto contro petto senza sottobracci."]});
-}
-{const a=[
-  clinch("Clinch: un sottobraccio e una mano al collo o al tricipite."),
-  ph(S(190,1,{t:4,y:186,fn:[206,G],ff:[166,G],hn:['B.mid',0,-6],hf:'B.neck'}),S(238,-1,{t:-4,y:186,fn:[222,G],ff:[264,G],hn:'A.neck',hf:{a:[40,60]}}),"Spingi: lui risponde e mette il peso indietro."),
-  ph({x:198,y:192,t:8,f:1,fn:['B.ff',-12,-16],ff:[170,G],hn:['B.mid',0,-6],hf:'B.neck',flip:'fn'},S(238,-1,{t:-4,y:186,fn:[222,G],ff:[264,G],hn:'A.neck',hf:{a:[40,60]}}),"La tua gamba avanti entra tra le sue e aggancia da dentro il suo polpaccio."),
-  ph({x:232,y:208,t:42,f:1,fn:[258,G],ff:[204,G],hn:'B.mid',hf:'B.neck'},{x:268,y:228,t:-62,f:-1,fn:{a:[60,30]},ff:{a:[40,10]},hn:{a:[-60,30]},hf:{a:[-80,30]}},"Tira il polpaccio verso di te e spingi il petto avanti: cade di schiena."),
-  ph({x:264,y:224,t:78,f:1,fn:{a:[20,110]},ff:{a:[-20,90]},hn:'B.neck',hf:'B.pel'},B(288,-1),"Finisci sopra."),
-];
-T({it:"Sgambetto interno",en:"Inside trip",cat:"Proiezioni alte",lvl:"Alto",
-intro:"Agganci dall'interno la gamba dell'avversario e gli togli l'appoggio mentre il petto spinge.",
-att:a,attTips:["Fallo quando il suo peso è sui talloni.","Aggancio con il polpaccio, non col piede: più contatto, più controllo.","Gamba e petto lavorano insieme, nella stessa frazione di secondo."],
-attErr:["Agganciare quando lui è in avanti: ti cade addosso.","Restare su un piede troppo a lungo."],
-def:[M(a[0],"Clinch."),
-  ph(S(160,1,{t:28,y:198,fn:[188,G],ff:[124,G],hn:['B.mid',0,-4],hf:'B.neck'}),S(236,-1,{t:16,hn:'A.mid',hf:'A.neck'}),"Anche basse e base larga: il peso non va sui talloni."),
-  ph({x:166,y:198,t:24,f:1,fn:{a:[50,70]},ff:[126,G],hn:'B.mid',hf:'B.neck'},S(234,-1,{t:16,hn:'A.mid',hf:'A.neck'}),"Quando ti aggancia: solleva il ginocchio e sfila la gamba, poi spingilo via."),
-  ph(S(150,1),S(262,-1),"Ritrova la guardia."),],
-defTips:["Peso sulla pianta dei piedi, mai sui talloni.","Ginocchio su e fuori: la gamba si libera."],
-defErr:["Irrigidire la gamba agganciata."]});
-}
-{const a=[
-  clinch("Clinch: lui ha un sottobraccio, tu prendi la sua testa con un braccio."),
-  ph({x:226,y:200,t:30,f:-1,fn:[212,G],ff:[244,G],hn:'B.neck',hf:'B.en'},S(252,-1,{t:24,y:186,fn:[236,G],ff:[272,G],hn:['A.mid',0,0]}),"Cravatta: braccio attorno al collo, piede davanti ai suoi, ruota: la tua schiena contro il suo petto."),
-  ph({x:216,y:204,t:58,f:-1,fn:[198,G],ff:[236,G],hn:'B.neck',hf:'B.en'},{x:232,y:150,t:122,f:-1,fn:{a:[-150,10]},ff:{a:[-160,20]},hn:{a:[150,20]},hf:{a:[160,10]}},"Gambe piegate sotto di lui, poi tira la testa e solleva con l'anca: rotola sopra di te."),
-  ph({x:226,y:226,t:66,f:-1,fn:{a:[15,100]},ff:{a:[-20,90]},hn:'B.neck',hf:'B.en'},B(140,-1),"Cade di schiena davanti a te: tieni la testa e scivola nel controllo a terra."),
-];
-T({it:"Cravatta all'anca",en:"Headlock hip toss",cat:"Proiezioni alte",lvl:"Alto",
-intro:"Proiezione d'anca con il braccio attorno al collo: l'avversario rotola sopra il tuo fianco.",
-att:a,attTips:["Le tue anche devono essere più basse e più avanti delle sue.","Ruota completamente: la tua schiena contro il suo petto.","Tira la testa verso il tuo ginocchio opposto mentre ruoti."],
-attErr:["Anche alte o lontane: lui ti prende da dietro.","Lasciare la testa durante la caduta."],
-def:[M(a[0],"Clinch."),
-  ph(S(166,1,{t:26,y:200,hn:['B.pel',-10,0],hf:['B.pel',-4,6],fn:[196,G],ff:[132,G]}),{x:212,y:200,t:30,f:1,fn:[230,G],ff:[194,G],hn:'A.neck',hf:{a:[40,40]}},"Quando gira l'anca: abbassa le tue anche dietro le sue e tieni la testa alta."),
-  ph(S(172,1,{t:30,y:204,hn:'B.pel',hf:['B.pel',4,6],fn:[206,G],ff:[136,G]}),{x:214,y:196,t:28,f:1,fn:[234,G],ff:[196,G],hn:{a:[40,40]},hf:{a:[30,40]}},"Blocca il suo fianco con la mano e fai un passo intorno a lui."),
-  ph(U(184,1,{y:192,t:20,hn:['B.pel',12,-6],hf:['B.pel',18,-2]}),S(216,1,{t:30}),"Sei dietro: cintura da dietro e riportalo a terra."),],
-defTips:["Anche basse e indietro: lui non riesce a caricarti.","Una mano sul suo fianco blocca la rotazione."],
-defErr:["Restare dritto con il petto in avanti."]});
-}
-{const a=[
-  ph(S(186,1,{t:12,y:188,fn:[202,G],ff:[160,G],hn:'B.en',hf:'B.hn'}),S(244,-1,{t:12,y:188,fn:[228,G],ff:[268,G],hn:'A.neck'}),"Controlla il suo braccio: una mano al polso, l'altra sotto l'ascella."),
-  ph({x:228,y:200,t:30,f:-1,fn:[214,G],ff:[244,G],hn:'B.en',hf:'B.hn'},S(256,-1,{t:20,y:186,fn:[240,G],ff:[276,G],hn:['A.neck',-8,0]}),"Passo e giro: entri di schiena, il suo braccio sopra la tua spalla."),
-  ph({x:216,y:204,t:58,f:-1,fn:[198,G],ff:[236,G],hn:'B.en',hf:'B.hn'},{x:232,y:150,t:122,f:-1,fn:{a:[-150,10]},ff:{a:[-160,20]},hn:{a:[150,20]},hf:{a:[160,10]}},"Piega le ginocchia sotto di lui e tira il braccio sulla spalla: lo carichi e lo ribalti."),
-  ph({x:220,y:204,t:46,f:-1,fn:[204,G],ff:[244,G],hn:'B.hn',hf:'B.en'},B(150,-1),"Atterra di schiena davanti a te: tieni il braccio."),
-];
-T({it:"Proiezione di spalla",en:"Arm throw (seoi nage)",cat:"Proiezioni alte",lvl:"Alto",
-intro:"Entri di schiena sotto il braccio dell'avversario e lo proietti sopra la tua spalla.",
-att:a,attTips:["Le ginocchia si piegano prima di entrare: entri sotto il suo baricentro.","Il suo braccio è stretto contro il tuo petto.","La proiezione nasce dalle gambe che si distendono e dal busto che si piega."],
-attErr:["Entrare con le gambe tese.","Lasciare spazio tra la tua schiena e il suo petto."],
-def:[M(a[0],"Controllo del braccio."),
-  ph(S(170,1,{t:20,y:200,hn:'B.pel',hf:['B.pel',-4,6],fn:[200,G],ff:[136,G]}),{x:212,y:202,t:30,f:1,fn:[228,G],ff:[194,G],hn:{a:[40,40]},hf:{a:[30,40]}},"Ti entra di schiena: anche basse e avanti contro di lui, bloccalo."),
-  ph(S(170,1,{t:24,y:202,hn:{a:[25,120]},hf:'B.pel',fn:[200,G],ff:[136,G]}),{x:212,y:198,t:24,f:1,fn:[228,G],ff:[194,G],hn:{a:[40,40]},hf:{a:[30,40]}},"Sfila il braccio tirando il gomito verso il tuo fianco."),
-  ph(U(184,1,{y:192,t:20,hn:['B.pel',12,-6],hf:['B.pel',18,-2]}),S(216,1,{t:30}),"Sei dietro: cintura e controllo."),],
-defTips:["Il bacino avanti blocca la sua entrata.","Il braccio intrappolato si libera verso il basso."],
-defErr:["Piegarsi in avanti sopra la sua schiena: ti carica."]});
-}
-{const a=[
-  clinch("Clinch con due sottobracci."),
-  ph({x:202,y:198,t:6,f:1,fn:[218,G],ff:[176,G],hn:['B.mid',18,-4],hf:['B.mid',22,0]},S(234,-1,{t:8,y:188,fn:[220,G],ff:[258,G],hn:'A.neck',hf:{a:[40,60]}}),"Mani chiuse dietro la sua schiena, gomiti stretti, anche sotto le sue."),
-  ph({x:214,y:206,t:-28,f:1,fn:[236,G],ff:[196,G],hn:['B.mid',14,-2],hf:['B.mid',18,2]},{x:228,y:162,t:-18,f:-1,fn:{a:[20,30]},ff:{a:[10,20]},hn:'A.neck',hf:{a:[40,60]}},"Piega le gambe, poi spingi in alto e inarca: le sue anche salgono sopra le tue."),
-  ph({x:258,y:224,t:78,f:1,fn:{a:[20,110]},ff:{a:[-20,92]},hn:'B.neck',hf:'B.pel'},B(282,-1),"Ruota di lato in aria (mai dritto sopra la testa) e atterra sopra di lui."),
-];
-T({it:"Cintura frontale (suplex)",en:"Belly-to-belly suplex",cat:"Proiezioni alte",lvl:"Alto",
-intro:"Dalla cintura frontale sollevi l'avversario con le anche e lo ruoti a terra. Si prova solo con l'istruttore e su tappeto.",
-att:a,attTips:["Le tue anche devono essere sotto le sue prima di sollevare.","La forza viene dalle gambe e dall'inarcata, non dalle braccia.","Ruota sempre di lato: atterri sulla spalla, non sulla testa."],
-attErr:["Sollevare con la schiena curva.","Proiettare all'indietro dritto sopra la testa."],
-def:[M(a[0],"Clinch."),
-  ph(S(160,1,{t:34,y:196,fn:[180,G],ff:[126,G],hn:['B.mid',0,-4],hf:'B.neck'}),S(232,-1,{t:24,hn:'A.mid',hf:'A.neck'}),"Anche indietro, gomito sul suo petto: non lasciargli chiudere."),
-  ph({x:176,y:214,t:20,f:1,fn:[206,G],ff:[132,G],hn:'B.head',hf:['B.mid',0,0]},{x:228,y:198,t:12,f:-1,fn:[212,G],ff:[252,G],hn:['A.mid',14,0],hf:['A.mid',18,4]},"Se ti chiude: allarga la base, abbassa il baricentro, spingi la sua testa."),
-  ph(S(150,1),S(260,-1),"Gira l'anca e liberati."),],
-defTips:["Più basso di lui = non ti solleva.","La mano sulla sua testa o sul mento rompe la postura."],
-defErr:["Restare dritto e vicino.","Aggrapparsi al suo collo."]});
-}
-{const a=[
-  ph({x:238,y:196,t:15,f:-1,fn:[222,G],ff:[262,G],hn:['B.pel',-14,-6],hf:['B.pel',-18,-2]},S(205,-1,{t:20,y:190,fn:[188,G],ff:[226,G],hn:{a:[40,30]},hf:'A.hn'}),"Sei dietro: mani chiuse sulla sua vita, testa attaccata alla sua schiena."),
-  ph({x:232,y:210,t:20,f:-1,fn:[216,G],ff:[260,G],hn:['B.pel',-14,-6],hf:['B.pel',-18,-2]},S(205,-1,{t:20,y:190,fn:[188,G],ff:[226,G],hn:{a:[40,30]},hf:'A.hn'}),"Abbassa le anche sotto le sue e porta le sue anche contro il tuo petto."),
-  ph({x:236,y:196,t:-6,f:-1,fn:[220,G],ff:[262,G],hn:['B.pel',-14,-4],hf:['B.pel',-18,0]},{x:212,y:168,t:6,f:-1,fn:{a:[10,30]},ff:{a:[-10,25]},hn:{a:[50,30]},hf:{a:[30,40]}},"Distendi le gambe e sollevalo: i suoi piedi lasciano il tappeto."),
-  ph({x:244,y:218,t:62,f:-1,fn:{a:[6,96]},ff:{a:[-20,70]},hn:['B.pel',-8,6],hf:['B.pel',-16,8]},Q(204,-1),"Ruota e riportalo giù di lato, poi segui sopra in controllo."),
-];
-T({it:"Cintura posteriore e ritorno a terra",en:"Rear body lock & mat return",cat:"Proiezioni alte",lvl:"Alto",
-intro:"Il seguito naturale dell'arm drag e del duck under: da dietro sollevi l'avversario e lo riporti a terra.",
-att:a,attTips:["Mani sopra l'ombelico, presa a palmo contro palmo.","Le anche sotto le sue prima di sollevare.","Riporta giù di lato, mai di faccia: segui con il petto."],
-attErr:["Sollevare con le braccia.","Mani basse sulle anche: lui le stacca facilmente."],
-def:[M(a[0],"Ti ha preso da dietro."),
-  ph({x:215,y:194,t:20,f:1,fn:[234,G],ff:[194,G],hn:'B.hn',hf:'B.hf'},{x:182,y:196,t:15,f:1,fn:[198,G],ff:[158,G],hn:['A.pel',14,-6],hf:['A.pel',18,-2]},"Mani sulle sue mani: lotta le prese, stacca un dito o un polso."),
-  ph({x:216,y:212,t:30,f:1,fn:[250,G],ff:[186,G],hn:'B.hn',hf:'B.hf'},{x:180,y:200,t:15,f:1,fn:[196,G],ff:[156,G],hn:['A.pel',14,-6],hf:['A.pel',18,-2]},"Anche basse e base larga: non farti sollevare."),
-  ph(S(252,-1,{hn:'B.en'}),S(160,1),"Presa rotta: gira verso di lui e torna fronte a fronte."),],
-defTips:["Le mani sulle sue mani, sempre.","Abbassare il baricentro vale più della forza.","Gira verso il lato della presa che hai staccato."],
-defErr:["Stare dritto con le braccia in alto.","Girarsi prima di aver rotto la presa."]});
-}
-
-/* ---------- LOTTA A TERRA ---------- */
-const parTop=(o)=>O({x:250,y:221,t:62,f:-1,fn:{a:[6,96]},ff:{a:[-18,72]},hn:['B.mid',-6,14],hf:['B.mid',2,16]},o);
-{const a=[
-  ph(parTop(),Q(208,-1),"Par terre: lui a quattro zampe, tu sopra di lato, petto sulla sua schiena."),
-  ph(parTop({x:244,hn:['B.mid',-2,18],hf:['B.mid',4,20]}),Q(208,-1),"Chiudi le mani sotto il suo petto, vicino alle ascelle, gomiti stretti."),
-  ph({x:232,y:240,t:-80,f:-1,fn:{a:[150,90]},ff:{a:[140,80]},hn:'B.mid',hf:['B.mid',4,4]},{x:232,y:200,t:-100,f:-1,fn:{a:[170,30]},ff:{a:[160,20]},hn:{a:[160,20]},hf:{a:[150,30]}},"Anche attaccate, sollevalo e rotola sul tuo fianco come una ruota: lui passa sopra di te."),
-  ph(K(214,1,{hn:'B.neck',hf:'B.pel'}),B(256,-1),"Completa il giro: lui finisce di schiena e tu sopra (punti)."),
-];
-T({it:"Rovesciamento al busto",en:"Gut wrench",cat:"Lotta a terra",lvl:"A terra",
-intro:"La tecnica a terra della lotta per eccellenza: chiudi le mani attorno al busto e lo fai rotolare sulle spalle.",
-att:a,attTips:["La presa è alta e stretta: mani sotto il petto, non sulla pancia.","Le tue anche spingono dentro le sue prima di rotolare.","Rotola sopra la tua spalla, tenendolo incollato a te."],
-attErr:["Presa bassa sulle anche.","Tirare con le braccia lasciando spazio tra i corpi."],
-def:[ph(Q(212,1),parTop({x:174,f:1,hn:['B.mid',6,14],hf:['B.mid',-2,16]}),"Sei sotto: ti chiude le mani sul busto."),
-  ph(Q(212,1,{y:230,t:86,fn:{a:[20,110]},ff:{a:[10,100]},hn:[256,G],hf:[262,G]}),parTop({x:174,f:1,hn:['B.mid',6,14],hf:['B.mid',-2,16]}),"Anche basse, base larga, gomiti attaccati alle ginocchia."),
-  ph(P(206,1),K(178,1,{hn:'B.mid',hf:'B.pel'}),"Se ti solleva: appiattisciti a pancia in giù, braccia avanti."),
-  ph(Q(212,1),K(172,1,{hn:'B.pel',hf:{a:[40,40]}}),"Appena puoi, torna a quattro zampe e preparati ad alzarti."),],
-defTips:["Gomiti stretti: niente spazio per le sue mani.","Piatto a pancia in giù non ti può rotolare.","Non fermarti: dal basso si lavora sempre per alzarsi."],
-defErr:["Braccia larghe e tese.","Restare sulle ginocchia con le anche alte."]});
-}
-{const a=[
-  ph(parTop({hn:'B.neck',hf:'B.pel'}),P(206,-1),"Sei sopra di lato: lui è piatto a pancia in giù."),
-  ph(parTop({x:246,hn:['B.neck',0,-2],hf:'B.mid'}),P(206,-1),"Passa il braccio sotto la sua ascella e metti la mano sulla sua nuca (mezzo nelson)."),
-  ph(K(234,-1,{t:70,hn:['B.neck',0,-2],hf:'B.pel'}),{x:206,y:236,t:90,f:-1,fn:{a:[-70,10]},ff:{a:[-100,20]},hn:{a:[160,10]},hf:{a:[40,20]}},"Mettiti perpendicolare a lui e spingi la testa lontano e giù, sollevando il braccio: rotola."),
-  ph(K(214,1,{t:72,hn:'B.neck',hf:'B.mid'}),B(250,-1),"È di schiena: petto sul suo petto, perpendicolare, per lo schienamento."),
-];
-T({it:"Mezzo nelson",en:"Half nelson",cat:"Lotta a terra",lvl:"A terra",
-intro:"Leva sul collo e sul braccio per ribaltare l'avversario a pancia in giù e portarlo sulle spalle.",
-att:a,attTips:["La mano va sulla nuca, non sul collo: è una leva, non uno strangolamento.","Cammina fino a essere a 90° rispetto a lui.","Spingi la testa lontano dal tuo corpo, il braccio sale."],
-attErr:["Restare parallelo a lui: non ruota.","Spingere la testa verso il tappeto invece che di lato."],
-def:[ph(P(214,1),parTop({x:256,f:1,x:172,hn:['B.neck',0,-2],hf:'B.mid'}),"Sei sotto: ti infila il mezzo nelson."),
-  ph(P(214,1,{hn:{a:[30,140]}}),parTop({x:172,f:1,hn:['B.neck',0,-2],hf:'B.mid'}),"Gomito del braccio intrappolato stretto al corpo, mano sul suo polso."),
-  ph(Q(214,1,{t:60,y:220}),K(172,1,{hn:'B.mid',hf:{a:[40,40]}}),"Testa alta e girati verso il braccio, non lontano: torna sulle ginocchia."),
-  ph(Q(214,1),K(172,1,{hn:'B.pel',hf:{a:[40,40]}}),"A quattro zampe: base solida, preparati ad alzarti."),],
-defTips:["Mai allontanare la testa dal braccio intrappolato.","Il gomito stretto toglie la leva."],
-defErr:["Girarsi dalla parte della spinta.","Restare piatto senza muoversi."]});
-}
-{const a=[
-  ph(Q(210,-1,{hn:'B.hn',hf:'B.hf'}),parTop({x:248,hn:['A.mid',-4,14],hf:['A.mid',2,16]}),"Sei sotto a quattro zampe: lui ha le mani attorno alla tua vita. Prima afferra le sue mani."),
-  ph({x:214,y:220,t:50,f:-1,fn:[186,G],ff:{a:[-4,90]},hn:'B.hn',hf:'B.hf'},parTop({x:250,y:214,t:50,hn:['A.mid',-4,10],hf:['A.mid',2,12]}),"Testa alta, pianta il piede esterno a terra, tieni le sue mani sul tuo stomaco."),
-  ph({x:206,y:190,t:-4,f:-1,fn:[190,G],ff:[226,G],hn:'B.hn',hf:'B.hf'},{x:238,y:206,t:24,f:-1,fn:[224,G],ff:[264,G],hn:['A.pel',-12,-4],hf:['A.pel',-16,0]},"Spingi con le gambe e alzati, schiena contro il suo petto, anche avanti."),
-  ph(S(170,1),S(270,-1),"Stacca le mani, gira verso di lui: sei fuori, fronte a fronte (punto di fuga)."),
-];
-T({it:"Alzarsi da sotto",en:"Stand-up escape",cat:"Lotta a terra",lvl:"A terra",
-intro:"La via di fuga principale quando sei sotto: ti rialzi controllando le sue mani e ti giri.",
-att:a,attTips:["Le mani dell'avversario si controllano prima e dopo l'alzata.","Testa alta e schiena dritta: la schiena va contro il suo petto.","Gira verso il lato della mano che hai staccato."],
-attErr:["Alzarsi senza controllare le mani.","Piegarsi in avanti mentre ti alzi: ti riporta giù."],
-def:[M(a[0],"Lui è sotto, tu sopra con le mani in vita."),
-  ph({x:186,y:214,t:56,f:1,fn:{a:[6,96]},ff:{a:[-18,72]},hn:['B.kn',0,0],hf:['B.mid',0,10]},{x:206,y:220,t:50,f:1,fn:[234,G],ff:{a:[-4,90]},hn:{a:[60,30]},hf:{a:[50,30]}},"Quando pianta il piede: tira il suo ginocchio o il braccio d'appoggio (chop) per rimetterlo giù."),
-  ph({x:180,y:204,t:24,f:1,fn:[194,G],ff:[156,G],hn:['B.pel',12,-4],hf:['B.pel',16,0]},{x:212,y:190,t:-4,f:1,fn:[228,G],ff:[192,G],hn:{a:[30,60]},hf:{a:[20,60]}},"Se si alza: segui con le anche e chiudi le mani (cintura)."),
-  ph(K(170,1,{hn:['B.mid',6,14],hf:['B.mid',-2,16]}),Q(212,1),"Riportalo a terra e torna sopra."),],
-defTips:["Le tue anche seguono le sue: sempre attaccato.","Colpire il braccio d'appoggio rompe la sua base."],
-defErr:["Lasciare le mani chiuse senza seguire con le anche."]});
-}
-{const a=[
-  ph(parTop({hn:'B.neck',hf:'B.pel'}),Q(208,-1),"Sei sopra di lato, lui a quattro zampe."),
-  ph(parTop({x:244,hn:'B.neck',hf:'B.kn'}),Q(208,-1),"Un braccio attorno alla sua testa, l'altro dietro il suo ginocchio vicino."),
-  ph(parTop({x:240,t:66,hn:['B.neck',0,0],hf:'B.kn'}),Q(208,-1,{t:100,y:226,fn:{a:[56,120]},ff:{a:[20,110]},hn:[160,G],hf:[168,G]}),"Avvicina la testa al ginocchio e chiudi le mani: la culla."),
-  ph(K(272,-1,{t:58,hn:'B.neck',hf:'B.kn'}),B(212,-1,{fn:{a:[160,120]},ff:{a:[150,110]},hn:{a:[120,20]},hf:{a:[110,20]}}),"Rotola all'indietro sul tuo fianco portandolo sulla schiena: schienamento."),
-];
-T({it:"Culla",en:"Cradle",cat:"Lotta a terra",lvl:"A terra",
-intro:"Chiudi insieme la testa e il ginocchio dell'avversario e lo fai rotolare sulle spalle: una delle prese di schienamento più efficaci.",
-att:a,attTips:["Avvicina testa e ginocchio prima di chiudere le mani.","Mani chiuse a gancio, non intrecciate le dita.","Rotola verso il lato della sua testa."],
-attErr:["Chiudere quando testa e ginocchio sono lontani.","Lasciarlo respirare: la presa va stretta subito."],
-def:[ph(Q(212,1),parTop({x:174,f:1,hn:'B.neck',hf:'B.kn'}),"Sei sotto: ti prende testa e ginocchio."),
-  ph(Q(212,1,{t:62,y:218}),parTop({x:174,f:1,hn:'B.neck',hf:'B.kn'}),"Testa alta e lontana dal ginocchio, ginocchia larghe."),
-  ph(Q(212,1,{t:62,y:218,hn:'B.hn',ff:{a:[-50,20]}}),parTop({x:174,f:1,hn:'B.neck',hf:{a:[30,40]}}),"Spingi via il suo braccio dalla testa e distendi la gamba catturata indietro."),
-  ph(Q(212,1),K(172,1,{hn:'B.pel',hf:{a:[40,40]}}),"Liberato: base solida a quattro zampe."),],
-defTips:["Distanza testa-ginocchio = niente culla.","Gamba distesa indietro, mai raccolta sotto."],
-defErr:["Raccogliersi a palla.","Abbassare la testa verso le ginocchia."]});
-}
-
-/* ===================== INTERFACCIA ===================== */
-const CATS=["Takedown bassi","Controlli e passaggi dietro","Proiezioni alte","Lotta a terra"];
-TECH.forEach((t,i)=>{t.i=i;t.cAtt=compile(t.att);t.cDef=compile(t.def);});
 const $=id=>document.getElementById(id);
-const store={get(){try{return JSON.parse(localStorage.getItem('lotta-done')||'[]')}catch(e){return []}},
-  set(v){try{localStorage.setItem('lotta-done',JSON.stringify(v))}catch(e){}}};
-let done=store.get();
-let cur=0, side='att', phase=0, playing=true, speed=1, t0=0, raf=0;
-const st=buildStage($('stage'));
-const MOVE=950, HOLD=1250;
+const {render,makeStage,changed,windowOf,ELEMS,fitView}=window.TOPV;
+const st=makeStage($('stage'),{w:300,h:200,id:'m'});
+let cur=0,side='att',i=0,T=1,playing=true,speed=.6,mode='hold',t0=performance.now();
+const MOVE=1900,HOLD=2200;
+const keys=()=>TECHS[cur][side];
 
-function renderIndex(){
-  const box=$('idxList');box.innerHTML='';
-  CATS.forEach(c=>{const g=document.createElement('div');g.className='idx-group';
-    g.innerHTML='<h3>'+c+'</h3>';const ol=document.createElement('ol');
-    TECH.filter(t=>t.cat===c).forEach(t=>{const li=document.createElement('li');const b=document.createElement('button');
-      b.innerHTML='<span class="num">'+String(t.i+1).padStart(2,'0')+'</span><span>'+t.it+'</span>'+(done.includes(t.i)?'<span class="done-mark">✓</span>':'');
-      b.setAttribute('aria-current',t.i===cur?'true':'false');b.onclick=()=>{go(t.i);if(innerWidth<=900){$('index').classList.add('closed');$('idxToggle').setAttribute('aria-expanded','false')}};
-      li.appendChild(b);ol.appendChild(li);});
-    g.appendChild(ol);box.appendChild(g);});
-  $('progText').textContent='Imparate: '+done.length+' di '+TECH.length;
-  $('progBar').style.width=(done.length/TECH.length*100)+'%';
+function renderTechs(){$('techs').innerHTML='';TECHS.forEach((t,k)=>{const b=document.createElement('button');b.className='tbtn';
+  b.innerHTML='<small>'+String(k+1).padStart(2,'0')+' · '+t.cat+'</small><b>'+t.it+'</b>';b.setAttribute('aria-current',k===cur);
+  b.onclick=()=>{cur=k;side='att';load()};$('techs').appendChild(b)})}
+const TRACKS=[['A','fL','Piede S'],['A','fR','Piede D'],['A','hL','Mano S'],['A','hR','Mano D'],['A','body','Anche e testa'],['B','*','Avversario']];
+function buildTimeline(){
+  const K=keys(),n=K.length,g=$('tl');g.innerHTML='';g.style.gridTemplateColumns='8.5em repeat('+(n-1)+',minmax(0,1fr))';
+  g.appendChild(document.createElement('div'));
+  for(let k=1;k<n;k++){const h=document.createElement('div');h.className='hd';h.dataset.k=k;h.textContent=k+'. '+K[k].t;h.title=K[k].t;h.onclick=()=>jump(k);g.appendChild(h)}
+  for(const [W,el,lab] of TRACKS){const l=document.createElement('div');l.className='lab';l.textContent=lab;if(W==='B')l.style.color='var(--blue)';g.appendChild(l);
+    for(let k=1;k<n;k++){const c=document.createElement('div');c.className='cell';c.onclick=()=>jump(k);
+      const els=el==='*'?ELEMS:[el];let lo=1,hi=0;
+      for(const e of els)if(changed(K[k-1],K[k],W,e)){const w=windowOf(K[k],W,e);lo=Math.min(lo,w[0]);hi=Math.max(hi,w[1])}
+      if(hi>lo){const b=document.createElement('div');b.className='bar '+W;b.style.left=(lo*100)+'%';b.style.width=((hi-lo)*100)+'%';c.appendChild(b)}
+      g.appendChild(c)}}
 }
-function seq(){const t=TECH[cur];return side==='att'?t.cAtt:t.cDef}
-function renderCard(){
-  const t=TECH[cur];
-  $('eyebrow').textContent='Tecnica '+String(cur+1).padStart(2,'0')+' · '+t.cat;
-  $('title').textContent=t.it;$('enName').textContent=t.en;
-  $('tags').innerHTML='<span class="tag'+(t.lvl==='Basso'?' low':'')+'">'+t.lvl+'</span>';
-  $('intro').textContent=t.intro;
-  $('learned').checked=done.includes(cur);
-  renderSide();
-}
-function renderSide(){
-  const t=TECH[cur],s=seq();
+function placeHead(){const hd=$('tl').querySelectorAll('.hd'),ph=$('playhead');
+  hd.forEach(h=>h.classList.toggle('on',+h.dataset.k===i));
+  if(i===0||!hd.length){ph.style.display='none';return}ph.style.display='block';
+  const h=hd[i-1];ph.style.left=(h.offsetLeft+h.offsetWidth*Math.min(1,T))+'px';}
+function phaseCard(){const K=keys(),k=K[i];
+  $('pNum').textContent=i===0?'Partenza':'Fase '+i+' di '+(K.length-1);
+  $('pTitle').textContent=k.t;
+  $('pWhen').hidden=!k.tempo;$('pWhen').textContent=k.tempo?('Tempo: '+k.tempo):'';
+  const L={piedi:'Piedi',mani:'Mani',testa:'Testa e anche',intento:'Intento'};
+  $('pRows').innerHTML=Object.keys(L).filter(x=>k.d[x]).map(x=>'<div><dt>'+L[x]+'</dt><dd>'+k.d[x]+'</dd></div>').join('');
+  const g=[];for(const W of ['A','B'])for(const s of ['L','R']){const h=k[W]['h'+s];if(h&&h.g)g.push('<li><span style="background:var(--'+(W==='A'?'red':'blue')+')">'+(s==='L'?'S':'D')+'</span><span>'+h.g+'</span></li>')}
+  $('pGrips').innerHTML=g.length?'<li style="display:block;font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Prese</li>'+g.join(''):'';}
+function draw(){render(st,keys(),i,T,true);placeHead()}
+function jump(k){setPlaying(false);i=k;T=1;mode='hold';phaseCard();draw()}
+function load(){const t=TECHS[cur];renderTechs();$('title').textContent=t.it;$('en').textContent=t.en;$('intro').textContent=t.intro;
   $('tabAtt').setAttribute('aria-selected',side==='att');$('tabDef').setAttribute('aria-selected',side==='def');
-  $('panel').className='panel '+side;
-  $('stepsHead').textContent=side==='att'?'Sequenza d\'attacco (tu attacchi)':'Sequenza di difesa (lui attacca, tu difendi)';
-  const ol=$('steps');ol.innerHTML='';
-  s.forEach((p,i)=>{const li=document.createElement('li');li.textContent=p.c;li.onclick=()=>{setPlaying(false);phase=i;show(i,i,1)};ol.appendChild(li)});
-  const tips=side==='att'?t.attTips:t.defTips, errs=side==='att'?t.attErr:t.defErr;
-  $('tips').innerHTML=tips.map(x=>'<li>'+x+'</li>').join('');
-  $('errs').innerHTML=errs.map(x=>'<li>'+x+'</li>').join('');
-  phase=0;t0=performance.now();show(0,0,1);
-}
-function show(a,b,e){const s=seq();const J=frame(s[a],s[b],e);draw(st,J,(e<.5?s[a]:s[b]).s.top);
-  const k=e<.5?a:b;$('caption').innerHTML='<b>'+(k+1)+'/'+s.length+'</b>'+s[k].c;
-  [...$('steps').children].forEach((li,i)=>li.classList.toggle('on',i===k));}
-const ease=x=>x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;
+  $('sideIntro').textContent=side==='att'?'Tu (rosso) esegui la tecnica.':t.defIntro;
+  $('startCard').innerHTML=side==='att'
+    ?'<h5>Posizione di partenza</h5><b>Tu</b><ul>'+t.start.tu.map(x=>'<li>'+x+'</li>').join('')+'</ul><b>Lui</b><ul>'+t.start.lui.map(x=>'<li>'+x+'</li>').join('')+'</ul>'
+    :'<h5>Situazione</h5><ul><li>'+t.defIntro+'</li></ul>';
+  const tips=side==='att'?t.attTips:t.defTips,errs=side==='att'?t.attErr:t.defErr;
+  $('tips').innerHTML=tips.map(x=>'<li>'+x+'</li>').join('');$('errs').innerHTML=errs.map(x=>'<li>'+x+'</li>').join('');
+  fitView(st,keys());buildTimeline();i=0;T=1;mode='hold';t0=performance.now();phaseCard();draw();
+  try{history.replaceState(null,'','#'+t.id+(side==='def'?'-difesa':''))}catch(e){}}
+function setPlaying(p){playing=p;$('bPlay').textContent=p?'Pausa':'Play';t0=performance.now()}
 function tick(now){
-  if(playing){const s=seq(),m=MOVE/speed,h=HOLD/speed;let el=now-t0;
-    const next=(phase+1)%s.length, mv=next===0?350/speed:m;
-    if(el<h){show(phase,phase,1)} else if(el<h+mv){const e=ease((el-h)/mv);show(phase,next,next===0?(e<1?0:1):e);if(next===0&&e>.5)show(next,next,1)}
-    else{phase=next;t0=now;show(phase,phase,1)}}
-  raf=requestAnimationFrame(tick);
-}
-function setPlaying(p){playing=p;$('bPlay').textContent=p?'Pausa':'Play';if(p)t0=performance.now();}
-function go(i){cur=(i+TECH.length)%TECH.length;side='att';renderIndex();renderCard();try{history.replaceState(null,'','#t'+(cur+1))}catch(e){}}
+  if(playing){const el=now-t0,n=keys().length;
+    if(mode==='hold'&&el>HOLD/speed){if(i<n-1){i++;T=0;mode='move';t0=now;phaseCard()}else{i=0;T=1;t0=now;phaseCard();draw()}}
+    else if(mode==='move'){T=Math.min(1,el/(MOVE/speed));draw();if(T>=1){mode='hold';t0=now}}}
+  requestAnimationFrame(tick)}
+function animate(k){setPlaying(false);i=k;T=0;phaseCard();const s=performance.now();
+  const step=n=>{T=Math.min(1,(n-s)/(MOVE/speed));draw();if(T<1&&!playing)requestAnimationFrame(step)};requestAnimationFrame(step)}
 $('bPlay').onclick=()=>setPlaying(!playing);
-$('bNext').onclick=()=>{setPlaying(false);const s=seq();const n=Math.min(phase+1,s.length-1);animTo(phase,n)};
-$('bPrev').onclick=()=>{setPlaying(false);const n=Math.max(phase-1,0);animTo(phase,n)};
-function animTo(a,b){const start=performance.now(),d=MOVE/speed*.8;phase=b;
-  const step=n=>{const e=Math.min(1,(n-start)/d);show(a,b,ease(e));if(e<1&&!playing)requestAnimationFrame(step)};requestAnimationFrame(step)}
+$('bNext').onclick=()=>{if(i<keys().length-1)animate(i+1)};
+$('bPrev').onclick=()=>{if(i>0)jump(i-1)};
+$('bRep').onclick=()=>{if(i>0)animate(i)};
 $('speedSel').onchange=e=>{speed=+e.target.value};
-$('tabAtt').onclick=()=>{side='att';renderSide()};
-$('tabDef').onclick=()=>{side='def';renderSide()};
-$('tPrev').onclick=()=>go(cur-1);$('tNext').onclick=()=>go(cur+1);
-$('learned').onchange=e=>{done=done.filter(x=>x!==cur);if(e.target.checked)done.push(cur);store.set(done);renderIndex()};
-$('idxToggle').onclick=()=>{const c=$('index').classList.toggle('closed');$('idxToggle').setAttribute('aria-expanded',String(!c))};
-const m=/^#t(\d+)$/.exec(location.hash);if(m)cur=Math.min(TECH.length,Math.max(1,+m[1]))-1;
-if(matchMedia('(prefers-reduced-motion: reduce)').matches)setPlaying(false);
-renderIndex();renderCard();raf=requestAnimationFrame(tick);
-window.LIB={TECH,buildStage,frame,draw};
+$('tabAtt').onclick=()=>{side='att';load()};$('tabDef').onclick=()=>{side='def';load()};
+addEventListener('resize',placeHead);
+const h=location.hash.slice(1);TECHS.forEach((t,k)=>{if(h.startsWith(t.id)){cur=k;if(h.endsWith('-difesa'))side='def'}});
+if(matchMedia('(prefers-reduced-motion: reduce)').matches)playing=false;
+load();setPlaying(playing);requestAnimationFrame(tick);
 </script>
