@@ -77,3 +77,22 @@ The mean DC field Ex in the rib (1 V applied) is recorded with Vpi*L.
   - 0.101/0.135 = 0.75, while 0.5/1.4 = 0.36;
   - two cap heights cannot fix a law;
   - the cap effect should saturate once the cap is taller than the gap field near the rib.
+
+## Why the matching gap is 3.47 um at CAP_H 1.4 but 3.41 um at CAP_H 0.5 (WG_TOP 1.0; WG_TOP 1.4 is the same)
+- **Formula.** The buffered curve is linear to within 0.7 mV*cm, so the matching gap is g* = 4.2 - P/s:
+  - P = buffered - unbuffered Vpi*L at gap 4.2;
+  - s = slope of the buffered curve.
+
+| | P (V*cm) | s (V*cm/um) | P/s (um) | g* (um) |
+|---|---|---|---|---|
+| CAP_H 1.4 | 0.372 | 0.508 | 0.732 | 3.468 |
+| CAP_H 0.5 | 0.377 | 0.478 | 0.788 | 3.412 |
+
+- **Slope (about 80 % of the 0.056 um shift).** With CAP_H 0.5, narrowing the gap recovers 6 % less Vpi*L per um.
+  - About half of that is because all its values are ~3 % lower (Vpi*L ~ 1/E_rib).
+  - The other half is because the low-cap advantage grows with the gap: cap0.5/cap1.4 = 0.976 at 3.2, 0.972 at 3.6, 0.969 at 4.0.
+- **Penalty (about 20 %).** P is slightly larger at CAP_H 0.5.
+- **Same thing in relative terms:**
+  - The low cap lowers the unbuffered reference by 4.1 %.
+  - Near the matching gap it lowers the buffered curve by only 2.7 %.
+  - So the target falls 1.4 % (~0.026 V*cm) further below the buffered curve, and reaching it needs 0.026 / 0.478 = 0.055 um more narrowing.
