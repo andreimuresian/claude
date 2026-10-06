@@ -1,0 +1,17 @@
+Transforming over 1000 vertices to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+{'h_um': 0.06, 'n_theta': 192, 'f_GHz': np.float64(0.001), 'R_exact': np.float64(1024.9118), 'R_fem': np.float64(1025.09475), 'dR_pct': np.float64(0.01785), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(-1e-05), 'polygon_area_pct': np.float64(-0.01785)}
+{'h_um': 0.06, 'n_theta': 192, 'f_GHz': np.float64(1.0), 'R_exact': np.float64(1078.46733), 'R_fem': np.float64(1078.64144), 'dR_pct': np.float64(0.01614), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(0.00026), 'polygon_area_pct': np.float64(-0.01785)}
+{'h_um': 0.06, 'n_theta': 192, 'f_GHz': np.float64(10.0), 'R_exact': np.float64(2506.01606), 'R_fem': np.float64(2506.25424), 'dR_pct': np.float64(0.0095), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(0.00185), 'polygon_area_pct': np.float64(-0.01785)}
+{'h_um': 0.06, 'n_theta': 192, 'f_GHz': np.float64(60.0), 'R_exact': np.float64(5889.06626), 'R_fem': np.float64(5889.66249), 'dR_pct': np.float64(0.01012), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(0.00088), 'polygon_area_pct': np.float64(-0.01785)}
+{'h_um': 0.06, 'n_theta': 192, 'f_GHz': np.float64(200.0), 'R_exact': np.float64(10621.30943), 'R_fem': np.float64(10622.99513), 'dR_pct': np.float64(0.01587), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(0.00065), 'polygon_area_pct': np.float64(-0.01785)}
+{'n_el': 27840, 'ndof': np.int32(55873)}
+Transforming over 1000 vertices to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+{'h_um': 0.04, 'n_theta': 320, 'f_GHz': np.float64(0.001), 'R_exact': np.float64(1024.9118), 'R_fem': np.float64(1024.97765), 'dR_pct': np.float64(0.00643), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(-0.0), 'polygon_area_pct': np.float64(-0.00643)}
+{'h_um': 0.04, 'n_theta': 320, 'f_GHz': np.float64(1.0), 'R_exact': np.float64(1078.46733), 'R_fem': np.float64(1078.53001), 'dR_pct': np.float64(0.00581), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(9e-05), 'polygon_area_pct': np.float64(-0.00643)}
+{'h_um': 0.04, 'n_theta': 320, 'f_GHz': np.float64(10.0), 'R_exact': np.float64(2506.01606), 'R_fem': np.float64(2506.10146), 'dR_pct': np.float64(0.00341), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(0.00066), 'polygon_area_pct': np.float64(-0.00643)}
+{'h_um': 0.04, 'n_theta': 320, 'f_GHz': np.float64(60.0), 'R_exact': np.float64(5889.06626), 'R_fem': np.float64(5889.27494), 'dR_pct': np.float64(0.00354), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(0.0003), 'polygon_area_pct': np.float64(-0.00643)}
+{'h_um': 0.04, 'n_theta': 320, 'f_GHz': np.float64(200.0), 'R_exact': np.float64(10621.30943), 'R_fem': np.float64(10621.83596), 'dR_pct': np.float64(0.00496), 'L_exact': np.float64(0.0), 'L_fem': np.float64(0.0), 'dL_pct': np.float64(0.0002), 'polygon_area_pct': np.float64(-0.00643)}
+{'n_el': 57920, 'ndof': np.int32(116161)}
+DC check: R_dc exact = 1024.911740183815

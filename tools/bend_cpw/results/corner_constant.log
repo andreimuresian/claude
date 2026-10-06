@@ -1,0 +1,15 @@
+square a = 10.0 um: G_pec = 31790.94 1/m, corner K = 2.6834e+02 m^-2/3,  G*a = 0.31791
+hfine 0.02 {'n_el': 15842, 'ndof': np.int32(32041)}
+   f     20 GHz  delta/a 0.0527  R   1320.098  R_IBC   1322.866  deficit  0.209 %   c = 0.0286
+   f     50 GHz  delta/a 0.0333  R   2065.046  R_IBC   2091.634  deficit  1.271 %   c = 0.2024
+   f    100 GHz  delta/a 0.0236  R   2908.146  R_IBC   2958.018  deficit  1.686 %   c = 0.3013
+   f    200 GHz  delta/a 0.0167  R   4104.249  R_IBC   4183.269  deficit  1.889 %   c = 0.3789
+   f    400 GHz  delta/a 0.0118  R   5800.525  R_IBC   5916.036  deficit  1.952 %   c = 0.4396
+   f    800 GHz  delta/a 0.0083  R   8205.441  R_IBC   8366.538  deficit  1.925 %   c = 0.4866
+hfine 0.01 {'n_el': 20402, 'ndof': np.int32(41209)}
+   f     20 GHz  delta/a 0.0527  R   1320.098  R_IBC   1322.866  deficit  0.209 %   c = 0.0286
+   f     50 GHz  delta/a 0.0333  R   2065.045  R_IBC   2091.634  deficit  1.271 %   c = 0.2024
+   f    100 GHz  delta/a 0.0236  R   2908.142  R_IBC   2958.018  deficit  1.686 %   c = 0.3013
+   f    200 GHz  delta/a 0.0167  R   4104.237  R_IBC   4183.269  deficit  1.889 %   c = 0.3789
+   f    400 GHz  delta/a 0.0118  R   5800.479  R_IBC   5916.036  deficit  1.953 %   c = 0.4397
+   f    800 GHz  delta/a 0.0083  R   8205.254  R_IBC   8366.538  deficit  1.928 %   c = 0.4871

@@ -1,29 +1,32 @@
 """
-Closed-form coplanar waveguide (CPW) model for the electrode bend: geometry and
-materials in, Z0, n_m and alpha(f) out. No simulation, no Touchstone.
+Coplanar waveguide (CPW) model for the electrode bend: geometry and materials
+in, Z0, n_m and alpha(f) out. No FEM mesh, no Touchstone. Use bend_cpw().
 
-Capacitance (quasi-TEM, conformal mapping):
-  * upper half-space (air) and the 'all-air' lower half-space: thin-strip CPW
-    with finite grounds,   C = 2 eps0 K(k)/K(k')  per half-space,
-        k = (a/b) sqrt((1 - b^2/c^2) / (1 - a^2/c^2)),  a = S/2, b = a + W, c = b + Wg
-  * layers below the metal: partial-capacitance method (Veyres-Fouad Hanna,
-    Gevorgian), each layer from the metal down to its bottom at depth H_i
-        dC_i = 2 eps0 (eps_i - eps_i+1) K(k_i)/K(k_i'),
-        k_i = sinh(pi a/2H) / sinh(pi b/2H) * sqrt((1 - sinh^2(pi b/2H)/sinh^2(pi c/2H))
-                                                  / (1 - sinh^2(pi a/2H)/sinh^2(pi c/2H)))
-    Anisotropic layers (eps_h horizontal, eps_v vertical) are mapped to an
-    isotropic layer eps = sqrt(eps_h eps_v) of thickness h sqrt(eps_h/eps_v).
-  * metal thickness t: the gaps between the sidewalls add a parallel plate
-    each, eps_gap eps0 t / W  (the usual effective-width correction of Gupta
-    fails when t is not << W; here t/W ~ 0.5).
+Capacitance (quasi-TEM):
+  * air above: conformal map with finite grounds, C = 2 eps0 K(k)/K(k');
+  * gaps between the sidewalls: a parallel plate each, eps0 t / W;
+  * layers below: spectral-domain variational method (layered admittance by
+    transmission-line recursion, LN anisotropy exact, conformal-map slot field
+    as trial function), scaled by the finite-ground factor of the map;
+  * the air-filled capacitance C_air (it sets L_ext = 1/(c^2 C_air)) is taken
+    from the boundary-element solution of the real thick electrodes
+    (bem_pec.py); the difference to the conformal C_air is a thickness error
+    common to both C and C_air, so C is corrected by the same amount.
 
-Inductance: L_ext = 1 / (c^2 C_air)  (quasi-TEM); internal inductance from
-the surface impedance, L_int = R/omega (as in the FEM notebook's IBC step).
-
-Conductor loss: Wheeler's incremental-inductance rule,
-    R = (Rs / mu0) dL_ext/dn,
-every metal surface receding by n (S -> S - 2n, W -> W + 2n, t -> t - 2n,
-Wg -> Wg - 2n), derivative taken numerically on the closed form above.
+Conductor resistance (conductor_impedance):
+  * DC: 1/(sigma S t) + 1/(2 sigma Wg t)  (signal + two grounds in parallel);
+  * skin effect: the exact surface current of the thick electrodes, top,
+    bottom AND sidewalls, from the boundary-element solution of the PEC
+    problem (bem_pec.py), with two finite-skin-depth corrections:
+      - receding wall (Wheeler): the current flows ~delta/2 inside the metal,
+        so the surface current is taken on the electrodes shrunk by delta/2;
+      - corners: the PEC current is singular there (J/I = K r^-1/3); the real
+        current spreads over a skin depth, which removes c K^2 delta^(1/3) per
+        corner, c = 0.70 for a right-angle corner (corner_constant.py: from an
+        isolated square bar, not from the CPW validation set);
+    R = sqrt(R_dc^2 + R_hf^2); L_int = R_hf / omega in the skin-effect regime,
+    blended to the exact uniform-current L_dc towards DC.
+  * G_ghione() (thin-strip closed form, Ghione 1993) is kept for comparison.
 
 Dielectric loss: G = sum_i sigma_i dC/d(eps0 eps_i) + omega tan(delta) terms,
 alpha_d = G Z0 / 2.
@@ -241,7 +244,55 @@ def G_ghione(S, W, t):
     return 2 * 30 * np.pi * Kp / K / (480 * np.pi * K * Kp * (1 - k * k)) * B
 
 
-def bend_cpw(f_Hz, S, W, Wg, t, layers, sigma_metal=4.56e7, layer_sigma=None, layer_tand=None):
+C_CORNER = 0.70      # right-angle corner constant, from corner_constant.py
+
+
+def conductor_impedance(f_Hz, S, W, Wg, t, sigma_metal=4.56e7, c_corner=C_CORNER, L_ext=None):
+    """R (ohm/m) and L_int (H/m) of a CPW with thick electrodes, from DC to the
+    strong skin effect. The boundary-element solve is done at a few receding
+    depths and interpolated, so many frequencies cost no more than one."""
+    import bem_pec
+    f = np.atleast_1d(np.asarray(f_Hz, float))
+    w = 2 * np.pi * f
+    delta = np.sqrt(2.0 / (w * MU0 * sigma_metal))
+    Rs = 1.0 / (sigma_metal * delta)
+    d_eff = np.minimum(delta, 0.45 * t)                 # the receded metal keeps a core
+    dg = np.unique(np.geomspace(d_eff.min(), d_eff.max(), 7 if d_eff.max() > d_eff.min() * 1.01 else 1))
+    Gs, Ks = [], []
+    for d in dg:
+        b = bem_pec.solve(S - d, W + d, Wg - d, t - d)
+        Gs.append(b["G_pec"]); Ks.append(4 * sum(k * k for k in b["K_corners"]))
+    G = np.interp(np.log(d_eff), np.log(dg), Gs)
+    Ksum = np.interp(np.log(d_eff), np.log(dg), Ks)
+    R_dc = 1.0 / (sigma_metal * S * t) + 0.5 / (sigma_metal * Wg * t)
+    R_hf = Rs * (G - c_corner * Ksum * delta ** (1.0 / 3.0))
+    R = np.sqrt(R_dc ** 2 + R_hf ** 2)
+    # internal inductance: R_hf / w in the skin-effect regime; towards DC the
+    # current spreads uniformly over each electrode and L tends to L_dc (exact
+    # for uniform current), so the excess over L_ext is blended as
+    #   L_int = (1/dL_dc^2 + 1/(R_hf/w)^2)^(-1/2),  dL_dc = L_dc - L_ext
+    L_hf = R_hf / w
+    if L_ext is not None:
+        dL = max(inductance_dc(S, W, Wg, t) - L_ext, 1e-30)
+        L_int = 1.0 / np.sqrt(1.0 / dL ** 2 + 1.0 / L_hf ** 2)
+    else:
+        L_int = L_hf
+    return R, L_int, dict(R_dc=R_dc, R_hf=R_hf, G=G, Ksum=Ksum)
+
+
+def inductance_dc(S, W, Wg, t):
+    """Loop inductance (H/m) with uniform current in each electrode (signal +1,
+    grounds -1/2 each), from the exact mean log-distance between rectangles."""
+    from peec2d import mean_log
+    xs, xgi = S / 2, S / 2 + W
+    rects = [(-xs, xs, 0.0, t), (xgi, xgi + Wg, 0.0, t), (-xgi - Wg, -xgi, 0.0, t)]
+    cur = (1.0, -0.5, -0.5)
+    return sum(cur[a] * cur[b] * (-MU0 / (2 * np.pi)) * float(mean_log(rects[a], rects[b]))
+               for a in range(3) for b in range(3))
+
+
+def bend_cpw(f_Hz, S, W, Wg, t, layers, sigma_metal=4.56e7, layer_sigma=None, layer_tand=None,
+             conductor="thick"):
     """Z0, n_m, alpha(f) of a CPW (signal S, gaps W, grounds Wg, metal t; SI units)
     on the layer stack *layers* [(h, eps_h, eps_v), ... from the metal down],
     air above and in the gaps. Closed form + one 1D spectral integral."""
@@ -250,17 +301,24 @@ def bend_cpw(f_Hz, S, W, Wg, t, layers, sigma_metal=4.56e7, layer_sigma=None, la
     C_eps, parts = capacitance_sd(S, W, Wg, t, layers)
     air = [(h, 1.0, 1.0) for h, _eh, _ev in layers]
     C_air, _ = capacitance_sd(S, W, Wg, t, air)
+    if conductor == "thick":
+        import bem_pec
+        C_air_bem = bem_pec.solve(S, W, Wg, t)["C_air"]
+        C_eps = C_eps + (C_air_bem - C_air)          # same thickness error in both
+        C_air = C_air_bem
     L_ext = 1.0 / (C0 ** 2 * C_air)
-    delta = np.sqrt(2.0 / (w * MU0 * sigma_metal))
-    Rs = 1.0 / (sigma_metal * delta)
-    G = G_ghione(S, W, t)
-    R_dc = 1.0 / (sigma_metal * S * t) + 0.5 / (sigma_metal * Wg * t)
-    R_hf = Rs * G
-    R = np.sqrt(R_dc ** 2 + R_hf ** 2)
-    # internal inductance: R_hf / w in the skin-effect regime, held at its value
-    # where R_hf = R_dc below that (it tends to a finite DC value)
-    f_x = (R_dc / G) ** 2 * sigma_metal / (np.pi * MU0)
-    L_int = np.where(f >= f_x, R_hf / w, R_dc / (2 * np.pi * f_x))
+    if conductor == "thick":
+        R, L_int, cinfo = conductor_impedance(f, S, W, Wg, t, sigma_metal, L_ext=L_ext)
+        R_dc, G = cinfo["R_dc"], cinfo["G"]
+    else:
+        delta = np.sqrt(2.0 / (w * MU0 * sigma_metal))
+        Rs = 1.0 / (sigma_metal * delta)
+        G = G_ghione(S, W, t)
+        R_dc = 1.0 / (sigma_metal * S * t) + 0.5 / (sigma_metal * Wg * t)
+        R_hf = Rs * G
+        R = np.sqrt(R_dc ** 2 + R_hf ** 2)
+        f_x = (R_dc / G) ** 2 * sigma_metal / (np.pi * MU0)
+        L_int = np.where(f >= f_x, R_hf / w, R_dc / (2 * np.pi * f_x))
     L = L_ext + L_int
     # dielectric conductance from the capacitance's sensitivity to each layer
     G_d = np.zeros_like(f)
@@ -273,10 +331,16 @@ def bend_cpw(f_Hz, S, W, Wg, t, layers, sigma_metal=4.56e7, layer_sigma=None, la
         lay[i] = (h, eh * 1.001, ev * 1.001)
         dC = (capacitance_sd(S, W, Wg, t, lay)[0] - C_eps) / (0.001 * np.sqrt(eh * ev))
         G_d = G_d + (sg / EPS0 + w * td * np.sqrt(eh * ev)) * dC
-    Z0 = np.sqrt(L / C_eps)
-    n_m = C0 * np.sqrt(L * C_eps)
-    a_c = R / (2 * Z0)
-    a_d = G_d * Z0 / 2
-    return dict(f_GHz=f / 1e9, Z0=Z0, n_m=n_m, alpha_dB_cm=DB_PER_NEPER * (a_c + a_d) / 100,
+    # exact line constants (R is not small against w L below ~1 GHz)
+    gamma = np.sqrt((R + 1j * w * L) * (G_d + 1j * w * C_eps))
+    Zc = np.sqrt((R + 1j * w * L) / (G_d + 1j * w * C_eps))
+    Z0 = np.abs(Zc)
+    n_m = gamma.imag / w * C0
+    # split of alpha into conductor and dielectric parts (low-loss expressions,
+    # scaled so that they add up to Re(gamma))
+    a_c0, a_d0 = R / (2 * Z0), G_d * Z0 / 2
+    a_c = gamma.real * a_c0 / (a_c0 + a_d0)
+    a_d = gamma.real * a_d0 / (a_c0 + a_d0)
+    return dict(f_GHz=f / 1e9, Z0=Z0, Zc=Zc, n_m=n_m, alpha_dB_cm=DB_PER_NEPER * gamma.real / 100,
                 alpha_c_dB_cm=DB_PER_NEPER * a_c / 100, alpha_d_dB_cm=DB_PER_NEPER * a_d / 100,
                 R=R, L=L, C=C_eps, C_air=C_air, L_ext=L_ext, R_dc=R_dc, G_geo=G)

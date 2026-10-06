@@ -72,11 +72,18 @@ def build(sig_w=35.0, gap=4.15, gnd_w=50.0, t=2.0, dom=600.0, hfine=0.03, hmax_m
     return mesh, cond
 
 
-def solve_Z(f_list, order=2, sigma=SIGMA_AU, **geom):
-    t0 = time.time()
-    mesh, cond = build(**geom)
+def solve_on_mesh(mesh, cond, I, dirichlet, f_list, order=2, sigma=SIGMA_AU):
+    """Series impedance per unit length on any triangle mesh (metres).
+
+    cond[e] = k > 0 marks the elements of conductor k (k = 1..N), 0 elsewhere.
+    I[k-1] is the current imposed on conductor k (they must sum to zero over the
+    full cross-section). dirichlet(x) -> bool marks the boundary where A = 0;
+    every other boundary is a natural (Neumann) boundary, i.e. a symmetry plane
+    with A even. Returns V'_k for every frequency: the longitudinal voltage drop
+    per unit length of conductor k is -V'_k (E = -j w A - V')."""
     basis = Basis(mesh, ElementTriP2() if order == 2 else ElementTriP1())
     b0 = basis.with_element(ElementTriP0())
+    ncond = int(cond.max())
 
     @BilinearForm
     def stiff(u, v, w):
@@ -92,29 +99,46 @@ def solve_Z(f_list, order=2, sigma=SIGMA_AU, **geom):
 
     K = asm(stiff, basis)
     Ms = asm(mass, basis, s=b0.interpolate(np.where(cond > 0, sigma, 0.0)))
-    areas_el = 0.5 * np.abs(np.linalg.det(np.stack([
-        mesh.p[:, mesh.t[1]] - mesh.p[:, mesh.t[0]],
-        mesh.p[:, mesh.t[2]] - mesh.p[:, mesh.t[0]]], axis=1).transpose(2, 0, 1)))
-    B = np.column_stack([asm(lf, basis, s=b0.interpolate((cond == k) * sigma)) for k in (1, 2)])
-    G = np.array([sigma * areas_el[cond == k].sum() for k in (1, 2)])
-    # half domain: the signal carries 1/2 here, the right ground -1/2
-    I = np.array([0.5, -0.5])
-    xmax, ymin, ymax = mesh.p[0].max(), mesh.p[1].min(), mesh.p[1].max()
-    D = basis.get_dofs(lambda xx: (np.abs(xx[0] - xmax) < 1e-12) | (np.abs(xx[1] - ymin) < 1e-12)
-                       | (np.abs(xx[1] - ymax) < 1e-12)).flatten()
+    p = mesh.p[:, mesh.t]
+    areas_el = 0.5 * np.abs((p[0, 1] - p[0, 0]) * (p[1, 2] - p[1, 0])
+                            - (p[0, 2] - p[0, 0]) * (p[1, 1] - p[1, 0]))
+    ks = range(1, ncond + 1)
+    B = np.column_stack([asm(lf, basis, s=b0.interpolate((cond == k) * sigma)) for k in ks])
+    G = np.array([sigma * areas_el[cond == k].sum() for k in ks])
+    D = basis.get_dofs(dirichlet).flatten()
     keep = np.setdiff1d(np.arange(basis.N), D)
     Kk, Mk, Bk = K.tocsr()[keep][:, keep], Ms.tocsr()[keep][:, keep], sp.csr_matrix(B[keep])
-    res = []
+    out = []
+    Bd = Bk.toarray()
     for f in np.atleast_1d(f_list):
         w = 2 * np.pi * f
-        M = sp.vstack([sp.hstack([Kk + 1j * w * Mk, Bk]),
-                       sp.hstack([1j * w * Bk.T, sp.diags(G)])]).tocsc()
-        rhs = np.concatenate([np.zeros(len(keep)), -I])
-        sol = spla.spsolve(M, rhs)
-        V = sol[len(keep):]
+        # [K + jwM   B] [A ]   [ 0]
+        # [jw B^T    G] [V'] = [-I]   solved by its Schur complement on V'
+        # (identical result; avoids LU fill from the dense constraint rows)
+        lu = spla.splu((Kk + 1j * w * Mk).tocsc(), permc_spec="MMD_AT_PLUS_A")
+        X = lu.solve(Bd.astype(complex))
+        S = np.diag(G).astype(complex) - 1j * w * (Bd.T @ X)
+        out.append(np.linalg.solve(S, -np.asarray(I, float)))
+    return out, dict(n_el=mesh.nelements, ndof=basis.N)
+
+
+def solve_Z(f_list, order=2, sigma=SIGMA_AU, **geom):
+    """CPW (signal + two grounds) on the half domain x >= 0."""
+    t0 = time.time()
+    mesh, cond = build(**geom)
+    xmax, ymin, ymax = mesh.p[0].max(), mesh.p[1].min(), mesh.p[1].max()
+
+    def far(xx):
+        return (np.abs(xx[0] - xmax) < 1e-12) | (np.abs(xx[1] - ymin) < 1e-12) | (np.abs(xx[1] - ymax) < 1e-12)
+    # half domain: the signal carries 1/2 here, the right ground -1/2
+    Vs, info = solve_on_mesh(mesh, cond, [0.5, -0.5], far, f_list, order, sigma)
+    res = []
+    for f, V in zip(np.atleast_1d(f_list), Vs):
+        w = 2 * np.pi * f
         Z = -(V[0] - V[1])                   # E = -jwA - V': the voltage drop is -V'
         res.append(dict(f_GHz=f / 1e9, R=Z.real, L=Z.imag / w))
-    return res, dict(n_el=mesh.nelements, ndof=basis.N, t_s=time.time() - t0)
+    info["t_s"] = time.time() - t0
+    return res, info
 
 
 if __name__ == "__main__":

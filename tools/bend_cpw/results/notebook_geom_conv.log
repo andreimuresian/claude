@@ -1,0 +1,4 @@
+notebook geom hfine 0.06 3590.15 357.5554 {'n_el': 80262, 'ndof': np.int32(161365), 't_s': 7.52566123008728}
+notebook geom hfine 0.03 3590.1 357.5554 {'n_el': 98936, 'ndof': np.int32(198801), 't_s': 7.366223573684692}
+notebook geom hfine 0.02 3590.1 357.5555 {'n_el': 111864, 'ndof': np.int32(224715), 't_s': 13.248090267181396}
+notebook geom hfine 0.015 3590.09 357.5555 {'n_el': 121360, 'ndof': np.int32(243747), 't_s': 15.942166090011597}
