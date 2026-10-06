@@ -122,3 +122,37 @@ recession (δ/8 and δ/2 agree to ≤ 0.6 %), so it is the converged value.
 on n and Z0 (through L_int = R′/ω) is about +0.2 %. The notebook matches the COMSOL
 baseline α to ~1 % on these rows, so the dataset's COMSOL α likely carries a
 similar underestimate.
+
+### Why Wheeler's rule is a valid reference (`wheeler_verify.py`, `wheeler_verify.txt`)
+
+The two are the same quantity. Receding a perfectly conducting wall by `a` changes
+the magnetic energy by (μ0/2)|H_t|² a per unit area, which is exactly the contour
+integrand. They differ only numerically: the contour integral squares a singular
+gradient, while Wheeler takes a difference of C_air, which converges fast.
+
+Test on row 49's electrodes in free space (the air problem both methods use),
+with the corners rounded so the contour integral can converge:
+
+| corner radius | contour integral, three meshes | Wheeler (central difference) | gap |
+|---|---|---|---|
+| 0.1 µm | 2350.7 / 2359.3 / 2360.1 | 2374.1 | −0.6 % |
+| 0.3 µm | 2281.1 / 2288.8 / 2288.7 | 2302.3 | −0.6 % |
+| sharp | 2125.7 / 2196.7 / 2271.3 (still rising) | 2521.3 | −9.9 % at 12.5 nm cells |
+
+Units are Ω/m. The sharp case reproduces the section solver (2128 / 2517–2525).
+
+The loss also depends on the real corner radius. Against the notebook's sharp-
+corner value at its own mesh (2126), the loss is +8 % higher at a 0.3 µm radius,
++12 % at 0.1 µm and +19 % at sharp corners. The fabricated corner radius must be
+part of the model.
+
+## Section lengths: top view vs the cross-section figure
+
+Following the top view (stem W1 × L1 at the gap, head W2 × L2 behind it), the
+section through the stem has no metal between the gap and the head. That gives
+the full W1 + W2 recess over L1, and the W1 finger only where the head extends
+past the stem, over L2 − L1. The code uses this. Swapping the two lengths (finger
+over L1, recess over L2 − L1) on the 11 rows with L2 > L1, floating finger:
+
+- n median abs error 2.2 % → 5.3 %, max 7.9 % → 13.0 %;
+- Z0 max abs error 6.3 % → 31.7 %.

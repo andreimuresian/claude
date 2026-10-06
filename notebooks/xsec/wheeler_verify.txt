@@ -1,0 +1,13 @@
+row 49: WS 61.86  GAP 8.62  MTX 3.93 um, electrodes in free space
+ corner radius 0.00 um   Wheeler R'  2521.3 ohm/m central,  2514.5 one-sided  (step 38 nm)
+     contour, cell  50.00 nm ( 519778 el): R'  2125.7   vs Wheeler -15.69%
+     contour, cell  25.00 nm ( 546202 el): R'  2196.7   vs Wheeler -12.88%
+     contour, cell  12.50 nm ( 596108 el): R'  2271.3   vs Wheeler  -9.92%
+ corner radius 0.10 um   Wheeler R'  2374.1 ohm/m central,  2385.3 one-sided  (step 25 nm)
+     contour, cell  25.00 nm ( 717160 el): R'  2350.7   vs Wheeler  -0.99%
+     contour, cell  12.50 nm ( 879448 el): R'  2359.3   vs Wheeler  -0.62%
+     contour, cell   6.25 nm (1212084 el): R'  2360.1   vs Wheeler  -0.59%
+ corner radius 0.30 um   Wheeler R'  2302.3 ohm/m central,  2318.8 one-sided  (step 38 nm)
+     contour, cell  75.00 nm ( 605254 el): R'  2281.1   vs Wheeler  -0.92%
+     contour, cell  37.50 nm ( 656662 el): R'  2288.8   vs Wheeler  -0.59%
+     contour, cell  18.75 nm ( 775786 el): R'  2288.7   vs Wheeler  -0.59%
