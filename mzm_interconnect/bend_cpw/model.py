@@ -41,6 +41,7 @@ Line constants exact: gamma = sqrt((R + jwL)(G + jwC)), Zc = sqrt((R + jwL)/(G +
 """
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, replace
 from functools import lru_cache
 
@@ -57,6 +58,12 @@ SIGMA_AU = 4.56e7
 F_REF_GHZ = 60.0                 # where Z0 and n_m are quoted and matched
 C_CORNER = 0.70                  # right-angle corner constant (tools/bend_cpw/corner_constant.py)
 F_FLOOR_HZ = 1e6                 # below this the line constants are taken at 1 MHz
+
+# One computation at a time: the GUI asks for the same geometry from several
+# threads (Bend window, device analysis, inverse design). Serialising them
+# avoids computing a geometry twice, and keeps concurrent dense LAPACK calls
+# out of numpy's BLAS, which is not safe for that on every platform.
+_LOCK = threading.RLock()
 
 # Materials of the stack under the bend (the FEM reference notebook's values):
 # (name, eps_h, eps_v, sigma S/m) from the metal down; the substrate is last.
@@ -262,6 +269,10 @@ class LineModel:
 
     def conductor(self, f_Hz):
         """R (ohm/m), L_int (H/m) at the frequencies f_Hz."""
+        with _LOCK:
+            return self._conductor(f_Hz)
+
+    def _conductor(self, f_Hz):
         f = np.maximum(np.atleast_1d(np.asarray(f_Hz, float)), F_FLOOR_HZ)
         w = 2 * np.pi * f
         t = self._dims[3]
@@ -321,6 +332,10 @@ class LineModel:
         return self._dC
 
     def G_diel(self, f_Hz, layer_tand=None):
+        with _LOCK:
+            return self._G_diel(f_Hz, layer_tand)
+
+    def _G_diel(self, f_Hz, layer_tand=None):
         f = np.atleast_1d(np.asarray(f_Hz, float))
         w = 2 * np.pi * f
         G = np.zeros_like(f)
@@ -332,6 +347,10 @@ class LineModel:
 
     # -- line constants ------------------------------------------------------
     def evaluate(self, f_Hz, dielectric=True) -> dict:
+        with _LOCK:
+            return self._evaluate(f_Hz, dielectric)
+
+    def _evaluate(self, f_Hz, dielectric=True) -> dict:
         f_in = np.atleast_1d(np.asarray(f_Hz, float))
         f = np.maximum(f_in, F_FLOOR_HZ)
         w = 2 * np.pi * f
@@ -364,7 +383,8 @@ def _model_cached(key: tuple) -> LineModel:
 
 def line_model(g: BendGeometry) -> LineModel:
     """Cached LineModel for this geometry."""
-    return _model_cached(g.rounded().astuple())
+    with _LOCK:
+        return _model_cached(g.rounded().astuple())
 
 
 def line_constants(g: BendGeometry, f_GHz) -> dict:

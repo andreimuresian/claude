@@ -15,6 +15,7 @@ Tabs
 
 from __future__ import annotations
 
+import gc
 import os
 import queue
 import threading
@@ -265,6 +266,13 @@ class FigurePane(ttk.Frame):
             self.canvas.get_tk_widget().destroy()
         if self.tb is not None:
             self.tb.destroy()
+        self.canvas = self.tb = None
+        # The old canvas holds a Tk PhotoImage and the old toolbar Tk variables.
+        # Free them HERE, on the main thread: left to the cyclic garbage
+        # collector they are freed by whichever thread allocates next -- often a
+        # worker -- and a Tcl object deleted from another thread aborts the whole
+        # process ("Tcl_AsyncDelete: async handler deleted by the wrong thread").
+        gc.collect()
         self.figure = fig
         self.canvas = FigureCanvasTkAgg(fig, master=self)
         self.canvas.draw()
@@ -650,30 +658,47 @@ class MZMStudio(tk.Tk):
             self._rows.append((spec, row3))
 
     def _update_bend_match(self, p=None):
+        """Matched and walk-off compensated bend lengths next to Bend length.
+        With a cross-section bend they need the bend line model (seconds for a
+        new cross-section), so they are computed on a thread and posted back."""
         lbl = getattr(self, "bend_match_lbl", None)
         if lbl is None:
             return
         try:
-            from .physics import bend_matched_length_mm, bend_skew_ps
             p = p or self._get_params()
-            lbl.configure(text=f"{bend_matched_length_mm(p):.3f} mm   "
-                               f"(now: skew {bend_skew_ps(p):+.2f} ps/bend)")
         except Exception:
-            lbl.configure(text="matched: -")
-        wl = getattr(self, "bend_walk_lbl", None)
-        if wl is None:
             return
         fit, f_ref = self._walkoff_ref()
-        if fit is None:
-            wl.configure(text="(after the first analysis)")
-            return
-        try:
-            from .physics import bend_walkoff_length_mm, bend_walkoff_skew_ps
-            wl.configure(text=f"{bend_walkoff_length_mm(fit, p, f_ref):.3f} mm   "
-                              f"(skew {bend_walkoff_skew_ps(fit, p, f_ref):+.2f} ps, "
-                              f"n_m at {f_ref:.0f} GHz)")
-        except Exception:
-            wl.configure(text="-")
+        self._bend_match_seq = getattr(self, "_bend_match_seq", 0) + 1
+        seq = self._bend_match_seq
+
+        def work():
+            from .physics import (bend_matched_length_mm, bend_skew_ps, bend_walkoff_length_mm,
+                                  bend_walkoff_skew_ps)
+            try:
+                t1 = (f"{bend_matched_length_mm(p):.3f} mm   "
+                      f"(now: skew {bend_skew_ps(p):+.2f} ps/bend)")
+            except Exception:
+                t1 = "matched: -"
+            if fit is None:
+                t2 = "(after the first analysis)"
+            else:
+                try:
+                    t2 = (f"{bend_walkoff_length_mm(fit, p, f_ref):.3f} mm   "
+                          f"(skew {bend_walkoff_skew_ps(fit, p, f_ref):+.2f} ps, "
+                          f"n_m at {f_ref:.0f} GHz)")
+                except Exception:
+                    t2 = "-"
+
+            def show():
+                if seq != self._bend_match_seq:
+                    return
+                lbl.configure(text=t1)
+                wl = getattr(self, "bend_walk_lbl", None)
+                if wl is not None:
+                    wl.configure(text=t2)
+            self._ui(show)
+        threading.Thread(target=work, daemon=True).start()
 
     def _walkoff_ref(self):
         """(fit, f_ref) for the walk-off length: the last analysis' -3 dB

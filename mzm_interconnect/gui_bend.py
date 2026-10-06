@@ -1,20 +1,19 @@
 """
 The Bend window: the electrode bend as a coplanar line of its own.
 
-  * cross-section (signal S, gap W, ground Wg, gold, layer stack) drawn to
-    scale in x, with the figures of merit at 60 GHz updated as you type;
-  * alpha(f), n_m(f), |Zc|(f) of the bend line from the analytical line model
-    (mzm_interconnect.bend_cpw.model);
-  * the bend length that gives the required RF delay through the bend (bend
-    optical delay, or walk-off compensated), and the loss of one bend;
-  * inverse design: S, W, Wg inside editable ranges such that |Zc(60 GHz)|
-    matches the modulating line and the bend loss alpha x L_b is smallest;
-  * verification of the current cross-section with the 2D FEM reference
-    (bend_cpw.fem), drawn over the model curves.
-
-Every field here is the same parameter as in the sidebar (same variable), so
-the device analysis, the sweeps and the INTERCONNECT export use exactly what
-this window shows.
+How it works
+  * The cross-section fields at the top are WORKING values. As you type, they
+    drive everything in this window at once: the drawing, the figures of merit
+    at 60 GHz and the alpha / n_m / |Zc| curves. They do NOT change the device.
+  * "Apply to device" copies the working values into the device (and, if
+    ticked, sets the bend length to the delay-matched one). Only then do the
+    device response, the sweeps and the INTERCONNECT export use them.
+  * "Optimise" runs the inverse design on the ranges; "Apply proposal" loads
+    its result into the working fields and applies it to the device.
+  * The device's own bend is always shown next to the working one (dashed
+    curves, "Device" lines), so you see what changes before you apply it.
+  * "Verify" solves the working cross-section with the 2D FEM reference and
+    draws the points over the curves.
 """
 from __future__ import annotations
 
@@ -37,8 +36,20 @@ GEOM = (("bend_S_um", "Signal width S"), ("bend_W_um", "Gap W"), ("bend_Wg_um", 
         ("bend_buf_um", "SiO2 buffer"), ("bend_slab_um", "LN slab"), ("bend_box_um", "Buried oxide"))
 RANGES = (("S", "bend_S_min_um", "bend_S_max_um"), ("W", "bend_W_min_um", "bend_W_max_um"),
           ("Wg", "bend_Wg_min_um", "bend_Wg_max_um"))
-MODEL_C, FEM_C, TARGET_C = "#4f9cf9", "#e2504a", "#d99b2e"
+WORK_C, DEV_C, PROP_C, FEM_C, TARGET_C = "#4f9cf9", "#8a93a5", "#4fae7c", "#e2504a", "#d99b2e"
 GOLD, SIO2, LN, SI = "#d4a72c", "#9fb7d6", "#b58ad6", "#7d8590"
+
+
+def _fmt(v):
+    return f"{float(v):.6g}"
+
+
+def _same(a, b, tol=1e-3):
+    """Two cross-sections equal to within tol (um, or relative for sigma)."""
+    if a is None or b is None:
+        return a is b
+    ta, tb = a.astuple(), b.astuple()
+    return all(abs(x - y) <= tol * (abs(x) if i == 8 else 1.0) for i, (x, y) in enumerate(zip(ta, tb)))
 
 
 class BendWindow(tk.Toplevel):
@@ -59,10 +70,13 @@ class BendWindow(tk.Toplevel):
         self._cancel = threading.Event()
         self._seq = 0                     # drops results of superseded evaluations
         self._refresh_job = None
-        self.current = None               # last evaluation of the current cross-section
+        self.current = None               # last evaluation (working, device, proposal)
         self.fem = None                   # last FEM verification (with its geometry)
         self.proposal = None              # last inverse-design result
         self._traces = []
+
+        p0 = app._get_params()
+        self.dvars = {k: tk.StringVar(value=_fmt(p0[k])) for k, _ in GEOM}
 
         pane = ttk.Panedwindow(self, orient="horizontal")
         pane.pack(fill="both", expand=True, padx=10, pady=8)
@@ -70,38 +84,44 @@ class BendWindow(tk.Toplevel):
         pane.add(left, weight=0)
         right = ttk.Frame(pane, style="Bg.TFrame")
         pane.add(right, weight=1)
-
         sf = ScrollFrame(left, t)
         sf.pack(fill="both", expand=True)
         body = sf.inner
 
-        # ---- cross-section ------------------------------------------------
-        box = Collapsible(body, "Bend cross-section", t)
+        def muted(parent, text):
+            lab = ttk.Label(parent, text=text, style="Muted.TLabel", wraplength=300, justify="left")
+            lab.pack(fill="x", padx=4, pady=(2, 4))
+            return lab
+
+        # ---- working cross-section ------------------------------------------
+        box = Collapsible(body, "Bend cross-section (working values)", t)
         box.pack(fill="x", padx=4)
-        src = ttk.Frame(box.body, style="Panel.TFrame")
-        src.pack(fill="x", pady=2)
-        ttk.Label(src, text="Bend line from", style="Muted.TLabel", width=22).pack(side="left", padx=4)
-        cb = ttk.Combobox(src, textvariable=app.vars["bend_model"], state="readonly", width=16,
-                          values=list(P.BY_KEY["bend_model"].choices))
-        cb.pack(side="left", fill="x", expand=True)
-        cb.bind("<<ComboboxSelected>>", lambda e: self._changed(commit=True))
-        Tooltip(cb, P.BY_KEY["bend_model"].tooltip, t)
+        muted(box.body, "Type here: the drawing, the 60 GHz values and the curves follow at once. "
+                        "The device changes only when you press Apply to device.")
         for key, label in GEOM:
-            self._entry_row(box.body, key, f"{label} [{P.BY_KEY[key].unit}]")
-        ttk.Label(box.body, text="Materials: SiO2 eps 3.9; LN slab eps 28 (x) / 44 (y); "
-                                 "Si 550 um, eps 11.7; air above and in the gaps.",
-                  style="Muted.TLabel", wraplength=300, justify="left").pack(fill="x", padx=4, pady=(2, 6))
+            self._entry_row(box.body, self.dvars[key], f"{label} [{P.BY_KEY[key].unit}]", P.BY_KEY[key].tooltip)
+        muted(box.body, "Materials: SiO2 eps 3.9; LN slab eps 28 (x) / 44 (y); Si 550 um, eps 11.7; "
+                        "air above and in the gaps.")
+        self.apply_len = tk.BooleanVar(value=True)
+        ttk.Checkbutton(box.body, text="Apply also sets the bend length",
+                        variable=self.apply_len).pack(anchor="w", padx=4)
+        b = ttk.Frame(box.body, style="Panel.TFrame")
+        b.pack(fill="x", padx=4, pady=4)
+        ttk.Button(b, text="Apply to device", style="Accent.TButton",
+                   command=self.action_apply_working).pack(side="left", fill="x", expand=True)
+        ttk.Button(b, text="Reload from device", command=self.action_reload).pack(side="left", padx=(4, 0))
+        self.dev_lbl = ttk.Label(box.body, text="", style="Muted.TLabel", wraplength=300, justify="left")
+        self.dev_lbl.pack(fill="x", padx=4, pady=(0, 6))
 
         # ---- figures of merit ---------------------------------------------
-        box = Collapsible(body, f"Bend line at {F_REF_GHZ:g} GHz", t)
+        box = Collapsible(body, f"Bend line at {F_REF_GHZ:g} GHz (working values)", t)
         box.pack(fill="x", padx=4)
         self.kpi = {}
         grid = tk.Frame(box.body, bg=t["panel"])
         grid.pack(fill="x", padx=4, pady=2)
-        rows = (("Z0", "|Zc|", "ohm"), ("Zt", "target |Zc|", "ohm"), ("nm", "n_m", ""),
-                ("alpha", "alpha", "dB/cm"), ("tau", "RF delay in the bend", "ps"),
-                ("Lb", "length for that delay", "mm"), ("loss", "loss per bend", "dB"),
-                ("Lnow", "length now set", "mm"), ("skew", "skew, length now set", "ps"))
+        rows = (("Z0", "|Zc|", "ohm"), ("Zt", "target |Zc|", "ohm"), ("dZ", "|Zc| - target", "ohm"),
+                ("nm", "n_m", ""), ("alpha", "alpha", "dB/cm"), ("tau", "RF delay in the bend", "ps"),
+                ("Lb", "length for that delay", "mm"), ("loss", "loss per bend", "dB"))
         for i, (k, lab, unit) in enumerate(rows):
             tk.Label(grid, text=lab, bg=t["panel"], fg=t["muted"], font=("Segoe UI", 9),
                      anchor="w").grid(row=i, column=0, sticky="w", pady=1)
@@ -122,18 +142,15 @@ class BendWindow(tk.Toplevel):
         cr.pack(side="left", fill="x", expand=True)
         cr.bind("<<ComboboxSelected>>", lambda e: self._changed())
         Tooltip(cr, P.BY_KEY["bend_delay_rule"].tooltip, t)
-        self._entry_row(box.body, "bend_opt_delay_ps", "Bend optical delay [ps]")
-        ttk.Button(box.body, text="Set the bend length to this value",
-                   command=self.action_set_length).pack(fill="x", padx=4, pady=(4, 6))
+        self._entry_row(box.body, app.vars["bend_opt_delay_ps"], "Bend optical delay [ps]",
+                        P.BY_KEY["bend_opt_delay_ps"].tooltip, device=True)
 
         # ---- inverse design -----------------------------------------------
         box = Collapsible(body, "Inverse design", t)
         box.pack(fill="x", padx=4)
-        ttk.Label(box.body, text="Finds S, W, Wg inside these ranges such that |Zc| at 60 GHz "
-                                 "equals the target, with the smallest loss per bend "
-                                 "(alpha x bend length for the RF delay above). Gold thickness, "
-                                 "conductivity and the layer stack stay as set above.",
-                  style="Muted.TLabel", wraplength=300, justify="left").pack(fill="x", padx=4, pady=(2, 4))
+        muted(box.body, "Finds S, W, Wg inside these ranges such that |Zc| at 60 GHz equals the target, "
+                        "with the smallest loss per bend (alpha x bend length for the RF delay above). "
+                        "Gold thickness, conductivity and the layer stack are the working values above.")
         rg = tk.Frame(box.body, bg=t["panel"])
         rg.pack(fill="x", padx=4)
         for c, txt in enumerate(("", "min [um]", "max [um]")):
@@ -145,12 +162,14 @@ class BendWindow(tk.Toplevel):
                 e = ttk.Entry(rg, textvariable=app.vars[k], width=9)
                 e.grid(row=r, column=c, padx=3, pady=1)
                 Tooltip(e, P.BY_KEY[k].help, t)
-        self._entry_row(box.body, "bend_Z_target_ohm", "Target |Zc| [ohm] (0 = line)")
+        self._entry_row(box.body, app.vars["bend_Z_target_ohm"], "Target |Zc| [ohm] (0 = line)",
+                        P.BY_KEY["bend_Z_target_ohm"].tooltip)
         b = ttk.Frame(box.body, style="Panel.TFrame")
         b.pack(fill="x", padx=4, pady=4)
         self.btn_opt = ttk.Button(b, text="Optimise", style="Accent.TButton", command=self.action_optimise)
         self.btn_opt.pack(side="left", fill="x", expand=True)
-        self.btn_apply = ttk.Button(b, text="Apply proposal", command=self.action_apply, state="disabled")
+        self.btn_apply = ttk.Button(b, text="Apply proposal", command=self.action_apply_proposal,
+                                    state="disabled")
         self.btn_apply.pack(side="left", fill="x", expand=True, padx=(4, 0))
         self.prop_lbl = ttk.Label(box.body, text="", style="Muted.TLabel", wraplength=300, justify="left")
         self.prop_lbl.pack(fill="x", padx=4, pady=(0, 6))
@@ -158,10 +177,9 @@ class BendWindow(tk.Toplevel):
         # ---- FEM verification -----------------------------------------------
         box = Collapsible(body, "Verify with the 2D FEM reference", t)
         box.pack(fill="x", padx=4)
-        ttk.Label(box.body, text="Solves the current cross-section with the validated reference: "
-                                 "quasi-static FEM capacitance and the current inside the gold "
-                                 "(no surface-impedance approximation). About 10 s per frequency.",
-                  style="Muted.TLabel", wraplength=300, justify="left").pack(fill="x", padx=4, pady=(2, 4))
+        muted(box.body, "Solves the working cross-section with the validated reference: quasi-static FEM "
+                        "capacitance and the current inside the gold (no surface-impedance "
+                        "approximation). About 10 s per frequency.")
         fr = ttk.Frame(box.body, style="Panel.TFrame")
         fr.pack(fill="x", pady=2)
         ttk.Label(fr, text="Frequencies [GHz]", style="Muted.TLabel", width=22).pack(side="left", padx=4)
@@ -184,37 +202,52 @@ class BendWindow(tk.Toplevel):
         self.progress = ttk.Progressbar(st, length=220, mode="determinate", maximum=1.0)
         self.progress.pack(side="right")
 
-        # ---- figures --------------------------------------------------------
+        # ---- figures: created once, redrawn in place ------------------------
+        th = self.theme["fig"]
         self.fig_xs = FigurePane(right, t, toolbar=False)
         self.fig_xs.pack(fill="x", expand=False)
         self.fig_xs.configure(height=300)
         self.fig_xs.pack_propagate(False)
         self.fig_f = FigurePane(right, t)
         self.fig_f.pack(fill="both", expand=True, pady=(6, 0))
+        self.F_xs = Figure(figsize=(10, 2.9), dpi=100, facecolor=th["bg"])
+        self.F_f = Figure(figsize=(10, 4.2), dpi=100, facecolor=th["bg"])
+        self.fig_xs.show(self.F_xs)
+        self.fig_f.show(self.F_f)
 
-        for key in [k for k, _ in GEOM] + ["bend_opt_delay_ps", "bend_len_mm", "bend_Z_target_ohm"]:
-            var = app.vars[key]
+        for var in self.dvars.values():
+            self._traces.append((var, var.trace_add("write", lambda *a: self._changed())))
+        for key in ("bend_opt_delay_ps", "bend_len_mm", "bend_Z_target_ohm", "bend_model") + \
+                tuple(k for k, _ in GEOM):
+            var = app.vars[key]                    # device values: refresh the "Device" lines
             self._traces.append((var, var.trace_add("write", lambda *a: self._changed())))
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.after(80, self._pump)
-        self._changed()
+        self._changed(delay=10)
 
     # ------------------------------------------------------------------ widgets
-    def _entry_row(self, parent, key, label):
-        t = self.theme
+    def _entry_row(self, parent, var, label, tip="", device=False):
+        """One labelled entry. device=True: the variable is a device parameter,
+        committed (device re-analysed) on Return / leaving the field."""
         row = ttk.Frame(parent, style="Panel.TFrame")
         row.pack(fill="x", pady=2)
         lab = ttk.Label(row, text=label, style="Muted.TLabel", width=26, anchor="w")
         lab.pack(side="left", padx=(4, 4))
-        e = ttk.Entry(row, textvariable=self.app.vars[key], width=12)
+        e = ttk.Entry(row, textvariable=var, width=12)
         e.pack(side="left", fill="x", expand=True)
-        e.bind("<Return>", lambda ev: self._changed(commit=True))
-        e.bind("<FocusOut>", lambda ev: self._changed(commit=True))
-        spec = P.BY_KEY[key]
-        if spec.help:
-            self._Tooltip(lab, spec.tooltip, t)
-            self._Tooltip(e, spec.tooltip, t)
+        if device:
+            e.bind("<Return>", lambda ev: self._commit_device())
+            e.bind("<FocusOut>", lambda ev: self._commit_device())
+        if tip:
+            self._Tooltip(lab, tip, self.theme)
+            self._Tooltip(e, tip, self.theme)
         return e
+
+    def _commit_device(self):
+        try:
+            self.app._on_change()
+        except Exception:
+            pass
 
     def close(self):
         self._closing = True
@@ -261,13 +294,14 @@ class BendWindow(tk.Toplevel):
                     pass
 
     def _run(self, name, work, done):
-        """Run work() on a thread, then done(result) on the UI thread."""
+        """Run work() on a thread, then done(result) on the UI thread. The
+        thread never touches Tk: everything goes through the queue."""
         if self._busy:
-            self._post("status", f"busy: {self._busy} -- wait or press Cancel")
+            self.status.config(text=f"busy: {self._busy} -- wait or press Cancel")
             return False
         self._busy = name
         self._cancel.clear()
-        self._post("status", f"{name}...")
+        self.status.config(text=f"{name}...")
 
         def runner():
             try:
@@ -293,8 +327,17 @@ class BendWindow(tk.Toplevel):
             raise RuntimeError("cancelled")
 
     # ------------------------------------------------------------------ inputs
-    def _params(self):
-        return self.app._get_params()
+    def _working_params(self):
+        """Device parameters with the working cross-section in place of the
+        device's. Raises ValueError naming the field that is not a number."""
+        p = self.app._get_params()
+        for key, label in GEOM:
+            raw = self.dvars[key].get().strip()
+            try:
+                p[key] = float(raw)
+            except ValueError:
+                raise ValueError(f"{label}: '{raw}' is not a number") from None
+        return p
 
     def _z_target(self, p):
         zt = float(p.get("bend_Z_target_ohm", 0.0))
@@ -307,7 +350,7 @@ class BendWindow(tk.Toplevel):
         return float(abs(z)), f"modulating line |Zc| at {F_REF_GHZ:g} GHz"
 
     def _tau(self, p):
-        """RF delay (ps) the bend length is set for, and a note on where it comes from."""
+        """RF delay (ps) the bend length is set for, and where it comes from."""
         tau0 = float(p.get("bend_opt_delay_ps", 5.0))
         if str(p.get("bend_delay_rule")) != "walk-off compensated":
             return tau0, "RF delay = bend optical delay"
@@ -321,98 +364,114 @@ class BendWindow(tk.Toplevel):
                            f"(line n_m at {f_ref:.0f} GHz vs n_g)")
 
     # ------------------------------------------------------------------ live evaluation
-    def _changed(self, commit=False):
-        if commit:
-            try:
-                self.app._on_change()
-            except Exception:
-                pass
+    def _changed(self, delay=250):
+        if self._closing:
+            return
         if self._refresh_job is not None:
             try:
                 self.after_cancel(self._refresh_job)
             except Exception:
                 pass
         try:
-            self._refresh_job = self.after(350, self.refresh)
+            self._refresh_job = self.after(delay, self.refresh)
         except tk.TclError:
             pass
 
     def refresh(self):
+        """Redraw the cross-section now; compute the line (thread) and update the
+        numbers and curves when it is ready."""
         self._refresh_job = None
         try:
-            p = self._params()
+            p = self._working_params()
             g = geometry_from_params(p)
         except Exception as exc:
-            self.status.config(text=f"cross-section: {exc}")
+            self.status.config(text=f"working cross-section: {exc}")
             return
+        pdev = self.app._get_params()
+        try:
+            gdev = geometry_from_params(pdev) if str(pdev.get("bend_model")) == "cross-section" else None
+        except Exception:
+            gdev = None
+        gprop = self.proposal.geometry if self.proposal is not None else None
         zt, zt_note = self._z_target(p)
         tau, tau_note = self._tau(p)
         self._seq += 1
         seq = self._seq
+        self._draw_xs(g, gdev)
+        for v in self.kpi.values():
+            v.config(fg=self.theme["muted"])
+        self.status.config(text="line model: computing...")
         fmax = max(200.0, float(p.get("f_max_GHz", 200.0)))
-        self.status.config(text="line model...")
-
-        def show_ref(ref):
-            if seq != self._seq or self._closing:
-                return
-            self._show_kpis(p, ref, zt, zt_note, tau, tau_note)
-
-        def done(res):
-            if seq != self._seq or self._closing:
-                return
-            ref, f, sw = res
-            self.current = dict(g=g, ref=ref, f=f, sweep=sw, zt=zt, tau=tau, p=p)
-            self._show_kpis(p, ref, zt, zt_note, tau, tau_note)
-            self._draw(p, g, f, sw, zt)
+        ctx = dict(p=p, pdev=pdev, g=g, gdev=gdev, gprop=gprop, zt=zt, zt_note=zt_note, tau=tau,
+                   tau_note=tau_note)
 
         def runner():
             try:
-                m = line_model(g)
-                ref = m.at_ref(F_REF_GHZ)                  # the figures of merit first
-                self._post("call", lambda: show_ref(ref))
+                ref = line_model(g).at_ref(F_REF_GHZ)          # the working values first
+                self._post("call", lambda: self._show_kpis(seq, ctx, ref))
+                dref = line_model(gdev).at_ref(F_REF_GHZ) if gdev is not None else None
+                self._post("call", lambda: self._show_device(seq, ctx, dref))
                 if seq != self._seq:
                     return
                 self._post("status", "line model: frequency curves...")
                 f = np.linspace(0.25, fmax, 400)
-                res = (ref, f, m.evaluate(f * 1e9))
-                self._post("call", lambda: done(res))
+                curves = {"work": line_model(g).evaluate(f * 1e9)}
+                if gdev is not None and not _same(gdev, g):
+                    curves["dev"] = line_model(gdev).evaluate(f * 1e9)
+                if gprop is not None and not _same(gprop, g) and not _same(gprop, gdev):
+                    curves["prop"] = line_model(gprop).evaluate(f * 1e9)
+                self._post("call", lambda: self._show_curves(seq, ctx, ref, f, curves))
                 self._post("status", "line model: up to date")
             except Exception as exc:
                 self._post("status", f"line model: {exc}")
         threading.Thread(target=runner, daemon=True).start()
 
-    def _show_kpis(self, p, ref, zt, zt_note, tau, tau_note):
+    def _show_kpis(self, seq, ctx, ref):
+        if seq != self._seq or self._closing:
+            return
         k = self.kpi
+        zt, tau = ctx["zt"], ctx["tau"]
+        Lb = C0 * tau * 1e-12 / ref["n_m"] * 1e3
         k["Z0"].config(text=f"{ref['Z0']:.2f}")
         k["Zt"].config(text="-" if zt is None else f"{zt:.2f}")
+        k["dZ"].config(text="-" if zt is None else f"{ref['Z0'] - zt:+.2f}")
         k["nm"].config(text=f"{ref['n_m']:.4f}")
         k["alpha"].config(text=f"{ref['alpha_dB_cm']:.3f}")
         k["tau"].config(text=f"{tau:.3f}")
-        Lb = C0 * tau * 1e-12 / ref["n_m"] * 1e3
         k["Lb"].config(text=f"{Lb:.4f}")
         k["loss"].config(text=f"{ref['alpha_dB_cm'] * Lb / 10:.4f}")
-        Lnow = float(p.get("bend_len_mm", 0.0))
-        k["Lnow"].config(text=f"{Lnow:.4f}")
-        k["skew"].config(text=f"{ref['n_m'] * Lnow * 1e-3 / C0 * 1e12 - tau:+.3f}")
-        bits = [tau_note, f"target: {zt_note}"]
-        if zt is not None:
-            bits.append(f"mismatch |Zc| - target = {ref['Z0'] - zt:+.2f} ohm")
-        if int(p.get("n_bends", 0)) == 0:
+        for v in k.values():
+            v.config(fg=self.theme["fg"])
+        bits = [ctx["tau_note"], f"target: {ctx['zt_note']}"]
+        if int(ctx["pdev"].get("n_bends", 0)) == 0:
             bits.append("the device has no bends (Device geometry > Number of bends)")
-        if str(p.get("bend_model")) != "cross-section":
-            bits.append("the device uses the FITTED bend values, not this cross-section "
-                        "(Bend line from)")
         self.note.config(text="\n".join(bits))
 
+    def _show_device(self, seq, ctx, dref):
+        if seq != self._seq or self._closing:
+            return
+        pdev, g, gdev = ctx["pdev"], ctx["g"], ctx["gdev"]
+        Ld = float(pdev.get("bend_len_mm", 0.0))
+        if gdev is None:
+            txt = ("DEVICE uses the fitted bend values (Bend line from = fitted values), not a "
+                   "cross-section. Apply to device switches it to the working cross-section.")
+        else:
+            same = _same(gdev, g)
+            skew = dref["n_m"] * Ld * 1e-3 / C0 * 1e12 - ctx["tau"]
+            txt = (f"DEVICE: S {gdev.S_um:g}, W {gdev.W_um:g}, Wg {gdev.Wg_um:g}, t {gdev.t_um:g} um"
+                   f"{'  (= working values)' if same else '  (differs from the working values)'}\n"
+                   f"|Zc| {dref['Z0']:.2f} ohm, n_m {dref['n_m']:.4f}, alpha {dref['alpha_dB_cm']:.3f} dB/cm; "
+                   f"bend length {Ld:.4f} mm -> loss {dref['alpha_dB_cm'] * Ld / 10:.4f} dB, "
+                   f"skew {skew:+.3f} ps")
+        self.dev_lbl.config(text=txt)
+
+    def _show_curves(self, seq, ctx, ref, f, curves):
+        if seq != self._seq or self._closing:
+            return
+        self.current = dict(g=ctx["g"], ref=ref, f=f, curves=curves, ctx=ctx)
+        self._draw_curves()
+
     # ------------------------------------------------------------------ figures
-    def _fig_theme(self):
-        return self.theme["fig"]
-
-    def _draw(self, p, g, f, sw, zt):
-        th = self._fig_theme()
-        self.fig_xs.show(self._xs_figure(g, th))
-        self.fig_f.show(self._f_figure(g, f, sw, zt, th))
-
     def _style(self, ax, th):
         ax.set_facecolor(th["axes"])
         for s in ax.spines.values():
@@ -422,17 +481,25 @@ class BendWindow(tk.Toplevel):
         ax.yaxis.label.set_color(th["fg"])
         ax.title.set_color(th["fg"])
 
-    def _xs_figure(self, g, th):
-        fig = Figure(figsize=(10, 2.9), dpi=100)
-        fig.patch.set_facecolor(th["bg"])
-        ax = fig.add_axes([0.04, 0.12, 0.80, 0.74])
+    def _redraw(self, pane):
+        try:
+            if pane.canvas is not None:
+                pane.canvas.draw_idle()
+        except Exception:
+            pass
+
+    def _draw_xs(self, g, gdev):
+        th = self.theme["fig"]
+        fig = self.F_xs
+        fig.clear()
+        fig.set_facecolor(th["bg"])
+        ax = fig.add_axes([0.04, 0.14, 0.80, 0.72])
         self._style(ax, th)
         S, W, Wg, t = g.S_um, g.W_um, g.Wg_um, g.t_um
         xo = S / 2 + W + Wg
-        X = xo + 0.12 * xo
-        si_show = 3.0
+        X = 1.12 * max(xo, (gdev.S_um / 2 + gdev.W_um + gdev.Wg_um) if gdev is not None else 0)
         ys = [0.0, -g.buf_um, -g.buf_um - g.slab_um, -g.buf_um - g.slab_um - g.box_um]
-        ys.append(ys[-1] - si_show)
+        ys.append(ys[-1] - 3.0)
         cols = (SIO2, LN, SIO2, SI)
         names = (f"SiO2 {g.buf_um:g}", f"LN {g.slab_um:g}", f"SiO2 {g.box_um:g}", f"Si {g.si_um:g} (cut)")
         for (y0, y1, c, nm) in zip(ys[:-1], ys[1:], cols, names):
@@ -441,6 +508,11 @@ class BendWindow(tk.Toplevel):
                     clip_on=False)
         for x0, w in ((-S / 2, S), (S / 2 + W, Wg), (-xo, Wg)):
             ax.add_patch(Rectangle((x0, 0), w, t, color=GOLD, lw=0))
+        if gdev is not None and not _same(gdev, g):   # the device's electrodes, outlined
+            Sd, Wd, Wgd, td = gdev.S_um, gdev.W_um, gdev.Wg_um, gdev.t_um
+            xod = Sd / 2 + Wd + Wgd
+            for x0, w in ((-Sd / 2, Sd), (Sd / 2 + Wd, Wgd), (-xod, Wgd)):
+                ax.add_patch(Rectangle((x0, 0), w, td, fill=False, ec=th["fg"], lw=1.0, ls="--"))
         top = t + 1.2
         ann = dict(arrowstyle="<->", color=th["fg"], lw=0.9, shrinkA=0, shrinkB=0)
         for x0, x1, lab in ((-S / 2, S / 2, f"S {S:g}"), (S / 2, S / 2 + W, f"W {W:g}"),
@@ -453,22 +525,33 @@ class BendWindow(tk.Toplevel):
         ax.set_ylim(ys[-1], top + 2.2)
         ax.set_xlabel("x (um)", fontsize=8)
         ax.set_yticks([])
-        ax.set_title(f"Bend cross-section: Au {g.sigma / 1e6:.1f} MS/m, air above and in the gaps  "
-                     f"(x to scale, y stretched)", fontsize=9, loc="left")
-        return fig
+        extra = "" if gdev is None or _same(gdev, g) else "   dashed outline: the device's bend"
+        ax.set_title(f"Working cross-section: Au {g.sigma / 1e6:.1f} MS/m, air above and in the gaps "
+                     f"(x to scale, y stretched){extra}", fontsize=9, loc="left")
+        self._redraw(self.fig_xs)
 
-    def _f_figure(self, g, f, sw, zt, th):
-        fig = Figure(figsize=(10, 4.2), dpi=100)
-        fig.patch.set_facecolor(th["bg"])
+    def _draw_curves(self):
+        cur = self.current
+        if cur is None:
+            return
+        th = self.theme["fig"]
+        fig = self.F_f
+        fig.clear()
+        fig.set_facecolor(th["bg"])
         axs = [fig.add_subplot(1, 3, i) for i in (1, 2, 3)]
-        fem = self.fem if (self.fem is not None and self.fem["g"] == g) else None
-        data = ((sw["alpha_dB_cm"], "alpha_dB_cm", "Attenuation (dB/cm)"),
-                (sw["n_m"], "n_m", "Microwave index n_m"),
-                (sw["Z0"], "Z0", "|Zc| (ohm)"))
-        for ax, (y, key, title) in zip(axs, data):
+        f, curves, ctx, g = cur["f"], cur["curves"], cur["ctx"], cur["g"]
+        zt = ctx["zt"]
+        fem = self.fem if (self.fem is not None and _same(self.fem["g"], g)) else None
+        styles = (("work", WORK_C, "-", 2.2, "working values"),
+                  ("dev", DEV_C, "--", 1.6, "device now"),
+                  ("prop", PROP_C, ":", 2.0, "proposal"))
+        for ax, key, title in zip(axs, ("alpha_dB_cm", "n_m", "Z0"),
+                                  ("Attenuation (dB/cm)", "Microwave index n_m", "|Zc| (ohm)")):
             self._style(ax, th)
             ax.grid(True, color=th["grid"], lw=0.6)
-            ax.plot(f, y, color=MODEL_C, lw=2, label="line model")
+            for name, col, ls, lw, lab in styles:
+                if name in curves:
+                    ax.plot(f, curves[name][key], color=col, ls=ls, lw=lw, label=lab)
             if fem is not None:
                 ax.plot(fem["f_GHz"], fem[key], "o", ms=7, mfc="none", mew=2, color=FEM_C,
                         label="2D FEM reference")
@@ -476,33 +559,77 @@ class BendWindow(tk.Toplevel):
             ax.set_xlabel("Frequency (GHz)", fontsize=8)
             ax.set_title(title, fontsize=9)
         if zt is not None:
-            axs[2].axhline(zt, color=TARGET_C, ls="--", lw=1.4, label=f"target {zt:.1f}")
-        lo = np.nanpercentile(sw["n_m"], 3)
-        axs[1].set_ylim(lo - 0.05, max(sw["n_m"][f > 5].max(), lo) + 0.08)
-        zlo = np.nanpercentile(sw["Z0"], 3)
-        axs[2].set_ylim(min(zlo, zt or zlo) - 3, max(sw["Z0"][f > 5].max(), zt or 0) + 3)
+            axs[2].axhline(zt, color=TARGET_C, ls="--", lw=1.4, label=f"target {zt:.2f}")
+        allc = list(curves.values())
+        sel = f > 5
+        nlo = min(np.nanmin(c["n_m"][sel]) for c in allc)
+        nhi = max(np.nanmax(c["n_m"][sel]) for c in allc)
+        axs[1].set_ylim(nlo - 0.03, nhi + 0.05)
+        zlo = min(np.nanmin(c["Z0"][sel]) for c in allc)
+        zhi = max(np.nanmax(c["Z0"][sel]) for c in allc)
+        if zt is not None:
+            zlo, zhi = min(zlo, zt), max(zhi, zt)
+        axs[2].set_ylim(zlo - 1.5, zhi + 2.5)
         for ax in axs:
             leg = ax.legend(fontsize=7.5, frameon=False)
             for txt in leg.get_texts():
                 txt.set_color(th["fg"])
         fig.subplots_adjust(left=0.06, right=0.985, bottom=0.13, top=0.9, wspace=0.28)
-        return fig
+        self._redraw(self.fig_f)
 
     # ------------------------------------------------------------------ actions
-    def action_set_length(self):
-        cur = self.current
-        if cur is None:
+    def _apply(self, geom_vals: dict, L_b_mm, what):
+        """Write a cross-section (and optionally the bend length) into the device."""
+        v = self.app.vars
+        v["bend_model"].set("cross-section")
+        for key, _ in GEOM:
+            v[key].set(_fmt(geom_vals[key]))
+        msg = f"{what} applied to the device: " + ", ".join(
+            f"{lab.split()[-1]} {_fmt(geom_vals[k])}" for k, lab in GEOM[:3])
+        if L_b_mm is not None:
+            v["bend_len_mm"].set(f"{L_b_mm:.4f}")
+            msg += f"; bend length {L_b_mm:.4f} mm"
+        self.app.log(msg + ".")
+        self.status.config(text=msg)
+        self._commit_device()
+        self._changed(delay=10)
+
+    def action_apply_working(self):
+        try:
+            p = self._working_params()
+            geometry_from_params(p)
+        except Exception as exc:
+            self.status.config(text=f"not applied: {exc}")
             return
-        Lb = C0 * cur["tau"] * 1e-12 / cur["ref"]["n_m"] * 1e3
-        self.app.vars["bend_len_mm"].set(f"{Lb:.4f}")
-        self.app.log(f"Bend length set to {Lb:.4f} mm: RF delay {cur['tau']:.3f} ps at n_m "
-                     f"{cur['ref']['n_m']:.4f} (bend line at {F_REF_GHZ:g} GHz).")
-        self._changed(commit=True)
+        L_b = None
+        if self.apply_len.get():
+            cur = self.current
+            g = geometry_from_params(p)
+            n = (cur["ref"]["n_m"] if cur is not None and _same(cur["g"], g)
+                 else line_model(g).at_ref(F_REF_GHZ)["n_m"])
+            L_b = C0 * self._tau(p)[0] * 1e-12 / n * 1e3
+        self._apply({k: p[k] for k, _ in GEOM}, L_b, "Working cross-section")
+
+    def action_apply_proposal(self):
+        res = self.proposal
+        if res is None:
+            return
+        g = res.geometry
+        vals = {"bend_S_um": g.S_um, "bend_W_um": g.W_um, "bend_Wg_um": g.Wg_um}
+        for key, val in vals.items():                # load it into the working fields
+            self.dvars[key].set(_fmt(round(val, 4)))
+        p = self._working_params()
+        self._apply({k: p[k] for k, _ in GEOM}, res.L_b_mm if self.apply_len.get() else None, "Proposal")
+
+    def action_reload(self):
+        p = self.app._get_params()
+        for key, _ in GEOM:
+            self.dvars[key].set(_fmt(p[key]))
 
     def action_optimise(self):
         from .bend_cpw.design import optimise
-        p = self._params()
         try:
+            p = self._working_params()
             base = geometry_from_params(p)
             ranges = {"S_um": (p["bend_S_min_um"], p["bend_S_max_um"]),
                       "W_um": (p["bend_W_min_um"], p["bend_W_max_um"]),
@@ -521,40 +648,26 @@ class BendWindow(tk.Toplevel):
             g = res.geometry
             chk = res.surface_check["surface vs model at the result, %"]
             self.prop_lbl.config(text=(
-                f"{'Proposal' if res.feasible else 'NOT FEASIBLE -- closest'}: S {g.S_um:.3f}, W {g.W_um:.3f}, "
+                f"{'PROPOSAL' if res.feasible else 'NOT FEASIBLE -- closest'}: S {g.S_um:.3f}, W {g.W_um:.3f}, "
                 f"Wg {g.Wg_um:.3f} um\n|Zc| {res.Z0:.2f} ohm (target {zt:.2f}, {zt_note}), n_m {res.n_m:.4f}, "
                 f"alpha {res.alpha_dB_cm:.3f} dB/cm\nbend {res.L_b_mm:.4f} mm for {tau:.3f} ps, "
                 f"loss {res.loss_dB:.4f} dB per bend at {F_REF_GHZ:g} GHz\n{res.message}\n"
                 f"(response surface vs line model at the result: {chk[0]:+.3f} / {chk[1]:+.3f} / "
-                f"{chk[2]:+.3f} % on |Zc| / n_m / alpha)"))
+                f"{chk[2]:+.3f} % on |Zc| / n_m / alpha)\nGreen dotted curves: the proposal. "
+                f"Apply proposal loads it into the working fields and the device."))
             self.btn_apply.config(state="normal")
             self.app.log(f"Bend inverse design: {res.message}; S {g.S_um:.3f}, W {g.W_um:.3f}, "
                          f"Wg {g.Wg_um:.3f} um, n_m {res.n_m:.4f}, alpha {res.alpha_dB_cm:.3f} dB/cm, "
                          f"L_b {res.L_b_mm:.4f} mm", "ok" if res.feasible else "warn")
+            self._changed(delay=10)
 
         self._run("inverse design", lambda: optimise(base, ranges, zt, tau, progress=self._progress,
                                                      cancel=self._cancel), done)
 
-    def action_apply(self):
-        res = self.proposal
-        if res is None:
-            return
-        g = res.geometry
-        v = self.app.vars
-        v["bend_model"].set("cross-section")
-        v["bend_S_um"].set(f"{g.S_um:.4g}")
-        v["bend_W_um"].set(f"{g.W_um:.4g}")
-        v["bend_Wg_um"].set(f"{g.Wg_um:.4g}")
-        v["bend_len_mm"].set(f"{res.L_b_mm:.4f}")
-        self.app.log(f"Bend proposal applied: S {g.S_um:.4g}, W {g.W_um:.4g}, Wg {g.Wg_um:.4g} um, "
-                     f"bend length {res.L_b_mm:.4f} mm.")
-        self._changed(commit=True)
-
     def action_verify(self):
         from .bend_cpw import fem
-        p = self._params()
         try:
-            g = geometry_from_params(p)
+            g = geometry_from_params(self._working_params())
             fl = [float(x) for x in self.fem_f.get().replace(";", ",").split(",") if x.strip()]
             if not fl or min(fl) <= 0:
                 raise ValueError("give positive frequencies in GHz, e.g. 10, 60, 200")
@@ -573,13 +686,11 @@ class BendWindow(tk.Toplevel):
                              f"{(m['alpha_dB_cm'][i] / res['alpha_dB_cm'][i] - 1) * 100:+6.2f} "
                              f"{res['n_m'][i]:8.4f} {(m['n_m'][i] / res['n_m'][i] - 1) * 100:+6.2f} "
                              f"{res['Z0'][i]:8.3f} {(m['Z0'][i] / res['Z0'][i] - 1) * 100:+6.2f}")
-            lines.append(f"% = line model vs FEM. FEM: {res['t_s']:.0f} s, {res['mesh']['n_el']} elements.")
+            lines.append(f"% = line model vs FEM, for S {g.S_um:g}, W {g.W_um:g}, Wg {g.Wg_um:g} um. "
+                         f"FEM: {res['t_s']:.0f} s, {res['mesh']['n_el']} elements.")
             self.fem_txt.delete("1.0", "end")
             self.fem_txt.insert("end", "\n".join(lines))
-            self.app.log("Bend FEM verification (S %.4g, W %.4g, Wg %.4g um):\n  " % (g.S_um, g.W_um, g.Wg_um)
-                         + "\n  ".join(lines))
-            if self.current is not None and self.current["g"] == g:
-                c = self.current
-                self._draw(c["p"], g, c["f"], c["sweep"], c["zt"])
+            self.app.log("Bend FEM verification:\n  " + "\n  ".join(lines))
+            self._draw_curves()
 
         self._run("FEM verification", lambda: fem.verify(g, fl, progress=self._progress), done)
