@@ -1,0 +1,14 @@
+hfine 0.02 {'n_el': 15842, 'ndof': np.int32(32041)} L_ext 8.005815873090856e-07
+      20 GHz  delta/a 0.0527  R  1320.098  X_int  1283.925  Rs G_rec  1396.461   c_R 0.7338   c_X 1.0815
+      50 GHz  delta/a 0.0333  R  2065.046  X_int  2040.349  Rs G_rec  2163.755   c_R 0.7180   c_X 0.8977
+     100 GHz  delta/a 0.0236  R  2908.146  X_int  2894.568  Rs G_rec  3029.418   c_R 0.7096   c_X 0.7891
+     200 GHz  delta/a 0.0167  R  4104.249  X_int  4104.943  Rs G_rec  4254.167   c_R 0.7029   c_X 0.6996
+     400 GHz  delta/a 0.0118  R  5800.525  X_int  5820.029  Rs G_rec  5986.584   c_R 0.6969   c_X 0.6239
+     800 GHz  delta/a 0.0083  R  8205.442  X_int  8250.424  Rs G_rec  8436.841   c_R 0.6911   c_X 0.5568
+hfine 0.01 {'n_el': 20402, 'ndof': np.int32(41209)} L_ext 8.005608002541724e-07
+      20 GHz  delta/a 0.0527  R  1320.098  X_int  1283.771  Rs G_rec  1396.461   c_R 0.7339   c_X 1.0829
+      50 GHz  delta/a 0.0333  R  2065.045  X_int  2039.964  Rs G_rec  2163.755   c_R 0.7181   c_X 0.9005
+     100 GHz  delta/a 0.0236  R  2908.142  X_int  2893.799  Rs G_rec  3029.418   c_R 0.7097   c_X 0.7936
+     200 GHz  delta/a 0.0167  R  4104.237  X_int  4103.405  Rs G_rec  4254.167   c_R 0.7029   c_X 0.7068
+     400 GHz  delta/a 0.0118  R  5800.479  X_int  5816.950  Rs G_rec  5986.584   c_R 0.6971   c_X 0.6354
+     800 GHz  delta/a 0.0083  R  8205.254  X_int  8244.242  Rs G_rec  8436.841   c_R 0.6917   c_X 0.5753

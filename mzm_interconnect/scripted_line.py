@@ -32,7 +32,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .physics import (C0, bend_line, electrode_layout, eo_transfer,
+from .physics import (C0, bend_line, bend_summary, electrode_layout, eo_transfer,
                       first_crossing)
 
 # The LSF uses log(10)/20; physics.py uses the rounded 1/8.686. The difference
@@ -381,7 +381,7 @@ def export_tl_tables(fit, p: dict, out_dir: str, f_top_GHz=None,
             os.path.join(out_dir, "bend_line.txt"), f_GHz * 1e9,
             b["bend_alpha_dB_cm"] * 100.0, b["bend_nm"], b["bend_Z"],
             ["bend line: its own loss, index and impedance, not the electrode's",
-             f"Z = {b['bend_Z']:.2f} ohm flat, n = {b['bend_nm']:.3f}",
+             bend_summary(p),
              "columns frequency Hz, loss dB per m, microwave index, Re Z0, Im Z0"])
     # Arm 1 on "modulation" (ng1), arm 2 on "modulation 2" (ng2): the same
     # split of ng_imbalance as physics.arm_models.

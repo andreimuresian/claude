@@ -1646,6 +1646,15 @@ class InterconnectBuilder(TLElementsMixin):
 # for arm 2). The value is applied to every electrode in the schematic -- two
 # in a push-pull build, one otherwise -- so the electrodes can never drift apart
 # on a property they are supposed to share.
+def _bend_note(p: dict) -> str:
+    """The bend line in a few words, for the check reports."""
+    try:
+        from .physics import bend_summary
+        return bend_summary(p)
+    except Exception as exc:            # a report line must never stop a run
+        return f"bend line: {exc}"
+
+
 def _ng_arms(p, ng, dn):
     return ng * (1.0 + dn / 2.0), ng * (1.0 - dn / 2.0)
 
@@ -1896,7 +1905,7 @@ def run_bend_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
                 b.close()
     lines = ["Step 1 bend check -- TL line build vs the Python device response",
              f"device: L = {float(p['L_target_mm']):g} mm, bend {float(p['bend_len_mm']):g} mm "
-             f"at {float(p['bend_Z_ohm']):g} ohm, Zs {float(p['Zs_R']):g} ohm, "
+             f"({_bend_note(p)}), Zs {float(p['Zs_R']):g} ohm, "
              f"Rt {float(p['Rt_R']):g} ohm, sample rate {float(p['ic_sample_rate_GHz']):g} GHz",
              "", hdr] + rows + [
              "",
@@ -2091,8 +2100,8 @@ def run_eye_ladder(fit, p: dict, out_dir: str, n_list=(0, 1, 2, 3, 4),
                 b.close()
     lines = ["Step 1 eye check -- TL line eye build vs the Python eye",
              f"{float(p['bitrate_Gbps']):g} Gb/s, {float(p['drive_Vpp_V']):g} Vpp, "
-             f"L = {float(p['L_target_mm']):g} mm, bend {float(p['bend_len_mm']):g} mm at "
-             f"{float(p['bend_Z_ohm']):g} ohm; noise off, no receiver filter on either side",
+             f"L = {float(p['L_target_mm']):g} mm, bend {float(p['bend_len_mm']):g} mm "
+             f"({_bend_note(p)}); noise off, no receiver filter on either side",
              "", hdr] + rows + [
              "",
              "Both eyes are folded and measured by the same code (eye_stats): height = lowest",

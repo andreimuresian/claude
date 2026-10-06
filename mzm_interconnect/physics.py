@@ -221,18 +221,57 @@ def bend_optical_length_m(p: dict) -> float:
     return float(p.get("bend_opt_delay_ps", 5.0)) * 1e-12 * C0 / float(p.get("ng", 2.27))
 
 
+BEND_F_REF_GHZ = 60.0       # where the bend's Z0 and n_m are quoted, matched and used for its length
+
+
+def bend_from_cross_section(p: dict) -> bool:
+    return str(p.get("bend_model", "cross-section")) == "cross-section"
+
+
+def bend_ref(p: dict, f_GHz: float = BEND_F_REF_GHZ) -> dict:
+    """The bend line at one frequency: alpha (dB/cm), n_m, Z0 = |Zc| and where
+    they come from."""
+    if bend_from_cross_section(p):
+        from .bend_cpw import geometry_from_params, line_model
+        g = geometry_from_params(p)
+        r = line_model(g).at_ref(f_GHz)
+        return dict(alpha_dB_cm=r["alpha_dB_cm"], nm=r["n_m"], Z=r["Z0"], Zc=r["Zc"],
+                    source=(f"cross-section S {g.S_um:g} / W {g.W_um:g} / Wg {g.Wg_um:g} / "
+                            f"t {g.t_um:g} um"))
+    a, b, src = bend_loss_coefficients(p)
+    f = max(float(f_GHz), 0.0)
+    Z = float(p.get("bend_Z_ohm", 60.0))
+    return dict(alpha_dB_cm=a * np.sqrt(f) + b * f, nm=float(p.get("bend_nm", 1.7)), Z=Z, Zc=complex(Z),
+                source=f"fitted values ({src})")
+
+
+def bend_index(p: dict) -> float:
+    """Microwave index that sets the RF transit through a bend: the bend line's
+    n_m at 60 GHz (cross-section), or the flat index (fitted values)."""
+    if bend_from_cross_section(p):
+        return float(bend_ref(p)["nm"])
+    return float(p.get("bend_nm", 1.7))
+
+
+def bend_summary(p: dict) -> str:
+    """One line for logs and plot notes."""
+    r = bend_ref(p)
+    return (f"{r['source']}: Z0 {r['Z']:.1f} ohm, n_m {r['nm']:.3f}, alpha "
+            f"{r['alpha_dB_cm']:.2f} dB/cm at {BEND_F_REF_GHZ:g} GHz")
+
+
 def bend_matched_length_mm(p: dict) -> float:
     """RF length of a bend whose RF transit n_b.L_b/c equals the bend optical
     delay: the length compensation that makes the bend skew-free."""
-    return float(p.get("bend_opt_delay_ps", 5.0)) * 1e-12 * C0 / float(p.get("bend_nm", 1.7)) * 1e3
+    return float(p.get("bend_opt_delay_ps", 5.0)) * 1e-12 * C0 / bend_index(p) * 1e3
 
 
 def bend_skew_ps(p: dict) -> float:
     """RF transit minus optical delay through one bend (ps): positive means the RF
-    reaches the next electrode after the light. Transit at the bend's flat
-    microwave index; reflections at the bend's ends add a little phase on top,
-    which the cascade includes."""
-    sk = (float(p.get("bend_nm", 1.7)) * float(p.get("bend_len_mm", 0.0)) * 1e-3 / C0 * 1e12
+    reaches the next electrode after the light. Transit at the bend's microwave
+    index (at 60 GHz for a cross-section bend); reflections at the bend's ends
+    add a little phase on top, which the cascade includes."""
+    sk = (bend_index(p) * float(p.get("bend_len_mm", 0.0)) * 1e-3 / C0 * 1e12
           - float(p.get("bend_opt_delay_ps", 5.0)))
     return round(sk, 6) + 0.0          # no "-0.00 ps" at the matched length
 
@@ -260,7 +299,7 @@ def bend_walkoff_skew_ps(fit, p: dict, f_ref_GHz: float) -> float:
 def bend_walkoff_length_mm(fit, p: dict, f_ref_GHz: float) -> float:
     """Bend length giving bend_walkoff_skew_ps: (tau + skew) . c / n_b."""
     tau = float(p.get("bend_opt_delay_ps", 5.0)) + bend_walkoff_skew_ps(fit, p, f_ref_GHz)
-    return max(tau, 0.0) * 1e-12 * C0 / float(p.get("bend_nm", 1.7)) * 1e3
+    return max(tau, 0.0) * 1e-12 * C0 / bend_index(p) * 1e3
 
 
 def electrode_layout(p: dict) -> list:
@@ -462,6 +501,12 @@ def bend_line(p: dict, f_GHz) -> dict:
     Keyword arguments for segmented_transfer.
     """
     f = np.maximum(np.asarray(f_GHz, dtype=float), 0.0)
+    if bend_from_cross_section(p):
+        # the analytical line model of the bend cross-section (bend_cpw): loss,
+        # index and complex impedance at every frequency
+        from .bend_cpw import geometry_from_params, line_constants
+        lc = line_constants(geometry_from_params(p), f)
+        return dict(bend_alpha_dB_cm=lc["alpha_dB_cm"], bend_nm=lc["n_m"], bend_Z=lc["Zc"])
     a, b, _ = bend_loss_coefficients(p)
     return dict(bend_alpha_dB_cm=a * np.sqrt(f) + b * f,
                 bend_nm=float(p.get("bend_nm", 1.7)),

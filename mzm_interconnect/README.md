@@ -78,7 +78,7 @@ python -m mzm_interconnect.cli export  line.s2p --out_dir ./tables
 python -m mzm_interconnect.cli build   line.s2p     # needs lumapi
 ```
 
-Requirements: `numpy scipy matplotlib scikit-rf` (+ `tkinter` for the GUI).
+Requirements: `numpy scipy matplotlib scikit-rf` (+ `tkinter` for the GUI, + `scikit-fem` for the FEM verification in the Bend window).
 Lumerical is optional -- nothing imports `lumapi` until you press
 **Build + run in INTERCONNECT**.
 
@@ -110,6 +110,44 @@ to build the system model around it.
 The KPI strip across the top always shows EO bandwidth, effective V_pi,
 V_pi·L, extinction ratio, chirp parameter, velocity walk-off at the bandwidth
 frequency, and worst-case S11.
+
+## The Bend window
+
+Header button **Bend window** (or the button next to *Bend line from* in the
+sidebar). The electrode bend is a coplanar line of its own; this window sets
+its cross-section and shows what it does.
+
+* **Cross-section**: signal S, gap W, ground Wg, gold thickness and
+  conductivity, SiO2 buffer / LN slab / buried oxide under the bend (Si 550 um
+  below). The same parameters as in the sidebar: edit either.
+* **Bend line at 60 GHz**: |Zc|, n_m, alpha, updated as you type (~0.5 s for a
+  new cross-section, then instant), and the target |Zc| (the modulating line's,
+  from the Touchstone fit, unless you type one).
+* **Bend RF delay and length**: the bend length is the one at which the RF
+  takes the required time through the bend, L_b = c tau / n_m(60 GHz), with
+  tau either the bend optical delay or the **walk-off compensated** delay
+  (optical delay - (n_m - n_g) x mean section length / c; the right choice
+  when the modulating line is not velocity-matched, identical when it is).
+  *Set the bend length to this value* copies it into the device.
+* **Inverse design**: S, W, Wg inside editable ranges such that |Zc(60 GHz)|
+  equals the target, with the smallest loss per bend alpha x L_b (i.e. the
+  smallest alpha / n_m: a slower line needs a shorter bend). Line model on a
+  3x3x3 grid, quadratic response surfaces, constrained search, then a polish
+  with the line model itself (the reported numbers are the model's). If the
+  target cannot be reached inside the ranges it says so and gives the
+  closest geometry. *Apply proposal* writes S, W, Wg and the bend length.
+* **Verify with the 2D FEM reference**: the current cross-section solved with
+  the validated reference (quasi-static FEM capacitance + the current inside
+  the gold, no surface-impedance approximation), drawn over the model curves
+  with a table of differences. Needs `scikit-fem`; about 10 s per frequency.
+* **alpha(f), n_m(f), |Zc|(f)** of the bend from the line model, which is
+  also what the device cascade and the INTERCONNECT tables use (Bend line from
+  = cross-section). *fitted values* keeps the old fixed Z / n and
+  a.sqrt(f) + b.f loss (or a bend S21 file), e.g. for a 3D simulation of the
+  real bend.
+
+The line model (`bend_cpw/model.py`) and its validation are documented in
+`tools/bend_cpw/README.md`.
 
 ## Adding a parameter
 

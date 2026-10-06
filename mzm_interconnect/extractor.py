@@ -767,12 +767,9 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
     _lay = electrode_layout(p)
     if len(_lay) > 1:
         _secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in _lay if x["kind"] == "mod")
-        from .physics import bend_loss_coefficients
-        _a, _b, _src = bend_loss_coefficients(p)
+        from .physics import bend_summary
         _geom = (f"{int(p['n_bends'])} bend(s): electrodes {_secs} mm; "
-                 f"bend {float(p['bend_len_mm']):.2f} mm, {float(p['bend_Z_ohm']):.0f} ohm, "
-                 f"n = {float(p['bend_nm']):.2f}, "
-                 f"loss {_a:.3f}sqrt(f)+{_b:.4f}f dB/cm ({_src})\n"
+                 f"bend {float(p['bend_len_mm']):.2f} mm\n{bend_summary(p)}\n"
                  f"low-frequency modulation vs straight electrode: {bend_efficiency_dB(fit, p):+.2f} dB")
         ax.text(0.99, 0.97, _geom, transform=ax.transAxes, ha="right", va="top", fontsize=8,
                 color=theme["fg"], bbox=dict(facecolor=theme["axes"], alpha=0.8, edgecolor="none"))

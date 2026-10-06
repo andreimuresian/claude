@@ -9,9 +9,11 @@ gap 4.15, ground 50 um) on 3.6 um SiO2 / 0.275 um LN slab (ribs removed) /
 
 | file | what |
 |---|---|
-| `cpw_analytic.py` | the analytical model, `bend_cpw(f, S, W, Wg, t, layers)` -> Z0, n_m, alpha |
+| `cpw_analytic.py` | the analytical model, `bend_cpw(f, S, W, Wg, t, layers)` -> Z0, n_m, alpha (research version; the GUI uses the identical copy in `mzm_interconnect/bend_cpw/`) |
+| `cpw_galerkin.py` | capacitance: spectral-domain Galerkin on zero-thickness strips with finite grounds, + thickness from boundary elements |
 | `bem_pec.py` | boundary elements: exact PEC surface current of thick electrodes, C_air, converged IBC resistance, corner amplitudes |
 | `corner_constant.py` | finite-skin-depth correction at a right-angle corner, from an isolated square bar (not from the CPW set) |
+| `corner_reactance.py` | the same bar for the reactance: c_R = 0.70 is constant, c_X is not (an O(delta) term), so L_int is left at R_hf / w |
 | `eddy_tensor.py` | reference series impedance R(f), L(f): current solved inside the gold (skin + proximity effect), no IBC |
 | `peec2d.py` | independent check of `eddy_tensor.py`: partial-element (filament) integral equation, free-space Green's function, no mesh outside the metal |
 | `verify_coax.py` | check of `eddy_tensor.py` against the exact Bessel-function impedance of a gold coax |
@@ -22,6 +24,7 @@ gap 4.15, ground 50 um) on 3.6 um SiO2 / 0.275 um LN slab (ribs removed) /
 | `sweep_eddy.py` | reference R, L of the bend from 0.1 to 200 GHz |
 | `comsol_rows.py` | reference R' for the 13 COMSOL rows of the notebook, vs their IBC attenuation |
 | `eval_final.py` | analytical model vs references, figures in `results/` |
+| `doe_design.py`, `eval_design.py` | the inverse-design space (S 30-40, W 4-5, Wg 50-60, t 2 um, 33 geometries, 1-200 GHz): reference, then line model vs reference |
 | `notebook/unetched_nmZ0_aRF_Claude_v2.ipynb` | the user's notebook with cell [6]: R' and L_int from the current inside the gold |
 
 Needs scikit-fem, femwell, gmsh, shapely (sympy only to re-derive the PEEC kernel).
@@ -58,9 +61,14 @@ practical meshes.
 
 ## Analytical model
 
-- C: air above (conformal map, finite grounds) + sidewall parallel plates +
-  layers below by the spectral-domain variational method; C_air from boundary
-  elements on the real thick electrodes (L_ext = 1/(c^2 C_air)).
+- C: zero-thickness strips with finite grounds on the layered substrate by the
+  spectral-domain Galerkin method (charge basis with the 1/sqrt edge
+  singularity, layered Green's function by transmission-line recursion, LN
+  anisotropy exact); exact in air (conformal map to 1e-8). Thickness:
+  C += C_air,thick(BEM) - C_air,thin. Against the mesh-converged FEM of the
+  bend: C -0.28 %, C_air -0.002 %. (The earlier conformal / single-trial
+  spectral version, `capacitance_model="sd"`, was +0.05..+5 % high.) The
+  notebook's default mesh gives C +0.18..+0.25 % high (FEM energy bound).
 - R: exact surface current of the thick electrodes (top, bottom, sidewalls)
   from boundary elements, on the electrodes shrunk by delta/2 (receding wall),
   minus c K^2 delta^(1/3) per corner (c = 0.70 from the square bar);

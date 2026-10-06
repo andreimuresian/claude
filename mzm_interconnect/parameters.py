@@ -68,6 +68,11 @@ class ParamSpec:
 # ---------------------------------------------------------------------------
 # The registry.  Order inside a group is the order shown in the GUI.
 # ---------------------------------------------------------------------------
+def _bend_xs(p: dict) -> bool:
+    """True when the bend line comes from its cross-section (not fitted values)."""
+    return str(p.get("bend_model", "cross-section")) == "cross-section"
+
+
 PARAMS: list[ParamSpec] = [
 
     # ---------------- Source data / de-embedding -------------------------
@@ -147,9 +152,51 @@ PARAMS: list[ParamSpec] = [
                    "transmission line that carries the RF but does not modulate. The "
                    "readout on the right is the length at which the RF crosses the bend "
                    "in the same time as the light (bend optical delay); 'use' copies it."),
+    ParamSpec("bend_model", "Bend line from", "cross-section", "Device geometry",
+              kind="choice", choices=("cross-section", "fitted values"), affects="circuit",
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              help="Where the bend's loss, microwave index and impedance come from. "
+                   "'cross-section': computed at every frequency from the bend's CPW "
+                   "cross-section below (signal, gap, ground, gold thickness, layer "
+                   "stack) by the analytical line model of the Bend window, validated "
+                   "against the 2D FEM reference. 'fitted values': the fixed impedance "
+                   "and index and the a.sqrt(f) + b.f loss fit (or a simulated bend "
+                   "S21 file), e.g. to use a 3D simulation of the real bend."),
+    ParamSpec("bend_S_um", "Bend signal width", 35.0, "Device geometry", "um",
+              sweepable=True, sweep_default=(20.0, 60.0, 21), affects="circuit", vmin=1.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="Width of the signal electrode in the bend cross-section."),
+    ParamSpec("bend_W_um", "Bend gap", 4.5, "Device geometry", "um",
+              sweepable=True, sweep_default=(3.0, 8.0, 26), affects="circuit", vmin=0.5,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="Gap between the signal and each ground in the bend."),
+    ParamSpec("bend_Wg_um", "Bend ground width", 50.0, "Device geometry", "um",
+              sweepable=True, sweep_default=(30.0, 80.0, 26), affects="circuit", vmin=1.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="Width of each ground electrode in the bend."),
+    ParamSpec("bend_t_um", "Bend gold thickness", 2.0, "Device geometry", "um",
+              affects="circuit", vmin=0.1,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="Gold thickness of the bend electrodes."),
+    ParamSpec("bend_sigma_MSm", "Gold conductivity", 45.6, "Device geometry", "MS/m",
+              affects="circuit", vmin=1.0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="Conductivity of the bend gold (CST library gold: 45.61 MS/m)."),
+    ParamSpec("bend_buf_um", "Bend SiO2 buffer", 3.6, "Device geometry", "um",
+              affects="circuit", vmin=0.01,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="SiO2 between the bend electrodes and the LN slab (eps 3.9)."),
+    ParamSpec("bend_slab_um", "Bend LN slab", 0.275, "Device geometry", "um",
+              affects="circuit", vmin=0.001,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="LN slab under the bend (eps 28 in-plane, 44 vertical; ribs removed)."),
+    ParamSpec("bend_box_um", "Bend buried oxide", 4.7, "Device geometry", "um",
+              affects="circuit", vmin=0.01,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and _bend_xs(p),
+              help="Buried SiO2 between the LN slab and the 550 um Si substrate."),
     ParamSpec("bend_Z_ohm", "Bend impedance", 60.0, "Device geometry", "ohm",
               sweepable=True, sweep_default=(30.0, 80.0, 51), affects="circuit", vmin=1.0,
-              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and not _bend_xs(p),
               help="Characteristic impedance of the bend line: real and the same at "
                    "every frequency. Where it differs from the electrode impedance "
                    "there is a reflection at each end of the bend.",
@@ -157,29 +204,29 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("bend_alpha_sqrt", "Bend loss, sqrt(f) term", 0.3519, "Device geometry",
               "dB/cm/sqrt(GHz)", sweepable=True, sweep_default=(0.0, 1.0, 21),
               affects="circuit", vmin=0.0,
-              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and not _bend_xs(p),
               help="Bend attenuation alpha(f) = a.sqrt(f) + b.f in dB/cm (f in GHz); "
                    "this is a. Default: fitted to BEND200GHZ.csv (0.8 mm bend, "
                    "0-200 GHz). Loss of one bend = alpha(f) x bend length."),
     ParamSpec("bend_alpha_lin", "Bend loss, f term", 0.03419, "Device geometry",
               "dB/cm/GHz", sweepable=True, sweep_default=(0.0, 0.1, 21),
               affects="circuit", vmin=0.0,
-              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and not _bend_xs(p),
               help="The b of alpha(f) = a.sqrt(f) + b.f (dB/cm, f in GHz)."),
     ParamSpec("bend_loss_file", "Bend loss file (optional)", "", "Device geometry",
               kind="path", affects="circuit",
-              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and not _bend_xs(p),
               help="CSV with columns f (GHz), S21 (dB) of a simulated bend, like "
                    "BEND200GHZ.csv. When set, a and b above are fitted to it and "
                    "the two coefficients are ignored."),
     ParamSpec("bend_loss_file_len_mm", "Length of the bend in that file", 0.8,
               "Device geometry", "mm", affects="circuit", vmin=0.001,
-              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and bool(p.get("bend_loss_file")),
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and not _bend_xs(p) and bool(p.get("bend_loss_file")),
               help="Physical length of the bend the file was simulated for; turns "
                    "its dB into dB/cm."),
     ParamSpec("bend_nm", "Bend microwave index", 1.7, "Device geometry", "-",
               sweepable=True, sweep_default=(1.4, 2.6, 25), affects="circuit", vmin=1.0,
-              visible_if=lambda p: int(p.get("n_bends", 0)) > 0,
+              visible_if=lambda p: int(p.get("n_bends", 0)) > 0 and not _bend_xs(p),
               help="Microwave index of the bend line: sets how long the RF takes to "
                    "cross the bend (n_b x bend length / c). Where the waveguides "
                    "cross, the electrodes sit on the SiO2 buffer instead of the LN "
@@ -194,6 +241,31 @@ PARAMS: list[ParamSpec] = [
                    "the bend length that achieves it. Default 5 ps. With an arm "
                    "group-index imbalance, an arm at n_g + d sees this delay scaled "
                    "by (n_g + d) / n_g."),
+
+    # ---------------- Bend inverse design (edited in the Bend window) ----
+    ParamSpec("bend_S_min_um", "Signal width, min", 30.0, "Bend design", "um", vmin=0.5,
+              help="Lower end of the signal width the inverse design may use."),
+    ParamSpec("bend_S_max_um", "Signal width, max", 40.0, "Bend design", "um", vmin=0.5,
+              help="Upper end of the signal width the inverse design may use."),
+    ParamSpec("bend_W_min_um", "Gap, min", 4.0, "Bend design", "um", vmin=0.1,
+              help="Smallest gap the inverse design may use (lithography)."),
+    ParamSpec("bend_W_max_um", "Gap, max", 5.0, "Bend design", "um", vmin=0.1,
+              help="Largest gap the inverse design may use."),
+    ParamSpec("bend_Wg_min_um", "Ground width, min", 50.0, "Bend design", "um", vmin=0.5,
+              help="Lower end of the ground width the inverse design may use."),
+    ParamSpec("bend_Wg_max_um", "Ground width, max", 60.0, "Bend design", "um", vmin=0.5,
+              help="Upper end of the ground width the inverse design may use."),
+    ParamSpec("bend_Z_target_ohm", "Target bend Z0", 0.0, "Bend design", "ohm", vmin=0.0,
+              help="|Zc| the bend must have at 60 GHz. 0 = the modulating line's "
+                   "|Zc| at 60 GHz from the Touchstone fit (impedance matching)."),
+    ParamSpec("bend_delay_rule", "Bend RF delay", "walk-off compensated", "Bend design",
+              kind="choice", choices=("walk-off compensated", "bend optical delay"),
+              help="RF transit time the bend length is set for. 'bend optical delay': "
+                   "the RF crosses the bend in the same time as the light. 'walk-off "
+                   "compensated': that delay plus the skew that re-aligns consecutive "
+                   "electrode sections when the line's n_m differs from n_g (the "
+                   "correct one when the modulating line is not velocity-matched; the "
+                   "two coincide when n_m = n_g)."),
 
     # ---------------- Microwave line 'what-if' knobs ---------------------
     ParamSpec("alpha_scale", "Total loss scale", 1.0, "Microwave line", "x",

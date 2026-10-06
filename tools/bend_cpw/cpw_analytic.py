@@ -292,20 +292,30 @@ def inductance_dc(S, W, Wg, t):
 
 
 def bend_cpw(f_Hz, S, W, Wg, t, layers, sigma_metal=4.56e7, layer_sigma=None, layer_tand=None,
-             conductor="thick"):
+             conductor="thick", capacitance_model="galerkin"):
     """Z0, n_m, alpha(f) of a CPW (signal S, gaps W, grounds Wg, metal t; SI units)
     on the layer stack *layers* [(h, eps_h, eps_v), ... from the metal down],
     air above and in the gaps. Closed form + one 1D spectral integral."""
     f = np.atleast_1d(np.asarray(f_Hz, float))
     w = 2 * np.pi * f
-    C_eps, parts = capacitance_sd(S, W, Wg, t, layers)
     air = [(h, 1.0, 1.0) for h, _eh, _ev in layers]
-    C_air, _ = capacitance_sd(S, W, Wg, t, air)
-    if conductor == "thick":
-        import bem_pec
-        C_air_bem = bem_pec.solve(S, W, Wg, t)["C_air"]
-        C_eps = C_eps + (C_air_bem - C_air)          # same thickness error in both
-        C_air = C_air_bem
+    if conductor == "thick" and capacitance_model == "galerkin":
+        import cpw_galerkin
+        C_eps, C_air = cpw_galerkin.capacitance(S, W, Wg, t, layers)
+
+        def C_of(lay):
+            return cpw_galerkin.capacitance(S, W, Wg, t, lay, C_air_thick=C_air)[0]
+    else:
+        C_eps, parts = capacitance_sd(S, W, Wg, t, layers)
+        C_air, _ = capacitance_sd(S, W, Wg, t, air)
+
+        def C_of(lay):
+            return capacitance_sd(S, W, Wg, t, lay)[0]
+        if conductor == "thick":
+            import bem_pec
+            C_air_bem = bem_pec.solve(S, W, Wg, t)["C_air"]
+            C_eps = C_eps + (C_air_bem - C_air)          # same thickness error in both
+            C_air = C_air_bem
     L_ext = 1.0 / (C0 ** 2 * C_air)
     if conductor == "thick":
         R, L_int, cinfo = conductor_impedance(f, S, W, Wg, t, sigma_metal, L_ext=L_ext)
@@ -329,7 +339,7 @@ def bend_cpw(f_Hz, S, W, Wg, t, layers, sigma_metal=4.56e7, layer_sigma=None, la
             continue
         lay = list(layers)
         lay[i] = (h, eh * 1.001, ev * 1.001)
-        dC = (capacitance_sd(S, W, Wg, t, lay)[0] - C_eps) / (0.001 * np.sqrt(eh * ev))
+        dC = (C_of(lay) - C_eps) / (0.001 * np.sqrt(eh * ev))
         G_d = G_d + (sg / EPS0 + w * td * np.sqrt(eh * ev)) * dC
     # exact line constants (R is not small against w L below ~1 GHz)
     gamma = np.sqrt((R + 1j * w * L) * (G_d + 1j * w * C_eps))

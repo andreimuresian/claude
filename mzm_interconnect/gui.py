@@ -428,6 +428,7 @@ class MZMStudio(tk.Tk):
                  bg=t["bg"], fg=t["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
 
         ttk.Button(bar, text="Load session", command=self.action_load_session).pack(side="right", padx=3)
+        ttk.Button(bar, text="Bend window", command=self.action_open_bend).pack(side="right", padx=3)
         ttk.Button(bar, text="Save session", command=self.action_save_session).pack(side="right", padx=3)
         ttk.Button(bar, text=("Light theme" if self.theme_name == "dark" else "Dark theme"),
                    command=self.action_toggle_theme).pack(side="right", padx=3)
@@ -530,6 +531,12 @@ class MZMStudio(tk.Tk):
         self._rows = []                     # (spec, row frame) in display order
         for group in P.GROUPS:
             specs = [s for s in P.PARAMS if s.group == group]
+            if group == "Bend design":
+                # edited in the Bend window; the variables live here so that
+                # sessions save and load them with everything else
+                for spec in specs:
+                    self.vars[spec.key] = tk.StringVar(value=str(spec.default))
+                continue
             box = Collapsible(parent, group, t,
                               open_=group not in ("Lumerical", "Arm imbalance"))
             box.pack(fill="x", padx=4)
@@ -580,6 +587,9 @@ class MZMStudio(tk.Tk):
                              state="readonly", width=14)
             w.pack(side="left", fill="x", expand=True)
             w.bind("<<ComboboxSelected>>", lambda e: self._on_change())
+            if spec.key == "bend_model":
+                ttk.Button(row, text="Bend window", command=self.action_open_bend).pack(
+                    side="left", padx=2)
         elif spec.kind in ("path", "dirpath"):
             var = tk.StringVar(value=str(spec.default))
             w = ttk.Entry(row, textvariable=var)
@@ -1093,22 +1103,20 @@ class MZMStudio(tk.Tk):
                 from .physics import bend_efficiency_dB, electrode_layout
                 lay = electrode_layout(p)
                 secs = " + ".join(f"{x['L_rf']*1e3:.2f}" for x in lay if x["kind"] == "mod")
-                from .physics import (bend_loss_coefficients, bend_matched_length_mm,
-                                      bend_skew_ps, bend_walkoff_length_mm,
+                from .physics import (bend_line, bend_matched_length_mm, bend_skew_ps,
+                                      bend_summary, bend_walkoff_length_mm,
                                       bend_walkoff_skew_ps)
-                a_b, b_b, src = bend_loss_coefficients(p)
+                a10, a100 = bend_line(p, np.array([10.0, 100.0]))["bend_alpha_dB_cm"]
+                Lb_cm = float(p['bend_len_mm']) / 10
                 self.log(f"  {int(p['n_bends'])} bend(s): electrodes {secs} mm "
                          f"(total {sum(x['L_rf'] for x in lay if x['kind'] == 'mod')*1e3:.2f} mm); "
-                         f"bend {float(p['bend_len_mm']):.2f} mm, {float(p['bend_Z_ohm']):.1f} ohm, "
-                         f"n = {float(p['bend_nm']):.2f}, optical delay "
+                         f"bend {float(p['bend_len_mm']):.3f} mm, {bend_summary(p)}; optical delay "
                          f"{float(p['bend_opt_delay_ps']):.2f} ps (matched length "
                          f"{bend_matched_length_mm(p):.3f} mm, skew {bend_skew_ps(p):+.2f} ps "
                          f"per bend, RF minus light; walk-off compensated length "
                          f"{bend_walkoff_length_mm(fit, p, res.bw_GHz):.3f} mm, skew "
-                         f"{bend_walkoff_skew_ps(fit, p, res.bw_GHz):+.2f} ps), "
-                         f"loss {a_b:.4f}.sqrt(f) + {b_b:.5f}.f dB/cm "
-                         f"[{src}] = {(a_b*10**0.5+b_b*10)*float(p['bend_len_mm'])/10:.3f} / "
-                         f"{(a_b*100**0.5+b_b*100)*float(p['bend_len_mm'])/10:.3f} dB per bend at 10 / 100 GHz. "
+                         f"{bend_walkoff_skew_ps(fit, p, res.bw_GHz):+.2f} ps); loss "
+                         f"{a10 * Lb_cm:.3f} / {a100 * Lb_cm:.3f} dB per bend at 10 / 100 GHz. "
                          f"Low-frequency modulation vs the same electrodes without bends: "
                          f"{bend_efficiency_dB(fit, p):+.2f} dB.")
             if abs(res.bw_GHz - res.bw_electrode_GHz) > 0.005:
@@ -1600,6 +1608,21 @@ class MZMStudio(tk.Tk):
             self.ic_builder = None
 
     # ---------------- session save/load ---------------------------------
+    def action_open_bend(self):
+        """The bend line's own window: cross-section, figures of merit at 60 GHz,
+        inverse design and FEM verification (gui_bend.py)."""
+        win = getattr(self, "bend_window", None)
+        if win is not None:
+            try:
+                win.deiconify()
+                win.lift()
+                win.focus_set()
+                return
+            except tk.TclError:
+                self.bend_window = None
+        from .gui_bend import BendWindow
+        self.bend_window = BendWindow(self)
+
     def action_save_session(self):
         import json
         path = filedialog.asksaveasfilename(defaultextension=".json",

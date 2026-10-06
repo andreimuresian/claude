@@ -59,8 +59,10 @@ def main(argv=None) -> int:
         8.0 if a.s2p.endswith("synth_line_8mm.s2p") else 2.5)
     fit = extract_line_fit(a.s2p, L_meas, 50.0, 0.5, "saturating")
     out = tempfile.mkdtemp()
+    # checks 1-8 use the fitted bend values they set; check 6 adds a bend from
+    # its cross-section (frequency-dependent loss, index and complex Zc)
     base = dict(P.defaults(), s2p_path=a.s2p, L_meas_mm=L_meas, f_max_GHz=150.0,
-                ic_sample_rate_GHz=640.0)
+                ic_sample_rate_GHz=640.0, bend_model="fitted values")
     tol = 1e-4                  # the LSF's exact dB->Np constant vs physics.py's 1/8.686
     results = []
 
@@ -167,7 +169,9 @@ def main(argv=None) -> int:
                       bend_opt_delay_ps=8.0, bend_nm=2.3, bend_Z_ohm=35.0, ng_imbalance=0.02)),
              (3, dict(bend_len_mm=0.6, bend_Z_ohm=80.0, Zs_L_pH=40.0, Rt_C_fF=25.0)),
              (4, dict(tw_len_1_mm=2, tw_len_2_mm=4, tw_len_3_mm=3, tw_len_4_mm=2.5,
-                      tw_len_5_mm=2.5, bend_len_mm=1.0, bend_Z_ohm=45.0, ng_imbalance=-0.03))]
+                      tw_len_5_mm=2.5, bend_len_mm=1.0, bend_Z_ohm=45.0, ng_imbalance=-0.03)),
+             (2, dict(tw_len_1_mm=5, tw_len_2_mm=4, tw_len_3_mm=5, bend_len_mm=0.84,
+                      bend_model="cross-section", bend_S_um=40.0, bend_W_um=4.9, bend_Wg_um=60.0))]
     for nb, extra in cases:
         p = P.normalise(dict(base, L_target_mm=14.0, Zs_R=50.0, Rt_R=55.0, n_bends=nb, **extra))
         paths = SL.export_tl_tables(fit, p, out)
@@ -178,7 +182,8 @@ def main(argv=None) -> int:
         r_ch = SL.chain_response(els, Zs_f, Zt_f, opt_lengths=opt)
         f = el["f_Hz"] / 1e9
         m = (f > 0) & (f <= 150)
-        tag = f"{nb} bend(s)" + (", 0 mm bend" if nb and extra.get("bend_len_mm") == 0 else "")
+        tag = f"{nb} bend(s)" + (", 0 mm bend" if nb and extra.get("bend_len_mm") == 0 else "") \
+            + (", cross-section bend" if extra.get("bend_model") == "cross-section" else "")
         err = max(float(np.max(np.abs(r_el.H[m] / r_ch.H[m] - 1))),
                   float(np.max(np.abs(r_el.H2[m] / r_ch.H2[m] - 1))),
                   float(np.max(np.abs(r_el.far_end[0][m] / r_ch.far_end[-1][m] - 1))),
@@ -203,7 +208,7 @@ def main(argv=None) -> int:
     zero = np.zeros_like(fk)
     R = 50.0
     for nbends, ngk, Lb_mm in ((2, 2.27, None), (2, 2.27, 0.3), (3, 2.27, 1.6), (2, 2.29, 0.5)):
-        pk = dict(bend_opt_delay_ps=5.0, bend_nm=1.7, ng=2.27,
+        pk = dict(bend_opt_delay_ps=5.0, bend_nm=1.7, ng=2.27, bend_model="fitted values",
                   bend_len_mm=Lb_mm if Lb_mm is not None else 0.0)
         if Lb_mm is None:
             pk["bend_len_mm"] = bend_matched_length_mm(pk)
