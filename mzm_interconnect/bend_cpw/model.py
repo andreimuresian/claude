@@ -161,6 +161,7 @@ def inductance_dc(S, W, Wg, t):
 # Current inside the electrodes, filament (PEEC) integral equation
 # ---------------------------------------------------------------------------
 PEEC_T_DELTA = (3.8, 6.5)        # t/delta: filaments below, boundary elements above, blend between
+FIL_H = 0.15e-6                  # filament size at the gold surfaces (m)
 
 
 def _graded_edges(a, b, h_a, h_b, h_max, r=1.15):
@@ -192,7 +193,7 @@ class _Filaments:
     L_ij = -mu0/(2 pi) (<ln r>_ij + <ln r>_ij,mirror), exact for rectangles."""
 
     def __init__(self, S, W, Wg, t, sigma):
-        h_s = min(0.15e-6, 0.075 * t)
+        h_s = min(FIL_H, 0.075 * t)
         xs, xgi = S / 2, S / 2 + W
         xgo = xgi + Wg
         ey = _graded_edges(0.0, t, h_s, h_s, 0.2 * t)
