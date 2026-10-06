@@ -24,6 +24,9 @@ L, C, R, G are length-averaged; n = c√(LC), Z0 = √(L/C), α = R/2Z0 + GZ0/2.
 python conv.py 49 118 408   # mesh convergence            -> conv.json
 python run_rows.py          # 14 rows x 3 sections        -> run_rows.json (~15 min, 4 cores)
 python report.py            # tables                      -> report.txt
+python validate_mqs.py      # gold-interior solve checks  -> validate_mqs.txt
+python run_mqs.py           # gold-interior R', L_int      -> run_mqs.json (~6 min, 4 cores)
+python report_mqs.py        # assessment with it          -> report_mqs.txt
 ```
 
 ## The slide-4 result rests on a typo
@@ -76,6 +79,53 @@ changes little). It misses every large positive Δα. A slice is uniform along
 the line: it has no slot ends, so no radiation or substrate-mode excitation and
 no current crowding at the slot corners.
 
+## Assessment with the gold-interior conductor model (`report_mqs.txt`)
+
+Same 14 rows and sections. C, G and C_air come from the quasi-static solve as
+before. R′ and L_int come from the gold-interior solve of notebook v2 cell [6]
+(`mqs2d.py`, see the section on conductor loss below), with the finger floating.
+
+**Baseline (section C vs the COMSOL baseline of the dataset)**
+
+- n is −0.19 to +0.06 % and Z0 is −0.52 to −0.05 %. The gold L_int raises both
+  by +0.06 to +0.22 % over the IBC value.
+- α (gold) is −3.6 % to +18.2 % above COMSOL, median +8 %.
+- The notebook IBC is 7–16 % below gold on every row.
+- The COMSOL gap depends on the row (≈ 0 on rows 38 and 220, +16–18 % on
+  rows 118 and 130), so it can't be applied as a flat correction. It costs
+  one gold solve per geometry (20–90 s).
+
+**Perturbation (2D: average − section C; dataset: final − baseline)**
+
+Errors are a % of the final value. The α reference is the dataset final with
+the COMSOL baseline replaced by the gold section C:
+α_ref = α_final − α_base + α_C,gold.
+
+| | n | Z0 | α |
+|---|---|---|---|
+| 2D average, median / max abs error | 2.2 / 7.9 % | 3.0 / 6.3 % | 21.1 / 66.0 % |
+| ignoring the tee (section C alone) | 14.0 / 25.4 % | 20.7 / 41.4 % | 13.0 / 74.5 % |
+| share of the dataset's change reproduced, median (range) | 70 % (44–94 %) | 83 % (68–94 %) | sign wrong on 7 of 14 rows |
+
+α split by what the tee does in the dataset (median / max abs error):
+
+| rows | 2D average | ignoring the tee |
+|---|---|---|
+| 9 rows, Δα ≤ +0.5 dB/cm | 9.9 / 26.6 % | 6.4 / 21.3 % |
+| 5 rows, Δα > +0.5 dB/cm (+1.05 … +8.29) | 59.3 / 66.0 % | 56.3 / 74.5 % |
+
+- **n and Z0.** The average reproduces most of the tee's effect and cuts the
+  error of ignoring the tee by about 6×. Every error is negative: the slices
+  miss part of the slow-wave loading. Expect about −2 to −3 %, at worst −8 %.
+  The conductor model moves these by ≤ 0.2 %.
+- **α.** No skill. The average says the tee lowers α on 12 of 14 rows
+  (Z0 rises, R′ changes little), while the dataset has it raising α on 8 of 14.
+  Overall it does no better than ignoring the tee.
+  - The gold model fixes the baseline (0–18 %) but moves Δα by ≤ 0.1 dB/cm.
+  - The missing loss is in the 3D current path around the slot: x-directed
+    current at the slot ends and crowding in the stem. No z-uniform slice
+    carries it.
+
 ## Mesh convergence (`conv.json`)
 
 Rows 49, 118, 408, all three sections, up to 1.45 M elements (bulk mesh 2×
@@ -86,7 +136,8 @@ finer, corner and skin collars 2× finer than the notebook):
 - α: sensitive to the corner collar. Halving the 0.05 µm corner size raises α
   by 2.2–4.8 %; the IBC integrand is singular at the 90° corners. Δα moves by
   ~5 %. The notebook's corner size is kept, since it reproduces COMSOL on its
-  validation row.
+  validation row. The gold-interior solve removes this problem (see the
+  section on conductor loss).
 
 ## Side findings on the baseline (section C vs dataset baseline, 14 rows)
 
@@ -95,56 +146,86 @@ finer, corner and skin collars 2× finer than the notebook):
   0.497 to 0.481 (coupling to the PEC box). On sections A and B the eigen
   solve is worse: no mode passes the filters on 8 of 14 A sections, and a 2D
   eigenmode cannot tie the finger to ground. So the report uses quasi-static.
-- α (both solvers agree): −10.9 % to +1.4 % against the dataset baseline. Part
-  of it is the conductivity: the notebook uses σ = 4.56e7, while
-  `../validation/GEOMETRY_SPEC.md` notes COMSOL used 4.1e7 (≈ 5.5 % in α).
-  The additive form uses the dataset baseline, so this does not enter Δα.
+- α (both solvers agree): −10.9 % to +1.4 % against the dataset baseline.
+  - An earlier version of this note blamed σ, because
+    `../validation/GEOMETRY_SPEC.md` says COMSOL used 4.1e7. But the notebook
+    labels its 4.56e7 as COMSOL's "Au (Gold)" node, and COMSOL's built-in gold
+    is 45.6e6 S/m, so σ is probably not the cause. The spread follows the
+    corner resolution instead: see the gold-interior table above.
+  - The additive form uses the dataset baseline, so this does not enter Δα.
 
-## Conductor loss at the corners: the notebook value is 13–19 % low
+## Conductor loss: gold-interior solve (notebook v2 cell [6]) vs IBC
 
-`conv_corner.py`: refining only the corner/edge cells (0.05 → 0.00625 µm) raises
-R′ by a near-constant 2.3–3.4 % per halving, still growing at the finest level.
-The field next to the corner has the expected r^−1/3 form; the integral is
-finite, but the mesh value approaches it too slowly to extrapolate.
+`mqs2d.py` is cell [6] ported verbatim: same equations, same graded tensor mesh,
+same P2 elements and half domain. It accepts any ground pieces, and the finger
+is its own conductor with zero net current. On row 86 it reproduces the cell
+exactly: R′ 3590.1006 Ω/m, L_int 10.7647 nH/m.
 
-`wheeler_check.py` (`wheeler_check.txt`): Wheeler's incremental-inductance rule
-gives the same R′ from C_air of the line with every metal face receded. It is
-mesh-converged (≤ 0.3 % between two mesh levels) and independent of the
-recession (δ/8 and δ/2 agree to ≤ 0.6 %), so it is the converged value.
+Checks (`validate_mqs.txt`):
 
-| row | MTX µm | notebook R′ vs converged |
-|---|---|---|
-| 408 | 7.5 | −12.9 % |
-| 49 | 3.9 | −15.4 % |
-| 118 | 2.0 | −19.1 % |
+| check | result |
+|---|---|
+| DC limit, 1 kHz | R′ = exact R_dc (291.5054 Ω/m) to 1e-6 |
+| round gold wire in a PEC tube vs exact Bessel solution, 60 GHz, a = 5 and 1 µm | R′ within 0.011 %, L_int within 0.084 % |
+| surface cell 0.06 / 0.03 / 0.015 µm, interior cell 0.5 / 0.25 µm, grading 1.15 / 1.08 | R′ within 0.001 %, L_int within 0.09 % |
+| box 600 → 1200 µm | R′ and L_int unchanged |
 
-α_c ∝ R′, so the notebook's conductor loss is low by the same amount. The effect
-on n and Z0 (through L_int = R′/ω) is about +0.2 %. The notebook matches the COMSOL
-baseline α to ~1 % on these rows, so the dataset's COMSOL α likely carries a
-similar underestimate.
+It converges normally because there is no corner singularity. Inside a
+conductor of finite σ the field is smooth at the corner: the r^−1/3 singularity
+belongs to the PEC limit, and within about one skin depth of the corner the real
+current spreads out.
 
-### Why Wheeler's rule is a valid reference (`wheeler_verify.py`, `wheeler_verify.txt`)
+**Two fixes to cell [6]**
 
-The two are the same quantity. Receding a perfectly conducting wall by `a` changes
-the magnetic energy by (μ0/2)|H_t|² a per unit area, which is exactly the contour
-integrand. They differ only numerically: the contour integral squares a singular
-gradient, while Wheeler takes a difference of C_air, which converges fast.
+1. **`L_ext_box`.** The PEC reference pins A = 1 on the signal and A = 0 on the
+   ground *and* on the box, so the box acts as a third conductor.
+   - The box returns 5.0 % of the current (3.9 % with a 1200 µm box).
+   - L_ext_box comes out 0.37 % low, so L_int = L′ − L_ext_box is 13 % high:
+     10.76 instead of 9.49 nH/m. It also depends on the box: 10.50 nH/m at
+     1200 µm.
+   - Fix: impose the gold solve's net currents (±1/2, A constant on each
+     conductor). This gives L_int = 9.491 nH/m, independent of the box, with
+     ωL_int/R′ = 0.997, the strong-skin-effect value.
+   - Effect on row 86: n 1.71465 → 1.71161, Z0 62.774 → 62.663 Ω, α 2.4838 →
+     2.4882 dB/cm.
+2. **`_graded` endpoint.** `_graded` returns a + (b − a) as its last point,
+   which can miss b by one ulp. `np.unique` then keeps both copies, and the
+   zero-width elements make the matrix singular (row 398, section A). Fix: set
+   the last point to b.
 
-Test on row 49's electrodes in free space (the air problem both methods use),
-with the corners rounded so the contour integral can converge:
+**Gold vs IBC, section C** (Ω/m; % relative to gold):
 
-| corner radius | contour integral, three meshes | Wheeler (central difference) | gap |
-|---|---|---|---|
-| 0.1 µm | 2350.7 / 2359.3 / 2360.1 | 2374.1 | −0.6 % |
-| 0.3 µm | 2281.1 / 2288.8 / 2288.7 | 2302.3 | −0.6 % |
-| sharp | 2125.7 / 2196.7 / 2271.3 (still rising) | 2521.3 | −9.9 % at 12.5 nm cells |
+| row | MTX µm | gold | notebook IBC (notebook mesh) | converged IBC (Wheeler) | ωL_int/R′ |
+|---|---|---|---|---|---|
+| 86 | 9.14 | 3590.1 | 3157.9 (−12.0 %) | 3674.7 (+2.4 %) | 0.997 |
+| 49 | 3.93 | 2393.2 | 2128.4 (−11.1 %) | 2520.9 (+5.3 %) | 1.025 |
+| 118 | 1.96 | 2631.6 | 2251.7 (−14.4 %) | 2783.8 (+5.8 %) | 1.022 |
+| 408 | 7.52 | 3009.1 | 2729.1 (−9.3 %) | 3134.2 (+4.2 %) | 1.017 |
 
-Units are Ω/m. The sharp case reproduces the section solver (2128 / 2517–2525).
+Both IBC values are off, for different reasons:
+- the notebook's because its corners are under-resolved: 7–16 % low over the
+  14 rows;
+- the converged one because the surface-impedance model itself fails within
+  about δ of a 90° corner: 2–6 % high.
 
-The loss also depends on the real corner radius. Against the notebook's sharp-
-corner value at its own mesh (2126), the loss is +8 % higher at a 0.3 µm radius,
-+12 % at 0.1 µm and +19 % at sharp corners. The fabricated corner radius must be
-part of the model.
+The gold solve has neither problem, so it is the reference here.
+
+### Wheeler's rule and the IBC limit (`wheeler_check.py`, `wheeler_verify.py`)
+
+Wheeler's incremental-inductance rule is evaluated here with the same FEM, not
+as a formula: C_air of the electrodes with every face receded by a, and
+R′ = Rs (L(a) − L(0))/(μ0 a). It is the same quantity as the IBC contour
+integral (the shape derivative of the magnetic energy), but it converges fast.
+
+- With rounded corners the contour integral converges and matches Wheeler to
+  0.6 % (ρ = 0.1 µm: 2360 vs 2374; ρ = 0.3 µm: 2289 vs 2302 Ω/m, row 49).
+- With sharp corners the contour integral is still rising at 12.5 nm cells
+  (2126 / 2197 / 2271 vs 2521).
+
+So Wheeler gives the *converged IBC*. That is a statement about the IBC model,
+which the gold solve shows to be 2–6 % high at sharp corners. A real corner
+radius lowers every value somewhat. The earlier "notebook 13–19 % low" was
+measured against Wheeler; against the gold solve it is 7–16 %.
 
 ## Section lengths: top view vs the cross-section figure
 

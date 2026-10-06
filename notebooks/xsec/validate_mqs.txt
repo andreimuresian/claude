@@ -1,0 +1,22 @@
+1. DC limit, row 86 (notebook geometry), f = 1 kHz
+   R' 291.5054  exact R_dc 291.5054 ohm/m  (+0.0000%)
+
+2. Round gold wire in a PEC tube (b = 50 um), 60 GHz, vs the exact Bessel solution
+   a = 5.0 um (35072 el): R'   2365.68 vs   2365.55 (+0.005%)   L_int 6.0813 vs 6.0809 nH/m (+0.006%)   L_ext -0.0001%
+   a = 1.0 um (28928 el): R'  13376.52 vs  13378.00 (-0.011%)   L_int 29.8166 vs 29.8417 nH/m (-0.084%)   L_ext -0.0001%
+
+3. Row 86 section C: mesh and box (notebook cell [6] = first line)
+                        DOF   R_ohm/m L_int nH/m wL_int/R | notebook: L_int_box box share
+   notebook mesh     198801   3590.10     9.4910   0.9966 |             10.7647     4.96%
+   hfine 0.06        161365   3590.15     9.4995   0.9975 |             10.7731     4.96%   R' +0.001%  L_int +0.09%
+   hfine 0.015       243747   3590.09     9.4876   0.9963 |             10.7614     4.96%   R' -0.000%  L_int -0.04%
+   hmax_metal 0.25   305721   3590.10     9.4910   0.9966 |             10.7647     4.96%   R' +0.000%  L_int +0.00%
+   grading 1.08      397047   3590.10     9.4910   0.9966 |             10.7647     4.96%   R' -0.000%  L_int -0.00%
+   box 1200          243125   3590.11     9.4910   0.9966 |             10.4960     3.91%   R' +0.000%  L_int +0.00%
+
+4. Section C, gold interior vs IBC: notebook contour integral (notebook mesh) and its
+   converged sharp-corner value (Wheeler, central difference, electrodes in free space)
+   row  86: gold  3590.1 | IBC notebook mesh  3157.9 (gold +13.7%) | IBC converged (Wheeler)  3674.7 (gold  -2.3%) | wL_int/R 0.997
+   row  49: gold  2393.2 | IBC notebook mesh  2128.4 (gold +12.4%) | IBC converged (Wheeler)  2520.9 (gold  -5.1%) | wL_int/R 1.025
+   row 118: gold  2631.6 | IBC notebook mesh  2251.7 (gold +16.9%) | IBC converged (Wheeler)  2783.8 (gold  -5.5%) | wL_int/R 1.022
+   row 408: gold  3009.1 | IBC notebook mesh  2729.1 (gold +10.3%) | IBC converged (Wheeler)  3134.2 (gold  -4.0%) | wL_int/R 1.017
