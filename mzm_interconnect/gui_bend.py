@@ -352,11 +352,10 @@ class BendWindow(tk.Toplevel):
         fmax = max(200.0, float(p.get("f_max_GHz", 200.0)))
         self.status.config(text="line model...")
 
-        def work():
-            m = line_model(g)
-            ref = m.at_ref(F_REF_GHZ)
-            f = np.linspace(0.25, fmax, 400)
-            return ref, f, m.evaluate(f * 1e9)
+        def show_ref(ref):
+            if seq != self._seq or self._closing:
+                return
+            self._show_kpis(p, ref, zt, zt_note, tau, tau_note)
 
         def done(res):
             if seq != self._seq or self._closing:
@@ -368,7 +367,14 @@ class BendWindow(tk.Toplevel):
 
         def runner():
             try:
-                res = work()
+                m = line_model(g)
+                ref = m.at_ref(F_REF_GHZ)                  # the figures of merit first
+                self._post("call", lambda: show_ref(ref))
+                if seq != self._seq:
+                    return
+                self._post("status", "line model: frequency curves...")
+                f = np.linspace(0.25, fmax, 400)
+                res = (ref, f, m.evaluate(f * 1e9))
                 self._post("call", lambda: done(res))
                 self._post("status", "line model: up to date")
             except Exception as exc:

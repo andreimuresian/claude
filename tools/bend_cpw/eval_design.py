@@ -68,7 +68,7 @@ for name in ("converged", "notebook"):
     log.append(f"== reference C: {name} ({len(out)} geometries)")
     for k in ("alpha", "n_m", "Z0"):
         e = np.array([o[name][k] for o in out])
-        log.append(f"  {k:6s} model - ref (%) per frequency {list(f)} GHz")
+        log.append(f"  {k:6s} model - ref (%) per frequency {[int(x) for x in f]} GHz")
         log.append(f"     mean   {np.round(e.mean(0), 2).tolist()}")
         log.append(f"     max|.| {np.round(np.abs(e).max(0), 2).tolist()}")
 cm = np.array([o["C_model_vs_conv_pct"] for o in out])

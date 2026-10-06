@@ -73,4 +73,10 @@ practical meshes.
   from boundary elements, on the electrodes shrunk by delta/2 (receding wall),
   minus c K^2 delta^(1/3) per corner (c = 0.70 from the square bar);
   R = sqrt(R_dc^2 + R_hf^2), L_int = R_hf / w.
+- Below t/delta ~ 6.5 (60 GHz for 2 um gold), where the skin depth is not small
+  against the gold, R and L come from the current solved inside the electrodes
+  by the filament (PEEC) integral equation of `peec2d.py`, coarse (~700
+  filaments, one eigendecomposition then any number of frequencies); used
+  alone below t/delta = 3.8, blended above. In the design space this took the
+  alpha error at 1-20 GHz from 4-6 % to < 0.9 % (`eval_design.py`).
 - Dielectric conductance from dC/d(eps) of each layer and its sigma / tan(delta).

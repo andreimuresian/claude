@@ -25,7 +25,13 @@ Series impedance (conductor loss and internal inductance):
     delta/2 (the current flows inside the metal), minus c K^2 delta^(1/3) per
     corner for the r^(-1/3) corner current (c = 0.70 from an isolated square
     bar, not fitted to the CPW);
-  * R = sqrt(R_dc^2 + R_hf^2); L_int blended between the DC value and R_hf/w.
+  * R = sqrt(R_dc^2 + R_hf^2); L_int blended between the DC value and R_hf/w;
+  * below t/delta ~ 6.5 (60 GHz for 2 um gold) the skin depth is not small
+    against the gold, and R, L come instead from the current solved inside
+    the electrodes by a partial-element (filament) integral equation: exact
+    rectangle-to-rectangle mutual inductances, free-space Green's function, no
+    mesh outside the metal; fully used below t/delta = 3.8, blended (in
+    log t/delta) up to 6.5. Coarse filaments suffice there (~700, ~1 s).
   Reference: current solved inside the gold by FEM (tools/bend_cpw), itself
   checked against the exact coax solution, a PEEC integral equation and a
   full-wave solve with the gold meshed.
@@ -145,6 +151,83 @@ def inductance_dc(S, W, Wg, t):
 
 
 # ---------------------------------------------------------------------------
+# Current inside the electrodes, filament (PEEC) integral equation
+# ---------------------------------------------------------------------------
+PEEC_T_DELTA = (3.8, 6.5)        # t/delta: filaments below, boundary elements above, blend between
+
+
+def _graded_edges(a, b, h_a, h_b, h_max, r=1.15):
+    """Cell edges from a to b, size h_a at a and h_b at b (None = coarse)."""
+    def side(h0):
+        e, h = [0.0], h0
+        while e[-1] < (b - a) / 2:
+            e.append(e[-1] + h)
+            h = min(h * r, h_max)
+        return np.array(e)
+    left = side(h_a if h_a else h_max)
+    right = side(h_b if h_b else h_max)
+    pts = np.concatenate([a + left[left < (b - a) / 2], b - right[right < (b - a) / 2]])
+    pts = np.unique(np.concatenate([[a, b], pts]))
+    hmin = 0.4 * min(h_a or h_max, h_b or h_max)
+    keep = [pts[0]]
+    for p in pts[1:-1]:
+        if p - keep[-1] > hmin and pts[-1] - p > hmin:
+            keep.append(p)
+    keep.append(pts[-1])
+    return np.array(keep)
+
+
+class _Filaments:
+    """Half structure x >= 0 (mirror images for x < 0): half signal + right
+    ground cut into rectangles graded towards every surface. Per unit length,
+        I_i / (sigma A_i) + j w sum_j L_ij I_j = V_k   (filament i in conductor k),
+        sum over conductor k of I_i = +1/2 (signal half), -1/2 (ground),
+    L_ij = -mu0/(2 pi) (<ln r>_ij + <ln r>_ij,mirror), exact for rectangles."""
+
+    def __init__(self, S, W, Wg, t, sigma):
+        h_s = min(0.15e-6, 0.075 * t)
+        xs, xgi = S / 2, S / 2 + W
+        xgo = xgi + Wg
+        ey = _graded_edges(0.0, t, h_s, h_s, 0.2 * t)
+        rects, cond = [], []
+        for k, ex in ((1, _graded_edges(0.0, xs, None, h_s, 1.5e-6)),
+                      (2, _graded_edges(xgi, xgo, h_s, h_s, 1.5e-6))):
+            X1, Y1 = np.meshgrid(ex[:-1], ey[:-1], indexing="ij")
+            X2, Y2 = np.meshgrid(ex[1:], ey[1:], indexing="ij")
+            rects.append(np.column_stack([X1.ravel(), X2.ravel(), Y1.ravel(), Y2.ravel()]))
+            cond.append(np.full(X1.size, k))
+        R = np.vstack(rects)
+        self.cond = np.concatenate(cond)
+        Rm = R.copy()
+        Rm[:, 0], Rm[:, 1] = -R[:, 1], -R[:, 0]
+        n = len(R)
+        L = np.empty((n, n))
+        b = tuple(R[:, c][None, :] for c in range(4))
+        bm = tuple(Rm[:, c][None, :] for c in range(4))
+        for i0 in range(0, n, 400):
+            a = tuple(R[i0:i0 + 400, c][:, None] for c in range(4))
+            L[i0:i0 + 400] = -MU0 / (2 * np.pi) * (mean_log(a, b) + mean_log(a, bm))
+        Rdiag = 1.0 / (sigma * (R[:, 1] - R[:, 0]) * (R[:, 3] - R[:, 2]))
+        B = np.column_stack([(self.cond == k).astype(float) for k in (1, 2)])
+        # (D + j w L)^-1 for every w from one symmetric eigendecomposition:
+        # D^-1/2 L D^-1/2 = Q diag(lam) Q^T, so B^T (D + j w L)^-1 B
+        #   = sum_i p_i p_i^T / (1 + j w lam_i),  p = Q^T D^-1/2 B  (exact)
+        d = 1.0 / np.sqrt(Rdiag)
+        lam, Q = np.linalg.eigh(d[:, None] * L * d[None, :])
+        self.lam = lam
+        self.Pm = Q.T @ (d[:, None] * B)
+
+    def impedance(self, f_Hz):
+        """R (ohm/m), L (H/m, total: internal + external) at each frequency."""
+        w = 2 * np.pi * np.atleast_1d(np.asarray(f_Hz, float))
+        den = 1.0 / (1.0 + 1j * w[:, None] * self.lam[None, :])          # (nf, n)
+        Y = np.einsum("fi,ia,ib->fab", den, self.Pm, self.Pm)              # B^T M^-1 B
+        V = np.linalg.solve(Y, np.broadcast_to(np.array([0.5, -0.5], complex), (len(w), 2))[..., None])[..., 0]
+        Z = V[:, 0] - V[:, 1]
+        return Z.real, Z.imag / w
+
+
+# ---------------------------------------------------------------------------
 # The model
 # ---------------------------------------------------------------------------
 class LineModel:
@@ -166,6 +249,7 @@ class LineModel:
         self._lay = lay
         self._dC = None          # dC/d(eps_r) per lossy layer, on first use
         self._bem = {}
+        self._fil = None         # filament model, built on the first low-frequency call
 
     # -- conductor -----------------------------------------------------------
     def _bem_at(self, d):
@@ -207,6 +291,20 @@ class LineModel:
         # internal inductance: R_hf/w in the skin-effect regime; towards DC the
         # current spreads uniformly and L_int tends to L_dc - L_ext (exact)
         L_int = 1.0 / np.sqrt(1.0 / self.dL_dc ** 2 + 1.0 / (R_hf / w) ** 2)
+        # where the skin depth is not small against the gold: the current solved
+        # inside it (filaments), blended in log(t/delta) into the above
+        lo, hi = PEEC_T_DELTA
+        x = np.clip(np.log(t / delta / lo) / np.log(hi / lo), 0.0, 1.0)
+        wb = x * x * (3 - 2 * x)                   # 0: filaments, 1: boundary elements
+        need = wb < 1.0
+        if need.any():
+            if self._fil is None:
+                S, W, Wg, _t = self._dims
+                self._fil = _Filaments(S, W, Wg, t, self.g.sigma)
+            Rp, Lp = self._fil.impedance(f[need])
+            R = R.copy(); L_int = L_int.copy()
+            R[need] = (1 - wb[need]) * Rp + wb[need] * R[need]
+            L_int[need] = (1 - wb[need]) * (Lp - self.L_ext) + wb[need] * L_int[need]
         return R, L_int
 
     # -- dielectric ----------------------------------------------------------
