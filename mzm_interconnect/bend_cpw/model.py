@@ -279,14 +279,10 @@ class LineModel:
         delta = np.sqrt(2.0 / (w * MU0 * self.g.sigma))
         Rs = 1.0 / (self.g.sigma * delta)
         d_eff = np.minimum(delta, 0.45 * t)          # the receded metal keeps a core
-        u = np.unique(np.round(d_eff, 15))
-        if u.size <= 3:
-            G = np.empty_like(d_eff)
-            Ks = np.empty_like(d_eff)
-            for d in u:
-                gk, kk = self._bem_at(d)
-                sel = np.isclose(d_eff, d, rtol=1e-9, atol=0)
-                G[sel], Ks[sel] = gk, kk
+        if np.unique(d_eff).size <= 3:
+            # one solve per distinct depth (cached by _bem_at)
+            vals = np.array([self._bem_at(d) for d in d_eff])
+            G, Ks = vals[:, 0], vals[:, 1]
         else:
             # fixed table in log(depth), top node at 0.45 t, so that later sweeps
             # on other grids reuse the same solves
