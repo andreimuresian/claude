@@ -90,7 +90,7 @@ class BendWindow(tk.Toplevel):
             self._entry_row(box.body, key, f"{label} [{P.BY_KEY[key].unit}]")
         ttk.Label(box.body, text="Materials: SiO2 eps 3.9; LN slab eps 28 (x) / 44 (y); "
                                  "Si 550 um, eps 11.7; air above and in the gaps.",
-                  style="Muted.TLabel", wraplength=330, justify="left").pack(fill="x", padx=4, pady=(2, 6))
+                  style="Muted.TLabel", wraplength=300, justify="left").pack(fill="x", padx=4, pady=(2, 6))
 
         # ---- figures of merit ---------------------------------------------
         box = Collapsible(body, f"Bend line at {F_REF_GHZ:g} GHz", t)
@@ -112,7 +112,7 @@ class BendWindow(tk.Toplevel):
                      anchor="w").grid(row=i, column=2, sticky="w")
             self.kpi[k] = v
         grid.columnconfigure(0, weight=1)
-        self.note = ttk.Label(box.body, text="", style="Muted.TLabel", wraplength=330, justify="left")
+        self.note = ttk.Label(box.body, text="", style="Muted.TLabel", wraplength=300, justify="left")
         self.note.pack(fill="x", padx=4, pady=(4, 2))
         rule = ttk.Frame(box.body, style="Panel.TFrame")
         rule.pack(fill="x", pady=2)
@@ -133,7 +133,7 @@ class BendWindow(tk.Toplevel):
                                  "equals the target, with the smallest loss per bend "
                                  "(alpha x bend length for the RF delay above). Gold thickness, "
                                  "conductivity and the layer stack stay as set above.",
-                  style="Muted.TLabel", wraplength=330, justify="left").pack(fill="x", padx=4, pady=(2, 4))
+                  style="Muted.TLabel", wraplength=300, justify="left").pack(fill="x", padx=4, pady=(2, 4))
         rg = tk.Frame(box.body, bg=t["panel"])
         rg.pack(fill="x", padx=4)
         for c, txt in enumerate(("", "min [um]", "max [um]")):
@@ -152,7 +152,7 @@ class BendWindow(tk.Toplevel):
         self.btn_opt.pack(side="left", fill="x", expand=True)
         self.btn_apply = ttk.Button(b, text="Apply proposal", command=self.action_apply, state="disabled")
         self.btn_apply.pack(side="left", fill="x", expand=True, padx=(4, 0))
-        self.prop_lbl = ttk.Label(box.body, text="", style="Muted.TLabel", wraplength=330, justify="left")
+        self.prop_lbl = ttk.Label(box.body, text="", style="Muted.TLabel", wraplength=300, justify="left")
         self.prop_lbl.pack(fill="x", padx=4, pady=(0, 6))
 
         # ---- FEM verification -----------------------------------------------
@@ -161,7 +161,7 @@ class BendWindow(tk.Toplevel):
         ttk.Label(box.body, text="Solves the current cross-section with the validated reference: "
                                  "quasi-static FEM capacitance and the current inside the gold "
                                  "(no surface-impedance approximation). About 10 s per frequency.",
-                  style="Muted.TLabel", wraplength=330, justify="left").pack(fill="x", padx=4, pady=(2, 4))
+                  style="Muted.TLabel", wraplength=300, justify="left").pack(fill="x", padx=4, pady=(2, 4))
         fr = ttk.Frame(box.body, style="Panel.TFrame")
         fr.pack(fill="x", pady=2)
         ttk.Label(fr, text="Frequencies [GHz]", style="Muted.TLabel", width=22).pack(side="left", padx=4)
