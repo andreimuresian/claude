@@ -49,3 +49,31 @@ At the matching gaps (CAP_H 1.4 / WG_TOP 1.0, gap 3.5; CAP_H 0.5 / WG_TOP 1.4, g
 - Vpi*L changes by less than 0.03 %.
 
 So the buffered numbers do not depend on GAP_TOP / x_lift, as expected with the buffer above cutoff (~46 nm at 1360 nm).
+
+## Why CAP_H changes Vpi*L, and why less with the buffer (`cap_buffer_decomposition.csv`)
+WG_TOP 1.0 um. Both cap heights, with and without the 200 nm buffer, at the same gaps (4.2 and 3.4 um).
+The mean DC field Ex in the rib (1 V applied) is recorded with Vpi*L.
+
+| | gap 4.2, no buffer | gap 3.4, no buffer | gap 4.2, buffer | gap 3.4, buffer |
+|---|---|---|---|---|
+| Vpi*L, CAP_H 1.4 -> 0.5 | -4.1 % | -3.4 % | -3.2 % | -2.7 % |
+| Ex in the rib, CAP_H 1.4 -> 0.5 | +4.6 % | +3.8 % | +3.7 % | +3.1 % |
+
+| | CAP_H 1.4 | CAP_H 0.5 |
+|---|---|---|
+| buffer penalty at gap 4.2 | +19.4 % (+0.372 V*cm) | +20.5 % (+0.377 V*cm) |
+| buffer penalty at gap 3.4 | +25.6 % | +26.5 % |
+
+- **The cap acts electrostatically.** neff changes by only 4e-4, and the Ex change in the rib accounts for the
+  Vpi*L change. A lower SiO2 cap (eps_DC 3.75) leaves more air (eps 1) next to the rib, so more of the gap voltage
+  drops across the rib.
+- **The buffer penalty is the same for both caps** (within ~1 point).
+- **The cap effect is smaller with the buffer** (-2.7 to -3.2 % instead of -3.4 to -4.1 %). With the buffer, the
+  200 nm oxide fills the whole gap at rib level whatever CAP_H is, so the cap only changes the dielectric
+  above that.
+- **Consequence:** the Vpi*L that can be recovered (unbuffered gap 4.2 -> buffered gap 3.2) is 0.135 V*cm at CAP_H 1.4
+  and 0.101 V*cm at CAP_H 0.5.
+- **Not proportional to CAP_H:**
+  - 0.101/0.135 = 0.75, while 0.5/1.4 = 0.36;
+  - two cap heights cannot fix a law;
+  - the cap effect should saturate once the cap is taller than the gap field near the rib.
