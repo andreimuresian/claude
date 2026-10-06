@@ -96,3 +96,31 @@ The mean DC field Ex in the rib (1 V applied) is recorded with Vpi*L.
   - The low cap lowers the unbuffered reference by 4.1 %.
   - Near the matching gap it lowers the buffered curve by only 2.7 %.
   - So the target falls 1.4 % (~0.026 V*cm) further below the buffered curve, and reaching it needs 0.026 / 0.478 = 0.055 um more narrowing.
+
+## CAP_H sweep (`cap_sweep.py`, `cap_sweep.csv`, `jerez_cap_sweep.png`)
+- **Setup:** WG_TOP 1.0 um; CAP_H 0.3 -> 1.9 um (0.2 um steps, plus 1.4).
+- **Runs per CAP_H:**
+  - unbuffered gap 4.2 reference;
+  - buffered at gaps 3.3, 3.4, 3.5, 3.6 and 4.2.
+- **Run count:** 48 new runs, plus the CAP_H 1.4 / 0.5 runs from before. No failures.
+
+| CAP_H (um) | 0.3 | 0.5 | 0.7 | 0.9 | 1.1 | 1.3 | 1.4 | 1.5 | 1.7 | 1.9 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| target: no buffer, gap 4.2 (V*cm) | 1.789 | 1.837 | 1.867 | 1.886 | 1.901 | 1.911 | 1.915 | 1.919 | 1.924 | 1.928 |
+| matching gap g* (um) | 3.361 | 3.410 | 3.433 | 3.447 | 3.456 | 3.462 | 3.464 | 3.466 | 3.469 | 3.471 |
+| slope s (V*cm/um) | 0.463 | 0.477 | 0.487 | 0.495 | 0.500 | 0.505 | 0.506 | 0.508 | 0.510 | 0.512 |
+| penalty P at 4.2 (V*cm) | 0.388 | 0.377 | 0.373 | 0.372 | 0.372 | 0.372 | 0.372 | 0.372 | 0.373 | 0.373 |
+| buffered IL at g* (dB/cm) | 0.017 | 0.015 | 0.014 | 0.013 | 0.013 | 0.012 | 0.012 | 0.012 | 0.012 | 0.012 |
+
+- **g* saturates; it is not proportional to CAP_H.**
+  - Fit: g* = 3.471 - 0.238 exp(-CAP_H / 0.38 um), max residual 3 nm.
+  - Above CAP_H ~1.1 um, g* stays within 15 nm of 3.47 um.
+  - Below ~0.7 um it drops quickly, to 3.36 um at 0.3 um.
+- **What drives it:**
+  - The slope s of the buffered curve does most of it: it falls from 0.51 to 0.46 V*cm/um as the cap is lowered.
+  - P is constant (0.372 V*cm) down to CAP_H 0.7 and grows only for the lowest caps.
+- **Cap effect vs absolute cap-top height (bottom-right panel):**
+  - CAP_H is measured from the gold bottom, so with the buffer the cap top sits 0.2 um higher above the slab.
+  - Plotted against the real cap-top height, buffered and unbuffered nearly overlap.
+  - So most of "the cap matters less with the buffer" at equal CAP_H is this 0.2 um offset of the definition.
+  - What remains is a slightly longer decay length with the buffer (0.65 vs 0.54 um in CAP_H).
