@@ -1,0 +1,54 @@
+{
+ "CAP_H 1.4 / WG_TOP 1.0": {
+  "VpiL_at_3p2": 1.7801,
+  "VpiL_at_4p0": 2.1867,
+  "IL_range": [
+   0.00227,
+   0.02864
+  ],
+  "ref_noBuffer_VpiL": 1.9153,
+  "ref_noBuffer_IL_at_xlift6": 0.3127,
+  "matching_gap_um": 3.464,
+  "extrapolated": false,
+  "buffered_IL_at_matching_gap": 0.01236
+ },
+ "CAP_H 1.4 / WG_TOP 1.4": {
+  "VpiL_at_3p2": 1.7065,
+  "VpiL_at_4p0": 2.1043,
+  "IL_range": [
+   0.00212,
+   0.03241
+  ],
+  "ref_noBuffer_VpiL": 1.8403,
+  "ref_noBuffer_IL_at_xlift6": 0.1879,
+  "matching_gap_um": 3.467,
+  "extrapolated": false,
+  "buffered_IL_at_matching_gap": 0.01296
+ },
+ "CAP_H 0.5 / WG_TOP 1.0": {
+  "VpiL_at_3p2": 1.7364,
+  "VpiL_at_4p0": 2.1189,
+  "IL_range": [
+   0.00228,
+   0.02865
+  ],
+  "ref_noBuffer_VpiL": 1.8373,
+  "ref_noBuffer_IL_at_xlift6": 0.3108,
+  "matching_gap_um": 3.41,
+  "extrapolated": false,
+  "buffered_IL_at_matching_gap": 0.01469
+ },
+ "CAP_H 0.5 / WG_TOP 1.4": {
+  "VpiL_at_3p2": 1.6663,
+  "VpiL_at_4p0": 2.0413,
+  "IL_range": [
+   0.00213,
+   0.03243
+  ],
+  "ref_noBuffer_VpiL": 1.7676,
+  "ref_noBuffer_IL_at_xlift6": 0.1962,
+  "matching_gap_um": 3.415,
+  "extrapolated": false,
+  "buffered_IL_at_matching_gap": 0.01551
+ }
+}

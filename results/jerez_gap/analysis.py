@@ -39,29 +39,30 @@ for j, cap in enumerate(("1.4", "0.5")):
         s = dict(VpiL_at_3p2=round(float(vp[0]), 4), VpiL_at_4p0=round(float(vp[-1]), 4),
                  IL_range=[round(float(il.min()), 5), round(float(il.max()), 5)])
         if ref:
-            av.axhline(ref["VpiL"], color=COL[w], ls="--", lw=1)
-            av.plot([4.2], [ref["VpiL"]], "D", mfc="white", mec=COL[w], ms=7, mew=1.5,
-                    label=f"no buffer, gap 4.2 µm: {ref['VpiL']:.3f} V·cm")
-            ai.plot([4.2], [ref["IL"]], "D", mfc="white", mec=COL[w], ms=7, mew=1.5,
-                    label=f"no buffer, gap 4.2 µm, x_lift 6 µm: {ref['IL']:.3f} dB/cm")
             # gap where the buffered Vpi*L equals the unbuffered reference (linear in gap)
             if vp.min() <= ref["VpiL"] <= vp.max():
                 gm = float(np.interp(ref["VpiL"], vp, g)); extrap = False
             else:
-                a, b = np.polyfit(g[-3:], vp[-3:], 1); gm = float((ref["VpiL"] - b) / a); extrap = True
+                a_, b_ = np.polyfit(g[-3:], vp[-3:], 1); gm = float((ref["VpiL"] - b_) / a_); extrap = True
+            av.axhline(ref["VpiL"], color=COL[w], ls="--", lw=1)
             av.axvline(gm, color=COL[w], ls=":", lw=1)
-            av.annotate(f"{gm:.2f} µm" + (" (extrap.)" if extrap else ""), (gm, ref["VpiL"]),
-                        xytext=(-6, 8), textcoords="offset points", ha="right", color=COL[w], fontsize=9)
+            av.plot([4.2], [ref["VpiL"]], "D", mfc="white", mec=COL[w], ms=7, mew=1.5,
+                    label=f"no buffer, gap 4.2 µm: {ref['VpiL']:.3f} V·cm  →  buffered match at {gm:.2f} µm"
+                          + (" (extrap.)" if extrap else ""))
+            ai.plot([4.2], [ref["IL"]], "D", mfc="white", mec=COL[w], ms=7, mew=1.5,
+                    label=f"no buffer, gap 4.2 µm, x_lift 6 µm: {ref['IL']:.3f} dB/cm")
             ilm = float(np.exp(np.interp(gm, g, np.log(il)))) if not extrap else None
             s.update(ref_noBuffer_VpiL=round(ref["VpiL"], 4), ref_noBuffer_IL_at_xlift6=round(ref["IL"], 4),
                      matching_gap_um=round(gm, 3), extrapolated=extrap,
                      buffered_IL_at_matching_gap=round(ilm, 5) if ilm else None)
         summary[f"CAP_H {cap} / WG_TOP {w}"] = s
+    lo_, hi_ = av.get_ylim(); av.set_ylim(lo_, hi_ + 0.6 * (hi_ - lo_))
+    ai.set_yscale("log"); ai.set_ylim(3e-4, 0.6)
     av.set_title(f"CAP_H = {cap} µm", fontsize=11)
     av.set_ylabel("Vπ·L (V·cm)"); ai.set_ylabel("IL (dB/cm)"); ai.set_yscale("log")
     ai.set_xlabel("bottom gap GAP_BOT (µm)")
-    for a in (av, ai):
-        a.grid(alpha=0.3, which="both", lw=0.4); a.legend(fontsize=8, loc="best")
+    for a, loc in ((av, "upper left"), (ai, "lower left")):
+        a.grid(alpha=0.3, which="both", lw=0.4); a.legend(fontsize=8, loc=loc)
     ai.set_xticks(np.round(np.arange(3.2, 4.21, 0.1), 1))
 fig.suptitle("Buffered Jerez lifted, 1360 nm (400 nm film, 170 nm etch, GAP_TOP 8 µm): "
              "dashed = unbuffered gap 4.2 µm Vπ·L, dotted = buffered gap with the same Vπ·L", fontsize=10.5)
