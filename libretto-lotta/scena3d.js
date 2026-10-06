@@ -137,12 +137,12 @@ function derive(j){const {r,u,fw}=j.F,P=j.P;const set=(k,v)=>{if(j[k])j[k].copy(
     const fd=j['toe'+s].clone().sub(j['ankle'+s]);fd.y=0;if(fd.lengthSq()<1e-6)fd.copy(j.F.fw);fd.normalize();
     set('heel'+s,add(j['ankle'+s],fd,-4,V(0,1,0),-4));set('foot'+s,V(j['ankle'+s].x,0,j['ankle'+s].z));}}
 function physics(J,H,S){
-  const parts=[],idx={},segs=[],tpl={},q={},init={};
+  const parts=[],idx={},segs=[],tpl={},q={},init={};const P00={A:J.A.P.clone(),B:J.B.P.clone()};
   const P=(W,k)=>idx[W+'.'+k];
   for(const W of ['A','B']){const j=J[W],{r,u,fw}=j.F;
     j._tc0=add(j.P,u,-2);j._tc1=add(j.P,u,40);
     const names=CLUSTER.concat(['elbL','wrL','handL','elbR','wrR','handR','kneeL','ankleL','toeL','kneeR','ankleR','toeR']);
-    for(const k of names){idx[W+'.'+k]=parts.length;parts.push({v:j[k],w:CLUSTER.includes(k)?.15:1,r:0,W,k});init[W+'.'+k]=j[k].clone()}
+    for(const k of names){idx[W+'.'+k]=parts.length;parts.push({v:j[k],w:CLUSTER.includes(k)?.03:1,r:0,W,k});init[W+'.'+k]=j[k].clone()}
     tpl[W]=CLUSTER.map(k=>{const d=j[k].clone().sub(j.P);return V(d.dot(r),d.dot(u),d.dot(fw))});
     q[W]=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(r,u,fw));
     for(const [a,b,rad,kind] of SEGS){const s={a:P(W,a),b:P(W,b),r:rad,kind,W};segs.push(s);
@@ -196,7 +196,7 @@ function physics(J,H,S){
     const d=b.clone().sub(a);if(d.lengthSq()<1e-6)d.set(0,-1,0);b.copy(a).addScaledVector(d.normalize(),L)}
   let pen=0,pw='';for(const [s1,s2] of pairs){const [s,t]=closestSS(parts[s1.a].v,parts[s1.b].v,parts[s2.a].v,parts[s2.b].v);
     const dd=parts[s1.a].v.clone().lerp(parts[s1.b].v,s).distanceTo(parts[s2.a].v.clone().lerp(parts[s2.b].v,t));const nn=parts[s1.a].v.clone().lerp(parts[s1.b].v,s).sub(parts[s2.a].v.clone().lerp(parts[s2.b].v,t)).normalize();const x=rad(s1,nn)+rad(s2,nn)-dd;if(x>pen){pen=x;pw=s1.W+parts[s1.a].k+'/'+s2.W+parts[s2.a].k}}
-  J.pen=pen;J.penWhere=pw;
+  J.moved=Math.max(J.A.P.distanceTo(P00.A),J.B.P.distanceTo(P00.B));J.pen=pen;J.penWhere=pw;
   for(const W of ['A','B']){derive(J[W]);for(const s of ['L','R']){const h=H[W][s],j=J[W];h.el=j['elb'+s];h.wr=j['wr'+s];h.hd=j['hand'+s];
     const tg=live(W,s);const ap=tg.sub(h.wr);if(h.grip>.3&&ap.lengthSq()>1)h.appr=ap.normalize();else h.appr=h.hd.clone().sub(h.wr).normalize()}}
 }
@@ -217,7 +217,7 @@ function seg(group,r,mat){const geo=new THREE.CapsuleGeometry(r,1,6,12);const m=
     m.quaternion.setFromUnitVectors(UPY,d.normalize());
     if(Math.abs(m.userData.L-L)>.5||!m.userData.L){m.geometry.dispose();m.geometry=new THREE.CapsuleGeometry(r,Math.max(.1,L),6,12);m.userData.L=L}}}}
 function blob(group,sx,sy,sz,mat){const m=new THREE.Mesh(new THREE.SphereGeometry(1,20,14),mat);m.scale.set(sx,sy,sz);m.castShadow=true;m.receiveShadow=true;group.add(m);return m}
-function basisQuat(x,y,z){const M=new THREE.Matrix4().makeBasis(x,y,z);return new THREE.Quaternion().setFromRotationMatrix(M)}
+function basisQuat(x,y,z){if(x.clone().cross(y).dot(z)<0)x=x.clone().negate();const M=new THREE.Matrix4().makeBasis(x,y,z);return new THREE.Quaternion().setFromRotationMatrix(M)}
 
 function makeHand(group,mat,side){
   const h={side,palm:new THREE.Mesh(new THREE.BoxGeometry(8.4,2.6,9.2),mat),f:[],t:[]};
