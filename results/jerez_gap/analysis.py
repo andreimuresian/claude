@@ -24,7 +24,7 @@ with open(OUT + "jerez_gap_sweep.csv", "w") as f:
                 f"{v['IL']:.5f},{v['VpiL']:.4f},{v['tri']}\n")
 
 summary = {}
-fig, axs = plt.subplots(2, 2, figsize=(12, 8), sharex=True)
+fig, axs = plt.subplots(2, 2, figsize=(12, 8), sharex=True, sharey="row")
 for j, cap in enumerate(("1.4", "0.5")):
     av, ai = axs[0, j], axs[1, j]
     for w in ("1.0", "1.4"):
@@ -56,13 +56,16 @@ for j, cap in enumerate(("1.4", "0.5")):
                      matching_gap_um=round(gm, 3), extrapolated=extrap,
                      buffered_IL_at_matching_gap=round(ilm, 5) if ilm else None)
         summary[f"CAP_H {cap} / WG_TOP {w}"] = s
-    lo_, hi_ = av.get_ylim(); av.set_ylim(lo_, hi_ + 0.6 * (hi_ - lo_))
+    av.set_ylim(1.62, 2.45)
     ai.set_yscale("log"); ai.set_ylim(3e-4, 0.6)
     av.set_title(f"CAP_H = {cap} µm", fontsize=11)
-    av.set_ylabel("Vπ·L (V·cm)"); ai.set_ylabel("IL (dB/cm)"); ai.set_yscale("log")
+    if j == 0:
+        av.set_ylabel("Vπ·L (V·cm)"); ai.set_ylabel("IL (dB/cm)")
+    ai.set_yscale("log")
     ai.set_xlabel("bottom gap GAP_BOT (µm)")
     for a, loc in ((av, "upper left"), (ai, "lower left")):
         a.grid(alpha=0.3, which="both", lw=0.4); a.legend(fontsize=8, loc=loc)
+        a.tick_params(labelleft=True)
     ai.set_xticks(np.round(np.arange(3.2, 4.21, 0.1), 1))
 fig.suptitle("Buffered Jerez lifted, 1360 nm (400 nm film, 170 nm etch, GAP_TOP 8 µm): "
              "dashed = unbuffered gap 4.2 µm Vπ·L, dotted = buffered gap with the same Vπ·L", fontsize=10.5)
