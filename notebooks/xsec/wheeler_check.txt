@@ -1,0 +1,9 @@
+row 49   (skin depth 0.304 um)
+  mesh 1.0/1.0 ( 96052 el): contour integral R'  2128.4 | Wheeler R'  2525.9 (delta/8)  2517.2 (delta/2) ohm/m | contour vs Wheeler -15.4%
+  mesh 0.5/0.5 (365406 el): contour integral R'  2193.8 | Wheeler R'  2525.0 (delta/8)  2525.1 (delta/2) ohm/m | contour vs Wheeler -13.1%
+row 118   (skin depth 0.304 um)
+  mesh 1.0/1.0 ( 74060 el): contour integral R'  2251.7 | Wheeler R'  2766.7 (delta/8)  2782.6 (delta/2) ohm/m | contour vs Wheeler -19.1%
+  mesh 0.5/0.5 (277630 el): contour integral R'  2363.2 | Wheeler R'  2782.4 (delta/8)  2791.5 (delta/2) ohm/m | contour vs Wheeler -15.3%
+row 408   (skin depth 0.304 um)
+  mesh 1.0/1.0 (111872 el): contour integral R'  2729.1 | Wheeler R'  3139.6 (delta/8)  3134.8 (delta/2) ohm/m | contour vs Wheeler -12.9%
+  mesh 0.5/0.5 (424190 el): contour integral R'  2798.8 | Wheeler R'  3132.5 (delta/8)  3138.3 (delta/2) ohm/m | contour vs Wheeler -10.8%

@@ -99,3 +99,26 @@ finer, corner and skin collars 2× finer than the notebook):
   of it is the conductivity: the notebook uses σ = 4.56e7, while
   `../validation/GEOMETRY_SPEC.md` notes COMSOL used 4.1e7 (≈ 5.5 % in α).
   The additive form uses the dataset baseline, so this does not enter Δα.
+
+## Conductor loss at the corners: the notebook value is 13–19 % low
+
+`conv_corner.py`: refining only the corner/edge cells (0.05 → 0.00625 µm) raises
+R′ by a near-constant 2.3–3.4 % per halving, still growing at the finest level.
+The field next to the corner has the expected r^−1/3 form; the integral is
+finite, but the mesh value approaches it too slowly to extrapolate.
+
+`wheeler_check.py` (`wheeler_check.txt`): Wheeler's incremental-inductance rule
+gives the same R′ from C_air of the line with every metal face receded. It is
+mesh-converged (≤ 0.3 % between two mesh levels) and independent of the
+recession (δ/8 and δ/2 agree to ≤ 0.6 %), so it is the converged value.
+
+| row | MTX µm | notebook R′ vs converged |
+|---|---|---|
+| 408 | 7.5 | −12.9 % |
+| 49 | 3.9 | −15.4 % |
+| 118 | 2.0 | −19.1 % |
+
+α_c ∝ R′, so the notebook's conductor loss is low by the same amount. The effect
+on n and Z0 (through L_int = R′/ω) is about +0.2 %. The notebook matches the COMSOL
+baseline α to ~1 % on these rows, so the dataset's COMSOL α likely carries a
+similar underestimate.
