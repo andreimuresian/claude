@@ -148,6 +148,15 @@ def main():
                 aa = per_cell(D[(m, t, 400)], D[(m, t, 600)], f)[0]
                 print(f"   {m:5} {t:6} {f/1e9:4.0f} | {a:7.3f} {aa:7.3f} | {n:6.3f} | {sv:11.4f} {lk:+11.3f}")
 
+    print("\n5. Mesh check, 600 um PEC tee at 60 GHz: grounds on the automatic mesh (as above) vs in the 5 um group")
+    f = 60e9
+    fine = read(os.path.join(DIR, "600 TEE PEC MESH CORRECTED.s2p"))[0][f]
+    for name, S in (("automatic", D[("PEC", "TEE", 600)][f]), ("5 um", fine)):
+        a, n, sv, lk = line_line(D[("PEC", "TEE", 400)][f], S, f)
+        print(f"   {name:9}: |S11| {abs(S[0]):.4f} {math.degrees(cmath.phase(S[0])):8.2f} deg, |S21| {abs(S[1]):.5f}"
+              f" {math.degrees(cmath.phase(S[1])):8.2f} deg, lost {100*(1 - abs(S[0])**2 - abs(S[1])**2):.3f} %;"
+              f"  with the 400 um line: line-line {a:.3f} dB/cm, ends lose {lk:+.3f} %")
+
 
 if __name__ == "__main__":
     main()

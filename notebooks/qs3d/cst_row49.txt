@@ -40,3 +40,7 @@
    PEC   NO TEE   20 |   0.000   0.000 |  1.969 |      1.0000      -0.000
    PEC   NO TEE   60 |   0.109   0.108 |  1.972 |      1.0006      -0.068
    PEC   NO TEE  100 |   0.144   0.136 |  1.972 |      0.9999      +0.200
+
+5. Mesh check, 600 um PEC tee at 60 GHz: grounds on the automatic mesh (as above) vs in the 5 um group
+   automatic: |S11| 0.0778   -44.16 deg, |S21| 0.98322  -123.97 deg, lost 2.722 %;  with the 400 um line: line-line 5.517 dB/cm, ends lose -5.320 %
+   5 um     : |S11| 0.0706   -45.24 deg, |S21| 0.98378  -124.00 deg, lost 2.718 %;  with the 400 um line: line-line 5.554 dB/cm, ends lose -5.349 %

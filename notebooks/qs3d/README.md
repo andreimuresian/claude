@@ -236,8 +236,17 @@ This describes the test fixture; nothing is fitted to it.
 - The automatic mesh caps the element size at the longest model edge / 10
   (StepsPerBoxNear = 10). That edge is the line length, so the cap is about
   40 µm in the 400 µm model and 60 µm in the 600 µm model.
-- The two tee lines then do not have identically meshed cells. That alone can
-  break the line-line check, so the 60 GHz result above may be partly a mesh
-  effect.
-- Test: rerun the 600 µm PEC tee line with the grounds in the 5 µm group, then
-  run a 1000 µm (5-cell) line meshed the same way.
+- The two tee lines then do not have identically meshed cells, which alone
+  could break the line-line check.
+- **Result (`cst_row49.txt`, section 5): the mesh is not the cause.** The author
+  reran the 600 µm PEC tee line with the grounds in the 5 µm group.
+  - Lost power at 60 GHz: 2.722 % → 2.718 %.
+  - |S21|: 0.98322 → 0.98378; phase moves by 0.03°.
+  - |S11|: 0.078 → 0.071.
+  - Paired with the 400 µm line, the joined ends still need 5.3 % gain.
+  - The 400 µm model's automatic cap (about 40 µm) was already finer than the
+    600 µm one, so its mesh error is smaller still. The 60 GHz result above
+    stands.
+- Next: a 1000 µm (5-cell) PEC tee line with the same 5 µm ground mesh, paired
+  with the corrected 600 µm line. If the loss belongs to the cell, the 1000 µm
+  line loses about 7.7 % at 60 GHz (2.7 % + 2 × 2.5 %).
