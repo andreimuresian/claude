@@ -93,6 +93,32 @@ def line_line(S4, S6, f):
         100*(1 - abs(SK[0, 0])**2 - abs(SK[1, 0])**2)
 
 
+def pair(Sa, Sb, Na, Nb, f, n_ref=2.7):
+    """Line-line for lines of Na and Nb cells (same ends): per-cell alpha [dB/cm] and n
+    from the eigenvalues of Mb Ma^-1 = E_a T^(Nb-Na) E_a^-1, the author's subtraction,
+    and the joined ends K = T^-Na Ma with the branch of T = (Mb Ma^-1)^(1/d) nearest n_ref."""
+    d = Nb - Na
+    Ma, Mb = abcd(Sa), abcd(Sb)
+    X = Mb @ np.linalg.inv(Ma)
+    g = cmath.acosh(np.trace(X)/2)
+    g = g if g.real >= 0 else -g
+    k = 2*math.pi*f/C0*200e-6
+    w, V = np.linalg.eig(X)
+    best = None
+    for j in range(d):
+        r0 = w[0]**(1/d)*cmath.exp(2j*math.pi*j/d)
+        T = V @ np.diag([r0, 1/r0]) @ np.linalg.inv(V)
+        gc = cmath.acosh(np.trace(T)/2)
+        n = abs(gc.imag)/k
+        if best is None or abs(n - n_ref) < abs(best[1] - n_ref):
+            best = (T, n)
+    T, n = best
+    SK = s_of(np.linalg.matrix_power(np.linalg.inv(T), Na) @ Ma)
+    sub = (gamma_l(Sb, f, 0)[0] - gamma_l(Sa, f, 0)[0])/(d*0.02)*8.686
+    return dict(alpha=g.real/d/0.02*8.686, n=n, sub=sub, sv=np.linalg.svd(SK, compute_uv=False)[0],
+                lostK=100*(1 - abs(SK[0, 0])**2 - abs(SK[1, 0])**2))
+
+
 def per_cell(d4, d6, f):
     a4, b4 = gamma_l(d4[f], f, 400e-6)
     a6, b6 = gamma_l(d6[f], f, 600e-6)
@@ -156,6 +182,19 @@ def main():
         print(f"   {name:9}: |S11| {abs(S[0]):.4f} {math.degrees(cmath.phase(S[0])):8.2f} deg, |S21| {abs(S[1]):.5f}"
               f" {math.degrees(cmath.phase(S[1])):8.2f} deg, lost {100*(1 - abs(S[0])**2 - abs(S[1])**2):.3f} %;"
               f"  with the 400 um line: line-line {a:.3f} dB/cm, ends lose {lk:+.3f} %")
+
+    print("\n6. Length series, PEC tee at 60 GHz: 2, 3, 5 cells (400 um; 600 and 1000 um with the 5 um ground mesh)")
+    S = {2: D[("PEC", "TEE", 400)][f], 3: fine, 5: read(os.path.join(DIR, "1000 TEE PEC.s2p"))[0][f]}
+    lost = {N: 100*(1 - abs(v[0])**2 - abs(v[1])**2) for N, v in S.items()}
+    print("   power lost: " + ",  ".join(f"{N} cells {lost[N]:.3f} %" for N in S)
+          + f";  per added cell: 2->3 {lost[3] - lost[2]:.2f} %, 3->5 {(lost[5] - lost[3])/2:.2f} %")
+    slope = (lost[5] - lost[3])/2
+    print(f"   straight line through 3 and 5 cells: {slope:.2f} % per cell, {lost[3] - 3*slope:+.2f} % at zero cells;"
+          f" it predicts {lost[3] - slope:.2f} % for 2 cells")
+    print(f"   {'cells':>6} | {'subtraction':>11} {'line-line':>9} {'n':>7} | {'sigma_max K':>11} {'lost in K %':>11}")
+    for a, b in ((2, 3), (3, 5), (2, 5)):
+        r = pair(S[a], S[b], a, b, f)
+        print(f"   {a} -> {b} | {r['sub']:11.3f} {r['alpha']:9.3f} {r['n']:7.4f} | {r['sv']:11.4f} {r['lostK']:+11.3f}")
 
 
 if __name__ == "__main__":

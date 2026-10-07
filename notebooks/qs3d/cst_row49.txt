@@ -44,3 +44,11 @@
 5. Mesh check, 600 um PEC tee at 60 GHz: grounds on the automatic mesh (as above) vs in the 5 um group
    automatic: |S11| 0.0778   -44.16 deg, |S21| 0.98322  -123.97 deg, lost 2.722 %;  with the 400 um line: line-line 5.517 dB/cm, ends lose -5.320 %
    5 um     : |S11| 0.0706   -45.24 deg, |S21| 0.98378  -124.00 deg, lost 2.718 %;  with the 400 um line: line-line 5.554 dB/cm, ends lose -5.349 %
+
+6. Length series, PEC tee at 60 GHz: 2, 3, 5 cells (400 um; 600 and 1000 um with the 5 um ground mesh)
+   power lost: 2 cells 0.239 %,  3 cells 2.718 %,  5 cells 7.634 %;  per added cell: 2->3 2.48 %, 3->5 2.46 %
+   straight line through 3 and 5 cells: 2.46 % per cell, -4.65 % at zero cells; it predicts 0.26 % for 2 cells
+    cells | subtraction line-line       n | sigma_max K lost in K %
+   2 -> 3 |       5.860     5.554  2.7731 |      1.0479      -5.349
+   3 -> 5 |       6.504     6.440  2.5795 |      1.0810      -7.333
+   2 -> 5 |       6.290     6.011  2.6453 |      1.0751      -6.270

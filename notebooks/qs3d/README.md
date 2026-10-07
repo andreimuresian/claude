@@ -145,12 +145,23 @@ each):
 
 ## CST check on row 49 (author's runs; `cst_row49.py` → `cst_row49.txt`)
 
-The author's CST multilayer runs of row 49: 400 and 600 µm lines, with and
-without tees, gold and PEC electrodes, at 20, 60 and 100 GHz
-(`../mom/data/MULTILAYER SOLVER TOUCHSTONES`). Extraction is exactly the
-author's: α per cell from the 600 − 400 µm subtraction of Re acosh A. The
-header parameters that differ (CAP_W, SI_H) are not geometry differences: the
-model has no caps, and Si is 550 µm in all runs (author).
+The author's CST multilayer runs of row 49:
+- 400 and 600 µm lines, with and without tees, gold and PEC electrodes, at
+  20, 60 and 100 GHz;
+- then a 600 µm (rerun with the ground mesh fixed) and a 1000 µm PEC tee line,
+  at 60 GHz.
+
+Files: `../mom/data/MULTILAYER SOLVER TOUCHSTONES`.
+
+The header parameters that differ (CAP_W, SI_H) are not geometry differences:
+the model has no caps, and Si is 550 µm in all runs (author). Below the 550 µm
+layer the solver's bottom half-space is also silicon (solver log: "Half space:
+Silicon (lossy)"), so power radiated into the substrate never comes back.
+
+### 1. The 400/600 µm runs (sections 2–3)
+
+Extraction exactly as the author's: α per cell from the 600 − 400 µm
+subtraction of Re acosh A.
 
 | | 20 GHz | 60 GHz | 100 GHz |
 |---|---|---|---|
@@ -165,31 +176,26 @@ frequency-independent.
 
 - **The reproduction holds.** The gold runs give the dataset's Δα at 60 GHz.
 - **Most of the 60 GHz Δα is not conductor loss.** With PEC electrodes the tee
-  line still loses 5.9 dB/cm, 70 % of the gold Δα.
-- **That loss is not a per-length attenuation.**
-  - With PEC, the 3-cell line loses 11× the power of the 2-cell line at 60 GHz,
-    for 1.5× the length. At 100 GHz both lose about 10 %.
-  - The per-cell α from the subtraction comes out negative at 100 GHz.
-  - An attenuation of any kind (ohmic, dielectric or a leaky wave) grows with
-    length; this does not. The no-tee lines behave normally: lost power scales
-    1.51× for 1.5× the length (gold, 20 GHz).
-  - So the 2-vs-3-cell subtraction is picking up an effect of the finite
-    structure (radiation at the ends, interference or a resonance), not a loss
-    per cell. The n ratio has the same bump at 60 GHz.
-- **Where that effect is absent (20 GHz), CST and the 3D quasi-static cell
-  agree.**
+  line still loses 5.9 dB/cm, 70 % of the gold Δα. Silicon absorption is
+  negligible (σ = 2.5e-4 S/m in the material card), so this is radiation.
+- **At 20 GHz CST and the 3D quasi-static cell agree.**
   - α ratio: 1.45 vs 1.37, i.e. Δα +0.56 vs +0.46 dB/cm.
   - n ratio: 1.3495 (PEC) and 1.3512 (gold) vs 1.3498.
 - **The PEC electrodes stayed thick.** n of the no-tee line, gold over PEC, is
   1.012; the internal inductance of gold, √(1 + R′/(ωL)), predicts about 1.013.
+- The radiation depends strongly on frequency: about 0 at 20 GHz, 5.5 at 60 GHz
+  and 1.9 dB/cm at 100 GHz (line-line values below). That points to a resonance
+  of the cell, which fits the author's colleague's report of resonances on tees
+  with large L2 (row 49: L2 = 166.6 µm of the 200 µm period).
 
-### Line-line check: is there a per-cell loss at all? (`cst_row49.txt`, section 4)
+### 2. Line-line check (section 4)
 
-The subtraction of Re acosh A assumes the end transitions do nothing. A
-check that needs no assumption on them, if both lines have the same ends:
-M400 = E_a T² E_b and M600 = E_a T³ E_b, so M600 M400⁻¹ = E_a T E_a⁻¹ has the
-cell's eigenvalues, cosh γP = tr(M600 M400⁻¹)/2. The same model fixes the two
-end transitions joined, E_a E_b = (M600 M400⁻¹)⁻² M400, which must be passive.
+The subtraction of Re acosh A cancels the end transitions only in special
+cases. An exact version, if both lines have the same ends:
+- M400 = E_a T² E_b and M600 = E_a T³ E_b, so M600 M400⁻¹ = E_a T E_a⁻¹ has the
+  cell's eigenvalues, cosh γP = tr(M600 M400⁻¹)/2.
+- The same model fixes the two ends joined, E_a E_b = (M600 M400⁻¹)⁻² M400,
+  which must be passive if the lines are cascades of identical cells.
 
 | tee line, dB/cm per cell | 20 GHz | 60 GHz | 100 GHz |
 |---|---|---|---|
@@ -198,18 +204,61 @@ end transitions joined, E_a E_b = (M600 M400⁻¹)⁻² M400, which must be pass
 | joined ends E_a E_b, PEC: power lost | −0.002 % | **−5.3 %** (gain) | +7.6 % |
 
 - **No-tee lines:** both methods agree to 0.02 dB/cm at every frequency, and
-  the joined ends are passive within 0.07 %. The extraction is sound there.
-- **Tee line at 20 GHz:** same as the no-tee lines.
-- **Tee line at 100 GHz:** the negative α was an end effect. With the ends
-  removed the cell has a positive α; the ends lose about 8 % (PEC).
-- **Tee line at 60 GHz:** no pair of identical passive end transitions, plus
-  2 or 3 identical cells, reproduces both lines: the ends would need 5 % gain
-  (6 % with gold). So at 60 GHz the 400 and 600 µm tee lines are not cascades of
-  one cell. The structure acts as a whole (a resonance of the finite line, or
-  coupling beyond neighbouring cells), and no two-length extraction of it is a
-  property of the line. That includes the dataset's Δα for this row.
-- This fits the author's colleague's report of resonances on tees with large
-  L2 (row 49: L2 = 166.6 µm of the 200 µm period).
+  the joined ends are passive within 0.07 %.
+- **100 GHz:** the subtraction's negative α was an end effect. With the ends
+  removed exactly, the cell has a positive α.
+- **60 GHz:** the joined ends would need 5 % gain, so the lines are not
+  "passive ends + identical cells". Section 4 below shows why: the cells next to
+  the ports lose much less than the inner ones.
+
+### 3. Ground mesh (section 5): not the cause
+
+- **Finding.** The tee projects rebuild the grounds under new names
+  (GROUND ELECTRODE RIGHT/LEFT) and never add them back to the 5 µm mesh group.
+  So their grounds fall back on the automatic mesh. This is the coarser ground
+  mesh the author saw, and why the tee runs are faster than the no-tee runs.
+- **Test.** The author reran the 600 µm PEC tee line with the grounds in the
+  5 µm group.
+- **Result.**
+  - Lost power at 60 GHz: 2.722 % → 2.718 %.
+  - |S21|: 0.98322 → 0.98378.
+  - |S11|: 0.078 → 0.071.
+- The mesh does not explain the loss.
+
+### 4. Length series (section 6): the loss is a property of the line
+
+PEC tee lines at 60 GHz: 400 µm (2 cells), 600 and 1000 µm (3 and 5 cells,
+both with the 5 µm ground mesh).
+
+| cells | 2 | 3 | 5 |
+|---|---|---|---|
+| power lost | 0.24 % | 2.72 % | **7.63 %** |
+
+| pair | subtraction (dB/cm) | line-line (dB/cm) | n per cell |
+|---|---|---|---|
+| 2 → 3 | 5.86 | 5.55 | 2.773 |
+| 3 → 5 | **6.50** | **6.44** | 2.580 |
+| 2 → 5 | 6.29 | 6.01 | 2.645 |
+
+- **The loss grows linearly with length:** 2.48 % per added cell from 2 to 3
+  cells, 2.46 % from 3 to 5. The 7.7 % predicted before the 1000 µm run, for a
+  real per-cell loss, came out as 7.63 %. It is a real attenuation of the
+  periodic line: radiation, since the metal is PEC.
+- **The ends lose less, not more.** The straight line through 3 and 5 cells
+  gives −4.7 % at zero cells and predicts 0.26 % for 2 cells (measured 0.24 %).
+  - So the cell next to each port loses almost nothing, and only the inner
+    cells radiate their full 2.5 %.
+  - This is why the ends looked "active" in the line-line check. It is also why
+    the 2-cell line, made of two end cells, sees no loss.
+- **The 2/3-cell subtraction underestimates the per-cell loss by about 10 %**
+  (5.9 vs 6.5 dB/cm, PEC). The dataset's 8.29 dB/cm for row 49 comes from that
+  pair, so the long-line value is likely about 10 % higher.
+- **The per-cell n also depends on the pair** (2.77 vs 2.58). The dataset's n
+  for row 49 (2.581, from the 1-cell lumped extraction) matches the 3 → 5 value.
+- **For the fast model:**
+  - The 3D quasi-static cell reproduces n and the ohmic part of Δα.
+  - In the narrow-strip, long-L2 corner, Δα is dominated by resonant
+    radiation, a full-wave effect that a quasi-static solve cannot produce.
 
 ### Where the large Δα lives in the dataset (`dataset_regime.py` → `dataset_regime.txt`)
 
@@ -220,33 +269,5 @@ This describes the test fixture; nothing is fitted to it.
 - **Strip 5–10 µm with L2 > 100 µm:** Δα > 2 dB/cm in 40 of 43 rows, with
   medians of 3–7 dB/cm. Row 49 is one of them (strip 8.9 µm, L2 167 µm).
 - **Strip > 40 µm:** none of the 86 rows has Δα > 2 dB/cm.
-- So the large values sit in one corner of the design space: a narrow outer
-  strip with a long head slot. Both the author's hypothesis (tees ending near
-  the ground's outer edge) and the colleague's report (resonances at large L2)
-  point there.
-
-### Caveat from the author's CST history (600 µm tee project)
-
-- The local mesh group (5 µm) holds the centre conductor and the original
-  ground bricks. The tee projects delete those grounds and rebuild them
-  under new names (GROUND ELECTRODE RIGHT/LEFT), which are never added back.
-- So in the tee models the etched grounds fall back on the automatic mesh.
-  This is the coarser ground mesh the author saw. It is also why the no-tee
-  runs, whose grounds stay in the group, are slower.
-- The automatic mesh caps the element size at the longest model edge / 10
-  (StepsPerBoxNear = 10). That edge is the line length, so the cap is about
-  40 µm in the 400 µm model and 60 µm in the 600 µm model.
-- The two tee lines then do not have identically meshed cells, which alone
-  could break the line-line check.
-- **Result (`cst_row49.txt`, section 5): the mesh is not the cause.** The author
-  reran the 600 µm PEC tee line with the grounds in the 5 µm group.
-  - Lost power at 60 GHz: 2.722 % → 2.718 %.
-  - |S21|: 0.98322 → 0.98378; phase moves by 0.03°.
-  - |S11|: 0.078 → 0.071.
-  - Paired with the 400 µm line, the joined ends still need 5.3 % gain.
-  - The 400 µm model's automatic cap (about 40 µm) was already finer than the
-    600 µm one, so its mesh error is smaller still. The 60 GHz result above
-    stands.
-- Next: a 1000 µm (5-cell) PEC tee line with the same 5 µm ground mesh, paired
-  with the corrected 600 µm line. If the loss belongs to the cell, the 1000 µm
-  line loses about 7.7 % at 60 GHz (2.7 % + 2 × 2.5 %).
+- So the radiating geometries sit in one corner of the design space: a narrow
+  outer strip with a long head slot.
