@@ -77,7 +77,9 @@ quasi-static solves).
 The 2D average reproduces the ohmic relief where Δα is small (Z0 rises, R
 changes little). It misses every large positive Δα. A slice is uniform along
 the line: it has no slot ends, so no radiation or substrate-mode excitation and
-no current crowding at the slot corners.
+no current crowding at the slot corners. (Update: the crowding part is ruled out.
+The 3D quasi-static cell, which has slot ends and crowding, gives the same Δα as
+the slices to ≤ 0.3 dB/cm: `../qs3d/README.md`, step 1.)
 
 ## Assessment with the gold-interior conductor model (`report_mqs.txt`)
 
@@ -122,9 +124,10 @@ the COMSOL baseline replaced by the gold section C:
   (Z0 rises, R′ changes little), while the dataset has it raising α on 8 of 14.
   Overall it does no better than ignoring the tee.
   - The gold model fixes the baseline (0–18 %) but moves Δα by ≤ 0.1 dB/cm.
-  - The missing loss is in the 3D current path around the slot: x-directed
-    current at the slot ends and crowding in the stem. No z-uniform slice
-    carries it.
+  - It is not the 3D current path around the slot either. The 3D
+    quasi-static cell carries that path and gives the same Δα as the slices
+    to ≤ 0.3 dB/cm (`../qs3d/README.md`, step 1). The large Δα is not
+    quasi-static conductor loss.
 
 ## Mesh convergence (`conv.json`)
 

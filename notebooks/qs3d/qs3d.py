@@ -45,26 +45,38 @@ def _axis(breaks, fine, h_near, near, h_far, growth=0.25):
     return np.unique(np.concatenate(out))
 
 
-def build(g, etched=True, hz_min=0.5e-6, far=150e-6, h_near=6e-6, no_slot=False):
+def build(g, etched=True, hz_min=0.5e-6, far=150e-6, h_near=6e-6, no_slot=False,
+          rec=0.0, lines=0.0, hmin_scale=1.0):
     """Grid, materials and conductor masks.  g: dict in metres
     (WS, GAP, MTX, t_LN, W1, W2, L1, L2).  Unetched -> one z cell (exact:
-    the solution is z-invariant)."""
+    the solution is z-invariant).
+    lines > 0 adds grid lines at distance `lines` inside every metal face (and
+    outside every slot face), so a cell with every metal face receded by
+    rec = lines (Wheeler's rule, loss.py) shares the grid of rec = 0."""
     WS, GAP, MTX, tLN = g['WS'], g['GAP'], g['MTX'], g['t_LN']
     WG = 70e-6
     x_si, x_gi, x_go = WS/2, WS/2 + GAP, WS/2 + GAP + WG
     xb1, xb2 = min(x_gi + g['W1'], x_go), min(x_gi + g['W1'] + g['W2'], x_go)
-    hmin = max(min(tLN/4, GAP/40, MTX/4), 8e-9)
+    hmin = max(min(tLN/4, GAP/40, MTX/4), 8e-9)*hmin_scale
+    a = lines
     # tee lines are always present, so etched and unetched share the x-y grid
-    xb = sorted({0.0, x_si, x_gi, x_go, x_go + far, x_go + 1200e-6, xb1, xb2})
-    fine = {v: hmin for v in (x_si, x_gi, x_go, xb1, xb2)}
+    xl = {x_si, x_gi, x_go, xb1, xb2}
+    if a > 0:
+        xl |= {x_si - a, x_gi + a, x_go - a, xb1 - a, xb1 + a, xb2 + a}
+    xb = sorted({0.0, x_go + far, x_go + 1200e-6} | xl)
+    fine = {v: hmin for v in xl}
     xf = _axis(xb, fine, h_near, (0, x_go + far), 200e-6)
     zL, zB, zS = -tLN, -tLN - sp.BOX_H, -tLN - sp.BOX_H - sp.SI_H
-    yb = sorted({zS - 150e-6, zS, zB - far, zB, zL, 0.0, MTX, MTX + far, MTX + 800e-6})
-    yf = _axis(yb, {0.0: hmin, zL: min(hmin, tLN/4), zB: hmin, MTX: hmin},
-               h_near, (zB - far, MTX + far), 200e-6)
+    yl = {0.0, MTX} | ({a, MTX - a} if a > 0 else set())
+    yb = sorted({zS - 150e-6, zS, zB - far, zB, zL, MTX + far, MTX + 800e-6} | yl)
+    yfine = {v: hmin for v in yl}
+    yfine.update({zL: min(hmin, tLN/4), zB: hmin})
+    yf = _axis(yb, yfine, h_near, (zB - far, MTX + far), 200e-6)
     if etched:
-        zb = sorted({0.0, P/2} | {v for v in (g['L1']/2, g['L2']/2) if 0 < v < P/2})
-        zf = cs._grid(zb, {g['L1']/2: hz_min, g['L2']/2: hz_min}, h_near)
+        zl = {g['L1']/2, g['L2']/2} | ({g['L1']/2 + a, g['L2']/2 + a} if a > 0 else set())
+        zl = {v for v in zl if 0 < v < P/2}
+        zb = sorted({0.0, P/2} | zl)
+        zf = cs._grid(zb, {v: hz_min for v in zl}, h_near)
     else:
         zf = np.array([0.0, P/2])
     xc, yc, zc = [0.5*(a[1:] + a[:-1]) for a in (xf, yf, zf)]
@@ -75,15 +87,16 @@ def build(g, etched=True, hz_min=0.5e-6, far=150e-6, h_near=6e-6, no_slot=False)
     ex[ln], ey[ln], ez[ln] = EPS_LN
     for sel, e in (((Y > zB) & (Y < zL), sp.EPS_SIO2), ((Y > zS) & (Y < zB), sp.EPS_SI)):
         ex[sel] = ey[sel] = ez[sel] = e
-    inmet = (Y > 0) & (Y < MTX)
-    sig = inmet & (X < x_si)
-    gnd = inmet & (X > x_gi) & (X < x_go)
+    r = rec                                   # every metal face receded by r
+    inmet = (Y > r) & (Y < MTX - r)
+    sig = inmet & (X < x_si - r)
+    gnd = inmet & (X > x_gi + r) & (X < x_go - r)
     if etched and not no_slot:
-        slot = (((X >= x_gi) & (X < xb1) & (Z < g['L1']/2))
-                | ((X >= xb1) & (X < xb2) & (Z < g['L2']/2)))
+        slot = (((X >= x_gi) & (X < xb1 + r) & (Z < g['L1']/2 + r))
+                | ((X >= xb1 - r) & (X < xb2 + r) & (Z < g['L2']/2 + r)))
         gnd &= ~slot
     return dict(d=(dx, dy, dz), c=(xc, yc, zc), eps=(ex, ey, ez), sig=sig, gnd=gnd,
-                MTX=MTX, x_si=x_si, x_gi=x_gi)
+                MTX=MTX, x_si=x_si, x_gi=x_gi, y_lo=r, y_hi=MTX - r, x_cut=x_go - r)
 
 
 def _faces(d, kx, ky, kz):
@@ -161,7 +174,7 @@ def capacitance(m, vacuum=False, full=False, float_frame=False):
     return 4*sl.sum()/P, rr, 2*sl                      # 2*sl: full-width slice C [F]
 
 
-def inductance(m, sign=1.0):
+def inductance(m, sign=1.0, full=False):
     """Per-length L' [H/m] in the high-frequency (PEC) limit, full cell.
 
     Multivalued psi is handled so that no cut ends in open space:
@@ -180,12 +193,13 @@ def inductance(m, sign=1.0):
     faces = [(s0, s1, np.nan_to_num(T)) for s0, s1, T in _faces(m['d'], k, k, k)]
     jc = int(np.argmin(np.abs(yc - m['MTX']/2)))
     jumps = [np.zeros(f[2].shape) for f in faces]
-    x_go = m['x_si'] + (m['x_gi'] - m['x_si']) + 70e-6
+    x_go = m.get('x_cut', m['x_si'] + (m['x_gi'] - m['x_si']) + 70e-6)   # ground outer edge
     jumps[1][xc > x_go, jc, :] = sign*0.5
     free = ~metal
     ed = np.zeros(shape); dv = np.zeros(shape)
     ed[0, :, :] = MU0*dy[:, None]*dz[None, :]/(dx[0]/2)
-    dv[0, :, :] = np.where(yc > m['MTX'], 0.25, np.where(yc < 0, -0.25, 0.0))[:, None]
+    ylo, yhi = m.get('y_lo', 0.0), m.get('y_hi', m['MTX'])             # signal extent in y
+    dv[0, :, :] = np.where(yc > yhi, 0.25, np.where(yc < ylo, -0.25, 0.0))[:, None]
     A, b, idx = _assemble(shape, faces, free, None, jump=jumps, extra_diag=ed)
     b += (ed*dv)[free]
     x, rr = _solve(A, b)
@@ -193,6 +207,8 @@ def inductance(m, sign=1.0):
     e = [T*(psi[s1] - psi[s0] - jp)**2 for (s0, s1, T), jp in zip(faces, jumps)]
     sl = _slices(e, shape[2])
     sl += np.sum(np.where(free[0], ed[0]*(psi[0] - dv[0])**2, 0.0), axis=0)
+    if full:
+        return 4*sl.sum()/P, rr, 2*sl, dict(psi=psi, faces=faces, jumps=jumps, dv=dv, free=free)
     return 4*sl.sum()/P, rr, 2*sl                      # 2*sl: full-width slice L [H]
 
 
