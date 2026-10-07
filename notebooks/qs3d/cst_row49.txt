@@ -1,0 +1,26 @@
+1. Header parameters that differ (mm; not geometry differences: no caps in the model, Si 550 um in all runs)
+   AIR_H: TEE 400: 0.2, TEE 600: 0.2, NO TEE 400: None, NO TEE 600: None
+   CAP_W: TEE 400: 0.008961, TEE 600: 0.00218, NO TEE 400: 0.00218, NO TEE 600: 0.00218
+   DEVICE_L: TEE 400: 0.4, TEE 600: 0.6, NO TEE 400: 0.4, NO TEE 600: 0.6
+   SI_H: TEE 400: 0.55, TEE 600: 0.55, NO TEE 400: 0.055, NO TEE 600: 0.055
+
+2. Per cell, 600 um - 400 um (author's extractor)
+   metal  GHz |   a tee a no tee  d_alpha  ratio |  n tee n no tee  ratio
+   GOLD    20 |   1.801    1.243   +0.558   1.45 |  2.712    2.007 1.3512
+   GOLD    60 |  10.645    2.391   +8.254   4.45 |  2.812    1.994 1.4103
+   GOLD   100 |   1.593    3.120   -1.527   0.51 |  2.704    1.987 1.3603
+   PEC     20 |   0.003    0.000   +0.002   8.15 |  2.656    1.968 1.3495
+   PEC     60 |   5.906    0.108   +5.798  54.91 |  2.776    1.971 1.4081
+   PEC    100 |  -1.956    0.136   -2.092 -14.40 |  2.670    1.970 1.3555
+   dataset row 49 at 60 GHz: d_alpha +8.290 dB/cm
+   3D quasi-static cell (frequency-independent): alpha ratio 1.373, n ratio 1.3498
+
+3. Power not returned, 1 - |S11|^2 - |S21|^2 (%)
+   PEC  TEE    400 um:  20 GHz   0.001   60 GHz   0.239  100 GHz   9.876
+   PEC  TEE    600 um:  20 GHz   0.002   60 GHz   2.722  100 GHz  10.603
+   PEC  NO TEE 400 um:  20 GHz   0.000   60 GHz   0.011  100 GHz   0.284
+   PEC  NO TEE 600 um:  20 GHz   0.001   60 GHz   0.059  100 GHz   0.413
+   GOLD TEE    400 um:  20 GHz   1.755   60 GHz   3.693  100 GHz  14.912
+   GOLD TEE    600 um:  20 GHz   2.570   60 GHz   7.840  100 GHz  18.205
+   GOLD NO TEE 400 um:  20 GHz   0.898   60 GHz   1.871  100 GHz   3.105
+   GOLD NO TEE 600 um:  20 GHz   1.355   60 GHz   3.098  100 GHz   4.896

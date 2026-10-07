@@ -142,3 +142,43 @@ each):
    converged 3D value: refine the etched grounds (D2 in GEOMETRY_SPEC).
 2. **Frequency, 30 / 45 / 60 GHz.** Ohmic Δα scales as √f; substrate leakage
    grows much faster.
+
+## CST check on row 49 (author's runs; `cst_row49.py` → `cst_row49.txt`)
+
+The author's CST multilayer runs of row 49: 400 and 600 µm lines, with and
+without tees, gold and PEC electrodes, at 20, 60 and 100 GHz
+(`../mom/data/MULTILAYER SOLVER TOUCHSTONES`). Extraction is exactly the
+author's: α per cell from the 600 − 400 µm subtraction of Re acosh A. The
+header parameters that differ (CAP_W, SI_H) are not geometry differences: the
+model has no caps, and Si is 550 µm in all runs (author).
+
+| | 20 GHz | 60 GHz | 100 GHz |
+|---|---|---|---|
+| gold: α tee / α no tee (dB/cm) | 1.80 / 1.24 | 10.65 / 2.39 | 1.59 / 3.12 |
+| gold: Δα (dB/cm) | +0.56 | **+8.25** (dataset +8.29) | −1.53 |
+| PEC: α tee / α no tee (dB/cm) | 0.003 / 0.000 | **5.91** / 0.11 | **−1.96** / 0.14 |
+| PEC tee: power lost, 400 / 600 µm | 0.001 / 0.002 % | 0.24 / 2.72 % | 9.9 / 10.6 % |
+| n ratio tee / no tee, gold (PEC) | 1.351 (1.350) | 1.410 (1.408) | 1.360 (1.356) |
+
+The 3D quasi-static cell gives α ratio 1.373 and n ratio 1.3498, both
+frequency-independent.
+
+- **The reproduction holds.** The gold runs give the dataset's Δα at 60 GHz.
+- **Most of the 60 GHz Δα is not conductor loss.** With PEC electrodes the tee
+  line still loses 5.9 dB/cm, 70 % of the gold Δα.
+- **That loss is not a per-length attenuation.**
+  - With PEC, the 3-cell line loses 11× the power of the 2-cell line at 60 GHz,
+    for 1.5× the length. At 100 GHz both lose about 10 %.
+  - The per-cell α from the subtraction comes out negative at 100 GHz.
+  - An attenuation of any kind (ohmic, dielectric or a leaky wave) grows with
+    length; this does not. The no-tee lines behave normally: lost power scales
+    1.51× for 1.5× the length (gold, 20 GHz).
+  - So the 2-vs-3-cell subtraction is picking up an effect of the finite
+    structure (radiation at the ends, interference or a resonance), not a loss
+    per cell. The n ratio has the same bump at 60 GHz.
+- **Where that effect is absent (20 GHz), CST and the 3D quasi-static cell
+  agree.**
+  - α ratio: 1.45 vs 1.37, i.e. Δα +0.56 vs +0.46 dB/cm.
+  - n ratio: 1.3495 (PEC) and 1.3512 (gold) vs 1.3498.
+- **The PEC electrodes stayed thick.** n of the no-tee line, gold over PEC, is
+  1.012; the internal inductance of gold, √(1 + R′/(ωL)), predicts about 1.013.
