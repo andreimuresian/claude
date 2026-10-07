@@ -129,8 +129,8 @@ arguments: row 49's stored C′ and L′ are reproduced to 1e-16.
   0.5–0.75 rad of phase and its lumped extraction carries sin θ/θ. The physical
   n_m is the Bloch value: 1–4 % above the dataset's n_final.
 - **Z0.** The convention changes Z0 by ≤ 1 %. The remaining gap (−0.2 to
-  −10.5 %, largest on rows 220, 49, 38) is the ΔC disagreement above and is
-  still open.
+  −10.5 %, largest on rows 220, 49, 38) is explained on row 49 in
+  "Z0 gap on row 49" below; rows 220 and 38 are not checked yet.
 - **Run time:** 65–170 s per geometry on one core (tee cell + no-slot cell, C,
   L(0), L(a)).
 
@@ -271,3 +271,93 @@ This describes the test fixture; nothing is fitted to it.
 - **Strip > 40 µm:** none of the 86 rows has Δα > 2 dB/cm.
 - So the radiating geometries sit in one corner of the design space: a narrow
   outer strip with a long head slot.
+
+## Z0 gap on row 49 (`zbloch_row49.py` → `zbloch_row49.txt`)
+
+**Question.** The 3D cell matches the dataset's n but not its Z0 (row 49: −5.4 %).
+Why, when both come from the same L′ and C′?
+
+**Why n can agree while Z0 does not.**
+- n ∝ √(L′C′) and Z0 ∝ √(L′/C′), so δn = (δL + δC)/2 and δZ = (δL − δC)/2.
+- Errors of opposite sign in L′ and C′ cancel in n and add in Z0.
+- Row 49, dataset convention: δn = −0.2 %, δZ = −5.4 %. So the 3D cell has 5.6 %
+  less L and 5.2 % more C than the dataset's cell.
+
+**Method: measure the tee cell's impedance on the CST lines.** The dataset's Z0
+comes from one CST cell between two ports at 60 GHz. Here it is measured on the
+400 and 600 µm lines instead.
+- The ports sit on cell boundaries, so a line of N cells is M_N = P T^N P~, with P
+  the port transition and T the symmetric cell.
+- The eigenvectors of M600 M400⁻¹ are P[±Z_B, 1]: the cell's Bloch impedance seen
+  through P.
+- P is fitted on the no-tee lines. A lumped port transition has a = d, which fixes
+  the impedance scale.
+  - It gives Z_u = 36.40 Ω (PEC, 20 GHz); the 3D no-slot cell gives 36.51 Ω.
+  - The port transition is small and does not change with frequency: −4.3 pH
+    series, −3.3 fF shunt, i.e. the port plane sits about 18 µm inside the line.
+- The eigenvector Z_B is insensitive to P to first order. The tee lines with their
+  own port fit and no no-tee runs give 50.910 Ω; the no-tee port fit gives
+  50.908 Ω. So **a future check needs only the two fast tee lines.**
+- The model ("same ends, identical cells") holds at 20 GHz: the two wave
+  impedances, which should be ±Z_B, sum to 0.29 Ω, 0.6 % of Z_B. At 60 GHz they
+  sum to 2.8 Ω (5 %), at 100 GHz to 10.7 Ω (17 %).
+
+**Results** (PEC; gold gives F_Z within 0.3 % up to 60 GHz):
+
+| | 20 GHz | 60 GHz | 100 GHz |
+|---|---|---|---|
+| CST no-tee line Z_u (Ω) | 36.40 | 36.33 | 36.12 |
+| CST tee cell Z_B (Ω), line-line 2 → 3 | 50.91 | 53.11 | 62.2 |
+| CST F_Z = Z_B / Z_u | **1.3985** | 1.462 | 1.72 |
+| 3D cell F_Z (static L′, C′; only the cascade's phase changes) | **1.3776** | 1.3871 | 1.4088 |
+| CST tee n, line-line 2 → 3 | 2.655 | 2.771 | 2.655 |
+
+At 60 GHz the 3 → 5 pair (5 µm ground mesh) gives Z_B = 54.49 Ω, F_Z = 1.500.
+
+**Row 49 rebuilt in the dataset's convention** (gold, 60 GHz, one cell between the
+ports, COMSOL baseline + lumped ΔL/P, ΔC/P):
+
+| cell | ports | ΔL (pH) | ΔC (fF) | Z0_final (Ω) | n_final |
+|---|---|---|---|---|---|
+| 3D quasi-static | none | 37.80 | −2.04 | 50.52 | 2.571 |
+| 3D quasi-static | CST's | 36.92 | −2.74 | 50.78 | 2.532 |
+| CST cell, de-embedded from the 2 → 3 lines | none | 45.79 | −2.74 | 53.35 | 2.659 |
+| CST cell, de-embedded from the 2 → 3 lines | CST's | 44.71 | −3.58 | 53.73 | 2.610 |
+| dataset (one CST cell) | | 43.20 | −3.78 | 53.46 | 2.581 |
+
+**Findings**
+- **The dataset's Z0 is the CST tee cell's impedance at 60 GHz.** The long-line
+  cell, put through the ports and the one-cell extractor, gives 53.73 Ω against
+  the dataset's 53.46 Ω (+0.5 %).
+  - The ports and the one-cell convention move Z0 by ≤ 0.7 %. They are not the
+    cause.
+  - The ports do move ΔC by 30 % (−2.74 → −3.58 fF). Part of the old ΔC
+    "disagreement" was this, but it barely moves Z0.
+- **At 20 GHz the 3D cell is 1.5 % below CST on F_Z, and n agrees to 0.1 %.**
+  - Part of the 1.5 % may be CST's mesh. The 20 GHz tee runs have the grounds on
+    the automatic mesh. At 60 GHz the 5 µm ground mesh moved the 3-cell Z_B by
+    −0.85 % and the 2 → 3 value by −0.2 %.
+  - Part may be the start of the dispersion below. If it grows as f², it is about
+    0.5 % at 20 GHz. This is not measured.
+- **From 20 to 60 GHz, CST's F_Z rises by 4.5 %; the 3D cell's rises by 0.7 %**
+  (the cascade's phase).
+  - The extra ~4 % is a full-wave effect of the cell, in the band where row 49
+    radiates. With PEC metal it is not skin effect.
+  - n rises with it (2.655 → 2.771). So it is mostly an increase of the series
+    inductance: L ∝ nZ rises 9 %, while C ∝ n/Z is flat.
+  - At 100 GHz F_Z is 1.72, and the cells near the ports no longer match the inner
+    ones.
+- **So on row 49 the 5.5 % splits as:**
+  - ~4 % dispersion at 60 GHz, which a quasi-static cell cannot produce;
+  - ≤ 1.5 % static, the size of CST's own mesh effect;
+  - 0.5 % ports.
+- **The n agreement at 60 GHz was partly a coincidence.** At 60 GHz the long lines
+  give n = 2.58 to 2.77 depending on the pair, and the dataset's single cell gives
+  2.581. At 20 GHz, where the pairs agree, the 3D cell's n ratio matches to 0.1 %.
+- **The 3D cell's absolute n is 1.4 % low on both cells** (no-slot 1.941 vs CST
+  1.969, PEC). This cancels in the factors applied to the 2D baseline.
+- **Rows 220 (−9.6 %) and 38 (−4.1 %) are not checked: there are no CST runs.**
+  - Row 220 has the largest head slot of the 14 rows: 53 × 185 µm, with a 5.3 µm
+    strip.
+  - Checking it needs the 400 and 600 µm tee lines only, with the grounds in the
+    5 µm mesh group, at 20 and 60 GHz.

@@ -1,0 +1,68 @@
+Row 49: tee-cell impedance from the CST 400/600 um lines (2 and 3 cells), port transitions removed
+with the no-tee lines.  Z in ohm; F_Z = Z_B(tee) / Z_u.
+
+1. Calibration on the no-tee lines: port map P fitted to 6 point pairs (consistency s_min/s_next),
+   Z_u = a/d of the fitted map, and the port transition as series L / shunt C (Im b / w, Im c / w)
+   metal  GHz | |A-D|/|A| |    n_u a_u dB/cm | consist. |             Z_u |    L pH    C fF
+   PEC     20 |   1.4e-04 |  1.969     0.000 |  4.9e-05 |  36.401 +0.000j |   -4.28   -3.34
+   PEC     60 |   1.3e-01 |  1.972     0.109 |  2.6e-04 |  36.326 -0.009j |   -4.23   -3.36
+   PEC    100 |   3.4e-03 |  1.972     0.144 |  1.4e-04 |  36.119 -0.025j |   -4.46   -3.42
+   GOLD    20 |   1.4e-04 |  2.008     1.242 |  4.8e-05 |  37.118 -0.631j |   -4.36   -3.34
+   GOLD    60 |   2.9e-02 |  1.995     2.390 |  2.5e-04 |  36.744 -0.394j |   -4.28   -3.36
+   GOLD   100 |   3.3e-03 |  1.990     3.142 |  1.3e-04 |  36.442 -0.328j |   -4.49   -3.42
+
+2. Tee lines: de-embedded with the no-tee port map.  Z_B and n from the 2-cell and the 3-cell line
+   separately, and from the line-line eigenvectors; they must agree if the model holds.
+   metal  GHz |   Z_B (2 cells)   Z_B (3 cells) Z_B (line-line) |    n 2    n 3   n ll |    F_Z
+   PEC     20 |  51.198 +0.000j  51.083 -0.000j  50.908 -0.001j |  2.674  2.667  2.655 | 1.3985
+   PEC     60 |  52.899 -0.061j  53.612 -0.847j  53.108 -0.247j |  2.727  2.742  2.771 | 1.4620
+   PEC    100 |  58.120 -4.974j  66.684+12.562j  62.143 -1.332j |  2.849  2.789  2.655 | 1.7209
+   GOLD    20 |  52.282 -0.959j  52.161 -0.955j  51.980 -0.951j |  2.730  2.724  2.711 | 1.4004
+   GOLD    60 |  53.627 -0.747j  54.334 -1.726j  53.845 -0.929j |  2.763  2.778  2.808 | 1.4655
+   GOLD   100 |  58.303 -6.316j  66.903+11.071j  63.310 -2.615j |  2.878  2.818  2.683 | 1.7387
+
+3. Comparison at 20 GHz (no radiation; the 3D quasi-static cell is valid there)
+                                                   PEC             GOLD
+   CST no-tee line Z_u (ohm)                    36.401           37.123
+   3D no-slot cell Z_u (ohm)                    36.505           37.408
+   CST tee cell Z_B (ohm)                       50.908           51.988
+   3D tee cell Z_B (ohm)                        50.289           51.558
+   CST F_Z = Z_B / Z_u                          1.3985           1.4004
+   3D F_Z                                       1.3776           1.3783
+   dataset F_Z (1 cell, 60 GHz)                 1.4510
+   dataset Z0: baseline -> final       36.842 -> 53.459
+
+4. Frequency dependence of the 3D cell's Z_B (static L', C'; only the cascade's phase changes)
+     20 GHz: Z_B tee 50.289, no-slot 36.505, F_Z 1.3776;  cell average sqrt(L'/C'): F_Z 1.3765
+     60 GHz: Z_B tee 50.636, no-slot 36.505, F_Z 1.3871;  cell average sqrt(L'/C'): F_Z 1.3765
+    100 GHz: Z_B tee 51.428, no-slot 36.505, F_Z 1.4088;  cell average sqrt(L'/C'): F_Z 1.3765
+
+5. 60 GHz, PEC tee: the 5 um ground mesh (600 and 1000 um lines); Z_B, n from each line alone and
+   from line-line pairs (eigenvectors of Mb Ma^-1 = P T^(Nb-Na) P^-1)
+   400 TEE PEC                 (2 cells): Z_B  52.899 -0.061j  n 2.727  alpha   0.32 dB/cm
+   600 TEE PEC                 (3 cells): Z_B  53.612 -0.847j  n 2.742  alpha   2.09 dB/cm
+   600 TEE PEC MESH CORRECTED  (3 cells): Z_B  53.158 -0.835j  n 2.742  alpha   2.08 dB/cm
+   1000 TEE PEC                (5 cells): Z_B  61.381+13.617j  n 2.678  alpha   4.57 dB/cm
+   line-line 2 -> 3 cells        : Z_B  53.108 -0.247j   (sum of the two wave impedances 2.849, 0 if the model holds)
+   line-line 2 -> 3 cells (5 um) : Z_B  52.992 -0.260j   (sum of the two wave impedances 2.193, 0 if the model holds)
+   line-line 3 -> 5 cells (5 um) : Z_B  54.488 +0.218j   (sum of the two wave impedances 6.547, 0 if the model holds)
+
+6. The dataset's one-cell extraction rebuilt: M1 = P T P~ (one cell between the two ports),
+   L = Im B / w, C = Im C / w, dL, dC = tee - no tee; Z0_final = sqrt((L_b + dL/P)/(C_b + dC/P)) on the
+   COMSOL baseline (dataset convention).  Gold, 60 GHz.  Dataset: dL 43.20 pH, dC -3.782 fF, Z0 53.459
+   cells                                      ports  |   dL pH   dC fF | Z0_final n_final
+   3D quasi-static (no-slot, tee)             none   |   37.80  -2.041 |   50.519  2.5712
+   3D quasi-static (no-slot, tee)             CST    |   36.92  -2.736 |   50.783  2.5317
+   CST, de-embedded (no-tee, tee 2->3)        none   |   45.79  -2.740 |   53.349  2.6593
+   CST, de-embedded (no-tee, tee 2->3)        CST    |   44.71  -3.584 |   53.731  2.6104
+   dataset (one CST cell)                            |   43.20  -3.782 |   53.459  2.5813
+
+7. Self-calibration on the tee lines alone (as section 1 with the tee cell in place of the uniform
+   line): Z_B = a/d of the fitted port map; compare with section 2 and with the no-tee port values
+   metal  GHz | consist. |         Z_B tee      n |    L pH    C fF
+   PEC     20 |  1.6e-05 |  50.910 -0.001j  2.655 |    5.46    3.37
+   PEC     60 |  7.8e-05 |  53.033 -0.169j  2.771 |   -1.37   -3.27
+   PEC    100 |  3.8e-05 |  62.438 -1.179j  2.655 |   15.04    4.87
+   GOLD    20 |  1.6e-05 |  51.982 -0.952j  2.711 |    5.62    3.36
+   GOLD    60 |  7.5e-05 |  53.771 -0.833j  2.808 |   -1.39   -3.27
+   GOLD   100 |  3.8e-05 |  63.580 -2.454j  2.683 |   15.51    4.82
