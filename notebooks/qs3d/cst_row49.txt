@@ -24,3 +24,19 @@
    GOLD TEE    600 um:  20 GHz   2.570   60 GHz   7.840  100 GHz  18.205
    GOLD NO TEE 400 um:  20 GHz   0.898   60 GHz   1.871  100 GHz   3.105
    GOLD NO TEE 600 um:  20 GHz   1.355   60 GHz   3.098  100 GHz   4.896
+
+4. Line-line: per-cell alpha and n from the eigenvalues of M600 M400^-1 (independent of the end transitions),
+   and the joined end transitions K = E_a E_b this implies (passive <=> sigma_max <= 1, power lost >= 0)
+   metal         GHz |   alpha  author |      n | sigma_max K lost in K %
+   GOLD  TEE      20 |   1.801   1.801 |  2.711 |      1.0000      +0.065
+   GOLD  TEE      60 |  10.140  10.645 |  2.808 |      1.0568      -6.367
+   GOLD  TEE     100 |   5.504   1.593 |  2.683 |      0.9936     +10.687
+   GOLD  NO TEE   20 |   1.242   1.243 |  2.008 |      1.0000      +0.036
+   GOLD  NO TEE   60 |   2.390   2.391 |  1.995 |      1.0001      -0.005
+   GOLD  NO TEE  100 |   3.142   3.120 |  1.990 |      0.9990      +0.296
+   PEC   TEE      20 |   0.003   0.003 |  2.655 |      1.0000      -0.002
+   PEC   TEE      60 |   5.517   5.906 |  2.771 |      1.0477      -5.320
+   PEC   TEE     100 |   1.909  -1.956 |  2.655 |      1.0136      +7.625
+   PEC   NO TEE   20 |   0.000   0.000 |  1.969 |      1.0000      -0.000
+   PEC   NO TEE   60 |   0.109   0.108 |  1.972 |      1.0006      -0.068
+   PEC   NO TEE  100 |   0.144   0.136 |  1.972 |      0.9999      +0.200

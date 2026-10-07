@@ -182,3 +182,31 @@ frequency-independent.
   - n ratio: 1.3495 (PEC) and 1.3512 (gold) vs 1.3498.
 - **The PEC electrodes stayed thick.** n of the no-tee line, gold over PEC, is
   1.012; the internal inductance of gold, √(1 + R′/(ωL)), predicts about 1.013.
+
+### Line-line check: is there a per-cell loss at all? (`cst_row49.txt`, section 4)
+
+The subtraction of Re acosh A assumes the end transitions do nothing. A
+check that needs no assumption on them, if both lines have the same ends:
+M400 = E_a T² E_b and M600 = E_a T³ E_b, so M600 M400⁻¹ = E_a T E_a⁻¹ has the
+cell's eigenvalues, cosh γP = tr(M600 M400⁻¹)/2. The same model fixes the two
+end transitions joined, E_a E_b = (M600 M400⁻¹)⁻² M400, which must be passive.
+
+| tee line, dB/cm per cell | 20 GHz | 60 GHz | 100 GHz |
+|---|---|---|---|
+| PEC: line-line / subtraction | 0.003 / 0.003 | 5.52 / 5.91 | 1.91 / −1.96 |
+| gold: line-line / subtraction | 1.80 / 1.80 | 10.14 / 10.65 | 5.50 / 1.59 |
+| joined ends E_a E_b, PEC: power lost | −0.002 % | **−5.3 %** (gain) | +7.6 % |
+
+- **No-tee lines:** both methods agree to 0.02 dB/cm at every frequency, and
+  the joined ends are passive within 0.07 %. The extraction is sound there.
+- **Tee line at 20 GHz:** same as the no-tee lines.
+- **Tee line at 100 GHz:** the negative α was an end effect. With the ends
+  removed the cell has a positive α; the ends lose about 8 % (PEC).
+- **Tee line at 60 GHz:** no pair of identical passive end transitions, plus
+  2 or 3 identical cells, reproduces both lines: the ends would need 5 % gain
+  (6 % with gold). So at 60 GHz the 400 and 600 µm tee lines are not cascades of
+  one cell. The structure acts as a whole (a resonance of the finite line, or
+  coupling beyond neighbouring cells), and no two-length extraction of it is a
+  property of the line. That includes the dataset's Δα for this row.
+- This fits the author's colleague's report of resonances on tees with large
+  L2 (row 49: L2 = 166.6 µm of the 200 µm period).

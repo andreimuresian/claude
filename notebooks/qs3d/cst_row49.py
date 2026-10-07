@@ -6,6 +6,11 @@ Extraction exactly as the author's alpha extractor (Touchstone_extractor.py):
     alpha per cell = (alpha L(600) - alpha L(400)) / 0.02 cm * 8.686   [dB/cm]
     d_alpha = alpha(tee) - alpha(no tee)
 n from the same subtraction of beta L (the branch with 1 < n < 4).
+Line-line check (no assumption on the ends): with M = ABCD of each line,
+M400 = E_a T^2 E_b and M600 = E_a T^3 E_b for identical end transitions E and
+identical cells T, so M600 M400^-1 = E_a T E_a^-1 has the cell's eigenvalues,
+cosh(gamma P) = tr(M600 M400^-1)/2, whatever E is.  The same model gives
+E_a E_b = (M600 M400^-1)^-2 M400, which must be a passive 2-port.
 Power check: with PEC metal, 1 - |S11|^2 - |S21|^2 is power that leaves the line
 other than by conductor loss (radiation, or absorption in the lossy dielectrics).
 The header parameters that differ (CAP_W, SI_H, AIR_H) are not geometry
@@ -18,6 +23,8 @@ import json
 import math
 import os
 import re
+
+import numpy as np
 
 import loss as Lo
 
@@ -55,6 +62,35 @@ def gamma_l(S, f, L):
     g = cmath.acosh(((1 + S11)*(1 - S22) + S12*S21)/(2*S21))
     g = g if g.real >= 0 else -g
     return g.real, [s*g.imag + 2*math.pi*k for s in (1, -1) for k in range(-3, 6)]
+
+
+def abcd(S, Z0=50.0):
+    S11, S21, S12, S22 = S
+    d = 2*S21
+    return np.array([[((1 + S11)*(1 - S22) + S12*S21)/d, Z0*((1 + S11)*(1 + S22) - S12*S21)/d],
+                     [((1 - S11)*(1 - S22) - S12*S21)/(Z0*d), ((1 - S11)*(1 + S22) + S12*S21)/d]])
+
+
+def s_of(M, Z0=50.0):
+    A, B, C, D = M.ravel()
+    den = A + B/Z0 + C*Z0 + D
+    return np.array([[(A + B/Z0 - C*Z0 - D)/den, 2*(A*D - B*C)/den],
+                     [2/den, (-A + B/Z0 - C*Z0 + D)/den]])
+
+
+def line_line(S4, S6, f):
+    """Per-cell alpha [dB/cm] and n from the eigenvalues of M600 M400^-1, and the
+    joined end transitions K = E_a E_b with its largest singular value (> 1: active)."""
+    M4, M6 = abcd(S4), abcd(S6)
+    T = M6 @ np.linalg.inv(M4)
+    g = cmath.acosh(np.trace(T)/2)
+    g = g if g.real >= 0 else -g
+    k = 2*math.pi*f/C0*200e-6
+    n = sorted(x for x in ((s*g.imag + 2*math.pi*j)/k for s in (1, -1) for j in range(-3, 6)) if 1 < x < 4)
+    K = np.linalg.inv(T @ T) @ M4
+    SK = s_of(K)
+    return g.real/0.02*8.686, n[0], np.linalg.svd(SK, compute_uv=False)[0], \
+        100*(1 - abs(SK[0, 0])**2 - abs(SK[1, 0])**2)
 
 
 def per_cell(d4, d6, f):
@@ -101,6 +137,16 @@ def main():
                 d = D[(m, t, L)]
                 print(f"   {m:4} {t:6} {L} um: " + "  ".join(
                     f"{f/1e9:3.0f} GHz {100*(1 - abs(S[0])**2 - abs(S[1])**2):7.3f}" for f, S in sorted(d.items())))
+
+    print("\n4. Line-line: per-cell alpha and n from the eigenvalues of M600 M400^-1 (independent of the end transitions),")
+    print("   and the joined end transitions K = E_a E_b this implies (passive <=> sigma_max <= 1, power lost >= 0)")
+    print(f"   {'metal':5} {'':6} {'GHz':>4} | {'alpha':>7} {'author':>7} | {'n':>6} | {'sigma_max K':>11} {'lost in K %':>11}")
+    for m in ("GOLD", "PEC"):
+        for t in ("TEE", "NO TEE"):
+            for f in freqs:
+                a, n, sv, lk = line_line(D[(m, t, 400)][f], D[(m, t, 600)][f], f)
+                aa = per_cell(D[(m, t, 400)], D[(m, t, 600)], f)[0]
+                print(f"   {m:5} {t:6} {f/1e9:4.0f} | {a:7.3f} {aa:7.3f} | {n:6.3f} | {sv:11.4f} {lk:+11.3f}")
 
 
 if __name__ == "__main__":
