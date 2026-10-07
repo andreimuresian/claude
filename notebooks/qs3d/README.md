@@ -210,3 +210,17 @@ end transitions joined, E_a E_b = (M600 M400⁻¹)⁻² M400, which must be pass
   property of the line. That includes the dataset's Δα for this row.
 - This fits the author's colleague's report of resonances on tees with large
   L2 (row 49: L2 = 166.6 µm of the 200 µm period).
+
+### Where the large Δα lives in the dataset (`dataset_regime.py` → `dataset_regime.txt`)
+
+This describes the test fixture; nothing is fitted to it.
+
+- **Strongest correlate: the outer ground strip behind the slot,
+  70 − W1 − W2** (Spearman −0.70). Next is L2 (+0.49).
+- **Strip 5–10 µm with L2 > 100 µm:** Δα > 2 dB/cm in 40 of 43 rows, with
+  medians of 3–7 dB/cm. Row 49 is one of them (strip 8.9 µm, L2 167 µm).
+- **Strip > 40 µm:** none of the 86 rows has Δα > 2 dB/cm.
+- So the large values sit in one corner of the design space: a narrow outer
+  strip with a long head slot. Both the author's hypothesis (tees ending near
+  the ground's outer edge) and the colleague's report (resonances at large L2)
+  point there.

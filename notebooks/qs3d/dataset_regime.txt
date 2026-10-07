@@ -1,0 +1,35 @@
+Spearman(alpha_delta, strip) = -0.70
+Spearman(alpha_delta, L2   ) = +0.49
+Spearman(alpha_delta, W1   ) = +0.42
+Spearman(alpha_delta, WS   ) = -0.30
+Spearman(alpha_delta, W2   ) = +0.22
+Spearman(alpha_delta, L1   ) = -0.18
+Spearman(alpha_delta, GAP  ) = +0.14
+Spearman(alpha_delta, MTX  ) = -0.15
+
+median alpha_delta (dB/cm)
+strip (um)  (5, 10]  (10, 20]  (20, 40]  (40, 70]
+L2 (um)                                          
+(0, 100]       0.87      0.32     -0.04     -0.02
+(100, 130]     4.92      1.77      0.17     -0.18
+(130, 150]     3.32      1.99      0.55     -0.25
+(150, 170]     7.29      3.25      0.78     -0.06
+(170, 200]     4.17      2.73      0.91      0.05
+
+share of rows with alpha_delta > 2 dB/cm
+strip (um)  (5, 10]  (10, 20]  (20, 40]  (40, 70]
+L2 (um)                                          
+(0, 100]       0.29      0.01      0.00       0.0
+(100, 130]     1.00      0.42      0.00       0.0
+(130, 150]     0.90      0.46      0.08       0.0
+(150, 170]     0.92      0.57      0.18       0.0
+(170, 200]     0.88      0.76      0.12       0.0
+
+rows
+strip (um)  (5, 10]  (10, 20]  (20, 40]  (40, 70]
+L2 (um)                                          
+(0, 100]         41        73        85        46
+(100, 130]       13        31        38        16
+(130, 150]       10        13        25        10
+(150, 170]       12        14        17         6
+(170, 200]        8        17        17         8
