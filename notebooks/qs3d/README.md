@@ -224,3 +224,20 @@ This describes the test fixture; nothing is fitted to it.
   strip with a long head slot. Both the author's hypothesis (tees ending near
   the ground's outer edge) and the colleague's report (resonances at large L2)
   point there.
+
+### Caveat from the author's CST history (600 µm tee project)
+
+- The local mesh group (5 µm) holds the centre conductor and the original
+  ground bricks. The tee projects delete those grounds and rebuild them
+  under new names (GROUND ELECTRODE RIGHT/LEFT), which are never added back.
+- So in the tee models the etched grounds fall back on the automatic mesh.
+  This is the coarser ground mesh the author saw. It is also why the no-tee
+  runs, whose grounds stay in the group, are slower.
+- The automatic mesh caps the element size at the longest model edge / 10
+  (StepsPerBoxNear = 10). That edge is the line length, so the cap is about
+  40 µm in the 400 µm model and 60 µm in the 600 µm model.
+- The two tee lines then do not have identically meshed cells. That alone can
+  break the line-line check, so the 60 GHz result above may be partly a mesh
+  effect.
+- Test: rerun the 600 µm PEC tee line with the grounds in the 5 µm group, then
+  run a 1000 µm (5-cell) line meshed the same way.
