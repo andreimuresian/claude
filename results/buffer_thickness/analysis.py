@@ -81,9 +81,9 @@ def panel(axv, axi, w, legend=True):
         ax.tick_params(axis="x", labelsize=8)
     axv.set_title(f"WG_TOP = {w:.1f} µm  |  gap 3.4 µm, CAP_H 1.4 µm, CAP_W 2.0 µm, GAP_TOP 10 µm", fontsize=10)
     if legend:
-        axv.legend(fontsize=7.5, loc="upper left", ncol=1, framealpha=0.95)
-        h, l = axi.get_legend_handles_labels()
-        axi.legend(h[2:], l[2:], fontsize=7.5, loc="upper right", framealpha=0.95)
+        h, l = axv.get_legend_handles_labels()
+        axv.legend(h[2:], l[2:], fontsize=7.5, loc="center", bbox_to_anchor=(0.5, 0.5), ncol=2, framealpha=0.95)
+        axi.legend(fontsize=7.5, loc="upper right", ncol=2, framealpha=0.95)
 
 
 def table_text(w):
