@@ -1,0 +1,555 @@
+CST History Data Exchange Format V2
+
+{
+    "history": [
+        {
+            "caption": "define units",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Units",
+                "     .SetUnit \"Length\", \"mm\"",
+                "     .SetUnit \"Frequency\", \"GHz\"",
+                "     .SetUnit \"Voltage\", \"V\"",
+                "     .SetUnit \"Resistance\", \"Ohm\"",
+                "     .SetUnit \"Inductance\", \"nH\"",
+                "     .SetUnit \"Temperature\", \"degC\"",
+                "     .SetUnit \"Time\", \"ns\"",
+                "     .SetUnit \"Current\", \"A\"",
+                "     .SetUnit \"Conductance\", \"S\"",
+                "     .SetUnit \"Capacitance\", \"pF\"",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define parameters",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "StoreParameter \"WS\", \"0.035\"",
+                "StoreParameter \"GAP\", \"0.0045\"",
+                "StoreParameter \"WG\", \"0.04985\"",
+                "StoreParameter \"MTX\", \"0.002\"",
+                "StoreParameter \"SIO2_CAP\", \"0.0036\"",
+                "StoreParameter \"LINBO3_THICKNESS\", \"0.000275\"",
+                "StoreParameter \"SIO2_THICKNESS\", \"0.0047\"",
+                "StoreParameter \"SI_THICKNESS\", \"0.3\"",
+                "StoreParameter \"W\", \"0.5\"",
+                "StoreParameter \"L\", \"0.05\"",
+                "StoreParameter \"MESHSTEP\", \"0.0005\"",
+                "StoreParameter \"F0\", \"60\""
+            ]
+        },
+        {
+            "caption": "define material: LN",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Material",
+                "     .Reset",
+                "     .Name \"LN\"",
+                "     .Folder \"\"",
+                "     .FrqType \"all\"",
+                "     .Type \"Anisotropic\"",
+                "     .MaterialUnit \"Frequency\", \"GHz\"",
+                "     .MaterialUnit \"Geometry\", \"mm\"",
+                "     .EpsilonX \"43\"",
+                "     .EpsilonY \"28\"",
+                "     .EpsilonZ \"43\"",
+                "     .MuX \"1\"",
+                "     .MuY \"1\"",
+                "     .MuZ \"1\"",
+                "     .Colour \"0\", \"0\", \"0\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define material: SIO2",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Material",
+                "     .Reset",
+                "     .Name \"SIO2\"",
+                "     .Folder \"\"",
+                "     .FrqType \"all\"",
+                "     .Type \"Normal\"",
+                "     .Epsilon \"3.9\"",
+                "     .Mu \"1\"",
+                "     .Colour \"0\", \"0\", \"1\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define material: Silicon (lossy)",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Material",
+                "     .Reset",
+                "     .Name \"Silicon (lossy)\"",
+                "     .Folder \"\"",
+                "     .FrqType \"all\"",
+                "     .Type \"Normal\"",
+                "     .SetMaterialUnit \"GHz\", \"mm\"",
+                "     .Epsilon \"11.9\"",
+                "     .Mu \"1.0\"",
+                "     .Kappa \"2.5e-004\"",
+                "     .Colour \"0.666667\", \"0.666667\", \"1\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define material: Gold",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Material",
+                "     .Reset",
+                "     .Name \"Gold\"",
+                "     .Folder \"\"",
+                "     .FrqType \"all\"",
+                "     .Type \"Lossy metal\"",
+                "     .MaterialUnit \"Frequency\", \"GHz\"",
+                "     .MaterialUnit \"Geometry\", \"mm\"",
+                "     .Mu \"1.0\"",
+                "     .Sigma \"4.561e+007\"",
+                "     .Rho \"19320.0\"",
+                "     .Colour \"1\", \"1\", \"0\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "new component: component1",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "Component.New \"component1\""
+            ]
+        },
+        {
+            "caption": "define brick: component1:si",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"si\"",
+                "     .Component \"component1\"",
+                "     .Material \"Silicon (lossy)\"",
+                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS-SI_THICKNESS\", \"-SIO2_THICKNESS-LINBO3_THICKNESS\"",
+                "     .Yrange \"-W/2\", \"W/2\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:box",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"box\"",
+                "     .Component \"component1\"",
+                "     .Material \"SIO2\"",
+                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS\", \"-LINBO3_THICKNESS\"",
+                "     .Yrange \"-W/2\", \"W/2\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:slab",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"slab\"",
+                "     .Component \"component1\"",
+                "     .Material \"LN\"",
+                "     .Xrange \"-LINBO3_THICKNESS\", \"0\"",
+                "     .Yrange \"-W/2\", \"W/2\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:cap",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"cap\"",
+                "     .Component \"component1\"",
+                "     .Material \"SIO2\"",
+                "     .Xrange \"0\", \"SIO2_CAP\"",
+                "     .Yrange \"-W/2\", \"W/2\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:signal",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"signal\"",
+                "     .Component \"component1\"",
+                "     .Material \"Gold\"",
+                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
+                "     .Yrange \"-WS/2\", \"WS/2\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:ground_r",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"ground_r\"",
+                "     .Component \"component1\"",
+                "     .Material \"Gold\"",
+                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
+                "     .Yrange \"WS/2+GAP\", \"WS/2+GAP+WG\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:ground_l",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"ground_l\"",
+                "     .Component \"component1\"",
+                "     .Material \"Gold\"",
+                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
+                "     .Yrange \"-WS/2-GAP-WG\", \"-WS/2-GAP\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:gap_r",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"gap_r\"",
+                "     .Component \"component1\"",
+                "     .Material \"Vacuum\"",
+                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
+                "     .Yrange \"WS/2\", \"WS/2+GAP\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define brick: component1:gap_l",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Brick",
+                "     .Reset",
+                "     .Name \"gap_l\"",
+                "     .Component \"component1\"",
+                "     .Material \"Vacuum\"",
+                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
+                "     .Yrange \"-WS/2-GAP\", \"-WS/2\"",
+                "     .Zrange \"0\", \"L\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "create group: meshgroup_xs",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "Group.Add \"meshgroup_xs\", \"mesh\""
+            ]
+        },
+        {
+            "caption": "set local mesh properties for: meshgroup_xs",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With MeshSettings",
+                "     With .ItemMeshSettings (\"group$meshgroup_xs\")",
+                "          .SetMeshType \"Hex\"",
+                "          .Set \"ConsiderGlobalEdgeRefinement\", 1",
+                "          .Set \"ConsiderGlobalFaceRefinement\", 1",
+                "          .Set \"ConsiderGlobalMaterialRefinement\", 1",
+                "          .Set \"ConsiderGlobalRefinement\", 1",
+                "          .Set \"ConsiderGlobalSnapping\", 1",
+                "          .Set \"EdgeRefinementType\", \"NONE\"",
+                "          .Set \"FaceRefinementType\", \"NONE\"",
+                "          .Set \"EllipseRefinementType\", \"NONE\"",
+                "          .Set \"UseMaterialRefinement\", 1",
+                "          .Set \"VolumeRefinementExtentNumSteps\", 3, 3, 3",
+                "          .Set \"VolumeRefinementExtentStep\", 0, 0, 0",
+                "          .Set \"VolumeRefinementExtentType\", \"STEPS_PER_DIM\"",
+                "          .Set \"VolumeRefinementExtentValueUseSameXYZ\", 1",
+                "          .Set \"VolumeRefinementNumSteps\", \"20\", \"20\", \"20\"",
+                "          .Set \"VolumeRefinementRatio\", \"2\", \"2\", \"2\"",
+                "          .Set \"VolumeRefinementScopeType\", \"ALL\"",
+                "          .Set \"VolumeRefinementStep\", \"MESHSTEP\", \"MESHSTEP\", \"0\"",
+                "          .Set \"VolumeRefinementType\", \"ABS_VALUE\"",
+                "          .Set \"VolumeRefinementValueUseSameXYZ\", 0",
+                "     End With",
+                "End With"
+            ]
+        },
+        {
+            "caption": "add items to group: \"meshgroup_xs\"",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "Group.AddItem \"solid$component1:signal\", \"meshgroup_xs\"",
+                "Group.AddItem \"solid$component1:ground_r\", \"meshgroup_xs\"",
+                "Group.AddItem \"solid$component1:ground_l\", \"meshgroup_xs\"",
+                "Group.AddItem \"solid$component1:gap_r\", \"meshgroup_xs\"",
+                "Group.AddItem \"solid$component1:gap_l\", \"meshgroup_xs\""
+            ]
+        },
+        {
+            "caption": "define frequency range",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "Solver.FrequencyRange \"F0-0.1\", \"F0\""
+            ]
+        },
+        {
+            "caption": "define background",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Background",
+                "     .ResetBackground",
+                "     .XminSpace \"0.0\"",
+                "     .XmaxSpace \"0.05\"",
+                "     .YminSpace \"0.0\"",
+                "     .YmaxSpace \"0.0\"",
+                "     .ZminSpace \"0.0\"",
+                "     .ZmaxSpace \"0.0\"",
+                "     .ApplyInAllDirections \"False\"",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define boundaries",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Boundary",
+                "     .Xmin \"open\"",
+                "     .Xmax \"open\"",
+                "     .Ymin \"open\"",
+                "     .Ymax \"open\"",
+                "     .Zmin \"open\"",
+                "     .Zmax \"open\"",
+                "     .Xsymmetry \"none\"",
+                "     .Ysymmetry \"none\"",
+                "     .Zsymmetry \"none\"",
+                "     .ApplyInAllDirections \"True\"",
+                "End With"
+            ]
+        },
+        {
+            "caption": "set mesh properties (Hexahedral FIT)",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Mesh",
+                "     .MeshType \"PBA\"",
+                "     .SetCreator \"High Frequency\"",
+                "End With",
+                "With MeshSettings",
+                "     .SetMeshType \"Hex\"",
+                "     .Set \"Version\", 1%",
+                "     .Set \"StepsPerWaveNear\", \"50\"",
+                "     .Set \"StepsPerWaveFar\", \"50\"",
+                "     .Set \"WavelengthRefinementSameAsNear\", \"1\"",
+                "     .Set \"StepsPerBoxNear\", \"50\"",
+                "     .Set \"StepsPerBoxFar\", \"50\"",
+                "     .Set \"MaxStepNear\", \"0\"",
+                "     .Set \"MaxStepFar\", \"0\"",
+                "     .Set \"ModelBoxDescrNear\", \"maxedge\"",
+                "     .Set \"ModelBoxDescrFar\", \"maxedge\"",
+                "     .Set \"UseMaxStepAbsolute\", \"0\"",
+                "     .Set \"GeometryRefinementSameAsNear\", \"1\"",
+                "     .Set \"UseRatioLimitGeometry\", \"1\"",
+                "     .Set \"RatioLimitGeometry\", \"50\"",
+                "     .Set \"MinStepGeometryX\", \"0\"",
+                "     .Set \"MinStepGeometryY\", \"0\"",
+                "     .Set \"MinStepGeometryZ\", \"0\"",
+                "     .Set \"UseSameMinStepGeometryXYZ\", \"1\"",
+                "End With",
+                "With MeshSettings",
+                "     .SetMeshType \"Hex\"",
+                "     .Set \"EdgeRefinementType\", \"RATIO\"",
+                "     .Set \"EdgeRefinementRatio\", \"2\"",
+                "     .Set \"EdgeRefinementStep\", \"0\"",
+                "     .Set \"EdgeRefinementBufferLines\", \"3\"",
+                "     .Set \"BufferLinesNear\", \"3\"",
+                "     .Set \"UseDielectrics\", \"1\"",
+                "     .Set \"EquilibrateOn\", \"1\"",
+                "     .Set \"Equilibrate\", \"1.5\"",
+                "     .Set \"IgnoreThinPanelMaterial\", \"0\"",
+                "End With",
+                "With Mesh",
+                "     .ConnectivityCheck \"True\"",
+                "     .UsePecEdgeModel \"True\"",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define port: 1",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Port",
+                "     .Reset",
+                "     .PortNumber \"1\"",
+                "     .Label \"\"",
+                "     .Folder \"\"",
+                "     .NumberOfModes \"2\"",
+                "     .AdjustPolarization \"False\"",
+                "     .PolarizationAngle \"0.0\"",
+                "     .ReferencePlaneDistance \"0\"",
+                "     .TextSize \"50\"",
+                "     .TextMaxLimit \"0\"",
+                "     .Coordinates \"Full\"",
+                "     .Orientation \"zmin\"",
+                "     .PortOnBound \"False\"",
+                "     .ClipPickedPortToBound \"False\"",
+                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS-SI_THICKNESS\", \"SIO2_CAP+MTX\"",
+                "     .Yrange \"-W/2\", \"W/2\"",
+                "     .Zrange \"0\", \"0\"",
+                "     .XrangeAdd \"0.0\", \"0.0\"",
+                "     .YrangeAdd \"0.0\", \"0.0\"",
+                "     .ZrangeAdd \"0.0\", \"0.0\"",
+                "     .SingleEnded \"False\"",
+                "     .WaveguideMonitor \"False\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "define port: 2",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "With Port",
+                "     .Reset",
+                "     .PortNumber \"2\"",
+                "     .Label \"\"",
+                "     .Folder \"\"",
+                "     .NumberOfModes \"2\"",
+                "     .AdjustPolarization \"False\"",
+                "     .PolarizationAngle \"0.0\"",
+                "     .ReferencePlaneDistance \"0\"",
+                "     .TextSize \"50\"",
+                "     .TextMaxLimit \"0\"",
+                "     .Coordinates \"Full\"",
+                "     .Orientation \"zmax\"",
+                "     .PortOnBound \"False\"",
+                "     .ClipPickedPortToBound \"False\"",
+                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS-SI_THICKNESS\", \"SIO2_CAP+MTX\"",
+                "     .Yrange \"-W/2\", \"W/2\"",
+                "     .Zrange \"L\", \"L\"",
+                "     .XrangeAdd \"0.0\", \"0.0\"",
+                "     .YrangeAdd \"0.0\", \"0.0\"",
+                "     .ZrangeAdd \"0.0\", \"0.0\"",
+                "     .SingleEnded \"False\"",
+                "     .WaveguideMonitor \"False\"",
+                "     .Create",
+                "End With"
+            ]
+        },
+        {
+            "caption": "change solver type",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "ChangeSolverType \"HF Time Domain\""
+            ]
+        },
+        {
+            "caption": "define time domain solver parameters",
+            "version": "2025.5|34.0.1|20250530",
+            "hidden": false,
+            "type": "vba",
+            "code": [
+                "Mesh.SetCreator \"High Frequency\"",
+                "With Solver",
+                "     .Method \"Hexahedral\"",
+                "     .CalculationType \"TD-S\"",
+                "     .StimulationPort \"All\"",
+                "     .StimulationMode \"All\"",
+                "     .SteadyStateLimit \"-40\"",
+                "     .MeshAdaption \"False\"",
+                "     .AutoNormImpedance \"False\"",
+                "     .NormingImpedance \"50\"",
+                "     .CalculateModesOnly \"True\"",
+                "     .SParaSymmetry \"False\"",
+                "     .StoreTDResultsInCache \"False\"",
+                "     .RunDiscretizerOnly \"False\"",
+                "     .FullDeembedding \"False\"",
+                "     .SuperimposePLWExcitation \"False\"",
+                "     .UseSensitivityAnalysis \"False\"",
+                "End With"
+            ]
+        }
+    ]
+}
