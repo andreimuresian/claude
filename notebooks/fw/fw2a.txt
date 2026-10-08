@@ -1,0 +1,12 @@
+grid (132, 204, 8) unknowns 627800
+    factor: N 627800, nnz 8124376, 59 s, 8.51 GB
+    eigs: 94 solves, 133 s
+  f   60.164 GHz  Q     2059.9  n 1.9489  gap-V score 1.741e-07  |V| spread over z 0.000
+  f   41.040 GHz  Q        4.2  n 2.8570  gap-V score 1.030e-08  |V| spread over z 0.000
+  f   37.797 GHz  Q        2.4  n 3.1022  gap-V score 7.136e-09  |V| spread over z 0.000
+  f   38.598 GHz  Q        1.4  n 3.0378  gap-V score 6.450e-09  |V| spread over z 0.000
+  f   52.539 GHz  Q        1.0  n 2.2317  gap-V score 9.590e-09  |V| spread over z 0.000
+  f    0.004 GHz  Q        1.8  n 28635.3085  gap-V score 1.527e-17  |V| spread over z 0.018
+  f    0.004 GHz  Q        1.4  n 30088.7777  gap-V score 7.495e-18  |V| spread over z 0.054
+  f    0.003 GHz  Q        0.6  n 40244.1389  gap-V score 1.833e-17  |V| spread over z 0.021
+LU memory 8.53 GB, 200 s

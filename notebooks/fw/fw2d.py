@@ -59,7 +59,7 @@ def pml_s(nodes, inner, outer_lo, outer_hi, w, smax=12.0, p=3):
 
 class Mode2D:
     def __init__(self, g, f, metal="pec", h_edge=0.1e-6, side=600e-6, top=600e-6, si_extra=200e-6,
-                 pml=500e-6, hmax=25e-6, smax=12.0, homog=None, half=True, wall_ground=False):
+                 pml=500e-6, hmax=25e-6, smax=12.0, homog=None, half=True, wall_ground=False, metal_x=None, extra_x=()):
         self.f, self.w = f, 2*np.pi*f
         WS, GAP, MTX, tLN = g["WS"], g["GAP"], g["MTX"], g["t_LN"]
         WG = 70e-6
@@ -67,12 +67,13 @@ class Mode2D:
         yL, yB, yS = -tLN, -tLN - sp.BOX_H, -tLN - sp.BOX_H - sp.SI_H
         X1 = x_go + side
         Ytop, Ybot = MTX + top, yS - si_extra
-        xb = ([] if half else [-X1 - pml, -X1, -x_go, -x_gi, -x_si]) + [0.0, x_si, x_gi, x_go, X1, X1 + pml]
+        xb = ([] if half else [-X1 - pml, -X1, -x_go, -x_gi, -x_si]) + [0.0, x_si, x_gi, x_go, X1, X1 + pml] + list(extra_x)
         self.half = half
         yb = [Ybot - pml, Ybot, yS, yB, yL, 0.0, MTX, Ytop, Ytop + pml]
         xn = axis(xb, h_edge, hmax)
         yn = axis(yb, min(h_edge, tLN/3), hmax)
         self.xn, self.yn = xn, yn
+        self.stretched = None
         self.box = (X1, Ybot, Ytop)
         self.geo = dict(x_si=x_si, x_gi=x_gi, x_go=x_go, MTX=MTX, yL=yL, yB=yB, yS=yS)
         nx, ny = len(xn), len(yn)
@@ -85,6 +86,7 @@ class Mode2D:
         dx = np.diff(xn)*sxc; dy = np.diff(yn)*syc                       # primal edges
         dxd = np.r_[dx[0]/2, 0.5*(dx[1:] + dx[:-1]), dx[-1]/2]           # dual, at nodes
         dyd = np.r_[dy[0]/2, 0.5*(dy[1:] + dy[:-1]), dy[-1]/2]
+        self.stretched = (dx, dy, dxd, dyd)
         # materials per primal cell (nx-1, ny-1): eps tensors
         XC, YC = np.meshgrid(xc, yc, indexing="ij")
         ex = np.ones(XC.shape, complex); ey = ex.copy(); ez = ex.copy()
@@ -103,7 +105,13 @@ class Mode2D:
         inm = (YN >= -tol) & (YN <= MTX + tol)
         ax = np.abs(XN)
         xg_out = np.inf if wall_ground else x_go + tol
-        mnode = inm & ((ax <= x_si + tol) | ((ax >= x_gi - tol) & (ax <= xg_out)))
+        if metal_x is None:
+            mnode = inm & ((ax <= x_si + tol) | ((ax >= x_gi - tol) & (ax <= xg_out)))
+        else:                                   # metal: list of (x0, x1) intervals, |x|
+            mnode = np.zeros(ax.shape, bool)
+            for x0, x1 in metal_x:
+                mnode |= (ax >= x0 - tol) & (ax <= x1 + tol)
+            mnode &= inm
         # unknown layout: Ex at (i+1/2, j): (nx-1, ny); Ey at (i, j+1/2): (nx, ny-1);
         # Ez at (i, j): (nx, ny); Hx at (i, j+1/2); Hy at (i+1/2, j); Hz at (i+1/2, j+1/2)
         nEx, nEy, nEz = (nx - 1)*ny, nx*(ny - 1), nx*ny
@@ -250,4 +258,4 @@ class Mode2D:
             I, P = 2*I, 2*P
         k0 = self.w/C0
         n, a = beta.real/k0, -beta.imag*8.686/100
-        return dict(n=n, alpha=a, Z_VI=V/I, Z_PV=abs(V)**2/(2*P.real), Z_PI=2*P.real/abs(I)**2)
+        return dict(n=n, alpha=a, V=V, I=I, Z_VI=V/I, Z_PV=abs(V)**2/(2*P.real), Z_PI=2*P.real/abs(I)**2)
