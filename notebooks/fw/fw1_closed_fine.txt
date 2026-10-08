@@ -1,0 +1,1 @@
+  20 GHz N= 379248 | n 2.2025 (CST 1.969)  alpha 0.0002 (CST 0.0) | Z VI 35.02 PV 28.26 PI 43.38 (CST 36.4) | other n [np.float64(2.27), np.float64(2.627)]  222 s

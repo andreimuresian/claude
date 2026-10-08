@@ -59,7 +59,7 @@ def pml_s(nodes, inner, outer_lo, outer_hi, w, smax=12.0, p=3):
 
 class Mode2D:
     def __init__(self, g, f, metal="pec", h_edge=0.1e-6, side=600e-6, top=600e-6, si_extra=200e-6,
-                 pml=500e-6, hmax=25e-6, smax=12.0):
+                 pml=500e-6, hmax=25e-6, smax=12.0, homog=None, half=True, wall_ground=False):
         self.f, self.w = f, 2*np.pi*f
         WS, GAP, MTX, tLN = g["WS"], g["GAP"], g["MTX"], g["t_LN"]
         WG = 70e-6
@@ -67,7 +67,8 @@ class Mode2D:
         yL, yB, yS = -tLN, -tLN - sp.BOX_H, -tLN - sp.BOX_H - sp.SI_H
         X1 = x_go + side
         Ytop, Ybot = MTX + top, yS - si_extra
-        xb = [-X1 - pml, -X1, -x_go, -x_gi, -x_si, 0.0, x_si, x_gi, x_go, X1, X1 + pml]
+        xb = ([] if half else [-X1 - pml, -X1, -x_go, -x_gi, -x_si]) + [0.0, x_si, x_gi, x_go, X1, X1 + pml]
+        self.half = half
         yb = [Ybot - pml, Ybot, yS, yB, yL, 0.0, MTX, Ytop, Ytop + pml]
         xn = axis(xb, h_edge, hmax)
         yn = axis(yb, min(h_edge, tLN/3), hmax)
@@ -94,12 +95,15 @@ class Mode2D:
         eps_si = sp.EPS_SI - 1j*sp.SIGMA_SI/(self.w*EPS0)
         si = YC < yB
         ex[si] = ey[si] = ez[si] = eps_si
+        if homog is not None:
+            ex[:] = ey[:] = ez[:] = homog
         # metal nodes (closed rectangles)
         XN, YN = np.meshgrid(xn, yn, indexing="ij")
         tol = 1e-12
         inm = (YN >= -tol) & (YN <= MTX + tol)
         ax = np.abs(XN)
-        mnode = inm & ((ax <= x_si + tol) | ((ax >= x_gi - tol) & (ax <= x_go + tol)))
+        xg_out = np.inf if wall_ground else x_go + tol
+        mnode = inm & ((ax <= x_si + tol) | ((ax >= x_gi - tol) & (ax <= xg_out)))
         # unknown layout: Ex at (i+1/2, j): (nx-1, ny); Ey at (i, j+1/2): (nx, ny-1);
         # Ez at (i, j): (nx, ny); Hx at (i, j+1/2); Hy at (i+1/2, j); Hz at (i+1/2, j+1/2)
         nEx, nEy, nEz = (nx - 1)*ny, nx*(ny - 1), nx*ny
@@ -130,7 +134,11 @@ class Mode2D:
         mEz = mnode.copy()
         # outer PEC walls (behind the PML)
         mEx[:, 0] = mEx[:, -1] = True; mEy[0, :] = mEy[-1, :] = True
-        mEz[0, :] = mEz[-1, :] = mEz[:, 0] = mEz[:, -1] = True
+        mEz[-1, :] = mEz[:, 0] = mEz[:, -1] = True
+        if not half:
+            mEz[0, :] = True
+        else:
+            mEy[0, :] = mnode[0, :-1] & mnode[0, 1:]   # x = 0 is a PMC plane (even CPW mode)
         I = lambda n: sparse.identity(n, format="csr")
         def D(n, h):     # forward difference n nodes -> n-1 edges, spacing h (n-1)
             return sparse.diags([-1/h, 1/h], [0, 1], shape=(n - 1, n), format="csr")
@@ -149,48 +157,52 @@ class Mode2D:
         DxH_hz = sparse.kron(Dh(nx, dxd), I(ny - 1))           # Hz(nx-1,ny-1) -> (nx,ny-1) [Ey loc]
         DyH_hz = sparse.kron(I(nx - 1), Dh(ny, dyd))           # Hz -> (nx-1, ny)          [Ex loc]
         w = self.w
-        jw = 1j*w
-        iez = np.where(mEz.ravel(), 0.0, 1.0/(jw*EPS0*epz.ravel()))
-        # Ez = (jw eps_z)^-1 (DxH Hy - DyH Hx);  h = [Hx, Hy]
-        Ez_of_h = sparse.diags(iez) @ sparse.hstack([-DyH_hx, DxH_hy])
-        # Hz = (-jw mu)^-1 (DxE Ey - DyE Ex);    e = [Ex, Ey]
-        Hz_of_e = (-1/(jw*MU0))*sparse.hstack([-DyE_ex, DxE_ey])
-        # jb J e = A h,  J e = [Ey; -Ex]: from  -jw mu Hx = DyE Ez + jb Ey ;  -jw mu Hy = -jb Ex - DxE Ez
-        nHx, nHy = nx*(ny - 1), (nx - 1)*ny
-        A = -jw*MU0*sparse.identity(nHx + nHy) - sparse.vstack([DyE_ez, -DxE_ez]) @ Ez_of_h
-        # jb J h = B e,  J h = [Hy; -Hx]: from  jw eps Ex = DyH Hz + jb Hy ;  jw eps Ey = -jb Hx - DxH Hz
-        B = sparse.diags(np.r_[jw*EPS0*epx.ravel(), jw*EPS0*epy.ravel()]) - sparse.vstack([DyH_hz, -DxH_hz]) @ Hz_of_e
-        # J for e (rows ordered [Ex; Ey]) maps e -> [Ey; -Ex]: shapes differ, so write the
-        # equations directly: rows of A are ordered [Hx-eq ~ Ey, Hy-eq ~ -Ex]
-        # A h = jb [Ey; -Ex]  ->  [Ex; Ey] = (1/jb) Pe A h,  Pe = [[0, -I], [I, 0]] on (Hx-rows, Hy-rows)
-        Pe = sparse.bmat([[None, -sparse.identity(nEx)], [sparse.identity(nEy), None]])   # rows: Ex, Ey
-        # B e = jb [Hy; -Hx]  ->  [Hx; Hy] = (1/jb) Ph B e,  Ph = [[0, -I], [I, 0]] on (Ex-rows, Ey-rows)
-        Ph = sparse.bmat([[None, -sparse.identity(nHx)], [sparse.identity(nHy), None]])
-        # check shapes: A rows = [Hx(nHx); Hy(nHy)] locations... rows of A: first block from DyE_ez (Hx loc, nHx)
-        Mfull = (Pe @ A @ Ph @ B).tocsr()                      # (jb)^2 e = M e
+        k0 = w/C0
+        # transverse-E eigenproblem (only 1/h^2 terms; stable at low frequency):
+        #   beta^2 Et = k0^2 eps_t Et - curl_t curl_t Et + grad_t( eps_z^-1 div_t(eps_t Et) )
+        iez = np.where(mEz.ravel(), 0.0, 1.0/epz.ravel())          # Ez = 0 on PEC
+        et = sparse.diags(np.r_[epx.ravel(), epy.ravel()])
+        curl_z = sparse.hstack([-DyE_ex, DxE_ey])                    # Et -> Hz location
+        CC = sparse.vstack([DyH_hz, -DxH_hz]) @ curl_z               # curl_t curl_t
+        div = sparse.hstack([DxH_hy, DyH_hx])                        # Et -> nodes (Ex ~ Hy shape, Ey ~ Hx shape)
+        grad = sparse.vstack([DxE_ez, DyE_ez])                       # nodes -> Et
+        Mfull = (k0**2*et - CC + grad @ sparse.diags(iez) @ div @ et).tocsr()
+        self.ops = dict(curl_z=curl_z, div=div, grad=grad, et=et, iez=iez)
         free = ~np.r_[mEx.ravel(), mEy.ravel()]
         S = sparse.identity(nEx + nEy, format="csr")[np.where(free)[0]]
         self.M = (S @ Mfull @ S.T).tocsc()
         self.S, self.free = S, free
         self.shape = dict(nx=nx, ny=ny, nEx=nEx, nEy=nEy)
-        self.ops = dict(Ez_of_h=Ez_of_h, Hz_of_e=Hz_of_e, Ph=Ph, B=B, epx=epx, epy=epy)
         self.nodes = (xn, yn)
         self.N = self.M.shape[0]
 
     def solve(self, n_guess=2.0, k=4):
         k0 = self.w/C0
-        sig = -(n_guess*k0)**2                                  # (jb)^2 = -b^2
-        vals, vecs = eigs(self.M, k=k, sigma=sig, which="LM")
-        beta = np.sqrt(-vals)
+        vals, vecs = eigs(self.M, k=k, sigma=(n_guess*k0)**2, which="LM")
+        beta = np.sqrt(vals.astype(complex))
         beta = np.where(beta.real < 0, -beta, beta)
-        order = np.argsort(np.abs(beta/k0 - n_guess))
+        # the CPW mode: largest gap voltage per unit power (box/common modes have ~0 gap voltage)
+        score = []
+        for b, v in zip(beta, vecs.T):
+            if not 0.5 < b.real/k0 < 5:
+                score.append(-2); continue
+            r = self.line_params(b, v)
+            score.append(r["Z_PV"] if np.isfinite(r["Z_PV"]) and r["Z_PV"] > 0 else -1)
+        order = np.argsort(score)[::-1]
         return beta[order], vecs[:, order]
 
     def fields(self, beta, v):
         """E and H on the Yee grid for one mode, scaled to V = 1 across the right gap."""
         e = self.S.T @ v
         jb = 1j*beta
-        h = (self.ops["Ph"] @ (self.ops["B"] @ e))/jb
+        o = self.ops
+        Ez = o["iez"]*(o["div"] @ (o["et"] @ e))/jb                 # div D = 0
+        gz = o["grad"] @ Ez                                          # [DxE Ez; DyE Ez]
+        nEx = self.shape["nEx"]
+        jwm = 1j*self.w*MU0
+        Hy = (jb*e[:nEx] + gz[:nEx])/jwm                             # -jwmu Hy = -jb Ex - DxE Ez
+        Hx = -(gz[nEx:] + jb*e[nEx:])/jwm                            # -jwmu Hx = DyE Ez + jb Ey
+        h = np.r_[Hx, Hy]
         nx, ny = self.shape["nx"], self.shape["ny"]
         nEx = self.shape["nEx"]
         Ex = e[:nEx].reshape(nx - 1, ny); Ey = e[nEx:].reshape(nx, ny - 1)
@@ -213,19 +225,29 @@ class Mode2D:
         xm = 0.5*(xn[1:] + xn[:-1])
         sel = (xm > g["x_si"]) & (xm < g["x_gi"])
         V = np.sum(Ex[sel, j]*dxn[sel])
-        # loop: dual columns ia, ib (x half-way into the gaps), dual rows ja, jt
+        # loop of H around the signal on dual lines: x = +-xmid (half-way into the gaps),
+        # y = yL/2 and MTX + 3 um.  Half domain: x = 0 is a PMC plane (H_t = 0 there),
+        # the loop runs 0 -> xmid and the current is doubled.
         xmid = (g["x_si"] + g["x_gi"])/2
-        ia, ib = int(np.argmin(abs(xm + xmid))), int(np.argmin(abs(xm - xmid)))
         ym = 0.5*(yn[1:] + yn[:-1])
         ja, jt = int(np.argmin(abs(ym - g["yL"]/2))), int(np.argmin(abs(ym - (g["MTX"] + 3e-6))))
-        I = (np.sum(Hx[ia + 1:ib + 1, ja]*dxd[ia + 1:ib + 1]) + np.sum(Hy[ib, ja + 1:jt + 1]*dyd[ja + 1:jt + 1])
-             - np.sum(Hx[ia + 1:ib + 1, jt]*dxd[ia + 1:ib + 1]) - np.sum(Hy[ia, ja + 1:jt + 1]*dyd[ja + 1:jt + 1]))
-        # Poynting flux inside the PML-free box
+        ib = int(np.argmin(abs(xm - xmid)))
+        if self.half:
+            i0 = 0
+            Il = 0.0
+        else:
+            ia = int(np.argmin(abs(xm + xmid))); i0 = ia + 1
+            Il = np.sum(Hy[ia, ja + 1:jt + 1]*dyd[ja + 1:jt + 1])
+        I = (np.sum(Hx[i0:ib + 1, ja]*dxd[i0:ib + 1]) + np.sum(Hy[ib, ja + 1:jt + 1]*dyd[ja + 1:jt + 1])
+             - np.sum(Hx[i0:ib + 1, jt]*dxd[i0:ib + 1]) - Il)
         X1 = self.box[0]; yb0, yb1 = self.box[1], self.box[2]
         mx = (np.abs(xm) < X1)[:, None] & ((yn > yb0) & (yn < yb1))[None, :]
         my = (np.abs(xn) < X1)[:, None] & ((ym > yb0) & (ym < yb1))[None, :]
+        wx = dxd.copy()
         P = 0.5*(np.sum((Ex*np.conj(Hy)*dxn[:, None]*dyd[None, :])[mx])
-                 - np.sum((Ey*np.conj(Hx)*dxd[:, None]*dyn[None, :])[my]))
+                 - np.sum((Ey*np.conj(Hx)*wx[:, None]*dyn[None, :])[my]))
+        if self.half:
+            I, P = 2*I, 2*P
         k0 = self.w/C0
         n, a = beta.real/k0, -beta.imag*8.686/100
         return dict(n=n, alpha=a, Z_VI=V/I, Z_PV=abs(V)**2/(2*P.real), Z_PI=2*P.real/abs(I)**2)
