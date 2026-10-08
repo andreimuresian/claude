@@ -1,0 +1,5 @@
+  20 GHz N= 307171 | n 1.9374 (CST 1.969)  alpha 0.0100 (CST 0.0) | Z VI 35.47 PV 34.68 PI 36.27 (CST 36.4) | other n [np.float64(2.11), np.float64(1.848)]  190 s
+  60 GHz N= 307171 | n 1.9536 (CST 1.972)  alpha 0.0504 (CST 0.109) | Z VI 36.37 PV 36.14 PI 36.59 (CST 36.33) | other n [np.float64(2.143), np.float64(1.364)]  223 s
+ 100 GHz N= 307171 | n 1.9587 (CST 1.972)  alpha 0.1535 (CST 0.144) | Z VI 36.33 PV 35.89 PI 36.78 (CST 36.12) | other n [np.float64(2.178), np.float64(1.191)]  393 s
+
+[exited with code 0]
