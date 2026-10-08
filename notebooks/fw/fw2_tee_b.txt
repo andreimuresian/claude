@@ -1,1 +1,2 @@
 grid (60, 50, 37) unknowns 301021
+    factor: N 301021, nnz 3848117, 96 s, 7.68 GB
