@@ -59,7 +59,7 @@ def pml_s(nodes, inner, outer_lo, outer_hi, w, smax=12.0, p=3):
 
 class Mode2D:
     def __init__(self, g, f, metal="pec", h_edge=0.1e-6, side=600e-6, top=600e-6, si_extra=200e-6,
-                 pml=500e-6, hmax=25e-6):
+                 pml=500e-6, hmax=25e-6, smax=12.0):
         self.f, self.w = f, 2*np.pi*f
         WS, GAP, MTX, tLN = g["WS"], g["GAP"], g["MTX"], g["t_LN"]
         WG = 70e-6
@@ -77,10 +77,10 @@ class Mode2D:
         nx, ny = len(xn), len(yn)
         xc, yc = 0.5*(xn[1:] + xn[:-1]), 0.5*(yn[1:] + yn[:-1])
         # stretched spacings: primal (between nodes) and dual (between cell centres)
-        sxc = pml_s(xc, (-X1, X1), -X1 - pml, X1 + pml, self.w)
-        syc = pml_s(yc, (Ybot, Ytop), Ybot - pml, Ytop + pml, self.w)
-        sxn = pml_s(xn, (-X1, X1), -X1 - pml, X1 + pml, self.w)
-        syn = pml_s(yn, (Ybot, Ytop), Ybot - pml, Ytop + pml, self.w)
+        sxc = pml_s(xc, (-X1, X1), -X1 - pml, X1 + pml, self.w, smax)
+        syc = pml_s(yc, (Ybot, Ytop), Ybot - pml, Ytop + pml, self.w, smax)
+        sxn = pml_s(xn, (-X1, X1), -X1 - pml, X1 + pml, self.w, smax)
+        syn = pml_s(yn, (Ybot, Ytop), Ybot - pml, Ytop + pml, self.w, smax)
         dx = np.diff(xn)*sxc; dy = np.diff(yn)*syc                       # primal edges
         dxd = np.r_[dx[0]/2, 0.5*(dx[1:] + dx[:-1]), dx[-1]/2]           # dual, at nodes
         dyd = np.r_[dy[0]/2, 0.5*(dy[1:] + dy[:-1]), dy[-1]/2]
