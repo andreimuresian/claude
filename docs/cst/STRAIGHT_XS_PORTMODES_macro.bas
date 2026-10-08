@@ -1,8 +1,36 @@
 ' Straight CPW (bend cross-section), port modes only.
-' Run with: Home > Macros > Run Macro... (select this file). Each block is executed and added to the history.
-Option Explicit
+' Run from file: Home > Macros > Run Macro... (do not paste into an editor).
+' Each block is executed and added to the history by AddToHistory.
 
 Sub Main
+    Block01
+    Block02
+    Block03
+    Block04
+    Block05
+    Block06
+    Block07
+    Block08
+    Block09
+    Block10
+    Block11
+    Block12
+    Block13
+    Block14
+    Block15
+    Block16
+    Block17
+    Block18
+    Block19
+    Block20
+    Block21
+    Block22
+    Block23
+    Block24
+    Block25
+End Sub
+
+Sub Block01
     Dim s As String
     s = ""
     s = s & "With Units" & vbCrLf
@@ -18,7 +46,10 @@ Sub Main
     s = s & "     .SetUnit ""Capacitance"", ""pF""" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define units", s
+End Sub
 
+Sub Block02
+    Dim s As String
     s = ""
     s = s & "With Material" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -38,7 +69,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define material: LN", s
+End Sub
 
+Sub Block03
+    Dim s As String
     s = ""
     s = s & "With Material" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -52,7 +86,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define material: SIO2", s
+End Sub
 
+Sub Block04
+    Dim s As String
     s = ""
     s = s & "With Material" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -68,7 +105,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define material: Silicon (lossy)", s
+End Sub
 
+Sub Block05
+    Dim s As String
     s = ""
     s = s & "With Material" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -85,11 +125,17 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define material: Gold", s
+End Sub
 
+Sub Block06
+    Dim s As String
     s = ""
     s = s & "Component.New ""component1""" & vbCrLf
     AddToHistory "new component: component1", s
+End Sub
 
+Sub Block07
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -102,7 +148,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:si", s
+End Sub
 
+Sub Block08
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -115,7 +164,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:box", s
+End Sub
 
+Sub Block09
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -128,7 +180,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:slab", s
+End Sub
 
+Sub Block10
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -141,7 +196,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:cap", s
+End Sub
 
+Sub Block11
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -154,7 +212,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:signal", s
+End Sub
 
+Sub Block12
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -167,7 +228,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:ground_r", s
+End Sub
 
+Sub Block13
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -180,7 +244,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:ground_l", s
+End Sub
 
+Sub Block14
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -193,7 +260,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:gap_r", s
+End Sub
 
+Sub Block15
+    Dim s As String
     s = ""
     s = s & "With Brick" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -206,11 +276,17 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define brick: component1:gap_l", s
+End Sub
 
+Sub Block16
+    Dim s As String
     s = ""
     s = s & "Group.Add ""meshgroup_xs"", ""mesh""" & vbCrLf
     AddToHistory "create group: meshgroup_xs", s
+End Sub
 
+Sub Block17
+    Dim s As String
     s = ""
     s = s & "Group.AddItem ""solid$component1:signal"", ""meshgroup_xs""" & vbCrLf
     s = s & "Group.AddItem ""solid$component1:ground_r"", ""meshgroup_xs""" & vbCrLf
@@ -218,11 +294,17 @@ Sub Main
     s = s & "Group.AddItem ""solid$component1:gap_r"", ""meshgroup_xs""" & vbCrLf
     s = s & "Group.AddItem ""solid$component1:gap_l"", ""meshgroup_xs""" & vbCrLf
     AddToHistory "add items to group: meshgroup_xs", s
+End Sub
 
+Sub Block18
+    Dim s As String
     s = ""
     s = s & "Solver.FrequencyRange ""59.9"", ""60""" & vbCrLf
     AddToHistory "define frequency range", s
+End Sub
 
+Sub Block19
+    Dim s As String
     s = ""
     s = s & "With Background" & vbCrLf
     s = s & "     .ResetBackground" & vbCrLf
@@ -235,7 +317,10 @@ Sub Main
     s = s & "     .ApplyInAllDirections ""False""" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define background", s
+End Sub
 
+Sub Block20
+    Dim s As String
     s = ""
     s = s & "With Boundary" & vbCrLf
     s = s & "     .Xmin ""open""" & vbCrLf
@@ -250,7 +335,10 @@ Sub Main
     s = s & "     .ApplyInAllDirections ""True""" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define boundaries", s
+End Sub
 
+Sub Block21
+    Dim s As String
     s = ""
     s = s & "With Mesh" & vbCrLf
     s = s & "     .MeshType ""PBA""" & vbCrLf
@@ -294,7 +382,10 @@ Sub Main
     s = s & "     .UsePecEdgeModel ""True""" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "set mesh properties (Hexahedral FIT)", s
+End Sub
 
+Sub Block22
+    Dim s As String
     s = ""
     s = s & "With Port" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -322,7 +413,10 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define port: 1", s
+End Sub
 
+Sub Block23
+    Dim s As String
     s = ""
     s = s & "With Port" & vbCrLf
     s = s & "     .Reset" & vbCrLf
@@ -350,11 +444,17 @@ Sub Main
     s = s & "     .Create" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define port: 2", s
+End Sub
 
+Sub Block24
+    Dim s As String
     s = ""
     s = s & "ChangeSolverType ""HF Time Domain""" & vbCrLf
     AddToHistory "change solver type", s
+End Sub
 
+Sub Block25
+    Dim s As String
     s = ""
     s = s & "Mesh.SetCreator ""High Frequency""" & vbCrLf
     s = s & "With Solver" & vbCrLf
@@ -375,5 +475,4 @@ Sub Main
     s = s & "     .UseSensitivityAnalysis ""False""" & vbCrLf
     s = s & "End With" & vbCrLf
     AddToHistory "define time domain solver parameters", s
-
 End Sub
