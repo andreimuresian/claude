@@ -1,0 +1,11 @@
+PASS TE  Rzz vs Fresnel: rel err 3.2e-16
+PASS TM  Rxx vs Fresnel: rel err 2.6e-16
+PASS no TE/TM coupling at beta = 0 (abs): rel err 8.3e-10
+PASS eps2 layers over eps2 = half-space: rel err 1.4e-17
+PASS air layer: R exp(-2j ky d): rel err 2.8e-16
+PASS oblique: eigenvalues of R = (r_TE, r_TM) (abs): rel err 6.7e-16
+PASS LN static image along x: rel err 1.2e-10
+PASS Jz sheet: Ez below: rel err 3.2e-16
+PASS Jz sheet: Ez above = below: rel err 6.6e-17
+full stack |R_zz|, |R_xx| at kx/k0 = [3.0e-01 9.0e-01 1.5e+00 3.0e+00 5.0e+01 1.0e+04] [5.625e-01 7.666e-01 9.926e-01 9.815e-01 8.000e-04 0.000e+00] [0.5322 0.2142 1.001  0.9943 0.7607 0.9436]
+ALL PASS
