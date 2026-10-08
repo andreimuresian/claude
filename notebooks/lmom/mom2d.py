@@ -104,7 +104,7 @@ def kernel_blocks(g, gamma=None):
         d = qp[:, :, None, None, :] - qp[None, None, :, :, :]
         rho = np.linalg.norm(d, axis=-1)
         with np.errstate(divide="ignore", invalid="ignore"):
-            sm = np.where(rho > 0, special.k0(gamma*rho) + np.log(rho), -np.log(gamma/2) - np.euler_gamma)
+            sm = np.where(rho > 0, special.kv(0, gamma*rho) + np.log(rho), -np.log(gamma/2) - np.euler_gamma)
         sm = sm/(2*np.pi)
         wa = (qw[None, :]*g.L[:, None])[:, :, None, None]
         wb = (qw[None, :]*g.L[:, None])[None, None, :, :]

@@ -40,11 +40,16 @@ def A_matrix(kx, beta, k0, eps):
     return A
 
 
-def modes(kx, beta, k0, eps):
+def modes(kx, beta, k0, eps, outgoing=None):
     """Eigen-split of a homogeneous layer: (lam_up, V_up, lam_dn, V_dn), V (..., 4, 2).
-    Up: Re(lam) < 0, or Re(lam) = 0 and Im(lam) < 0 (k_y = j lam with Im k_y <= 0)."""
+    Up: Re(lam) < 0, or Re(lam) = 0 and Im(lam) < 0 (k_y = j lam with Im k_y <= 0): the proper
+    (decaying) choice.  outgoing (bool mask over kx): there, classify by the direction of phase
+    travel instead (down = Im(lam) > 0), the improper choice a leaky mode needs in its
+    radiation region."""
     lam, V = np.linalg.eig(A_matrix(kx, beta, k0, eps))
     key = lam.real + 1e-9*np.abs(lam)*np.sign(lam.imag)          # tie-break for lossless waves
+    if outgoing is not None:
+        key = np.where(np.asarray(outgoing)[..., None], lam.imag, key)       # up first: smaller Im
     order = np.argsort(key, axis=-1)
     lam = np.take_along_axis(lam, order, -1)
     V = np.take_along_axis(V, order[..., None, :], -1)
@@ -56,12 +61,18 @@ def _adm(V):
     return V[..., 2:, :] @ np.linalg.inv(V[..., :2, :])
 
 
-def stack_admittance(kx, beta, k0, layers, bottom):
-    """Y_s at the top of `layers` (list of (eps, d) from the top down), bottom half-space eps."""
-    _, _, _, Vd = modes(kx, beta, k0, bottom)
+def stack_admittance(kx, beta, k0, layers, bottom, leaky=False):
+    """Y_s at the top of `layers` (list of (eps, d) from the top down), bottom half-space eps.
+    leaky: outgoing (improper) bottom waves for |Re kx| below the bottom branch point."""
+    out = None
+    if leaky:
+        kb2 = (np.real(bottom[0])*k0**2 - np.real(beta)**2)
+        out = np.abs(np.real(kx)) < np.sqrt(max(kb2, 0.0))
+    _, _, _, Vd = modes(kx, beta, k0, bottom, outgoing=out)
     Y = _adm(Vd)
     for eps, d in layers[::-1]:
-        lu, Vu, ld, Vd = modes(kx, beta, k0, eps)
+        same = out is not None and np.allclose(np.asarray(eps, complex), np.asarray(bottom, complex))
+        lu, Vu, ld, Vd = modes(kx, beta, k0, eps, outgoing=out if same else None)
         Pu = np.exp(lu*d)[..., None, :]*np.eye(2)                  # up waves referenced at the bottom
         Pd = np.exp(-ld*d)[..., None, :]*np.eye(2)                 # down waves referenced at the top
         VuE, VuH, VdE, VdH = Vu[..., :2, :], Vu[..., 2:, :], Vd[..., :2, :], Vd[..., 2:, :]

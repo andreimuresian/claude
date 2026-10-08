@@ -1,0 +1,6 @@
+  20 GHz (272 seg): n 1.9504  alpha 0.0074 dB/cm   | FD 1.952 / 0.009  CST 1.969 / 0.000   (2 it, 32 s)
+  60 GHz (272 seg): n 1.9521  alpha 0.0494 dB/cm   | FD 1.954 / 0.051  CST 1.972 / 0.109   (2 it, 38 s)
+ 100 GHz (272 seg): n 1.9628  alpha 0.1421 dB/cm   | FD 1.959 / 0.153  CST 1.972 / 0.144   (2 it, 33 s)
+  20 GHz (394 seg): n 1.9510  alpha 0.0074 dB/cm   | FD 1.952 / 0.009  CST 1.969 / 0.000   (2 it, 70 s)
+  60 GHz (394 seg): n 1.9527  alpha 0.0494 dB/cm   | FD 1.954 / 0.051  CST 1.972 / 0.109   (2 it, 59 s)
+ 100 GHz (394 seg): n 1.9634  alpha 0.1420 dB/cm   | FD 1.959 / 0.153  CST 1.972 / 0.144   (2 it, 61 s)
