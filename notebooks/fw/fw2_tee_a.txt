@@ -1,1 +1,13 @@
 grid (80, 73, 47) unknowns 765348
+Traceback (most recent call last):
+  File "/home/user/claude/notebooks/fw/run_fw2.py", line 21, in <module>
+    lam, V = c.solve(beta, k0, k=8)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/claude/notebooks/fw/fw3d.py", line 227, in solve
+    F = pardiso_c.Factor(A, ooc=self.N > 400000)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/user/claude/notebooks/fw/pardiso_c.py", line 45, in __init__
+    self._call(12, np.zeros(1, complex), np.zeros(1, complex), 1)
+  File "/home/user/claude/notebooks/fw/pardiso_c.py", line 56, in _call
+    raise RuntimeError(f"PARDISO error {err.value} in phase {phase}")
+RuntimeError: PARDISO error -11 in phase 12
