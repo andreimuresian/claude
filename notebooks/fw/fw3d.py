@@ -224,7 +224,7 @@ class Cell3D:
         A = (Ei @ K - sig*sparse.identity(self.N)).tocsr()
         import time
         t = time.time()
-        F = pardiso_c.Factor(A)
+        F = pardiso_c.Factor(A, ooc=self.N > 400000)
         print(f"    factor: N {self.N}, nnz {A.nnz}, {time.time() - t:.0f} s, {F.mem_GB:.2f} GB", flush=True)
         self.nsolve = 0
         def mv(v):
