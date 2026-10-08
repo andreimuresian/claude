@@ -1,0 +1,7 @@
+hmin 0.20 um, 272 segments: C_air = 46.902 pF/m  (FEM 47.011)
+hmin 0.10 um, 394 segments: C_air = 46.908 pF/m  (FEM 47.011)
+hmin 0.05 um, 620 segments: C_air = 46.910 pF/m  (FEM 47.011)
+hmin 0.20 um, 272 seg, k-grid base: C = 178.443 pF/m  (FEM 180.60, LN 44 vertical there)
+hmin 0.20 um, 272 seg, k-grid fine: C = 178.440 pF/m  (FEM 180.60, LN 44 vertical there)
+hmin 0.10 um, 394 seg, k-grid base: C = 178.568 pF/m  (FEM 180.60, LN 44 vertical there)
+hmin 0.10 um, 394 seg, k-grid fine: C = 178.565 pF/m  (FEM 180.60, LN 44 vertical there)
