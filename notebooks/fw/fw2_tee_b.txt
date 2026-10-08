@@ -1,2 +1,12 @@
 grid (60, 50, 37) unknowns 301021
     factor: N 301021, nnz 3848117, 96 s, 7.68 GB
+    eigs: 33 solves, 38 s
+  f   55.485 GHz  Q        3.8  n 2.9197  gap-V score 1.354e-09  |V| spread over z 0.274
+  f   50.354 GHz  Q        2.8  n 3.2172  gap-V score 1.626e-09  |V| spread over z 0.191
+  f   48.958 GHz  Q        1.6  n 3.3090  gap-V score 1.121e-09  |V| spread over z 0.496
+  f   58.131 GHz  Q        1.6  n 2.7868  gap-V score 3.387e-09  |V| spread over z 0.257
+  f   82.259 GHz  Q    10279.1  n 1.9694  gap-V score 1.425e-07  |V| spread over z 0.001
+  f   62.049 GHz  Q        1.2  n 2.6108  gap-V score 1.829e-09  |V| spread over z 0.583
+  f    0.000 GHz  Q        1.2  n 431956.6151  gap-V score 1.396e-17  |V| spread over z 0.413
+  f    0.000 GHz  Q        0.2  n 1168407.4732  gap-V score 1.429e-17  |V| spread over z 0.414
+LU memory 7.68 GB, 137 s

@@ -59,7 +59,7 @@ def pml_s(nodes, inner, outer_lo, outer_hi, w, smax=12.0, p=3):
 
 class Mode2D:
     def __init__(self, g, f, metal="pec", h_edge=0.1e-6, side=600e-6, top=600e-6, si_extra=200e-6,
-                 pml=500e-6, hmax=25e-6, smax=12.0, homog=None, half=True, wall_ground=False, metal_x=None, extra_x=()):
+                 pml=500e-6, hmax=25e-6, smax=12.0, homog=None, half=True, wall_ground=False, metal_x=None, extra_x=(), wall="pec"):
         self.f, self.w = f, 2*np.pi*f
         WS, GAP, MTX, tLN = g["WS"], g["GAP"], g["MTX"], g["t_LN"]
         WG = 70e-6
@@ -141,8 +141,11 @@ class Mode2D:
         mEy = mnode[:, :-1] & mnode[:, 1:]
         mEz = mnode.copy()
         # outer PEC walls (behind the PML)
-        mEx[:, 0] = mEx[:, -1] = True; mEy[0, :] = mEy[-1, :] = True
-        mEz[-1, :] = mEz[:, 0] = mEz[:, -1] = True
+        if wall == "pec":
+            mEx[:, 0] = mEx[:, -1] = True; mEy[0, :] = mEy[-1, :] = True
+            mEz[-1, :] = mEz[:, 0] = mEz[:, -1] = True
+        elif not half:
+            mEy[0, :] = mEy[0, :]
         if not half:
             mEz[0, :] = True
         else:

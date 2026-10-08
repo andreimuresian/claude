@@ -1,0 +1,34 @@
+grid (60, 50, 37) unknowns 301021
+    factor: N 301021, nnz 3848117, 95 s, 7.68 GB
+    eigs: 174 solves, 196 s
+  f   55.485 GHz  Q        3.8  n 2.9197  gap-V score 1.354e-09  |V| spread over z 0.274
+  f   50.354 GHz  Q        2.8  n 3.2172  gap-V score 1.626e-09  |V| spread over z 0.191
+  f   48.958 GHz  Q        1.6  n 3.3090  gap-V score 1.121e-09  |V| spread over z 0.496
+  f   58.131 GHz  Q        1.6  n 2.7868  gap-V score 3.387e-09  |V| spread over z 0.257
+  f   82.259 GHz  Q    10279.1  n 1.9694  gap-V score 1.425e-07  |V| spread over z 0.001
+  f   62.049 GHz  Q        1.2  n 2.6108  gap-V score 1.829e-09  |V| spread over z 0.583
+  f    0.001 GHz  Q        2.3  n 119722.5194  gap-V score 3.583e-20  |V| spread over z 0.152
+  f    0.001 GHz  Q       31.7  n 137281.7297  gap-V score 3.213e-19  |V| spread over z 0.422
+  f    0.001 GHz  Q        2.7  n 153828.5585  gap-V score 1.558e-18  |V| spread over z 0.483
+  f    0.001 GHz  Q        1.0  n 138175.9393  gap-V score 4.643e-20  |V| spread over z 0.236
+  f    0.001 GHz  Q        3.8  n 163660.6347  gap-V score 5.625e-18  |V| spread over z 0.460
+  f    0.001 GHz  Q        1.1  n 160230.8475  gap-V score 5.639e-19  |V| spread over z 0.476
+  f    0.001 GHz  Q        1.1  n 192835.0918  gap-V score 6.629e-18  |V| spread over z 0.464
+  f    0.001 GHz  Q        0.6  n 213596.2526  gap-V score 3.784e-18  |V| spread over z 0.460
+  f    0.001 GHz  Q        0.5  n 252784.4370  gap-V score 5.684e-18  |V| spread over z 0.465
+  f    0.001 GHz  Q        0.5  n 190421.1217  gap-V score 4.309e-20  |V| spread over z 0.256
+  f    0.000 GHz  Q        0.2  n 798574.3091  gap-V score 2.038e-17  |V| spread over z 0.463
+  f    0.001 GHz  Q        0.3  n 310287.3288  gap-V score 1.686e-18  |V| spread over z 0.460
+  f    0.000 GHz  Q        0.3  n 352078.1943  gap-V score 1.463e-18  |V| spread over z 0.454
+  f    0.001 GHz  Q        0.3  n 221164.2294  gap-V score 5.772e-20  |V| spread over z 0.039
+  f    0.000 GHz  Q        0.2  n 457857.1843  gap-V score 2.291e-18  |V| spread over z 0.459
+  f    0.000 GHz  Q        0.1  n 860054.5264  gap-V score 6.148e-18  |V| spread over z 0.464
+  f    0.001 GHz  Q        0.2  n 314341.1628  gap-V score 1.510e-19  |V| spread over z 0.286
+  f    0.000 GHz  Q        0.1  n 1358845.4401  gap-V score 3.963e-18  |V| spread over z 0.462
+  f    0.000 GHz  Q        0.0  n 1756133.3195  gap-V score 2.691e-20  |V| spread over z 0.227
+  f   59.971 GHz  Q        0.9  n 2.7013  gap-V score 9.827e-09  |V| spread over z 0.087
+  f   62.541 GHz  Q        0.8  n 2.5903  gap-V score 2.630e-09  |V| spread over z 0.116
+  f   66.976 GHz  Q        0.8  n 2.4188  gap-V score 1.172e-08  |V| spread over z 0.074
+  f   77.895 GHz  Q        1.0  n 2.0797  gap-V score 5.312e-09  |V| spread over z 0.077
+  f  101.485 GHz  Q        2.0  n 1.5963  gap-V score 2.664e-08  |V| spread over z 0.064
+LU memory 7.68 GB, 294 s

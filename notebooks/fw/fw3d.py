@@ -86,19 +86,20 @@ def cell_eps(yn, lay):
 
 class Cell3D:
     def __init__(self, g, tee=True, f0=60e9, h_edge=0.4e-6, hmax=40e-6, side=400e-6, top=400e-6,
-                 si_extra=150e-6, pml=300e-6, smax=12.0, hz_min=1e-6, hz_max=8e-6, growth=1.4, nz_plain=8):
+                 si_extra=150e-6, pml=300e-6, smax=12.0, hz_min=1e-6, hz_max=8e-6, growth=1.4, nz_plain=8, wall="pmc", h_pml=None, no_ground=False, ground_to_wall=False):
         WS, GAP, MTX, tLN = g["WS"], g["GAP"], g["MTX"], g["t_LN"]
         x_si, x_gi, x_go = WS/2, WS/2 + GAP, WS/2 + GAP + 70e-6
         yS = -tLN - sp.BOX_H - sp.SI_H
         X1, Ytop, Ybot = x_go + side, MTX + top, yS - si_extra
         xb1, xb2 = x_gi + g["W1"], x_gi + g["W1"] + g["W2"]
         hf = hmax                                              # far breaks: coarse
-        xbreaks = {0.0: 4*h_edge, x_si: h_edge, x_gi: h_edge, x_go: h_edge, X1: hf, X1 + pml: hf}
+        hp = h_pml or hf                                       # PML cells
+        xbreaks = {0.0: 4*h_edge, x_si: h_edge, x_gi: h_edge, x_go: h_edge, X1: hp, X1 + pml: hp}
         if tee:
             xbreaks.update({xb1: h_edge, xb2: h_edge})
         xn = axis(xbreaks, hmax, growth)
-        yn = axis({Ybot - pml: hf, Ybot: hf, yS: hf/2, -tLN - sp.BOX_H: 2*h_edge, 0.0: h_edge, MTX: h_edge,
-                   Ytop: hf, Ytop + pml: hf}, hmax, growth)
+        yn = axis({Ybot - pml: hp, Ybot: hp, yS: hf/2, -tLN - sp.BOX_H: 2*h_edge, 0.0: h_edge, MTX: h_edge,
+                   Ytop: hp, Ytop + pml: hp}, hmax, growth)
         if tee:
             zb = {0.0: hz_max, P/2 - g["L2"]/2: hz_min, P/2 - g["L1"]/2: hz_min,
                   P/2 + g["L1"]/2: hz_min, P/2 + g["L2"]/2: hz_min, P: hz_max}
@@ -135,24 +136,29 @@ class Cell3D:
         X, Y, Z = np.meshgrid(xn, yn, zn, indexing="ij")
         inm = (Y >= -tol) & (Y <= MTX + tol)
         sig = inm & (X <= x_si + tol)
-        gnd = inm & (X >= x_gi - tol) & (X <= x_go + tol)
+        x_ge = xn[-1] + 1 if ground_to_wall else x_go
+        gnd = inm & (X >= x_gi - tol) & (X <= x_ge + tol)
         if tee:
             zr = np.abs(Z - P/2)
-            stem = (X > x_gi + tol) & (X < xb1 - tol) & (zr < g["L1"]/2 - tol)
+            stem = (X > x_gi - tol) & (X < xb1 - tol) & (zr < g["L1"]/2 - tol)   # open onto the gap: x = x_gi included
             head = (X > xb1 - tol) & (X < xb2 - tol) & (zr < g["L2"]/2 - tol)
             # nodes strictly inside the slot are not metal; stem/head join at x = xb1
             stem |= (np.abs(X - xb1) < tol) & (zr < g["L1"]/2 - tol)
             gnd &= ~(stem | head)
-        m = sig | gnd
+        m = sig if no_ground else (sig | gnd)
         del X, Y, Z
         # E edge masks: an edge is PEC if both end nodes and its midpoint are metal
-        mid_ok = self._mid_metal(g, tee, xn, yn, zn, x_si, x_gi, x_go, xb1, xb2, MTX)
+        mid_ok = self._mid_metal(g, tee, xn, yn, zn, x_si, x_gi, x_ge, xb1, xb2, MTX)
+        if no_ground:
+            mid_ok = tuple(np.ones_like(a) for a in mid_ok)
         mEx = m[:-1] & m[1:] & mid_ok[0]
         mEy = m[:, :-1] & m[:, 1:] & mid_ok[1]
         mEz = m & np.roll(m, -1, axis=2) & mid_ok[2]
-        # outer PEC walls behind the PML (x = X1 + pml, y top and bottom); x = 0 is PMC
-        mEy[-1] = True; mEz[-1] = True
-        mEx[:, 0] = mEx[:, -1] = True; mEz[:, 0] = mEz[:, -1] = True
+        # outer walls behind the PML: PMC by default (no current on the box, so no spurious
+        # "conductors vs box" coax mode; the open structure has none).  x = 0 is PMC.
+        if wall == "pec":
+            mEy[-1] = True; mEz[-1] = True
+            mEx[:, 0] = mEx[:, -1] = True; mEz[:, 0] = mEz[:, -1] = True
         self.masks = (mEx, mEy, mEz)
         self.shape = (nx, ny, nz)
         eps = np.r_[np.broadcast_to(epx_y[None, :, None], (nx - 1, ny, nz)).ravel(),
@@ -173,7 +179,7 @@ class Cell3D:
             gd = inm & (x >= x_gi - tol) & (x <= x_go + tol)
             if tee:
                 zr = np.abs(z - P/2)
-                slot = (((x > x_gi + tol) & (x < xb1 + tol) & (zr < g["L1"]/2 - tol))
+                slot = (((x > x_gi - tol) & (x < xb1 + tol) & (zr < g["L1"]/2 - tol))
                         | ((x > xb1 - tol) & (x < xb2 - tol) & (zr < g["L2"]/2 - tol)))
                 gd &= ~slot
             return s | gd
@@ -246,6 +252,18 @@ class Cell3D:
         n1, n2 = (nx - 1)*ny*nz, nx*(ny - 1)*nz
         return (out[:n1].reshape(nx - 1, ny, nz), out[n1:n1 + n2].reshape(nx, ny - 1, nz),
                 out[n1 + n2:].reshape(nx, ny, nz))
+
+    def pml_fraction(self, e):
+        """Fraction of sum |E|^2 (by edge count) that sits outside the PML-free box."""
+        X1, yb0, yb1 = self.box
+        Ex, Ey, Ez = self.full(e)
+        xm, ym = 0.5*(self.xn[1:] + self.xn[:-1]), 0.5*(self.yn[1:] + self.yn[:-1])
+        tot = out = 0.0
+        for F, xs, ys in ((Ex, xm, self.yn), (Ey, self.xn, ym), (Ez, self.xn, self.yn)):
+            a = np.abs(F)**2
+            inside = (xs < X1)[:, None, None] & ((ys > yb0) & (ys < yb1))[None, :, None]
+            tot += a.sum(); out += a[~np.broadcast_to(inside, a.shape)].sum()
+        return out/tot
 
     def gap_voltage(self, e):
         """Integral of Ex across the gap at metal mid-height, averaged over z (Bloch phase removed later)."""
