@@ -189,32 +189,6 @@ End With
 ' create group: meshgroup_xs
 Group.Add "meshgroup_xs", "mesh"
 
-' set local mesh properties for: meshgroup_xs
-With MeshSettings
-     With .ItemMeshSettings ("group$meshgroup_xs")
-          .SetMeshType "Hex"
-          .Set "ConsiderGlobalEdgeRefinement", 1
-          .Set "ConsiderGlobalFaceRefinement", 1
-          .Set "ConsiderGlobalMaterialRefinement", 1
-          .Set "ConsiderGlobalRefinement", 1
-          .Set "ConsiderGlobalSnapping", 1
-          .Set "EdgeRefinementType", "NONE"
-          .Set "FaceRefinementType", "NONE"
-          .Set "EllipseRefinementType", "NONE"
-          .Set "UseMaterialRefinement", 1
-          .Set "VolumeRefinementExtentNumSteps", 3, 3, 3
-          .Set "VolumeRefinementExtentStep", 0, 0, 0
-          .Set "VolumeRefinementExtentType", "STEPS_PER_DIM"
-          .Set "VolumeRefinementExtentValueUseSameXYZ", 1
-          .Set "VolumeRefinementNumSteps", "20", "20", "20"
-          .Set "VolumeRefinementRatio", "2", "2", "2"
-          .Set "VolumeRefinementScopeType", "ALL"
-          .Set "VolumeRefinementStep", "0.0005", "0.0005", "0"
-          .Set "VolumeRefinementType", "ABS_VALUE"
-          .Set "VolumeRefinementValueUseSameXYZ", 0
-     End With
-End With
-
 ' add items to group: meshgroup_xs
 Group.AddItem "solid$component1:signal", "meshgroup_xs"
 Group.AddItem "solid$component1:ground_r", "meshgroup_xs"
