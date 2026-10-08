@@ -23,26 +23,6 @@ CST History Data Exchange Format V2
             ]
         },
         {
-            "caption": "define parameters",
-            "version": "2025.5|34.0.1|20250530",
-            "hidden": false,
-            "type": "vba",
-            "code": [
-                "StoreParameter \"WS\", \"0.035\"",
-                "StoreParameter \"GAP\", \"0.0045\"",
-                "StoreParameter \"WG\", \"0.04985\"",
-                "StoreParameter \"MTX\", \"0.002\"",
-                "StoreParameter \"SIO2_CAP\", \"0.0036\"",
-                "StoreParameter \"LINBO3_THICKNESS\", \"0.000275\"",
-                "StoreParameter \"SIO2_THICKNESS\", \"0.0047\"",
-                "StoreParameter \"SI_THICKNESS\", \"0.3\"",
-                "StoreParameter \"W\", \"0.5\"",
-                "StoreParameter \"L\", \"0.05\"",
-                "StoreParameter \"MESHSTEP\", \"0.0005\"",
-                "StoreParameter \"F0\", \"60\""
-            ]
-        },
-        {
             "caption": "define material: LN",
             "version": "2025.5|34.0.1|20250530",
             "hidden": false,
@@ -149,9 +129,9 @@ CST History Data Exchange Format V2
                 "     .Name \"si\"",
                 "     .Component \"component1\"",
                 "     .Material \"Silicon (lossy)\"",
-                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS-SI_THICKNESS\", \"-SIO2_THICKNESS-LINBO3_THICKNESS\"",
-                "     .Yrange \"-W/2\", \"W/2\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"-0.304975\", \"-0.004975\"",
+                "     .Yrange \"-0.25\", \"0.25\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -167,9 +147,9 @@ CST History Data Exchange Format V2
                 "     .Name \"box\"",
                 "     .Component \"component1\"",
                 "     .Material \"SIO2\"",
-                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS\", \"-LINBO3_THICKNESS\"",
-                "     .Yrange \"-W/2\", \"W/2\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"-0.004975\", \"-0.000275\"",
+                "     .Yrange \"-0.25\", \"0.25\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -185,9 +165,9 @@ CST History Data Exchange Format V2
                 "     .Name \"slab\"",
                 "     .Component \"component1\"",
                 "     .Material \"LN\"",
-                "     .Xrange \"-LINBO3_THICKNESS\", \"0\"",
-                "     .Yrange \"-W/2\", \"W/2\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"-0.000275\", \"0\"",
+                "     .Yrange \"-0.25\", \"0.25\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -203,9 +183,9 @@ CST History Data Exchange Format V2
                 "     .Name \"cap\"",
                 "     .Component \"component1\"",
                 "     .Material \"SIO2\"",
-                "     .Xrange \"0\", \"SIO2_CAP\"",
-                "     .Yrange \"-W/2\", \"W/2\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"0\", \"0.0036\"",
+                "     .Yrange \"-0.25\", \"0.25\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -221,9 +201,9 @@ CST History Data Exchange Format V2
                 "     .Name \"signal\"",
                 "     .Component \"component1\"",
                 "     .Material \"Gold\"",
-                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
-                "     .Yrange \"-WS/2\", \"WS/2\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"0.0036\", \"0.0056\"",
+                "     .Yrange \"-0.0175\", \"0.0175\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -239,9 +219,9 @@ CST History Data Exchange Format V2
                 "     .Name \"ground_r\"",
                 "     .Component \"component1\"",
                 "     .Material \"Gold\"",
-                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
-                "     .Yrange \"WS/2+GAP\", \"WS/2+GAP+WG\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"0.0036\", \"0.0056\"",
+                "     .Yrange \"0.022\", \"0.07185\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -257,9 +237,9 @@ CST History Data Exchange Format V2
                 "     .Name \"ground_l\"",
                 "     .Component \"component1\"",
                 "     .Material \"Gold\"",
-                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
-                "     .Yrange \"-WS/2-GAP-WG\", \"-WS/2-GAP\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"0.0036\", \"0.0056\"",
+                "     .Yrange \"-0.07185\", \"-0.022\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -275,9 +255,9 @@ CST History Data Exchange Format V2
                 "     .Name \"gap_r\"",
                 "     .Component \"component1\"",
                 "     .Material \"Vacuum\"",
-                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
-                "     .Yrange \"WS/2\", \"WS/2+GAP\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"0.0036\", \"0.0056\"",
+                "     .Yrange \"0.0175\", \"0.022\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -293,9 +273,9 @@ CST History Data Exchange Format V2
                 "     .Name \"gap_l\"",
                 "     .Component \"component1\"",
                 "     .Material \"Vacuum\"",
-                "     .Xrange \"SIO2_CAP\", \"SIO2_CAP+MTX\"",
-                "     .Yrange \"-WS/2-GAP\", \"-WS/2\"",
-                "     .Zrange \"0\", \"L\"",
+                "     .Xrange \"0.0036\", \"0.0056\"",
+                "     .Yrange \"-0.022\", \"-0.0175\"",
+                "     .Zrange \"0\", \"0.05\"",
                 "     .Create",
                 "End With"
             ]
@@ -334,7 +314,7 @@ CST History Data Exchange Format V2
                 "          .Set \"VolumeRefinementNumSteps\", \"20\", \"20\", \"20\"",
                 "          .Set \"VolumeRefinementRatio\", \"2\", \"2\", \"2\"",
                 "          .Set \"VolumeRefinementScopeType\", \"ALL\"",
-                "          .Set \"VolumeRefinementStep\", \"MESHSTEP\", \"MESHSTEP\", \"0\"",
+                "          .Set \"VolumeRefinementStep\", \"0.0005\", \"0.0005\", \"0\"",
                 "          .Set \"VolumeRefinementType\", \"ABS_VALUE\"",
                 "          .Set \"VolumeRefinementValueUseSameXYZ\", 0",
                 "     End With",
@@ -360,7 +340,7 @@ CST History Data Exchange Format V2
             "hidden": false,
             "type": "vba",
             "code": [
-                "Solver.FrequencyRange \"F0-0.1\", \"F0\""
+                "Solver.FrequencyRange \"59.9\", \"60\""
             ]
         },
         {
@@ -471,8 +451,8 @@ CST History Data Exchange Format V2
                 "     .Orientation \"zmin\"",
                 "     .PortOnBound \"False\"",
                 "     .ClipPickedPortToBound \"False\"",
-                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS-SI_THICKNESS\", \"SIO2_CAP+MTX\"",
-                "     .Yrange \"-W/2\", \"W/2\"",
+                "     .Xrange \"-0.304975\", \"0.0056\"",
+                "     .Yrange \"-0.25\", \"0.25\"",
                 "     .Zrange \"0\", \"0\"",
                 "     .XrangeAdd \"0.0\", \"0.0\"",
                 "     .YrangeAdd \"0.0\", \"0.0\"",
@@ -504,9 +484,9 @@ CST History Data Exchange Format V2
                 "     .Orientation \"zmax\"",
                 "     .PortOnBound \"False\"",
                 "     .ClipPickedPortToBound \"False\"",
-                "     .Xrange \"-SIO2_THICKNESS-LINBO3_THICKNESS-SI_THICKNESS\", \"SIO2_CAP+MTX\"",
-                "     .Yrange \"-W/2\", \"W/2\"",
-                "     .Zrange \"L\", \"L\"",
+                "     .Xrange \"-0.304975\", \"0.0056\"",
+                "     .Yrange \"-0.25\", \"0.25\"",
+                "     .Zrange \"0.05\", \"0.05\"",
                 "     .XrangeAdd \"0.0\", \"0.0\"",
                 "     .YrangeAdd \"0.0\", \"0.0\"",
                 "     .ZrangeAdd \"0.0\", \"0.0\"",
