@@ -50,3 +50,39 @@ Error falls ~ h^2.5-3 with the z cell size h = P/Nz; harmonic range M = 2 Nz is 
 ~2 min per frequency at Nz 8.  Limitation of this test: with uniform 25 um z cells it does not
 exercise the large harmonics (|k_z| up to ~1e7) that the tee's fine z mesh at the slot ends
 will need; that is checked in step 3b.
+
+## Z0 in mom_code and mom_cell (`fw.impedance`, `cell3d.plain_impedance`)
+
+Definition as fem_code: power-current, Z_PI = 2P/|I|^2, written as N/I^2 with
+N = int (E x H).z dA unconjugated (= 2P for a lossless mode; well defined for leaky modes).
+N comes from reciprocity between the mode and its z-reversed partner (J_t kept, J_z reversed):
+N = (j/2) Jb^T dZ/dbeta J  (per period: divided by P).  No field evaluation is needed, and
+the same formula holds for the periodic cell.  I = total J_z on the signal (at z = 0 in the cell).
+Check: using J instead of Jb gives -51.6 ohm (meaningless), Jb gives 36.69 ohm.
+
+mom_code, row 49 plain line, PEC (`run_z0_2d.txt`), contour mesh hmin 0.4 / 0.2 / 0.1 um:
+
+| GHz | Z_PI (ohm) | FD solver Z_PI / Z_VI | CST |
+|---|---|---|---|
+| 20 | 36.690 / 36.654 / 36.638 | 36.54 / 36.40 | 36.40 |
+| 60 | 36.793 / 36.757 / 36.741 | 36.62 / 36.39 | 36.33 |
+| 100 | 36.785 / 36.749 / 36.733 | - | 36.12 |
+
+Quasi-static check: 1/(c sqrt(C C_air)) = 36.45 ohm (C from test_static.txt).
+Same definition as the FD solver: +0.3 %.  CST's port impedance is ~1 % lower; the three
+definitions (PI, VI, PV) already differ by 0.7 % in the FD solver.
+
+fem_code is not the same geometry: it has the etched LN rib and SiO2 cap under the gap
+(COMSOL model), mom_code and CST Multilayer a flat LN slab 0.46 - ETCH.  So mom_code vs
+fem_code on Z0 compares geometries as well as solvers.
+
+mom_cell vs mom_code on the plain period (`run_z0_cell.txt`, hmin 0.4 um mesh):
+
+| GHz | mom_code Z_PI | mom_cell Nz 4 | mom_cell Nz 8 |
+|---|---|---|---|
+| 20 | 36.690 | -0.021 % | -0.006 % |
+| 60 | 36.793 | -0.188 % | -0.054 % |
+| 100 | 36.785 | -0.527 % | -0.151 % |
+
+Converges as h^2 (h = P/Nz).  Z0 needs a finer z mesh than n for the same accuracy; for the
+tee the differential (tee cell - plain cell on the same z mesh) removes most of this error.
