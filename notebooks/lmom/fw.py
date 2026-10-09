@@ -172,3 +172,22 @@ def find_mode(line, n0, tol=1e-7, maxit=12, dn=0.01):
             return b2, it
         b0, g0, b1, g1 = b1, g1, b2, line.gfun(b2)
     return b1, maxit
+
+
+def mode_current(Z, y):
+    """Null vector of Z (the modal current), scaled so that y.J = 1 (y: signal J_z weights)."""
+    J = np.linalg.solve(Z, y)
+    return J/(y @ J)
+
+
+def impedance(Zfun, beta0, J, Jb, I, scale=1.0, rel=1e-5):
+    """Power-current impedance Z_PI = N / I^2 of a mode, N = int (E x H) . z dA (unconjugated;
+    = 2P for a lossless mode, so Z_PI = 2P/|I|^2 as in fem_code).
+    Reciprocity between the mode (current J, beta0) and its z-reversed partner (current Jb:
+    J_t kept, J_z reversed) driven at beta gives  2 j N (beta - beta0) * scale =
+    -Jb^T [Z(beta) - Z(beta0)] J  to first order, i.e.  N = (j / 2 scale) Jb^T Z'(beta0) J.
+    scale = 1 for the 2D per-length matrix, P for the per-period 3D matrix."""
+    d = rel*abs(beta0)
+    dZ = (Zfun(beta0 + d) - Zfun(beta0 - d))/(2*d)
+    N = 0.5j*(Jb @ dZ @ J)/scale
+    return N/I**2, N

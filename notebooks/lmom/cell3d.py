@@ -89,3 +89,24 @@ def find_mode(cell, n0, M, tol=1e-7, maxit=12, dn=0.01, m_fresh=1):
             return b2, it
         b0, g0, b1, g1 = b1, g1, b2, cell.gfun(b2, M, m_fresh)
     return b1, maxit
+
+
+def plain_impedance(cell, beta0, M):
+    """Z_PI = N / I(z=0)^2 of the Bloch mode of the plain cell (fw.impedance with scale P).
+    Partner (backward) mode for reciprocity: J_t(-z), -J_z(-z); for the plain cell that is
+    exp(+j beta0 z) (u_t, -u_z) on the same local basis over one period."""
+    import fw
+    nn, ns, Nz, h = cell.nn, cell.ns, cell.Nz, cell.h
+    g = cell.line.g
+    Zf = lambda b: cell.Z(b, M, m_fresh=M)
+    Z0 = Zf(beta0)
+    y = np.zeros(Z0.shape[0]); y[Nz*nn:][:ns][g.owner == 0] = g.L[g.owner == 0]
+    J = fw.mode_current(Z0, y)                          # I(z=0) = y.J = 1
+    Jt, Jz = J[:Nz*nn].reshape(Nz, nn), J[Nz*nn:].reshape(Nz, ns)
+    zc, zn = (np.arange(Nz) + 0.5)*h, np.arange(Nz)*h
+    ut = Jt*np.exp(1j*beta0*zc)[:, None]                 # forward: J_t(z) = u_t exp(-j beta z)
+    uz = Jz*np.exp(1j*beta0*zn)[:, None]
+    Jb = np.r_[(ut*np.exp(1j*beta0*zc)[:, None]).ravel(), (-uz*np.exp(1j*beta0*zn)[:, None]).ravel()]
+    spread = np.abs(ut - ut.mean(0)).max()/np.abs(ut).max(), np.abs(uz - uz.mean(0)).max()/np.abs(uz).max()
+    Zpi, N = fw.impedance(Zf, beta0, J, Jb, 1.0, scale=cell.P)
+    return Zpi, N, spread
