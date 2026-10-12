@@ -15,6 +15,7 @@ L, bot = S.tfln_layers(0.46e-6 - d.ETCH_DEPTH*1e-6, 11.7 - 1j*2.5e-4/(2*np.pi*f*
 line = TS.Stack(f, L, bot, np.sqrt(28*43))
 cell = T.Cell(g, hmin=hmin, hmax=hmax, hz_min=hz0, hz_max=hz1)
 t0 = time.time()
-r = TS.Solver(cell, line).solve(n0)
+save = sys.argv[8] if len(sys.argv) > 8 else None
+r = TS.Solver(cell, line).solve(n0, save=save)
 print(f"{fG:.0f} GHz {kind} mesh ({hmin*1e6:g}, {hmax*1e6:g}, {hz0*1e6:g}, {hz1*1e6:g}) um, N {cell.N}: "
       f"n {r['n']:.5f}  alpha {r['alpha']:.5f} dB/cm  Z {r['Z'].real:.3f} {r['Z'].imag:+.3f}j  ({time.time()-t0:.0f} s)", flush=True)

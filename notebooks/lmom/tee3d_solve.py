@@ -116,18 +116,25 @@ class Solver:
         Jb[self.perm] = self.msgn*J*np.where(self.wrap0, np.exp(1j*beta*self.cell.P), 1.0)
         return np.exp(1j*beta*self.cell.P)*Jb
 
-    def solve(self, n0, rel=1e-3, rebuild=True):
+    def solve(self, n0, rel=1e-3, rebuild=True, save=None, dense_max=5000, nshow=8):
+        """save: path prefix; the two matrices of each pass are stored (re-selection without a
+        rebuild).  Up to dense_max unknowns all eigenvalues are computed (tee cells have many
+        spurious near-null modes close to the line mode); the line mode is the one carrying the
+        largest signal current per unit norm."""
         k0 = self.line.k0
         b1 = n0*k0
         for it in range(2 if rebuild else 1):
             b2 = b1*(1 + rel)
             Z1, Z2 = self.Z(b1), self.Z(b2)
+            if save:
+                np.savez(f"{save}_pass{it}.npz", Z1=Z1, Z2=Z2, b1=b1, b2=b2)
             D = (Z2 - Z1)/(b2 - b1)
             t0 = time.time()
             # (Z1 + (beta - b1) D) v = 0  ->  Z1 v = mu (-D) v, mu = beta - b1; shift-invert at mu = 0
-            if Z1.shape[0] <= 1500:                     # small: dense generalized eigenproblem
+            if Z1.shape[0] <= dense_max:                # dense generalized eigenproblem, all modes
                 mu, vecs = linalg.eig(Z1, -D)
-                o4 = np.argsort(np.abs(mu))[:4]; mu, vecs = mu[o4], vecs[:, o4]
+                ok = np.isfinite(mu) & (np.abs(mu) < 0.3*abs(b1))
+                mu, vecs = mu[ok], vecs[:, ok]
             else:
                 lu = linalg.lu_factor(Z1)
                 op = LinearOperator(Z1.shape, matvec=lambda x: linalg.lu_solve(lu, -D @ x), dtype=complex)
@@ -135,7 +142,7 @@ class Solver:
                 mu = 1/vals
             # the line mode: largest signal current for a normalised eigenvector
             cur = np.abs(self.y @ vecs)/np.linalg.norm(vecs, axis=0)
-            for o in np.argsort(np.abs(mu)):
+            for o in np.argsort(-cur)[:nshow]:
                 self.log(f"    candidate n {(b1 + mu[o])/k0:.5f}  |I|/|J| {cur[o]:.3e}")
             self.log(f"  ({time.time() - t0:.0f} s)")
             o = int(np.argmax(cur))
