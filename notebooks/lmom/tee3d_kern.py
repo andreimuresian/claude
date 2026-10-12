@@ -1,0 +1,460 @@
+"""Matrix of the periodic tee cell (tee3d.Cell): Z(beta) = static + dynamic + reflected.
+
+Kernel split (all three parts use the same Bloch-periodic Green's functions as cell3d):
+  1. static, 3D spatial:  sum_n exp(-j beta n P) / (4 pi R_n)  for the direct field (vector and
+     scalar potential) and for the LN quasi-static image (scalar, coefficient K, source mirrored
+     in y).  Per face pair the nearest image is integrated analytically over the source
+     rectangle (exact for any distance) at Gauss points of the observation face; the other
+     images form a smooth function T(rho, dz) (closed-form tail), applied at the face centres.
+  2. dynamic correction, Floquet harmonics |m| <= Mc: [K0(gamma_m rho) - K0(k_m rho)] / (2 pi),
+     smooth, Gauss x Gauss over the cross-section elements.
+  3. reflected field minus the image, Floquet harmonics |k_m| <= Ks: the stack's full spectral
+     response (stack.py, leaky branch as in fw.Line2D) minus the spectral image K/(2 eps0 j ky).
+Parts 2 and 3 are 2D cross-section interactions per harmonic, weighted by the z spectra of the
+basis pieces exactly as cell3d.PlainCell.  Half structure with the x = 0 mirror (J_x odd).
+"""
+import numpy as np
+from scipy import sparse, special
+
+import stack as S
+import fw
+
+EPS0, MU0, C0 = fw.EPS0, fw.MU0, fw.C0
+COMP = {"x": 0, "y": 1, "z": 2, "q": 3}
+XSIGN = np.array([-1.0, 1.0, 1.0, 1.0])            # x-mirror parity of J_x, J_y, J_z, charge
+
+
+# ------------------------------------------------------------------ geometry tables
+class Faces:
+    """Rectangles of the cell surface: origin o, axis indices (a1, a2), extents (l1, l2)."""
+
+    def __init__(self, cell):
+        X, Y, Zg = cell.X, cell.Y, cell.Zg
+        n = len(cell.faces)
+        self.o = np.zeros((n, 3)); self.ax = np.zeros((n, 2), int); self.l = np.zeros((n, 2))
+        self.key = {}
+        for f, (kind, i, j, k) in enumerate(cell.faces):
+            if kind == "x":
+                self.o[f] = (X[i], Y[j], Zg[k]); self.ax[f] = (1, 2); self.l[f] = (Y[j + 1] - Y[j], Zg[k + 1] - Zg[k])
+            elif kind == "y":
+                self.o[f] = (X[i], Y[j], Zg[k]); self.ax[f] = (0, 2); self.l[f] = (X[i + 1] - X[i], Zg[k + 1] - Zg[k])
+            else:
+                self.o[f] = (X[i], Y[j], Zg[k]); self.ax[f] = (0, 1); self.l[f] = (X[i + 1] - X[i], Y[j + 1] - Y[j])
+            self.key[(cell.face_elem[f], k)] = f
+        self.n = n
+        self.area = self.l[:, 0]*self.l[:, 1]
+        e = np.eye(3)
+        self.E1 = e[self.ax[:, 0]]; self.E2 = e[self.ax[:, 1]]
+        self.c = self.o + 0.5*self.l[:, :1]*self.E1 + 0.5*self.l[:, 1:]*self.E2
+        # observation points: Gauss n1 x n2, more points along the long side
+        pts, wts, fid, m1, m2 = [], [], [], [], []
+        for f in range(n):
+            l1, l2 = self.l[f]
+            r = max(l1, l2)/min(l1, l2)
+            n1 = int(np.clip(np.ceil(2*l1/min(l1, l2)), 3, 8)) if l1 >= l2 else 3
+            n2 = int(np.clip(np.ceil(2*l2/min(l1, l2)), 3, 8)) if l2 > l1 else 3
+            u1, w1 = np.polynomial.legendre.leggauss(n1); u2, w2 = np.polynomial.legendre.leggauss(n2)
+            u1, w1, u2, w2 = 0.5*(u1 + 1), 0.5*w1, 0.5*(u2 + 1), 0.5*w2
+            U1, U2 = np.meshgrid(u1, u2, indexing="ij"); W = np.outer(w1, w2)*l1*l2
+            p = self.o[f] + U1.ravel()[:, None]*l1*self.E1[f] + U2.ravel()[:, None]*l2*self.E2[f]
+            pts.append(p); wts.append(W.ravel()); fid.append(np.full(p.shape[0], f)); m1.append(U1.ravel()); m2.append(U2.ravel())
+        self.pts = np.concatenate(pts); self.pw = np.concatenate(wts); self.pf = np.concatenate(fid)
+        self.pu1 = np.concatenate(m1); self.pu2 = np.concatenate(m2)
+
+
+def basis_maps(cell, F):
+    """Sparse maps (3 nf x N) per component x, y, z, q: rows (face, moment 1/u1/u2),
+    and the wrap flag per entry (piece at z >= P: Bloch phase applied later)."""
+    P, Zg = cell.P, cell.Zg
+    MOM_S = {("s", "p"): (1, -1, 0), ("e", "p"): (0, 1, 0), ("c", "p"): (1, 0, 0),
+             ("c", "u"): (0, 0, 1), ("c", "d"): (1, 0, -1)}
+    MOM_C = {"xu": (0, 1, 0), "xd": (1, -1, 0), "yu": (0, 0, 1), "yd": (1, 0, -1), "c": (1, 0, 0)}
+    rows = {c: [] for c in range(4)}; cols = {c: [] for c in range(4)}
+    vals = {c: [] for c in range(4)}; wrap = {c: [] for c in range(4)}
+    for i, (cur, div) in enumerate(zip(cell.B, cell.Q)):
+        for p, f, coef in cur + div:
+            kind, elem, wt, comp = cell.pieces[p]
+            typ, a, b = cell.zfs[f]
+            w = a >= P - 1e-15
+            a0 = a - P if w else a
+            k = int(np.argmin(np.abs(Zg - a0)))
+            if kind == "s":
+                face = F.key[(("s", elem), k)]
+                mom = MOM_S[(wt, typ)]
+            else:
+                face = F.key[(("c", elem), k)]
+                mom = MOM_C[wt]
+            c = COMP[comp]
+            for al in range(3):
+                if mom[al]:
+                    rows[c].append(3*face + al); cols[c].append(i); vals[c].append(coef*mom[al]); wrap[c].append(w)
+    out = []
+    for c in range(4):
+        out.append((np.array(rows[c], int), np.array(cols[c], int), np.array(vals[c]), np.array(wrap[c], bool)))
+    return out
+
+
+def wmat(maps, c, nf, N, phase):
+    r, cc, v, w = maps[c]
+    vv = v*np.where(w, phase, 1.0)
+    return sparse.csr_matrix((vv, (r, cc)), shape=(3*nf, N))
+
+
+# ------------------------------------------------------------------ analytic rectangle potential
+def _lnp(v, R, q):
+    """ln(v + R), stable for v < 0 (q = R^2 - v^2); 0 where q = 0 and v < 0 (term multiplied by 0)."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        out = np.where(v >= 0, np.log(np.maximum(v + R, 1e-300)), np.log(np.maximum(q, 1e-300)/np.maximum(R - v, 1e-300)))
+    return np.where(q <= 1e-300*(1 + v*v), 0.0, out)        # multiplied by 0 there
+
+
+def rect_moments(p, o, E1, E2, l1, l2):
+    """int over the rectangle (o + s1 E1 + s2 E2, s in [0,l]) of (1, s1/l1, s2/l2) / R at points p.
+    Broadcasting shapes (..., 3) for p, o, E1, E2 and (...) for l1, l2.  Returns 3 arrays."""
+    D = p - o
+    xi0 = np.sum(D*E1, -1); eta0 = np.sum(D*E2, -1)
+    n = np.cross(E1, E2)
+    d = np.abs(np.sum(D*n, -1))
+    d2 = d*d
+    Ic = np.zeros(np.broadcast(xi0, l1).shape); Iu = np.zeros_like(Ic); Iv = np.zeros_like(Ic)
+    for su, u in ((1, l1 - xi0), (-1, -xi0)):
+        for sv, v in ((1, l2 - eta0), (-1, -eta0)):
+            s = su*sv
+            R = np.sqrt(u*u + v*v + d2)
+            Lv = _lnp(v, R, u*u + d2); Lu = _lnp(u, R, v*v + d2)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                at = np.where(d > 0, d*np.arctan(u*v/np.where(d > 0, d*R, 1.0)), 0.0)
+            Ic = Ic + s*(u*Lv + v*Lu - at)
+            Iu = Iu + s*0.5*(v*R + (u*u + d2)*Lv)
+            Iv = Iv + s*0.5*(u*R + (v*v + d2)*Lu)
+    return Ic, (Iu + xi0*Ic)/l1, (Iv + eta0*Ic)/l2
+
+
+# ------------------------------------------------------------------ periodic tail T(rho, dz)
+def tail_table(beta, P, rho_max, nr=48, nz=65, N=40):
+    """T(rho, dz) = sum_{m != 0} exp(-j beta m P) / (4 pi sqrt(rho^2 + (dz - m P)^2)) for
+    dz in [-P/2, P/2]: exact for |m| <= N, then the 1/m expansion to O(m^-3) summed in closed
+    form with polylogarithms (analytic continuation for complex beta)."""
+    rho = np.linspace(0, rho_max, nr); dz = np.linspace(-P/2, P/2, nz)
+    Rr, Dz = np.meshgrid(rho, dz, indexing="ij")
+    th = complex(beta)*P
+    T = np.zeros(Rr.shape, complex)
+    for m in range(1, N + 1):
+        T += np.exp(-1j*th*m)/np.sqrt(Rr**2 + (Dz - m*P)**2) + np.exp(1j*th*m)/np.sqrt(Rr**2 + (Dz + m*P)**2)
+    for sgn in (1, -1):                                   # z = exp(-+ j th), distance m P -+ dz
+        z = np.exp(-sgn*1j*th)
+        mm = np.arange(1, N + 1)
+        tails = [-np.log(1 - z) - np.sum(z**mm/mm)]      # Li_1 (analytic continuation)
+        zu = z/abs(z)                                     # |z| = 1 +- O(Im beta P): negligible in the
+        mt = np.arange(N + 1, 200001)                     # small m^-2, m^-3 terms
+        for s in (2, 3):
+            tails.append(np.sum(zu**mt/mt.astype(float)**s))
+        dd = sgn*Dz                                       # 1/(mP - dd) expansion with rho
+        T += (tails[0]/P + tails[1]*dd/P**2 + tails[2]*(dd**2 - Rr**2/2)/P**3)
+    return rho, dz, T/(4*np.pi)
+
+
+def tail_eval(tab, rho, dz):
+    r, z, T = tab
+    from scipy.interpolate import RectBivariateSpline
+    fr = RectBivariateSpline(r, z, T.real, kx=3, ky=3); fi = RectBivariateSpline(r, z, T.imag, kx=3, ky=3)
+    return fr.ev(rho, dz) + 1j*fi.ev(rho, dz)
+
+
+# ------------------------------------------------------------------ static part
+MIRRORS = {"d": np.array([1, 1, 1.]), "x": np.array([-1, 1, 1.]), "y": np.array([1, -1, 1.]), "xy": np.array([-1, -1, 1.])}
+
+
+def static_face_matrix(F, beta, P, mir, chunk=60):
+    """Generator over obs-face chunks: (face slice, M) with M (3 nc x 3 nf) complex =
+    int_a int_b (1,u1,u2)_a (1,u1,u2)_b G_per(r, mirror r') for the static periodic kernel."""
+    m = MIRRORS[mir]
+    om = F.o*m; E1m = F.E1*m; E2m = F.E2*m
+    cm = F.c*m
+    rho_max = np.max(np.hypot(F.c[:, None, 0] - cm[None, :, 0], F.c[:, None, 1] - cm[None, :, 1]))*1.05 + 1e-6
+    tab = tail_table(beta, P, rho_max)
+    nf = F.n
+    for a0 in range(0, nf, chunk):
+        a1 = min(nf, a0 + chunk)
+        sel = (F.pf >= a0) & (F.pf < a1)
+        pts, pw, pf, pu1, pu2 = F.pts[sel], F.pw[sel], F.pf[sel], F.pu1[sel], F.pu2[sel]
+        # nearest image per face pair from the centres
+        dzc = F.c[a0:a1, None, 2] - cm[None, :, 2]
+        nst = np.round(dzc/P)                              # (nc, nf)
+        nsp = nst[pf - a0]                                 # (np, nf)
+        shift = np.zeros((len(pf), nf, 3)); shift[..., 2] = nsp*P
+        I0, I1, I2 = rect_moments(pts[:, None, :], om[None] + shift, E1m[None], E2m[None], F.l[None, :, 0], F.l[None, :, 1])
+        I = np.stack([I0, I1, I2], -1)/(4*np.pi)            # (np, nf, 3)
+        # integrate over the obs face with weights (1, u1, u2)
+        nc = a1 - a0
+        rowsO = np.concatenate([3*(pf - a0) + k for k in range(3)])
+        colsO = np.tile(np.arange(len(pf)), 3)
+        valsO = np.concatenate([pw, pw*pu1, pw*pu2])
+        O = sparse.csr_matrix((valsO, (rowsO, colsO)), shape=(3*nc, len(pf)))
+        Mn = (O @ I.reshape(len(pf), 3*nf)).reshape(nc, 3, nf, 3)
+        # far images at the centres, monopole moments
+        dzw = dzc - nst*P
+        rho = np.hypot(F.c[a0:a1, None, 0] - cm[None, :, 0], F.c[a0:a1, None, 1] - cm[None, :, 1])
+        T = tail_eval(tab, rho.ravel(), dzw.ravel()).reshape(nc, nf)
+        momA = np.stack([F.area[a0:a1], F.area[a0:a1]/2, F.area[a0:a1]/2], -1)
+        momB = np.stack([F.area, F.area/2, F.area/2], -1)
+        ph = np.exp(-1j*beta*nst*P)
+        M = (Mn + T[:, None, :, None]*momA[:, :, None, None]*momB[None, None, :, :])*ph[:, None, :, None]
+        yield slice(a0, a1), M.reshape(3*nc, 3*nf)
+
+
+def static_Z(cell, F, maps, beta, w, K, chunk=60):
+    """Static part of Z (N x N)."""
+    N, nf, P = cell.N, F.n, cell.P
+    Wo = [wmat(maps, c, nf, N, np.exp(-1j*beta*P)) for c in range(4)]
+    Ws = [wmat(maps, c, nf, N, np.exp(1j*beta*P)) for c in range(4)]
+    Z = np.zeros((N, N), complex)
+    gens = {mir: static_face_matrix(F, beta, P, mir, chunk) for mir in MIRRORS}
+    while True:
+        try:
+            blocks = {mir: next(g) for mir, g in gens.items()}
+        except StopIteration:
+            break
+        sl = blocks["d"][0]
+        rs = slice(3*sl.start, 3*sl.stop)
+        Md, Mx, My, Mxy = (blocks[k][1] for k in ("d", "x", "y", "xy"))
+        for c in range(3):
+            Oc = Wo[c][rs]
+            if Oc.nnz == 0:
+                continue
+            Mc = Md + XSIGN[c]*Mx
+            Z += (-1j*w*MU0)*(Oc.T @ (Ws[c].T @ Mc.T).T)
+        Mq = (Md + Mx) + K*(My + Mxy)
+        Oq = Wo[3][rs]
+        if Oq.nnz:
+            Z += (-1/(1j*w*EPS0))*(Oq.T @ (Ws[3].T @ Mq.T).T)
+    return Z
+
+
+# ------------------------------------------------------------------ harmonic parts (cross-section)
+def sinh_grid(km, kmax=1e7, dt=0.05):
+    """k >= 0 grid for an evanescent harmonic (|k_m| >> k_Si): k = |k_m| sinh(t), trapezoid in t;
+    aliasing period 2 pi / (|k_m| dt) >> the 1/|k_m| decay length of the kernel."""
+    a = abs(km.real)
+    tmax = np.arcsinh(max(kmax, 4*a)/a)
+    t = np.arange(0, tmax + dt/2, dt)
+    k = a*np.sinh(t); w = a*np.cosh(t)*dt
+    w[0] *= 0.5
+    return k, w
+
+
+class XS:
+    """Cross-section pieces of the cell: Gauss points and spectral factors."""
+
+    def __init__(self, cell):
+        self.cell = cell
+        pcs = cell.pieces
+        self.n = len(pcs)
+        self.comp = np.array([COMP[p[3]] for p in pcs])
+        # Gauss points per piece (weights include the length / area and the piece weight)
+        g4u, g4w = np.polynomial.legendre.leggauss(4); g4u, g4w = 0.5*(g4u + 1), 0.5*g4w
+        g3u, g3w = np.polynomial.legendre.leggauss(3); g3u, g3w = 0.5*(g3u + 1), 0.5*g3w
+        pts, wts, pid = [], [], []
+        for ip, (kind, e, wt, comp) in enumerate(pcs):
+            if kind == "s":
+                d, p0, p1 = cell.segs[e][:3]
+                p0, p1 = np.array(p0), np.array(p1); L = np.linalg.norm(p1 - p0)
+                ww = {"s": 1 - g4u, "e": g4u, "c": np.ones(4)}[wt]
+                pts.append(p0 + g4u[:, None]*(p1 - p0)); wts.append(ww*g4w*L)
+            else:
+                xa, xb, ya, yb = cell.cells[e][:4]
+                U, V = np.meshgrid(g3u, g3u, indexing="ij"); W = np.outer(g3w, g3w)*(xb - xa)*(yb - ya)
+                ww = {"xu": U, "xd": 1 - U, "yu": V, "yd": 1 - V, "c": np.ones_like(U)}[wt]
+                pts.append(np.stack([xa + U.ravel()*(xb - xa), ya + V.ravel()*(yb - ya)], -1)); wts.append((ww*W).ravel())
+            pid.append(np.full(len(wts[-1]), ip))
+        self.pts = np.concatenate(pts); self.pw = np.concatenate(wts); self.pid = np.concatenate(pid)
+        self.xmin = np.array([self.pts[self.pid == i, 0].min() for i in range(self.n)])
+        self.xmax = np.array([self.pts[self.pid == i, 0].max() for i in range(self.n)])
+        for ip, (kind, e, wt, comp) in enumerate(pcs):             # exact extents (Gauss points are interior)
+            if kind == "s":
+                d, p0, p1 = cell.segs[e][:3]; self.xmin[ip], self.xmax[ip] = min(p0[0], p1[0]), max(p0[0], p1[0])
+            else:
+                self.xmin[ip], self.xmax[ip] = cell.cells[e][0], cell.cells[e][1]
+        self.Wp = sparse.csr_matrix((self.pw, (self.pid, np.arange(len(self.pid)))), shape=(self.n, len(self.pid)))
+
+    def spectra(self, k, ky, sign):
+        """(Nk, npieces) spectral factor: int w(r) exp(sign j k x - j ky y) over the piece."""
+        cell = self.cell
+        out = np.zeros((len(k), self.n), complex)
+        kk = k[:, None]; ky = ky[:, None]
+        segs = [(ip, p) for ip, p in enumerate(cell.pieces) if p[0] == "s"]
+        if segs:
+            ips = np.array([ip for ip, _ in segs])
+            S = [cell.segs[p[1]] for _, p in segs]
+            x0 = np.array([s[1][0] for s in S]); y0 = np.array([s[1][1] for s in S])
+            x1 = np.array([s[2][0] for s in S]); y1 = np.array([s[2][1] for s in S])
+            hor = np.array([s[0] == "x" for s in S])
+            L = np.where(hor, x1 - x0, y1 - y0)
+            a = np.where(hor, sign*1j*kk*L, -1j*ky*L)
+            pref = np.exp(sign*1j*kk*x0 - 1j*ky*y0)*L
+            I1, Iu = fw._If(a, "1"), fw._If(a, "u")
+            wt = np.array([p[2] for _, p in segs])
+            val = np.where(wt == "s", I1 - Iu, np.where(wt == "e", Iu, I1))
+            out[:, ips] = pref*val
+        cel = [(ip, p) for ip, p in enumerate(cell.pieces) if p[0] == "c"]
+        if cel:
+            ips = np.array([ip for ip, _ in cel])
+            C = np.array([cell.cells[p[1]][:4] for _, p in cel])
+            xa, xb, ya, yb = C.T
+            ax = sign*1j*kk*(xb - xa); ay = -1j*ky*(yb - ya)
+            Xf = np.exp(sign*1j*kk*xa)*(xb - xa); Yf = np.exp(-1j*ky*ya)*(yb - ya)
+            I1x, Iux, I1y, Iuy = fw._If(ax, "1"), fw._If(ax, "u"), fw._If(ay, "1"), fw._If(ay, "u")
+            wt = np.array([p[2] for _, p in cel])
+            fx = np.where(wt == "xu", Iux, np.where(wt == "xd", I1x - Iux, I1x))
+            fy = np.where(wt == "yu", Iuy, np.where(wt == "yd", I1y - Iuy, I1y))
+            out[:, ips] = Xf*fx*Yf*fy
+        return out
+
+
+def dyn_kernel(xs, km, k0):
+    """X (npieces^2): [K0(gamma rho) - K0(kappa rho)]/(2 pi), gamma = sqrt(km^2 - k0^2),
+    kappa = sqrt(km^2); first order in the (tiny) imaginary parts, real Bessel functions.
+    Returns dict mirror -> matrix (pieces x pieces, source mirrored)."""
+    gam = np.sqrt(km**2 - k0**2 + 0j); kap = np.sqrt(km**2 + 0j)
+    gam = gam if gam.real > 0 else -gam; kap = kap if kap.real > 0 else -kap
+    out = {}
+    p = xs.pts
+    for mir, m in MIRRORS.items():
+        q = p*m[:2]
+        rho = np.hypot(p[:, None, 0] - q[None, :, 0], p[:, None, 1] - q[None, :, 1])
+        r = np.maximum(rho, 1e-30)
+        D = (special.k0(gam.real*r) - 1j*gam.imag*r*special.k1(gam.real*r)
+             - special.k0(kap.real*r) + 1j*kap.imag*r*special.k1(kap.real*r))
+        D = np.where(rho < 1e-15, np.log(kap/gam), D)/(2*np.pi)
+        out[mir] = xs.Wp @ (xs.Wp @ D.T).T
+    return out
+
+
+def spec_grid(line, km, gmax, kmax=1.5e7):
+    """k grid for harmonic km: m = 0 (|k_m| near the silicon light line): Gauss pieces clustered at
+    the branch point up to 4 k_Si (as fw.Line2D); then uniform with dk = pi/(2 gmax) up to kmax.
+    Uniform spacing: the aliases of a pair at lateral gap g < gmax lie at >= 3 gmax, where the
+    kernel of an evanescent harmonic is below exp(-75) (m = 0: alias period > 4 x the cell)."""
+    k0 = line.k0
+    eb = line.eps_bot.real
+    lng = abs(km.real) < 1.5*np.sqrt(eb)*k0              # m = 0: long-range kernel
+    dk = 2e3 if lng else np.pi/(2*gmax)
+    kb2 = eb*k0**2 - km.real**2
+    ks, ws = [], []
+    kstart = 0.0
+    if lng:
+        u, wu = np.polynomial.legendre.leggauss(160); u, wu = 0.5*(u + 1), 0.5*wu
+        k4 = 4*np.sqrt(eb)*k0
+        if kb2 > 0:
+            kb = np.sqrt(kb2)
+            ks += [kb*(1 - (1 - u)**2), kb + (k4 - kb)*u**2]; ws += [kb*2*(1 - u)*wu, (k4 - kb)*2*u*wu]
+        else:
+            ks.append(k4*u); ws.append(k4*wu)
+        kstart = k4
+    n = int(np.ceil((kmax - kstart)/dk))
+    ku = kstart + dk*np.arange(n + 1)
+    wu_ = np.full(n + 1, dk); wu_[-1] = dk/2
+    if kstart > 0:                     # trapezoid from the end of the Gauss pieces
+        wu_[0] = dk/2
+        k = np.concatenate(ks + [ku]); w = np.concatenate(ws + [wu_])
+        return np.r_[-k[::-1], k], np.r_[w[::-1], w]
+    # k = 0 is an interior point of the mirrored trapezoid: full weight, counted once
+    return np.r_[-ku[:0:-1], ku], np.r_[wu_[:0:-1], wu_]
+
+
+def spec_kernel(xs, line, km, sym=True, Gmax=220e-6, kmax=1.5e7, decay=25.0):
+    """Reflected-field interaction (pieces x pieces) for harmonic km (field formulation, stack.py),
+    minus the spectral image on the charge pieces; x mirror added on the source side.  Pairs whose
+    lateral gap exceeds gmax = min(Gmax, decay/|k_m|) are set to zero (an evanescent harmonic's
+    kernel is analytic in a strip of half-width |k_m|: it decays as exp(-|k_m| gap))."""
+    k0 = line.k0
+    gmax = Gmax if abs(km.real) < 1.5*np.sqrt(line.eps_bot.real)*k0 else min(Gmax, decay/abs(km.real))
+    k, kw = spec_grid(line, km, gmax, kmax)
+    air = S.Air(k, km, k0)
+    R = air.reflection(S.stack_admittance(k, km, k0, line.layers, line.bottom, leaky=True))
+    ky = air.ky
+    Dc = [air.sheet_down(J)[0] for J in ((1, 0, 0), (0, 1, 0), (0, 0, 1))]
+    M3 = np.stack([air.up_field((R @ d[..., None])[..., 0]) for d in Dc], -1)      # (Nk, obs, src)
+    T = xs.spectra(k, ky, -1); Sp = xs.spectra(k, ky, +1)
+    Sm = Sp[::-1]                                                                  # source at -k: x mirror
+    comp = xs.comp
+    gd = np.maximum(0, np.maximum(xs.xmin[None, :] - xs.xmax[:, None], xs.xmin[:, None] - xs.xmax[None, :]))
+    gm = np.maximum(0, xs.xmin[:, None] + xs.xmin[None, :])                      # to the mirrored source
+    keep_d, keep_m = gd <= gmax, gm <= gmax
+    X = np.zeros((xs.n, xs.n), complex)
+    kwf = kw/(2*np.pi)
+    for ci in range(3):
+        oi = comp == ci
+        if not oi.any():
+            continue
+        To = T[:, oi]*kwf[:, None]
+        for cj in range(3):
+            sj = comp == cj
+            if not sj.any():
+                continue
+            A = To*M3[:, ci, cj][:, None]
+            blk = np.where(keep_d[np.ix_(oi, sj)], A.T @ Sp[:, sj], 0)
+            if sym:
+                blk = blk + XSIGN[cj]*np.where(keep_m[np.ix_(oi, sj)], A.T @ Sm[:, sj], 0)
+            X[np.ix_(oi, sj)] += blk
+    q = comp == 3
+    Tq = T[:, q]*(kwf*line.K/(2*EPS0*1j*ky))[:, None]
+    blk = np.where(keep_d[np.ix_(q, q)], Tq.T @ Sp[:, q], 0)
+    if sym:
+        blk = blk + np.where(keep_m[np.ix_(q, q)], Tq.T @ Sm[:, q], 0)
+    X[np.ix_(q, q)] += (1/(1j*line.w))*blk
+    return X
+
+
+def zspec(cell, k, sign):
+    """z spectra of the z functions: sign -1: T = int f exp(-j k z) dz; +1: C = (1/P) int f exp(+j k z)."""
+    out = np.zeros(len(cell.zfs), complex)
+    for i, (typ, a, b) in enumerate(cell.zfs):
+        if typ == "D":
+            out[i] = np.exp(sign*1j*k*a)
+        else:
+            h = b - a; s = sign*1j*k*h
+            pre = h*np.exp(sign*1j*k*a)
+            I1, Iu = complex(fw._If(s, "1")), complex(fw._If(s, "u"))
+            out[i] = pre*{"p": I1, "u": Iu, "d": I1 - Iu}[typ]
+    return out if sign < 0 else out/cell.P
+
+
+def piece_maps(cell):
+    rows, cols, coef, zf = [], [], [], []
+    for i, (cur, div) in enumerate(zip(cell.B, cell.Q)):
+        for p, f, c in cur + div:
+            rows.append(p); cols.append(i); coef.append(c); zf.append(f)
+    return np.array(rows), np.array(cols), np.array(coef), np.array(zf)
+
+
+def harmonic_Z(cell, xs, line, beta, Mc, Ks, pm=None, verbose=False):
+    """Sum over harmonics of the dynamic correction (|m| <= Mc) and the reflected part
+    (|k_m| <= Ks), assembled with the z spectra."""
+    import time
+    N, P, w, k0 = cell.N, cell.P, line.w, line.k0
+    rows, cols, coef, zf = pm if pm is not None else piece_maps(cell)
+    comp = xs.comp
+    same = (comp[:, None] == comp[None, :])
+    isq = comp == 3
+    Mmax = int(np.floor(Ks*P/(2*np.pi))) + 1
+    Z = np.zeros((N, N), complex)
+    t0 = time.time()
+    for m in range(-Mmax, Mmax + 1):
+        km = beta + 2*np.pi*m/P
+        if abs(km.real) > Ks and abs(m) > Mc:
+            continue
+        X = spec_kernel(xs, line, km)
+        if abs(m) <= Mc:
+            D = dyn_kernel(xs, km, k0)
+            A = (D["d"] + XSIGN[comp][None, :]*D["x"])*same
+            X += (-1j*w*MU0)*np.where(isq[:, None] | isq[None, :], 0, A)
+            Q = (D["d"] + D["x"]) + line.K*(D["y"] + D["xy"])
+            X += (-1/(1j*w*EPS0))*np.where(isq[:, None] & isq[None, :], Q, 0)
+        Tz, Cz = zspec(cell, km, -1), zspec(cell, km, +1)
+        V = sparse.csr_matrix((coef*Tz[zf], (rows, cols)), shape=(xs.n, N))
+        W = sparse.csr_matrix((coef*Cz[zf], (rows, cols)), shape=(xs.n, N))
+        Z += V.T @ (W.T @ X.T).T
+        if verbose and m % 10 == 0:
+            print(f"    m {m:4d}  {time.time() - t0:.0f} s", flush=True)
+    return Z
