@@ -1,0 +1,16 @@
+hmin 0.4
+20 GHz, 2D on the cell mesh (174 seg): n 1.94931  alpha 0.00737  Z 36.696
+60 GHz, 2D on the cell mesh (174 seg): n 1.95101  alpha 0.04950  Z 36.799
+100 GHz, 2D on the cell mesh (174 seg): n 1.96171  alpha 0.14226  Z 36.791
+hmin 0.2
+20 GHz, 2D on the cell mesh (262 seg): n 1.95045  alpha 0.00736  Z 36.654
+60 GHz, 2D on the cell mesh (262 seg): n 1.95214  alpha 0.04945  Z 36.757
+100 GHz, 2D on the cell mesh (262 seg): n 1.96283  alpha 0.14208  Z 36.749
+hmin 0.1
+20 GHz, 2D on the cell mesh (394 seg): n 1.95101  alpha 0.00736  Z 36.638
+60 GHz, 2D on the cell mesh (394 seg): n 1.95270  alpha 0.04945  Z 36.741
+100 GHz, 2D on the cell mesh (394 seg): n 1.96339  alpha 0.14205  Z 36.733
+hmin 0.05
+20 GHz, 2D on the cell mesh (622 seg): n 1.95163  alpha 0.00736  Z 36.625
+60 GHz, 2D on the cell mesh (622 seg): n 1.95332  alpha 0.04943  Z 36.727
+100 GHz, 2D on the cell mesh (622 seg): n 1.96400  alpha 0.14199  Z 36.720

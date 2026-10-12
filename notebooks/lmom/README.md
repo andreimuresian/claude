@@ -86,3 +86,24 @@ mom_cell vs mom_code on the plain period (`run_z0_cell.txt`, hmin 0.4 um mesh):
 
 Converges as h^2 (h = P/Nz).  Z0 needs a finer z mesh than n for the same accuracy; for the
 tee the differential (tee cell - plain cell on the same z mesh) removes most of this error.
+
+## Step 3b: general periodic cell (`tee3d.py`, `tee3d_kern.py`, `tee3d_solve.py`), plain-line check
+
+Frequency-domain MoM eigenmode solver of one 200 um period, metal surfaces meshed in 3D, any
+in-plane metal shape (tees).  Validated on the plain line (zero-size tee), row 49, 60 GHz, PEC.
+
+Reference: mom_code on the same cross-section mesh (`ref2d_same_mesh.py`).  How converged is it
+(`ref2d_conv.txt`, `ref2d_grade.txt`): alpha is converged (0.0494-0.0495 dB/cm on every mesh);
+n and Z0 drift slowly with the smallest cell at the metal corners only (largest cell, growth
+rate, spectral cutoff: no effect): n 1.9510 / 1.9521 / 1.9527 / 1.9533 for 0.4 / 0.2 / 0.1 /
+0.05 um, Z0 36.80 / 36.76 / 36.74 / 36.73 ohm.  Both codes shift together when refined, so the
+comparison is made on the same mesh.
+
+Bug found and fixed: only the nearest periodic copy of each face was integrated exactly; with
+long faces the next copy touches the face but was treated as distant (2 cells along the line:
+n -1.7 %, alpha +10 % against the Floquet cell on the same discretization).  Now the three
+nearest copies are exact.
+
+Residual after the fix (insensitive to harmonics count, spectral cutoff, quadrature, cell
+length along the line): n +0.04 %, alpha +1.3 % (0.0007 dB/cm), Z0 +0.02 %.  A fixed bias of
+the plain line; it cancels in the tee - plain difference.

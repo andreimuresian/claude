@@ -1,0 +1,7 @@
+hmin 0.4 hmax 8 growth 1.3 (174 seg): n 1.95101  alpha 0.04950  Z 36.799
+hmin 0.4 hmax 2 growth 1.3 (286 seg): n 1.95086  alpha 0.04949  Z 36.793
+hmin 0.4 hmax 2 growth 1.1 (358 seg): n 1.95095  alpha 0.04952  Z 36.791
+hmin 0.4 hmax 1 growth 1.1 (506 seg): n 1.95119  alpha 0.04949  Z 36.786
+hmin 0.2 hmax 1 growth 1.1 (602 seg): n 1.95244  alpha 0.04946  Z 36.750
+hmin 0.1 hmax 1 growth 1.1 (726 seg): n 1.95307  alpha 0.04945  Z 36.734
+hmin 0.1 hmax 0.5 growth 1.05 (1186 seg): n 1.95323  alpha 0.04944  Z 36.731
