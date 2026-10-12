@@ -1,0 +1,3 @@
+20 GHz, 2D on the cell mesh (174 seg): n 1.94931  alpha 0.00737  Z 36.696
+60 GHz, 2D on the cell mesh (174 seg): n 1.95101  alpha 0.04950  Z 36.799
+100 GHz, 2D on the cell mesh (174 seg): n 1.96171  alpha 0.14226  Z 36.791

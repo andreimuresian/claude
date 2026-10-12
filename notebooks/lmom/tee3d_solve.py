@@ -126,9 +126,12 @@ class Solver:
             op = LinearOperator(Z1.shape, matvec=lambda x: linalg.lu_solve(lu, -D @ x), dtype=complex)
             vals, vecs = eigs(op, k=4, which="LM")
             mu = 1/vals
-            order = np.argsort(np.abs(mu))
-            self.log("  pencil eigenvalues n:", [f"{(b1 + mu[o])/k0:.5f}" for o in order], f"({time.time() - t0:.0f} s)")
-            o = order[0]
+            # the line mode: largest signal current for a normalised eigenvector
+            cur = np.abs(self.y @ vecs)/np.linalg.norm(vecs, axis=0)
+            for o in np.argsort(np.abs(mu)):
+                self.log(f"    candidate n {(b1 + mu[o])/k0:.5f}  |I|/|J| {cur[o]:.3e}")
+            self.log(f"  ({time.time() - t0:.0f} s)")
+            o = int(np.argmax(cur))
             beta = b1 + mu[o]; J = vecs[:, o]
             b1 = beta*(1 - rel/2)
         self.D = D
