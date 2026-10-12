@@ -107,10 +107,13 @@ class Solver:
                 raise RuntimeError(f"no mirror piece for basis {i} {key}")
             sgn[i] = (-1 if comp == "z" else 1)*coef/match
         self.perm, self.msgn = perm, sgn
+        # bases on the plane z = 0 are stored centred at z = P (pieces on the last cell and the
+        # first cell shifted by +P): their mirror image lies at z = 0, one period back
+        self.wrap0 = np.array([k[0] == "tp" and k[2] == 0 for k in c.bkey])
 
     def partner(self, J, beta):
         Jb = np.zeros_like(J)
-        Jb[self.perm] = self.msgn*J
+        Jb[self.perm] = self.msgn*J*np.where(self.wrap0, np.exp(1j*beta*self.cell.P), 1.0)
         return np.exp(1j*beta*self.cell.P)*Jb
 
     def solve(self, n0, rel=1e-3, rebuild=True):
@@ -135,7 +138,7 @@ class Solver:
             beta = b1 + mu[o]; J = vecs[:, o]
             b1 = beta*(1 - rel/2)
         self.D = D
-        I = self.y @ J
+        I = (self.y @ J)*np.exp(1j*beta*self.cell.P)          # probe bases are stored at z = P
         J = J/I
         Jb = self.partner(J, beta)
         N = 2*0.5j*(Jb @ D @ J)/self.cell.P                     # x2: tests cover the half structure
