@@ -1,0 +1,62 @@
+[materials @ 1575 nm] LN ne=2.136842 no=2.210268 | SiO2 n=1.443723 | Au eps=-120.37-11.93j
+[geometry OK] 23 regions tile exactly
+              SLAB_W 8.20 um (edge +2.00 um from the gap edge): slab ends inside the gold
+              gaps: bottom 4.20 um / top 10.00 um | lower block 4.90 um | gold/SiO2 interface at x = 7.00 um
+Transforming over 1000 vertices to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+[mesh OK] 57436 triangles, 28865 vertices
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Transforming over 1000 elements to C_CONTIGUOUS.
+Eigensolver complete in 32.3s: computed 8 optical modes around n_guess = 1.8755.
+==================================================================================
+Idx  | Re(neff)   | Im(neff)     | TE %     | Core Pwr % | Unipolarity 
+----------------------------------------------------------------------------------
+0    | 1.88403    | -6.42e-07    | 95.27  % | 36.68    % | 1.0000      
+1    | 1.85367    | -7.81e-09    | 1.85   % | 31.72    % | 0.0014      
+2    | 1.85051    | -1.10e-02    | 11.99  % | 0.00     % | 0.9985      
+3    | 1.85049    | -1.10e-02    | 11.99  % | 0.00     % | 0.9997      
+4    | 1.99126    | -1.06e-02    | 7.81   % | 0.00     % | 1.0000      
+5    | 1.99127    | -1.06e-02    | 7.81   % | 0.00     % | 1.0000      
+6    | 1.74411    | -3.85e-05    | 87.96  % | 16.32    % | 0.0000      
+7    | 1.68521    | -2.52e-04    | 26.12  % | 19.22    % | 0.2270      
+==================================================================================
+=======================================================
+             ELECTRO-OPTIC SIMULATION RESULTS
+=======================================================
+Selected Mode Index:         0
+Effective Index (neff):      1.884033 + -6.42e-07j
+Optical Attenuation:         2.2252e-01 dB/cm  (2.2252e+01 dB/m)
+Overlap Integral (Gamma):    -0.4856
+|Vpi * L|:                   2.2667 V*cm
+|Vpi| (for L = 1.0 cm):        2.2667 V
+=======================================================
+
+BUFFER_H = 3600 nm
+  ratio R = integral / |Im(neff)| = 7.543114e+08   <-- MUST be t-independent
+  loss dissipated per gold region:
+     elL_bulk             0.10 %
+     elL_bulk_corner      5.21 %
+     elL_skin            44.72 %
+     elR_bulk             0.10 %
+     elR_bulk_corner      5.20 %
+     elR_skin            44.66 %
+EXPORT OK (1.8840330047692382-6.421642063076241e-07j) 0.22251521482406 2.266692665099757
+
+real	7m10.178s
+user	4m22.734s
+sys	3m26.370s
