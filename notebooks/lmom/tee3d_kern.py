@@ -26,9 +26,10 @@ XSIGN = np.array([-1.0, 1.0, 1.0, 1.0])            # x-mirror parity of J_x, J_y
 
 # ------------------------------------------------------------------ geometry tables
 class Faces:
-    """Rectangles of the cell surface: origin o, axis indices (a1, a2), extents (l1, l2)."""
+    """Rectangles of the cell surface: origin o, axis indices (a1, a2), extents (l1, l2).
+    qmul multiplies the number of observation Gauss points per axis (accuracy check)."""
 
-    def __init__(self, cell):
+    def __init__(self, cell, qmul=1):
         X, Y, Zg = cell.X, cell.Y, cell.Zg
         n = len(cell.faces)
         self.o = np.zeros((n, 3)); self.ax = np.zeros((n, 2), int); self.l = np.zeros((n, 2))
@@ -53,6 +54,9 @@ class Faces:
             r = max(l1, l2)/min(l1, l2)
             n1 = int(np.clip(np.ceil(2*l1/min(l1, l2)), 3, 8)) if l1 >= l2 else 3
             n2 = int(np.clip(np.ceil(2*l2/min(l1, l2)), 3, 8)) if l2 > l1 else 3
+            u1, w1 = np.polynomial.legendre.leggauss(n1); u2, w2 = np.polynomial.legendre.leggauss(n2)
+            u1, w1, u2, w2 = 0.5*(u1 + 1), 0.5*w1, 0.5*(u2 + 1), 0.5*w2
+            n1, n2 = n1*qmul, n2*qmul
             u1, w1 = np.polynomial.legendre.leggauss(n1); u2, w2 = np.polynomial.legendre.leggauss(n2)
             u1, w1, u2, w2 = 0.5*(u1 + 1), 0.5*w1, 0.5*(u2 + 1), 0.5*w2
             U1, U2 = np.meshgrid(u1, u2, indexing="ij"); W = np.outer(w1, w2)*l1*l2
