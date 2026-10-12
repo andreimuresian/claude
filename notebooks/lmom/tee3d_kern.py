@@ -135,15 +135,16 @@ def rect_moments(p, o, E1, E2, l1, l2):
 
 
 # ------------------------------------------------------------------ periodic tail T(rho, dz)
-def tail_table(beta, P, rho_max, nr=48, nz=65, N=40):
-    """T(rho, dz) = sum_{m != 0} exp(-j beta m P) / (4 pi sqrt(rho^2 + (dz - m P)^2)) for
+def tail_table(beta, P, rho_max, nr=48, nz=65, N=40, m0=1):
+    """T(rho, dz) = sum_{|m| >= m0} exp(-j beta m P) / (4 pi sqrt(rho^2 + (dz - m P)^2)) for
     dz in [-P/2, P/2]: exact for |m| <= N, then the 1/m expansion to O(m^-3) summed in closed
-    form with polylogarithms (analytic continuation for complex beta)."""
-    rho = np.linspace(0, rho_max, nr); dz = np.linspace(-P/2, P/2, nz)
+    form with polylogarithms (analytic continuation for complex beta).  dz spans [-P, P] so that
+    point pairs of long faces (beyond the centre offset range [-P/2, P/2]) stay inside."""
+    rho = np.linspace(0, rho_max, nr); dz = np.linspace(-P, P, 2*nz - 1)
     Rr, Dz = np.meshgrid(rho, dz, indexing="ij")
     th = complex(beta)*P
     T = np.zeros(Rr.shape, complex)
-    for m in range(1, N + 1):
+    for m in range(m0, N + 1):
         T += np.exp(-1j*th*m)/np.sqrt(Rr**2 + (Dz - m*P)**2) + np.exp(1j*th*m)/np.sqrt(Rr**2 + (Dz + m*P)**2)
     for sgn in (1, -1):                                   # z = exp(-+ j th), distance m P -+ dz
         z = np.exp(-sgn*1j*th)
@@ -169,14 +170,17 @@ def tail_eval(tab, rho, dz):
 MIRRORS = {"d": np.array([1, 1, 1.]), "x": np.array([-1, 1, 1.]), "y": np.array([1, -1, 1.]), "xy": np.array([-1, -1, 1.])}
 
 
-def static_face_matrix(F, beta, P, mir, chunk=60, tgauss=0):
+def static_face_matrix(F, beta, P, mir, chunk=60, tgauss=0, near=1):
     """Generator over obs-face chunks: (face slice, M) with M (3 nc x 3 nf) complex =
-    int_a int_b (1,u1,u2)_a (1,u1,u2)_b G_per(r, mirror r') for the static periodic kernel."""
+    int_a int_b (1,u1,u2)_a (1,u1,u2)_b G_per(r, mirror r') for the static periodic kernel.
+    The images n* - near .. n* + near (n*: nearest by the centres) are integrated analytically,
+    the others come from the table: with near = 0 a long face (h_z ~ P/2) would touch an
+    image treated as distant."""
     m = MIRRORS[mir]
     om = F.o*m; E1m = F.E1*m; E2m = F.E2*m
     cm = F.c*m
     rho_max = np.max(np.hypot(F.c[:, None, 0] - cm[None, :, 0], F.c[:, None, 1] - cm[None, :, 1]))*1.05 + 1e-6
-    tab = tail_table(beta, P, rho_max)
+    tab = tail_table(beta, P, rho_max, m0=near + 1)
     nf = F.n
     for a0 in range(0, nf, chunk):
         a1 = min(nf, a0 + chunk)
@@ -186,9 +190,11 @@ def static_face_matrix(F, beta, P, mir, chunk=60, tgauss=0):
         dzc = F.c[a0:a1, None, 2] - cm[None, :, 2]
         nst = np.round(dzc/P)                              # (nc, nf)
         nsp = nst[pf - a0]                                 # (np, nf)
-        shift = np.zeros((len(pf), nf, 3)); shift[..., 2] = nsp*P
-        I0, I1, I2 = rect_moments(pts[:, None, :], om[None] + shift, E1m[None], E2m[None], F.l[None, :, 0], F.l[None, :, 1])
-        I = np.stack([I0, I1, I2], -1)/(4*np.pi)            # (np, nf, 3)
+        I = np.zeros((len(pf), nf, 3), complex)
+        for s_ in range(-near, near + 1):
+            shift = np.zeros((len(pf), nf, 3)); shift[..., 2] = (nsp + s_)*P
+            I0, I1, I2 = rect_moments(pts[:, None, :], om[None] + shift, E1m[None], E2m[None], F.l[None, :, 0], F.l[None, :, 1])
+            I += np.exp(-1j*beta*s_*P)*np.stack([I0, I1, I2], -1)/(4*np.pi)    # (np, nf, 3)
         # integrate over the obs face with weights (1, u1, u2)
         nc = a1 - a0
         rowsO = np.concatenate([3*(pf - a0) + k for k in range(3)])
@@ -222,13 +228,13 @@ def static_face_matrix(F, beta, P, mir, chunk=60, tgauss=0):
         yield slice(a0, a1), M.reshape(3*nc, 3*nf)
 
 
-def static_Z(cell, F, maps, beta, w, K, chunk=60, tgauss=0):
+def static_Z(cell, F, maps, beta, w, K, chunk=60, tgauss=0, near=1):
     """Static part of Z (N x N)."""
     N, nf, P = cell.N, F.n, cell.P
     Wo = [wmat(maps, c, nf, N, np.exp(-1j*beta*P)) for c in range(4)]
     Ws = [wmat(maps, c, nf, N, np.exp(1j*beta*P)) for c in range(4)]
     Z = np.zeros((N, N), complex)
-    gens = {mir: static_face_matrix(F, beta, P, mir, chunk, tgauss) for mir in MIRRORS}
+    gens = {mir: static_face_matrix(F, beta, P, mir, chunk, tgauss, near) for mir in MIRRORS}
     while True:
         try:
             blocks = {mir: next(g) for mir, g in gens.items()}
