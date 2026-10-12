@@ -165,7 +165,7 @@ def tail_eval(tab, rho, dz):
 MIRRORS = {"d": np.array([1, 1, 1.]), "x": np.array([-1, 1, 1.]), "y": np.array([1, -1, 1.]), "xy": np.array([-1, -1, 1.])}
 
 
-def static_face_matrix(F, beta, P, mir, chunk=60):
+def static_face_matrix(F, beta, P, mir, chunk=60, tgauss=0):
     """Generator over obs-face chunks: (face slice, M) with M (3 nc x 3 nf) complex =
     int_a int_b (1,u1,u2)_a (1,u1,u2)_b G_per(r, mirror r') for the static periodic kernel."""
     m = MIRRORS[mir]
@@ -195,21 +195,36 @@ def static_face_matrix(F, beta, P, mir, chunk=60):
         # far images at the centres, monopole moments
         dzw = dzc - nst*P
         rho = np.hypot(F.c[a0:a1, None, 0] - cm[None, :, 0], F.c[a0:a1, None, 1] - cm[None, :, 1])
-        T = tail_eval(tab, rho.ravel(), dzw.ravel()).reshape(nc, nf)
-        momA = np.stack([F.area[a0:a1], F.area[a0:a1]/2, F.area[a0:a1]/2], -1)
-        momB = np.stack([F.area, F.area/2, F.area/2], -1)
         ph = np.exp(-1j*beta*nst*P)
-        M = (Mn + T[:, None, :, None]*momA[:, :, None, None]*momB[None, None, :, :])*ph[:, None, :, None]
+        if tgauss:
+            # obs Gauss points x src tgauss^2 Gauss points, moments (1, u1, u2) on both sides
+            u, wq = np.polynomial.legendre.leggauss(tgauss); u, wq = 0.5*(u + 1), 0.5*wq
+            U1, U2 = np.meshgrid(u, u, indexing="ij"); WQ = np.outer(wq, wq).ravel(); U1, U2 = U1.ravel(), U2.ravel()
+            sp = om[:, None, :] + U1[None, :, None]*F.l[:, None, :1]*E1m[:, None, :] + U2[None, :, None]*F.l[:, None, 1:]*E2m[:, None, :]
+            sw = WQ[None, :]*F.area[:, None]                                  # (nf, nq)
+            Tm = np.zeros((len(pf), nf, 3), complex)
+            for q in range(len(WQ)):
+                dzq = pts[:, None, 2] - sp[None, :, q, 2] - nsp*P
+                rq = np.hypot(pts[:, None, 0] - sp[None, :, q, 0], pts[:, None, 1] - sp[None, :, q, 1])
+                Tq = tail_eval(tab, rq.ravel(), dzq.ravel()).reshape(len(pf), nf)*sw[None, :, q]
+                Tm[..., 0] += Tq; Tm[..., 1] += Tq*U1[q]; Tm[..., 2] += Tq*U2[q]
+            MT = (O @ Tm.reshape(len(pf), 3*nf)).reshape(nc, 3, nf, 3)
+            M = (Mn + MT)*ph[:, None, :, None]
+        else:
+            T = tail_eval(tab, rho.ravel(), dzw.ravel()).reshape(nc, nf)
+            momA = np.stack([F.area[a0:a1], F.area[a0:a1]/2, F.area[a0:a1]/2], -1)
+            momB = np.stack([F.area, F.area/2, F.area/2], -1)
+            M = (Mn + T[:, None, :, None]*momA[:, :, None, None]*momB[None, None, :, :])*ph[:, None, :, None]
         yield slice(a0, a1), M.reshape(3*nc, 3*nf)
 
 
-def static_Z(cell, F, maps, beta, w, K, chunk=60):
+def static_Z(cell, F, maps, beta, w, K, chunk=60, tgauss=0):
     """Static part of Z (N x N)."""
     N, nf, P = cell.N, F.n, cell.P
     Wo = [wmat(maps, c, nf, N, np.exp(-1j*beta*P)) for c in range(4)]
     Ws = [wmat(maps, c, nf, N, np.exp(1j*beta*P)) for c in range(4)]
     Z = np.zeros((N, N), complex)
-    gens = {mir: static_face_matrix(F, beta, P, mir, chunk) for mir in MIRRORS}
+    gens = {mir: static_face_matrix(F, beta, P, mir, chunk, tgauss) for mir in MIRRORS}
     while True:
         try:
             blocks = {mir: next(g) for mir, g in gens.items()}
