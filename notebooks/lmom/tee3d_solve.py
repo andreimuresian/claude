@@ -125,10 +125,14 @@ class Solver:
             D = (Z2 - Z1)/(b2 - b1)
             t0 = time.time()
             # (Z1 + (beta - b1) D) v = 0  ->  Z1 v = mu (-D) v, mu = beta - b1; shift-invert at mu = 0
-            lu = linalg.lu_factor(Z1)
-            op = LinearOperator(Z1.shape, matvec=lambda x: linalg.lu_solve(lu, -D @ x), dtype=complex)
-            vals, vecs = eigs(op, k=4, which="LM")
-            mu = 1/vals
+            if Z1.shape[0] <= 1500:                     # small: dense generalized eigenproblem
+                mu, vecs = linalg.eig(Z1, -D)
+                o4 = np.argsort(np.abs(mu))[:4]; mu, vecs = mu[o4], vecs[:, o4]
+            else:
+                lu = linalg.lu_factor(Z1)
+                op = LinearOperator(Z1.shape, matvec=lambda x: linalg.lu_solve(lu, -D @ x), dtype=complex)
+                vals, vecs = eigs(op, k=4, which="LM")
+                mu = 1/vals
             # the line mode: largest signal current for a normalised eigenvector
             cur = np.abs(self.y @ vecs)/np.linalg.norm(vecs, axis=0)
             for o in np.argsort(np.abs(mu)):
