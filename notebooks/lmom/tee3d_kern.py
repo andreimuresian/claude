@@ -387,12 +387,15 @@ def spec_grid(line, km, gmax, kmax=1.5e7):
     return np.r_[-ku[:0:-1], ku], np.r_[wu_[:0:-1], wu_]
 
 
-def spec_kernel(xs, line, km, sym=True, Gmax=220e-6, kmax=1.5e7, decay=25.0):
+def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0):
     """Reflected-field interaction (pieces x pieces) for harmonic km (field formulation, stack.py),
     minus the spectral image on the charge pieces; x mirror added on the source side.  Pairs whose
     lateral gap exceeds gmax = min(Gmax, decay/|k_m|) are set to zero (an evanescent harmonic's
     kernel is analytic in a strip of half-width |k_m|: it decays as exp(-|k_m| gap))."""
     k0 = line.k0
+    if Gmax is None:                           # the whole cell and its mirror: no pair is ever cut
+        Gmax = 1.05*2*xs.xmax.max()            # by the cutoff (a fixed 220 um dropped substrate
+                                               # coupling once the cell got wider, alpha / 3)
     gmax = Gmax if abs(km.real) < 1.5*np.sqrt(line.eps_bot.real)*k0 else min(Gmax, decay/abs(km.real))
     k, kw = spec_grid(line, km, gmax, kmax)
     air = S.Air(k, km, k0)
