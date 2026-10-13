@@ -429,7 +429,7 @@ def _path_m0(line, km, kmax=1.5e7):
     return np.r_[-k[::-1], k], np.r_[w[::-1], w], np.r_[flip[::-1], flip]
 
 
-def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0):
+def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0, kref=None):
     """Reflected-field interaction (pieces x pieces) for harmonic km (field formulation, stack.py),
     minus the spectral image on the charge pieces; x mirror added on the source side.  Pairs whose
     lateral gap exceeds gmax = min(Gmax, decay/|k_m|) are set to zero (an evanescent harmonic's
@@ -438,8 +438,12 @@ def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0):
     if Gmax is None:                           # the whole cell and its mirror: no pair is ever cut
         Gmax = 1.05*2*xs.xmax.max()            # by the cutoff (a fixed 220 um dropped substrate
                                                # coupling once the cell got wider, alpha / 3)
-    gmax = Gmax if abs(km.real) < 1.5*np.sqrt(line.eps_bot.real)*k0 else min(Gmax, decay/abs(km.real))
-    if COMPLEX_PATH and abs(km.real) < 1.5*np.sqrt(line.eps_bot.real)*k0:
+    # kref: |2 pi m / P| + k_Si (>= |k_m|) from harmonic_Z, never beta itself: a cutoff or grid that
+    # moves with beta drops or adds pairs between two nearby builds (Z not smooth in beta; on the
+    # row 161 tee the m = 5 kernel was 98 % non-analytic -> Z0 30 instead of 48 ohm)
+    kref = abs(km.real) if kref is None else kref
+    gmax = Gmax if kref < 1.5*np.sqrt(line.eps_bot.real)*k0 else min(Gmax, decay/kref)
+    if COMPLEX_PATH and kref < 1.5*np.sqrt(line.eps_bot.real)*k0:
         k, kw, flip = _path_m0(line, km, kmax)
         R = S.stack_admittance(k, km, k0, line.layers, line.bottom, flip=flip)
     else:
@@ -517,9 +521,10 @@ def harmonic_Z(cell, xs, line, beta, Mc, Ks, pm=None, verbose=False):
     t0 = time.time()
     for m in range(-Mmax, Mmax + 1):
         km = beta + 2*np.pi*m/P
-        if abs(km.real) > Ks and abs(m) > Mc:
+        kref = abs(2*np.pi*m/P) + np.sqrt(line.eps_bot.real)*k0      # beta-independent choices
+        if kref > Ks and abs(m) > Mc:
             continue
-        X = spec_kernel(xs, line, km)
+        X = spec_kernel(xs, line, km, kref=kref)
         if abs(m) <= Mc:
             D = dyn_kernel(xs, km, k0)
             A = (D["d"] + XSIGN[comp][None, :]*D["x"])*same
