@@ -29,8 +29,11 @@ class Stack:
 
 
 class Solver:
-    def __init__(self, cell, line, Mc=8, Ks=3e6, verbose=True):
+    def __init__(self, cell, line, Mc=8, Ks=3e6, verbose=True, cache=None):
+        """cache: path prefix naming this cell, mesh and frequency; every Z(beta) is stored as
+        <cache>_n<beta/k0>.npy and reloaded instead of rebuilt (runs survive a restart)."""
         self.cell, self.line, self.Mc, self.Ks, self.v = cell, line, Mc, Ks, verbose
+        self.cache = cache
         self.F = K.Faces(cell)
         self.maps = K.basis_maps(cell, self.F)
         self.xs = K.XS(cell)
@@ -43,6 +46,22 @@ class Solver:
             print(*a, flush=True)
 
     def Z(self, beta):
+        if self.cache:
+            beta = complex(beta)
+            fn = f"{self.cache}_n{beta.real/self.line.k0:.9f}{beta.imag/self.line.k0:+.9f}j.npy"
+            try:
+                Z = np.load(fn)
+                if Z.shape[0] == self.cell.N:
+                    self.log(f"  Z({beta/self.line.k0:.5f} k0): from {fn}")
+                    return Z
+            except (OSError, ValueError):
+                pass
+            Z = self._Z(beta)
+            np.save(fn, Z)
+            return Z
+        return self._Z(beta)
+
+    def _Z(self, beta):
         t0 = time.time()
         Zs = K.static_Z(self.cell, self.F, self.maps, beta, self.line.w, self.line.K)
         t1 = time.time()
