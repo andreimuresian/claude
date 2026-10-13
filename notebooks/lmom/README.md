@@ -107,3 +107,43 @@ nearest copies are exact.
 Residual after the fix (insensitive to harmonics count, spectral cutoff, quadrature, cell
 length along the line): n +0.04 %, alpha +1.3 % (0.0007 dB/cm), Z0 +0.02 %.  A fixed bias of
 the plain line; it cancels in the tee - plain difference.
+
+## Step 3c: tee cell, first dataset row (row 161, 60 GHz)
+
+Row 161: α_final 3.11 dB/cm in the dataset (a typical row; row 49, 10.8 dB/cm, is an outlier).
+Run: `ROW=161 python run_tee_cell.py 60 {tee|plain} 1.5 12 4 10 <n guess> <cache prefix>`.
+
+**Mode finder (`Solver.solve_driven`).** The signal line is driven and the line mode is the
+zero of 1/h(β), h = yᵀ Z(β)⁻¹ y (Newton inside the local linear model of Z, rebuilt around each
+estimate; secant on the build-point fixed point).  No choice among the thousands of eigenvalues
+of the pencil.  Every Z(β) is cached on disk (a container restart costs one build).
+
+**Bugs found on the way** (each made the tee answer wrong while the plain line looked right):
+
+| bug | symptom | fix |
+|---|---|---|
+| z grading: a fine end next to a coarse end was not graded | row 49: one 16.7 µm cell at the slot ends | `grade` lays the smaller step first, no slivers |
+| fixed 220 µm lateral cutoff | row 161 plain α 0.020 instead of 0.058 (cell 223 µm wide) | cutoff covers the whole cell |
+| cutoff, k grid and harmonic set chosen from Re β | Z not analytic (m = 5: 98 %), α oscillating between passes, Z0 30 Ω | chosen from the harmonic index |
+| long-range harmonic on the real k axis | not analytic in β | complex path above the Si branch point |
+| k step ignored the piece width | aliases of 12 µm pieces ~1 µm away | dk = 2π/(4 gmax + 2 wmax) |
+| decay 25 in the evanescent cutoff | spurious poles beside the line mode: n 2.296 / 2.320, Z0 50 / 36 Ω | decay 150 |
+
+Cutoff convergence (tee, 60 GHz, PEC): decay 100 / 150 / 250 (one pass from 150): n 2.3077 /
+2.3113 / 2.3111, α 1.260 / 1.327 / 1.324 dB/cm, Z0 49.0 / 48.5 / 48.5 Ω.  Plain cell unchanged
+(n 1.98568, α 0.0584, Z0 42.49 Ω; 2D reference 1.9847, 0.0577, 42.2).
+
+**Row 161 against the dataset** (60 GHz):
+
+| | mom_cell | qs3d | dataset |
+|---|---|---|---|
+| n tee / plain | 1.164 | 1.165 | 1.136 |
+| Z0 tee (Ω) | 48.5 | 49.1 | 50.2 |
+| Δα substrate + radiation (PEC, tee − plain) | +1.27 | – | |
+| Δα ohmic (qs3d, on the COMSOL baseline) | +0.13 | +0.13 | |
+| Δα total | +1.40 | | +1.05 |
+| α_final = COMSOL baseline 2.06 + Δα | 3.46 | | 3.11 |
+
+n and Z0 agree with qs3d to 0.1 % and 1 %; the dataset's n is 2.4 % lower (COMSOL rib vs flat
+slab), its Z0 3 % higher.  α_final is 11 % above the dataset, the size of the expected offset
+(COMSOL baseline α ~10 % low).  Runtime: ~2 h per tee solve (N 3476, 4 cores, 2 builds per pass).
