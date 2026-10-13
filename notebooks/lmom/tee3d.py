@@ -22,24 +22,35 @@ import numpy as np
 
 
 def grade(L, h0, h1, hmax, growth=1.3):
-    """Breakpoints on [0, L]: step h0 at 0, h1 at L, growing by `growth` to hmax."""
-    a, b, sa, sb = [], [], 0.0, 0.0
-    ha, hb = h0, h1
+    """Breakpoints on [0, L]: step h0 at 0, h1 at L, growing by `growth` up to hmax.
+    Steps are laid from both ends, always the smaller next step first (so a fine end is graded
+    even when the other end is coarse); the remainder becomes whole middle steps and all steps
+    are then rescaled together to fill L exactly (no sliver cells)."""
+    a, b = [], []
+    ha, hb = min(h0, hmax), min(h1, hmax)
     while True:
-        if sa + sb + ha + hb > L:
+        if ha <= hb:
+            if sum(a) + sum(b) + ha > L*(1 + 1e-9):
+                break
+            a.append(ha); ha = min(ha*growth, hmax)
+        else:
+            if sum(a) + sum(b) + hb > L*(1 + 1e-9):
+                break
+            b.append(hb); hb = min(hb*growth, hmax)
+    if not a and not b:
+        return np.array([0.0, L])
+    steps = a + b[::-1]
+    rem = L - sum(steps)
+    hm = min(max(steps)*growth, hmax)                   # size of a middle step
+    m = int(np.floor(rem/hm + 0.5))
+    if m == 0 and rem > 0.5*min(ha, hb):                # most of one more step: add it
+        m, hm = 1, rem
+    while True:
+        steps = np.array(a + [hm]*m + b[::-1])
+        if steps.max()*L/steps.sum() <= hmax*(1 + 1e-9):
             break
-        a.append(ha); sa += ha; ha = min(ha*growth, hmax)
-        if sa + sb + hb > L:
-            break
-        b.append(hb); sb += hb; hb = min(hb*growth, hmax)
-    rem = L - sa - sb
-    if rem < 1e-9*L:
-        a[-1] += rem
-        steps = a + b[::-1]
-    else:
-        n = max(1, int(np.ceil(rem/hmax - 1e-9)))
-        steps = a + [rem/n]*n + b[::-1]
-    pts = np.r_[0, np.cumsum(steps)]
+        m += 1
+    pts = np.r_[0, np.cumsum(steps*L/steps.sum())]
     pts[-1] = L
     return pts
 

@@ -167,6 +167,37 @@ class Solver:
             o = int(np.argmax(cur))
             beta = b1 + mu[o]; J = vecs[:, o]
             b1 = beta*(1 - rel/2)
+        return self._finish(beta, J, D)
+
+    def solve_driven(self, n0, rel=1e-3, tol=2e-5, outer=5):
+        """Line mode as the zero of 1/h(beta), h = y^T Z(beta)^-1 y: the signal line is driven and
+        the propagation constant at which its response diverges is found (Newton, inside the local
+        linear model of Z, rebuilt around each new estimate until it moves < tol relative).
+        No choice among eigenvalues is involved.  The current is J = Z(beta)^-1 y at the zero."""
+        k0, y = self.line.k0, self.y
+        beta = complex(n0*k0)
+        for it in range(outer):
+            b1 = beta; b2 = b1*(1 + rel)
+            Z1, Z2 = self.Z(b1), self.Z(b2)
+            D = (Z2 - Z1)/(b2 - b1)
+            for _ in range(40):
+                lu = linalg.lu_factor(Z1 + (beta - b1)*D)
+                x = linalg.lu_solve(lu, y); xt = linalg.lu_solve(lu, y, trans=1)
+                step = -(y @ x)/(xt @ (D @ x))              # Newton on 1/h: beta += h/h', h' = -xt.D.x
+                beta = beta + step
+                if abs(step) < 1e-12*abs(beta):
+                    break
+            self.log(f"  pass {it}: built at n {b1.real/k0:.5f}{b1.imag/k0:+.5f}j -> n {beta.real/k0:.6f}"
+                     f"  alpha {-beta.imag*8.686/100:.5f} dB/cm")
+            if abs(beta - b1) < tol*abs(b1):
+                break
+        lu = linalg.lu_factor(Z1 + (beta - b1)*D)
+        J = linalg.lu_solve(lu, y)
+        J = linalg.lu_solve(lu, J)                          # one more inverse-iteration step
+        return self._finish(beta, J, D)
+
+    def _finish(self, beta, J, D):
+        k0 = self.line.k0
         self.D = D
         I = (self.y @ J)*np.exp(1j*beta*self.cell.P)          # probe bases are stored at z = P
         J = J/I

@@ -17,6 +17,6 @@ line = TS.Stack(f, L, bot, np.sqrt(28*43))
 cell = T.Cell(g, hmin=hmin, hmax=hmax, hz_min=hz0, hz_max=hz1)
 t0 = time.time()
 save = sys.argv[8] if len(sys.argv) > 8 else None
-r = TS.Solver(cell, line, cache=save).solve(n0)
+r = TS.Solver(cell, line, cache=save).solve_driven(n0)
 print(f"{fG:.0f} GHz {kind} mesh ({hmin*1e6:g}, {hmax*1e6:g}, {hz0*1e6:g}, {hz1*1e6:g}) um, N {cell.N}: "
       f"n {r['n']:.5f}  alpha {r['alpha']:.5f} dB/cm  Z {r['Z'].real:.3f} {r['Z'].imag:+.3f}j  ({time.time()-t0:.0f} s)", flush=True)
