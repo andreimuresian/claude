@@ -43,7 +43,7 @@ def curve(t):
     gs = sorted(g for (tt, g) in key if tt == t)
     return np.array(gs), np.array([key[(t, g)]["IL_dBcm"] for g in gs]), np.array([key[(t, g)]["VpiL_Vcm"] for g in gs])
 g40, il40, v40 = curve(40)
-G_star = float(np.interp(V_ref, v40[::-1], g40[::-1])) if v40.min() <= V_ref <= v40.max() else None
+G_star = float(np.interp(V_ref, v40, g40)) if v40.min() <= V_ref <= v40.max() else None
 N["G_star_40nm"] = G_star
 fig, (a1, a2) = plt.subplots(1, 2, figsize=(13, 4.8))
 for t in (0, 30, 40, 50):
