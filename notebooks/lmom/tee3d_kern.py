@@ -355,15 +355,17 @@ def dyn_kernel(xs, km, k0):
     return out
 
 
-def spec_grid(line, km, gmax, kmax=1.5e7):
+def spec_grid(line, km, gmax, kmax=1.5e7, wmax=0.0):
     """k grid for harmonic km: m = 0 (|k_m| near the silicon light line): Gauss pieces clustered at
-    the branch point up to 4 k_Si (as fw.Line2D); then uniform with dk = pi/(2 gmax) up to kmax.
-    Uniform spacing: the aliases of a pair at lateral gap g < gmax lie at >= 3 gmax, where the
-    kernel of an evanescent harmonic is below exp(-75) (m = 0: alias period > 4 x the cell)."""
+    the branch point up to 4 k_Si (as fw.Line2D); then uniform with dk = 2 pi/(4 gmax + 2 wmax) up
+    to kmax.  Uniform spacing: two kept pieces (gap < gmax, widths <= wmax) have points at most
+    gmax + 2 wmax apart, so their aliases lie >= 3 gmax away, where the kernel of an evanescent
+    harmonic is below exp(-75) (m = 0: alias period > 4 x the cell).  Without wmax the aliases of
+    wide pieces came within ~1 um for high harmonics (gmax 8 um, pieces 12 um)."""
     k0 = line.k0
     eb = line.eps_bot.real
     lng = abs(km.real) < 1.5*np.sqrt(eb)*k0              # m = 0: long-range kernel
-    dk = 2e3 if lng else np.pi/(2*gmax)
+    dk = 2e3 if lng else 2*np.pi/(4*gmax + 2*wmax)
     kb2 = eb*k0**2 - km.real**2
     ks, ws = [], []
     kstart = 0.0
@@ -447,7 +449,7 @@ def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0, kref=
         k, kw, flip = _path_m0(line, km, kmax)
         R = S.stack_admittance(k, km, k0, line.layers, line.bottom, flip=flip)
     else:
-        k, kw = spec_grid(line, km, gmax, kmax)
+        k, kw = spec_grid(line, km, gmax, kmax, wmax=np.max(xs.xmax - xs.xmin))
         R = S.stack_admittance(k, km, k0, line.layers, line.bottom, leaky=True)
     air = S.Air(k, km, k0)
     R = air.reflection(R)
