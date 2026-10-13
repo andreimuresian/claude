@@ -387,6 +387,48 @@ def spec_grid(line, km, gmax, kmax=1.5e7):
     return np.r_[-ku[:0:-1], ku], np.r_[wu_[:0:-1], wu_]
 
 
+# long-range harmonic on a complex k path (analytic in beta); False: real axis with the
+# improper sheet below the branch point (not analytic: wrong Z0 and alpha for leaky tee modes)
+COMPLEX_PATH = True
+
+
+def _path_m0(line, km, kmax=1.5e7):
+    """k path for the long-range harmonic (|k_m| below the silicon branch point), as an analytic
+    function of k_m: t on the real axis (Gauss pieces clustered at Re k_b, then uniform), mapped
+    to k = t + j A sin(pi t / k4) on [0, k4] (odd in t), A > Im k_b: the path passes above the
+    branch point k_b = sqrt(eps_b k0^2 - k_m^2), as the real axis does for a real k_m.  On it the
+    bottom wave is continued from the proper sheet at |t| = k4; flip marks where that continuation
+    is on the other sheet.  Returns k, weights (dk = k'(t) dt), flip."""
+    k0 = line.k0
+    eb = line.eps_bot
+    kb = np.sqrt(eb*k0**2 - km**2 + 0j)
+    kb = kb if kb.real > 0 else -kb
+    A = 2*max(kb.imag, 0.0) + 0.03*kb.real
+    k4 = 4*np.sqrt(eb.real)*k0
+    u, wu = np.polynomial.legendre.leggauss(160); u, wu = 0.5*(u + 1), 0.5*wu
+    t0 = min(kb.real, 0.95*k4)
+    t = np.r_[t0*(1 - (1 - u)**2), t0 + (k4 - t0)*u**2]
+    wt = np.r_[t0*2*(1 - u)*wu, (k4 - t0)*2*u*wu]
+    k = t + 1j*A*np.sin(np.pi*t/k4)
+    dk = 1 + 1j*A*np.pi/k4*np.cos(np.pi*t/k4)
+    w = wt*dk
+    dk_u = 2e3
+    n = int(np.ceil((kmax - k4)/dk_u))
+    ku = k4 + dk_u*np.arange(n + 1)
+    wu_ = np.full(n + 1, dk_u); wu_[0] = wu_[-1] = dk_u/2
+    k = np.r_[k, ku]; w = np.r_[w, wu_]
+    # continuation of lam = sqrt(k^2 + k_m^2 - eps_b k0^2) (down wave, proper: Re lam > 0) inward
+    L = np.sqrt(k**2 + km**2 - eb*k0**2 + 0j)
+    L = np.where(L.real < 0, -L, L)
+    flip = np.zeros(len(k), bool)
+    prev = L[-1]
+    for i in range(len(k) - 1, -1, -1):
+        s = 1 if abs(L[i] - prev) <= abs(-L[i] - prev) else -1
+        flip[i] = s < 0
+        prev = s*L[i]
+    return np.r_[-k[::-1], k], np.r_[w[::-1], w], np.r_[flip[::-1], flip]
+
+
 def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0):
     """Reflected-field interaction (pieces x pieces) for harmonic km (field formulation, stack.py),
     minus the spectral image on the charge pieces; x mirror added on the source side.  Pairs whose
@@ -397,9 +439,14 @@ def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0):
         Gmax = 1.05*2*xs.xmax.max()            # by the cutoff (a fixed 220 um dropped substrate
                                                # coupling once the cell got wider, alpha / 3)
     gmax = Gmax if abs(km.real) < 1.5*np.sqrt(line.eps_bot.real)*k0 else min(Gmax, decay/abs(km.real))
-    k, kw = spec_grid(line, km, gmax, kmax)
+    if COMPLEX_PATH and abs(km.real) < 1.5*np.sqrt(line.eps_bot.real)*k0:
+        k, kw, flip = _path_m0(line, km, kmax)
+        R = S.stack_admittance(k, km, k0, line.layers, line.bottom, flip=flip)
+    else:
+        k, kw = spec_grid(line, km, gmax, kmax)
+        R = S.stack_admittance(k, km, k0, line.layers, line.bottom, leaky=True)
     air = S.Air(k, km, k0)
-    R = air.reflection(S.stack_admittance(k, km, k0, line.layers, line.bottom, leaky=True))
+    R = air.reflection(R)
     ky = air.ky
     Dc = [air.sheet_down(J)[0] for J in ((1, 0, 0), (0, 1, 0), (0, 0, 1))]
     M3 = np.stack([air.up_field((R @ d[..., None])[..., 0]) for d in Dc], -1)      # (Nk, obs, src)

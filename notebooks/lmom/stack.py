@@ -40,7 +40,7 @@ def A_matrix(kx, beta, k0, eps):
     return A
 
 
-def modes(kx, beta, k0, eps, outgoing=None):
+def modes(kx, beta, k0, eps, outgoing=None, flip=None):
     """Eigen-split of a homogeneous layer: (lam_up, V_up, lam_dn, V_dn), V (..., 4, 2).
     Up: Re(lam) < 0, or Re(lam) = 0 and Im(lam) < 0 (k_y = j lam with Im k_y <= 0): the proper
     (decaying) choice.  outgoing (bool mask over kx): there, classify by the direction of phase
@@ -50,6 +50,8 @@ def modes(kx, beta, k0, eps, outgoing=None):
     key = lam.real + 1e-9*np.abs(lam)*np.sign(lam.imag)          # tie-break for lossless waves
     if outgoing is not None:
         key = np.where(np.asarray(outgoing)[..., None], lam.imag, key)       # up first: smaller Im
+    if flip is not None:                                          # other sheet: swap up and down
+        key = np.where(np.asarray(flip)[..., None], -key, key)
     order = np.argsort(key, axis=-1)
     lam = np.take_along_axis(lam, order, -1)
     V = np.take_along_axis(V, order[..., None, :], -1)
@@ -61,10 +63,24 @@ def _adm(V):
     return V[..., 2:, :] @ np.linalg.inv(V[..., :2, :])
 
 
-def stack_admittance(kx, beta, k0, layers, bottom, leaky=False):
+def stack_admittance(kx, beta, k0, layers, bottom, leaky=False, flip=None):
     """Y_s at the top of `layers` (list of (eps, d) from the top down), bottom half-space eps.
-    leaky: outgoing (improper) bottom waves for |Re kx| below the bottom branch point."""
+    leaky: outgoing (improper) bottom waves for |Re kx| below the bottom branch point.
+    flip (bool mask over kx): bottom waves taken on the other sheet there (analytic continuation
+    along a complex kx path, see tee3d_kern.spec_grid); overrides leaky."""
     out = None
+    if flip is not None:
+        _, _, _, Vd = modes(kx, beta, k0, bottom, flip=flip)
+        Y = _adm(Vd)
+        for eps, d in layers[::-1]:
+            same = np.allclose(np.asarray(eps, complex), np.asarray(bottom, complex))
+            lu, Vu, ld, Vd = modes(kx, beta, k0, eps, flip=flip if same else None)
+            Pu = np.exp(lu*d)[..., None, :]*np.eye(2)
+            Pd = np.exp(-ld*d)[..., None, :]*np.eye(2)
+            VuE, VuH, VdE, VdH = Vu[..., :2, :], Vu[..., 2:, :], Vd[..., :2, :], Vd[..., 2:, :]
+            Q = -np.linalg.solve(VuH - Y @ VuE, (VdH - Y @ VdE) @ Pd)
+            Y = (VuH @ Pu @ Q + VdH) @ np.linalg.inv(VuE @ Pu @ Q + VdE)
+        return Y
     if leaky:
         kb2 = (np.real(bottom[0])*k0**2 - np.real(beta)**2)
         out = np.abs(np.real(kx)) < np.sqrt(max(kb2, 0.0))
