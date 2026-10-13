@@ -431,7 +431,7 @@ def _path_m0(line, km, kmax=1.5e7):
     return np.r_[-k[::-1], k], np.r_[w[::-1], w], np.r_[flip[::-1], flip]
 
 
-def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=25.0, kref=None):
+def spec_kernel(xs, line, km, sym=True, Gmax=None, kmax=1.5e7, decay=150.0, kref=None):
     """Reflected-field interaction (pieces x pieces) for harmonic km (field formulation, stack.py),
     minus the spectral image on the charge pieces; x mirror added on the source side.  Pairs whose
     lateral gap exceeds gmax = min(Gmax, decay/|k_m|) are set to zero (an evanescent harmonic's
