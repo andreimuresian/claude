@@ -1,9 +1,10 @@
-"""mom_cell (general periodic code), row 49, PEC: tee cell or plain cell on the same mesh settings.
-usage: python run_tee_cell.py f_GHz {tee|plain} hmin_um hmax_um hz_min_um hz_max_um n_guess"""
-import sys, time
+"""mom_cell (general periodic code), one dataset row, PEC: tee cell or plain cell on the same mesh settings.
+usage: python run_tee_cell.py f_GHz {tee|plain} hmin_um hmax_um hz_min_um hz_max_um n_guess [save_prefix]
+Dataset row: environment variable ROW (default 49)."""
+import os, sys, time
 import numpy as np, pandas as pd
 import stack as S, tee3d as T, tee3d_solve as TS
-d = pd.read_excel("../mom/data/EVALUATED_FULL_LHS_DATASET.xlsx").loc[49]
+d = pd.read_excel("../mom/data/EVALUATED_FULL_LHS_DATASET.xlsx").loc[int(os.environ.get("ROW", 49))]
 fG, kind = float(sys.argv[1]), sys.argv[2]
 hmin, hmax, hz0, hz1 = (float(v)*1e-6 for v in sys.argv[3:7])
 n0 = float(sys.argv[7])
