@@ -73,6 +73,15 @@ as "X does not affect Y when …".
 over-etch) must be quantified through to the simulated parameter (Δn_g), or
 left out.
 
+**Picture first, then equations.** Every concept gets a mental image before
+its maths: a physical example, an analogy or an illustration (for crosstalk:
+the truck dropping balls, where the ones rolling with it pile up and the ones
+rolling back form a queue). The derivation then makes the picture precise. A
+formula without a picture is superficial understanding, and a picture without
+its limits is a guess, so each analogy states where it stops being true. Depth
+is chosen per topic: full derivation where the result is presented or drives
+a decision; a correct picture is enough elsewhere.
+
 **Claude explains, not only delivers.** When Claude introduces a formula or a
 method, it states where it comes from, what it assumes and how to check it.
 When I cannot follow, I ask until I can, before using it.
