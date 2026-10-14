@@ -174,18 +174,24 @@ class Solver:
             b1 = beta*(1 - rel/2)
         return self._finish(beta, J, D)
 
-    def solve_driven(self, n0, rel=1e-3, tol=2e-5, outer=8):
+    def solve_driven(self, n0, rel=1e-3, tol=1e-3, outer=6):
         """Line mode as the zero of 1/h(beta), h = y^T Z(beta)^-1 y: the signal line is driven and
-        the propagation constant at which its response diverges is found (Newton, inside the local
-        linear model of Z, rebuilt around each new estimate until it moves < tol relative).
-        No choice among eigenvalues is involved.  The current is J = Z(beta)^-1 y at the zero."""
+        the propagation constant at which its response diverges is found (Newton inside the local
+        linear model Z(b1) + (beta - b1) D).  No choice among eigenvalues is involved.
+        Pass 0 builds Z at two betas (D by difference); later passes build Z once at the new
+        estimate and keep D (Z is analytic and D varies slowly).  Stops when a pass moves the
+        estimate by < tol relative: the error of the linear model is second order in that move
+        (row 161: pass 0 moved 5e-3 and was off by 2e-4; pass 1 moves ~2e-4 -> error ~1e-7).
+        The current is J = Z(beta)^-1 y at the zero."""
         k0, y = self.line.k0, self.y
         beta = complex(n0*k0)
-        hist = []
+        D = None
         for it in range(outer):
-            b1 = beta; b2 = b1*(1 + rel)
-            Z1, Z2 = self.Z(b1), self.Z(b2)
-            D = (Z2 - Z1)/(b2 - b1)
+            b1 = beta
+            Z1 = self.Z(b1)
+            if D is None:
+                b2 = b1*(1 + rel)
+                D = (self.Z(b2) - Z1)/(b2 - b1)
             for _ in range(40):
                 lu = linalg.lu_factor(Z1 + (beta - b1)*D)
                 x = linalg.lu_solve(lu, y); xt = linalg.lu_solve(lu, y, trans=1)
@@ -197,20 +203,6 @@ class Solver:
                      f"  alpha {-beta.imag*8.686/100:.5f} dB/cm")
             if abs(beta - b1) < tol*abs(b1):
                 break
-            # Z is not exactly analytic in beta (first-order treatment of Im beta in the kernels), so
-            # the zero found depends a little on where Z was built: the answer is the fixed point
-            # build point = zero.  Plain repetition oscillates on Im beta (slope ~ -0.6, row 161);
-            # secant on the fixed-point map, real and imaginary parts separately.
-            hist.append((b1, beta))
-            if len(hist) >= 2:
-                (i0, o0), (i1, o1) = hist[-2], hist[-1]
-                nxt = []
-                for part in (np.real, np.imag):
-                    di = part(i1) - part(i0)
-                    sl = (part(o1) - part(o0))/di if abs(di) > 1e-14*abs(b1) else 0.0
-                    sl = sl if -0.95 < sl < 0.95 else 0.0
-                    nxt.append((part(o1) - sl*part(i1))/(1 - sl))
-                beta = nxt[0] + 1j*nxt[1]
         lu = linalg.lu_factor(Z1 + (beta - b1)*D)
         J = linalg.lu_solve(lu, y)
         J = linalg.lu_solve(lu, J)                          # one more inverse-iteration step
