@@ -214,7 +214,43 @@ $\partial I_1/\partial t$:
   **opposes** the aggressor's current, so it flows backwards. It is positive
   at the near end and negative at the far end.
 
-Hence, before any calculation:
+**Why both directions, and why these signs.** Look at one slice of the victim,
+at position $z$. To its left the victim continues to the near end, to its
+right to the far end. A wave leaving the slice in either direction sees the
+line's characteristic impedance, so each side behaves as a resistor $Z_c$
+(figure below; we assume the ends do not reflect, A4 removes that assumption).
+
+![Shunt vs series source](coupled/injection.png)
+
+*(a) Capacitive: a current source in shunt.* The current
+$I = C_m\,dz\,\partial V_1/\partial t$ is injected **into the node**. Both
+halves of the line hang from that one node, so they see **the same voltage**.
+Kirchhoff's current law splits the current between the two $Z_c$ in parallel:
+
+$$
+V = I\,\frac{Z_c}{2}, \qquad V_{\text{to near end}} = V_{\text{to far end}} = \frac{Z_c}{2}\,I .
+$$
+
+Two equal waves leave the slice, one each way, with the **same sign**: there
+is only one node voltage to share.
+
+*(b) Inductive: a voltage source in series.* The electromotive force
+$E = L_m\,dz\,\partial I_1/\partial t$ is induced **along** the victim, so it
+sits in series, between the left and right halves. Now there is one loop and
+one current through both $Z_c$, and Kirchhoff's voltage law gives
+
+$$
+V_{\text{near}} - V_{\text{far}} = E, \qquad V_{\text{near}} = +\frac{E}{2}, \quad V_{\text{far}} = -\frac{E}{2} .
+$$
+
+Two equal waves again, but with **opposite signs**: a series source raises
+one side and lowers the other. Which side is positive is set by Lenz's law:
+the induced current opposes the aggressor's, which here makes the near-end
+side positive.
+
+Adding the two sources slice by slice:
+
+
 
 $$
 \text{NEXT} \propto k_C + k_L, \qquad \text{FEXT} \propto (k_C - k_L)\times\text{length}.
