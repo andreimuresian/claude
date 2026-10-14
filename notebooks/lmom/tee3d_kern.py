@@ -289,17 +289,22 @@ def _wsplit(maps, c, nf, N):
     return [sparse.csr_matrix((np.where(w == f, v, 0.0), (r, cc)), shape=(3*nf, N)) for f in (False, True)]
 
 
-def _static_chunks(args):
-    F, maps, N, P, K, chunks, near = args
+_SCTX = {}
+
+
+def _static_chunks(chunks):
+    """Worker: near-image buckets of the obs-face chunks, added (under a lock) into the shared
+    basis-level arrays A[p], Phi[p] (context in _SCTX, inherited by fork)."""
+    F, maps, N, P, K, near = (_SCTX[k] for k in ("F", "maps", "N", "P", "K", "near"))
+    A, Phi, lock, p0 = _SCTX["A"], _SCTX["Phi"], _SCTX["lock"], _SCTX["p0"]
     nf = F.n
     W = [_wsplit(maps, c, nf, N) for c in range(4)]
-    A = {p: np.zeros((N, N)) for p in range(-2*near - 1, 2*near + 2)}
-    Phi = {p: np.zeros((N, N)) for p in A}
     for a0, a1 in chunks:
         rs = slice(3*a0, 3*a1)
         B = {mir: _near_buckets(F, P, mir, a0, a1, near) for mir in MIRRORS}
         qs = set().union(*[set(b) for b in B.values()])
         z = lambda mir, q: B[mir].get(q, 0.0)
+        adds = []
         for c in range(4):
             for q in qs:
                 if c < 3:
@@ -317,8 +322,11 @@ def _static_chunks(args):
                     for b in (0, 1):                   # src wrapped: exp(+j beta P)
                         if W[c][b].nnz == 0:
                             continue
-                        tgt[q + a - b][rows] += Oc.T @ (W[c][b].T @ M.T).T
-    return A, Phi
+                        adds.append((tgt, q + a - b + p0, rows, Oc.T @ (W[c][b].T @ M.T).T))
+        with lock:
+            for tgt, ip, rows, blk in adds:
+                tgt[ip][rows] += blk
+    return len(chunks)
 
 
 class StaticCache:
@@ -332,15 +340,21 @@ class StaticCache:
         self.cell, self.F, self.maps, self.K, self.near = cell, F, maps, K, near
         N, nf, P = cell.N, F.n, cell.P
         allc = [(a0, min(nf, a0 + chunk)) for a0 in range(0, nf, chunk)]
-        parts = [allc[i::workers] for i in range(workers)]
-        args = [(F, maps, N, P, K, pc, near) for pc in parts if pc]
+        p0 = 2*near + 1                                # p = -p0 .. p0
+        npp = 2*p0 + 1
+        ctx = mp.get_context("fork")
+        # one shared copy of the result (each worker holding its own ran out of memory at N 3990)
+        bufA = ctx.RawArray("d", npp*N*N); bufP = ctx.RawArray("d", npp*N*N)
+        A = np.frombuffer(bufA).reshape(npp, N, N); Phi = np.frombuffer(bufP).reshape(npp, N, N)
+        _SCTX.update(F=F, maps=maps, N=N, P=P, K=K, near=near, A=A, Phi=Phi, lock=ctx.Lock(), p0=p0)
         if workers > 1:
-            with mp.get_context("fork").Pool(len(args)) as pool:
-                res = pool.map(_static_chunks, args)
+            with ctx.Pool(workers) as pool:
+                pool.map(_static_chunks, [[c] for c in allc])
         else:
-            res = [_static_chunks(a) for a in args]
-        self.A = {p: sum(r[0][p] for r in res) for p in res[0][0]}
-        self.Phi = {p: sum(r[1][p] for r in res) for p in res[0][1]}
+            _static_chunks(allc)
+        self.A = {p: A[p + p0] for p in range(-p0, p0 + 1)}
+        self.Phi = {p: Phi[p + p0] for p in range(-p0, p0 + 1)}
+        _SCTX.clear()
         # tail: monopole moments of each face mapped to the bases
         mom = np.stack([F.area, F.area/2, F.area/2], -1).ravel()
         S = sparse.csr_matrix((np.ones(3*nf), (np.repeat(np.arange(nf), 3), np.arange(3*nf))), shape=(nf, 3*nf))
