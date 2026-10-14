@@ -179,7 +179,8 @@ class Solver:
         the propagation constant at which its response diverges is found (Newton inside the local
         linear model Z(b1) + (beta - b1) D).  No choice among eigenvalues is involved.
         Pass 0 builds Z at two betas (D by difference); later passes build Z once at the new
-        estimate and keep D (Z is analytic and D varies slowly).  Stops when a pass moves the
+        estimate and keep D (Z is analytic and D varies slowly); D is rebuilt at the last point
+        for Z0.  Stops when a pass moves the
         estimate by < tol relative: the error of the linear model is second order in that move
         (row 161: pass 0 moved 5e-3 and was off by 2e-4; pass 1 moves ~2e-4 -> error ~1e-7).
         The current is J = Z(beta)^-1 y at the zero."""
@@ -203,6 +204,11 @@ class Solver:
                      f"  alpha {-beta.imag*8.686/100:.5f} dB/cm")
             if abs(beta - b1) < tol*abs(b1):
                 break
+        if it > 0:
+            # D kept from pass 0 finds the zero (Z1 is built next to it) but Z0 needs dZ/dbeta at
+            # the zero itself: with D from pass 0, Z0 was off by 4 % (row 161 plain, 40.8 vs 42.5 ohm)
+            b2 = b1*(1 + rel)
+            D = (self.Z(b2) - Z1)/(b2 - b1)
         lu = linalg.lu_factor(Z1 + (beta - b1)*D)
         J = linalg.lu_solve(lu, y)
         J = linalg.lu_solve(lu, J)                          # one more inverse-iteration step
