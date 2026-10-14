@@ -5,6 +5,30 @@ computes, element by element: SRC, the TL line (EL_k), LOAD, the relays and the
 Compound around them. It then compares the result, port by port, with the
 native INTERCONNECT Traveling Wave Electrode (TW block).
 
+## Abbreviations and terms
+
+| Term | Meaning |
+|---|---|
+| TL | transmission line |
+| TW | travelling wave: the native INTERCONNECT "Traveling Wave Electrode" element |
+| RF | radio frequency: here, the electrical microwave signal on the electrode |
+| EO | electro-optic |
+| DC | direct current, i.e. zero frequency |
+| EMF | electromotive force: the open-circuit voltage of an ideal source (§6.1) |
+| Thevenin source | an ideal voltage source (the EMF) in series with an internal impedance Zs (§6.1) |
+| SRC, LOAD, EL_k, BEND_k | names of the scripted elements: source, termination, electrode line k, bend k |
+| OM | Optical Modulator, the INTERCONNECT element that turns V_mod into optical phase |
+| ENA | the INTERCONNECT electrical Network Analyzer element (named after the Keysight ENA instrument family) |
+| NRZ | non-return-to-zero: the pulse generator that drives the eye simulations |
+| LSF | Lumerical Script File, the scripting language of INTERCONNECT |
+| GUI | graphical user interface |
+| FIR | finite impulse response: the digital filter INTERCONNECT builds from each S-parameter table |
+| ABCD | the transmission (chain) matrix of a two-port: V₁ = A·V₂ + B·I₂, I₁ = C·V₂ + D·I₂ |
+| CST | CST Studio Suite, the electromagnetic simulator the line tables come from |
+| S-matrix | scattering matrix: leaving waves = S × incident waves (§2) |
+| R0 | reference impedance of the S-matrices (50 Ω) |
+
+
 Read `tw_electrode_derivation.md` first. That note derives the **physics**,
 H(f) = V_mod/V_s for one line between Zs and Zt. Its formula is our Python
 model (`physics.eo_transfer`). It is not the native block's internal
@@ -52,7 +76,7 @@ the same maths also covers.
 
 | Element | Script | Ports | Role in the maths |
 |---|---|---|---|
-| SRC | `source_setup.lsf` | port 1, port 2 (bidirectional) | Thevenin source: EMF behind Zs (§6.1) |
+| SRC | `source_setup.lsf` | port 1, port 2 (bidirectional) | Thevenin source: an ideal voltage (the EMF) in series with Zs (§6.1) |
 | EL_k (TL line) | `tl_element_setup.lsf` | port 1, port 2 (bidirectional); modulation, modulation 2, far end (outputs) | exact line S-matrix (§3) + exact overlap integral (§4–5) |
 | BEND_k | same script, `modulating = 0` | port 1, port 2 | line with its own table, no integral |
 | TL electrode (bent build) | `tl_electrode_setup.lsf` | as EL_k | all sections and bends in one element (§7) |
@@ -201,6 +225,33 @@ So EL_k stores, for each frequency:
 ## 6. Source, load, and the network solve
 
 ### 6.1 SRC: a Thevenin source as a two-port
+
+**What a Thevenin source is.** Thevenin's theorem says that any linear
+circuit, seen from two of its terminals, behaves exactly like one ideal
+voltage source in series with one impedance. A real driver (an amplifier
+output, an instrument port) is therefore modelled as:
+
+- an **ideal voltage source** of value V_emf, which keeps its voltage
+  whatever current flows. V_emf is called the **EMF**, electromotive force.
+  The name is historical: it is a voltage, in volts, not a force. Physically
+  it is the voltage the driver shows with nothing connected (open circuit),
+  because then no current flows and nothing drops across Zs;
+- in series with the **internal impedance Zs**, which accounts for the fact
+  that a real driver's terminal voltage falls when it delivers current.
+
+Its terminal equation is therefore
+
+    V = V_emf − Zs·I
+
+where V is the terminal voltage and I is the current delivered. For example:
+
+- **open circuit** (I = 0): V = V_emf;
+- **short circuit** (V = 0): I = V_emf/Zs;
+- **driving a load Z**: V = V_emf·Z/(Zs + Z), the voltage divider.
+
+With Z = Zs, the load receives V_emf/2. That is why a matched 50 Ω
+instrument "set to 1 V" into 50 Ω has an EMF of 2 V.
+
 
 The physical driver is an EMF V_emf behind Zs. INTERCONNECT drives with
 waves, so SRC translates between the two:
