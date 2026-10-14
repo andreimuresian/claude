@@ -146,4 +146,16 @@ Cutoff convergence (tee, 60 GHz, PEC): decay 100 / 150 / 250 (one pass from 150)
 
 n and Z0 agree with qs3d to 0.1 % and 1 %; the dataset's n is 2.4 % lower (COMSOL rib vs flat
 slab), its Z0 3 % higher.  α_final is 11 % above the dataset, the size of the expected offset
-(COMSOL baseline α ~10 % low).  Runtime: ~2 h per tee solve (N 3476, 4 cores, 2 builds per pass).
+(COMSOL baseline α ~10 % low).
+
+**Speed-up** (same matrices to 1e-14; row 161, 4 cores):
+
+| | before | now |
+|---|---|---|
+| static part per Z build | 577 s | 13–16 s, after a 180 s precompute per geometry (`StaticCache`: near images stored per Bloch phase exp(−jβpP), p = −3..3) |
+| harmonic part per Z build | 617 s | 115–125 s (dyn kernel tabulated in ρ; harmonics over 4 processes, one BLAS thread each) |
+| builds per solve | 4–10 (2 per pass, stop on 2e-5) | 4 (2, then 1 per pass with D kept, stop on a 1e-3 move; D rebuilt at the end for Z0) |
+| tee + plain, one geometry | ~2 h | **16.5 min** (tee 738 s, plain 248 s) |
+
+Fast run, row 161: tee n 2.31130, α 1.329 dB/cm, Z0 48.4 Ω; plain n 1.98568, α 0.0583, Z0 42.52
+(converged reference: 2.3113, 1.327, 48.5; 1.98568, 0.0584, 42.49).
