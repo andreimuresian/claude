@@ -159,3 +159,24 @@ slab), its Z0 3 % higher.  α_final is 11 % above the dataset, the size of the e
 
 Fast run, row 161: tee n 2.31130, α 1.329 dB/cm, Z0 48.4 Ω; plain n 1.98568, α 0.0583, Z0 42.52
 (converged reference: 2.3113, 1.327, 48.5; 1.98568, 0.0584, 42.49).
+
+## Step 3d: row 49 (large tee) - diagnosis in progress
+
+Row 49 (L2 = 166.6 µm, 8.9 µm outer strip) fails with the silicon stack: from CST's n the
+solver goes to n 2.53, α 3.8 dB/cm at 20 GHz (CST: n ≈ 2.63, α 0.003; qs3d 2.618); the mode
+carries 55 % net current (signal minus ground return; plain line 1.7 %).
+
+| check | result |
+|---|---|
+| finer z mesh (hz 30 → 10 µm) | same answer |
+| cell origin shifted by P/2 | same answer (cell boundary handling is fine) |
+| plain line on the tee's graded z mesh | identical to the uniform mesh (n 1.94107, net 1.67 %) |
+| long slot 120 / 150 / 166.6 µm | n −1.6 / −2.7 / −3.4 % vs qs3d, α 1.9 / 3.4 / 3.8 dB/cm: grows smoothly |
+| in air, from n 1.35 (trust-region finder) | n 1.3650, α 0 (qs3d in vacuum 1.348); Z0 113 vs 97.6 Ω |
+| in air, from n 1.3 (unlimited Newton) | jumped to a neighbouring mode, 2.647 → trust region added |
+| uniform ε = 4 below the metal | plain 1.4884 (qs3d 1.4889); tee n 2.0526 (qs3d 2.0041, +2.4 %), Z0 89.7 vs 65.7 Ω, α 0 |
+
+So the slot geometry itself is mis-modelled on large tees (too much L, too little C, growing with
+the substrate permittivity), even without leakage; on silicon this turns the mode into a lossy
+one. Row 161 (short slot) is much less affected, but its 20 GHz PEC α (0.65 dB/cm, vs 1.33 at
+60 GHz) shows its α is also inflated.  Next: mesh refinement in air.
