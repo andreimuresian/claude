@@ -174,7 +174,7 @@ class Solver:
             b1 = beta*(1 - rel/2)
         return self._finish(beta, J, D)
 
-    def solve_driven(self, n0, rel=1e-3, tol=1e-3, outer=6):
+    def solve_driven(self, n0, rel=1e-3, tol=1e-3, outer=10, trust=5e-3):
         """Line mode as the zero of 1/h(beta), h = y^T Z(beta)^-1 y: the signal line is driven and
         the propagation constant at which its response diverges is found (Newton inside the local
         linear model Z(b1) + (beta - b1) D).  No choice among eigenvalues is involved.
@@ -183,6 +183,10 @@ class Solver:
         for Z0.  Stops when a pass moves the
         estimate by < tol relative: the error of the linear model is second order in that move
         (row 161: pass 0 moved 5e-3 and was off by 2e-4; pass 1 moves ~2e-4 -> error ~1e-7).
+        trust: a pass moves at most this far (relative) from where Z was built; the linear model is
+        not valid further, and on large tees (row 49) an unlimited step landed on a neighbouring
+        mode (air: 2.647 instead of 1.365, qs3d 1.348).  So the finder follows the zero nearest
+        the starting guess (from qs3d), rebuilding Z every trust step.
         The current is J = Z(beta)^-1 y at the zero."""
         k0, y = self.line.k0, self.y
         beta = complex(n0*k0)
@@ -200,6 +204,12 @@ class Solver:
                 beta = beta + step
                 if abs(step) < 1e-12*abs(beta):
                     break
+            mv = beta - b1
+            if abs(mv) > trust*abs(b1):                         # outside the trust region: clip
+                beta = b1 + mv*trust*abs(b1)/abs(mv)
+                self.log(f"  pass {it}: built at n {b1.real/k0:.5f}{b1.imag/k0:+.5f}j -> zero beyond the"
+                         f" trust region, step to n {beta.real/k0:.6f}{beta.imag/k0:+.6f}j")
+                continue
             self.log(f"  pass {it}: built at n {b1.real/k0:.5f}{b1.imag/k0:+.5f}j -> n {beta.real/k0:.6f}"
                      f"  alpha {-beta.imag*8.686/100:.5f} dB/cm")
             if abs(beta - b1) < tol*abs(b1):
