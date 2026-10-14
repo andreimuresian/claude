@@ -39,15 +39,16 @@ conjugate.
 
 ## 1. The circuit
 
-```
-         ┌──────────── ELECTRODE (Compound, "scattering data analysis" on) ─────────────┐
- drive ──┤relay├─ SRC(Zs) ─ EL_1 ─ [BEND_1 ─ EL_2 ─ …] ─ LOAD(Zt)                       │
- (ENA or │                   │ │                                                           │
-  NRZ)   │                   │ └ modulation 2 ──┤relay├── to OM of arm 2                   │
-         │                   └── modulation  ───┤relay├── to OM of arm 1                   │
-         │                   (last EL) far end ─┤relay├── to ENA input 2 / EYE_2           │
-         └──────────────────────────────────────────────────────────────────────────────────┘
-```
+![Scripted electrode circuit](scripted/circuit.png)
+
+'Scattering data analysis' is a property of the **Compound** (ELECTRODE), not
+of the elements inside it. Select the Compound at root level and look in its
+property list. The build sets it (`tl_schematic.py`, line 276) and logs
+whether it succeeded.
+
+The straight build has one EL. A bent electrode uses one 'TL electrode'
+element in its place (§7). An older build chained EL_1 – BEND_1 – EL_2, which
+the same maths also covers.
 
 | Element | Script | Ports | Role in the maths |
 |---|---|---|---|
