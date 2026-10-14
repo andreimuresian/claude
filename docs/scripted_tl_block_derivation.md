@@ -107,6 +107,16 @@ and, inverted,
 
     V = a + b,     I = (a − b)/R0
 
+![Waves vs voltages](scripted/waves.png)
+
+**Why INTERCONNECT uses waves.** A node voltage has no direction: it is set
+by both sides of the node at the same instant, so it cannot be the output of
+one element. A wave has a direction. Each element can then be run as a
+cause-and-effect filter that computes the waves it sends from the waves it
+receives. A bidirectional wire carries two sample streams, a in one direction
+and b in the other, and a reflection is simply a b. V and I are recovered
+afterwards as V = a + b and I = (a − b)/R0.
+
 An element is defined by **b = S·a**: the leaving waves are linear in the
 incident ones. INTERCONNECT only ever handles a and b. V and I are our own
 bookkeeping. R0 is arbitrary: it changes the numbers in S but not the physics,
@@ -262,6 +272,8 @@ waves, so SRC translates between the two:
 
 The driver (an ENA or an NRZ source, both matched at R0) sends a wave
 a_drv = V_emf/2 into port 1. This is the "EMF/2" of Step 0, point 5.
+
+![Thevenin's theorem on a divider](scripted/thevenin.png)
 
 **Proof that this is a Thevenin source.** At port 2, call a the wave going
 into the line and b the wave coming back from it. SRC gives
