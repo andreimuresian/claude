@@ -179,6 +179,24 @@ $$
 k_C = \frac{C_m}{C_g + C_m}, \qquad k_L = \frac{L_m}{L_s}.
 $$
 
+**Why these ratios.** Each is "off-diagonal over diagonal" of its matrix,
+$k_C = |C_{12}|/C_{11}$ and $k_L = L_{12}/L_{11}$, and each is the fraction
+of the aggressor's voltage that one mechanism puts on an open victim:
+
+- *Capacitive divider.* With the victim floating (no current), $C_m$ and
+  $C_g$ form a divider from $V_1$ to ground, so
+  $V_2/V_1 = C_m/(C_m + C_g) = k_C$.
+- *Transformer.* A current $I_1$ drops $j\omega L_s I_1$ along the aggressor
+  and induces $j\omega L_m I_1$ along the victim, so the ratio is
+  $L_m/L_s = k_L$.
+
+Both lie between 0 and 1, and with these definitions the homogeneous-medium
+identity of §1.6 gives exactly $k_L = k_C$. With $C_m/C_g$ instead it would
+not: $C_m/C_g = k_C/(1 - k_C)$. For weak coupling ($k \approx 10^{-3}$) the two
+choices differ by 0.1 %, but only $C_m/(C_g + C_m)$ is exact. For unequal lines
+the same idea becomes $k_L = L_{12}/\sqrt{L_{11}L_{22}}$ and
+$k_C = |C_{12}|/\sqrt{C_{11}C_{22}}$.
+
 ### 1.5 How each coupling produces near-end and far-end crosstalk
 
 ![Mechanism](coupled/mechanism.png)
