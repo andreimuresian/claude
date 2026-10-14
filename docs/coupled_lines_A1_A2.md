@@ -53,6 +53,15 @@ q_1 = C_{11}V_1 + C_{12}V_2, \qquad q_2 = C_{21}V_1 + C_{22}V_2
 \mathbf{q} = \mathbf{C}\,\mathbf{V}
 $$
 
+**What the indices mean.** Index 1 is the **signal conductor of line A**
+and index 2 the **signal conductor of line B**. $V_1$ and $V_2$ are their
+voltages measured from the grounds. All the ground conductors (left and right
+of each CPW, and any shared middle ground) are tied together and form the
+common reference at 0 V. They are not entries of the matrix: their charge is
+whatever balances the signals, $q_{\text{gnd}} = -(q_1 + q_2)$. So
+$C_{11}$, $C_{22}$ describe each signal against the grounds, and $C_{12}$,
+$C_{21}$ describe signal A against signal B.
+
 $\mathbf{C}$ is the **Maxwell capacitance matrix**. Its link to the circuit
 picture comes from writing the charge on conductor 1 as the sum of what sits
 on its capacitance to ground $C_g$ and on its capacitance to line 2, $C_m$:
