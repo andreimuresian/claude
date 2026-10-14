@@ -62,13 +62,44 @@ whatever balances the signals, $q_{\text{gnd}} = -(q_1 + q_2)$. So
 $C_{11}$, $C_{22}$ describe each signal against the grounds, and $C_{12}$,
 $C_{21}$ describe signal A against signal B.
 
-$\mathbf{C}$ is the **Maxwell capacitance matrix**. Its link to the circuit
-picture comes from writing the charge on conductor 1 as the sum of what sits
-on its capacitance to ground $C_g$ and on its capacitance to line 2, $C_m$:
+$\mathbf{C}$ is the **Maxwell capacitance matrix**. It is what a field solver
+returns, but its entries are not capacitors you could draw: $C_{12}$ is
+negative, and $C_{11}$ mixes two physical effects. The same information is
+easier to read as two ordinary, positive capacitors per unit length:
+
+- $C_g$, the **capacitance to ground**: between one signal conductor and the
+  grounds. It is charged by that line's own voltage, $V_1$.
+- $C_m$, the **mutual capacitance**: between the two signal conductors. It is
+  charged by the voltage **difference** $V_1 - V_2$.
+
+These are the capacitors in the circuit of §2.1. The charge on conductor 1 is
+the sum of the charges on the two capacitors it touches:
 
 $$
 q_1 = C_g V_1 + C_m (V_1 - V_2) = (C_g + C_m)\,V_1 - C_m V_2
 $$
+
+Comparing with $q_1 = C_{11}V_1 + C_{12}V_2$ gives the translation in both
+directions:
+
+$$
+C_{11} = C_g + C_m,\quad C_{12} = -C_m
+\qquad\Longleftrightarrow\qquad
+C_g = C_{11} + C_{12},\quad C_m = -C_{12}.
+$$
+
+**Why use $C_g$ and $C_m$ at all?** Nothing new is added: they are the same two
+numbers, rearranged. They are worth it for three reasons:
+
+1. **Circuit.** They are real, positive capacitors, so the $dz$ cell of §2.1
+   can be drawn and solved with Kirchhoff's laws (§2.3).
+2. **Physics.** Each has a single meaning. $C_g$ is the line's own capacitance
+   and is present without a neighbour. $C_m$ is purely the coupling: remove
+   line B and $C_m = 0$. With the Maxwell form, coupling also hides inside
+   $C_{11}$.
+3. **Modes.** In the even mode both signals are at the same voltage, so $C_m$
+   carries no charge and drops out. In the odd mode it sees $2V$ and counts
+   twice (§3). That is immediate with $C_m$, and hidden with $C_{12}$.
 
 so that
 
