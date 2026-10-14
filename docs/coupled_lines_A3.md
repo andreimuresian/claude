@@ -48,6 +48,59 @@ not), so a long enough line damps everything before the beat completes (§5).
 
 ## 2. The modes, formally
 
+### 2.0 Why look for waves that keep their shape
+
+*Picture: a chord on a piano.* A chord sounds complicated, but it is just a
+sum of single notes, and each note behaves very simply. If we know how each
+note behaves, we know the chord. The strategy here is the same: find the
+"single notes" of the pair, the patterns that travel in the simplest possible
+way, and build every other signal as a sum of them. This works because the
+equations are linear: the sum of two solutions is a solution.
+
+*"Shape" means the ratio $V_2/V_1$*, the pattern across the two lines. A
+pattern keeps its shape if, at every position, both line voltages are
+multiplied by the **same** number. Then their ratio never changes; only the
+overall size and phase do.
+
+*Why the exponential.* $\mathbf{V}(z) = \mathbf{V}_0\,e^{-\gamma z}$ multiplies
+both entries of $\mathbf{V}_0$ by the same number $e^{-\gamma z}$ at each $z$,
+so the ratio is the one of $\mathbf{V}_0$, everywhere. It is also the only
+function whose derivative is proportional to itself,
+$\frac{d}{dz}e^{-\gamma z} = -\gamma e^{-\gamma z}$, so derivatives turn into
+multiplications and the differential equation becomes algebra. The single
+line used exactly this: $V^+e^{-\gamma z}$.
+
+*Derivation.* Substitute $\mathbf{V} = \mathbf{V}_0 e^{-\gamma z}$ into
+$d^2\mathbf{V}/dz^2 = \mathbf{Z}\mathbf{Y}\mathbf{V}$. Differentiating twice
+gives $(-\gamma)^2 = \gamma^2$:
+
+$$
+\gamma^2\,\mathbf{V}_0\,e^{-\gamma z} = \mathbf{Z}\mathbf{Y}\,\mathbf{V}_0\,e^{-\gamma z}.
+$$
+
+$e^{-\gamma z}$ is never zero, so divide by it:
+
+$$
+\mathbf{Z}\mathbf{Y}\,\mathbf{V}_0 = \gamma^2\,\mathbf{V}_0
+\quad\Longleftrightarrow\quad
+\left(\mathbf{Z}\mathbf{Y} - \gamma^2\,\mathbf{1}\right)\mathbf{V}_0 = 0 .
+$$
+
+($\mathbf{1}$ is the identity matrix, needed to subtract a number from a
+matrix.) In words: applying $\mathbf{Z}\mathbf{Y}$ to the pattern must give
+back **the same pattern**, only scaled by $\gamma^2$. Most vectors get turned
+into a different direction by a matrix; the few that are only scaled are its
+**eigenvectors**, and the scale factors are its **eigenvalues**.
+
+*How many, and are they enough?* A non-zero $\mathbf{V}_0$ exists only if
+$\det(\mathbf{Z}\mathbf{Y} - \gamma^2\mathbf{1}) = 0$. For
+$\mathbf{Z}\mathbf{Y} = \begin{pmatrix} a & b \\ b & a \end{pmatrix}$ that is
+$(a - \gamma^2)^2 - b^2 = 0$, so $\gamma^2 = a \pm b$: exactly two modes.
+Each travels forwards and backwards ($e^{\mp\gamma z}$), giving four
+solutions, which is the number of conditions a pair of lines has (one at each
+of its four ends). So nothing is lost by looking only for shape-keeping waves:
+every possible signal is a sum of them.
+
 ### 2.1 Modes are eigenvectors
 
 From A2, a voltage pattern that travels along the line keeping its shape,
