@@ -16,7 +16,7 @@ g = dict(WS=d.WS*1e-6, GAP=d.GAP*1e-6, MTX=d.MTX*1e-6,
 f = fG*1e9
 L, bot = S.tfln_layers(0.46e-6 - d.ETCH_DEPTH*1e-6, 11.7 - 1j*2.5e-4/(2*np.pi*f*8.8541878128e-12))
 line = TS.Stack(f, L, bot, np.sqrt(28*43))
-cell = T.Cell(g, hmin=hmin, hmax=hmax, hz_min=hz0, hz_max=hz1)
+cell = T.Cell(g, hmin=hmin, hmax=hmax, hz_min=hz0, hz_max=hz1, shift=bool(int(os.environ.get("SHIFT", 0))))
 t0 = time.time()
 save = sys.argv[8] if len(sys.argv) > 8 else None
 r = TS.Solver(cell, line, cache=save).solve_driven(n0)

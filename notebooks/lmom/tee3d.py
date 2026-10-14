@@ -70,7 +70,9 @@ class Cell:
     """g: dict WS, GAP, MTX, W1, W2, L1, L2 (m).  Tee centred at z = P/2."""
 
     def __init__(self, g, hmin=0.4e-6, hmax=8e-6, hz_min=1e-6, hz_max=20e-6, P=200e-6, WG=70e-6,
-                 growth=1.3):
+                 growth=1.3, shift=False):
+        """shift: tee centred at z = 0 instead of P/2 (the same periodic line seen from another
+        cell origin: n and alpha must not change; a check of the cell-boundary handling)."""
         self.P = P
         WS, GAP, t = g["WS"], g["GAP"], g["MTX"]
         x_si, x_gi = WS/2, WS/2 + GAP
@@ -80,13 +82,15 @@ class Cell:
         xbr = [0.0, x_si, x_gi, x_go] + [v for v in (xb1, xb2) if x_gi < v < x_go]
         self.X = lines(xbr, hmin, hmax, coarse=(0.0,), growth=growth)
         self.Y = lines([0.0, t], hmin, hmax, growth=growth)
-        zc = P/2
-        zbr = [0.0, zc] + [zc - v/2 for v in (g["L1"], g["L2"]) if 0 < v < P]
-        zh = lines(zbr, hz_min, hz_max, coarse=(0.0,) + (() if any(0 < v < P for v in (g["L1"], g["L2"])) else (zc,)),
-                   growth=growth)
-        self.Zg = np.r_[zh, P - zh[-2::-1]]                                 # symmetric about the tee centre
+        zc = 0.0 if shift else P/2
+        far = P/2 if shift else 0.0                                       # midway between tees
+        has = any(0 < v < P for v in (g["L1"], g["L2"]))
+        ends = [v/2 if shift else zc - v/2 for v in (g["L1"], g["L2"]) if 0 < v < P]
+        zh = lines([0.0, P/2] + ends, hz_min, hz_max, coarse=(far,) + (() if has else (zc,)), growth=growth)
+        self.Zg = np.r_[zh, P - zh[-2::-1]]                                 # symmetric about z = P/2
         xm = 0.5*(self.X[1:] + self.X[:-1])
         zm = 0.5*(self.Zg[1:] + self.Zg[:-1]) - zc
+        zm = (zm + P/2) % P - P/2                                           # distance to the tee centre
         sig = xm < x_si
         gnd = (xm > x_gi) & (xm < x_go)
         slot = (((xm[:, None] > x_gi) & (xm[:, None] < xb1) & (np.abs(zm)[None, :] < g["L1"]/2))
