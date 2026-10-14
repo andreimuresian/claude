@@ -256,12 +256,32 @@ $$
 \text{NEXT} \propto k_C + k_L, \qquad \text{FEXT} \propto (k_C - k_L)\times\text{length}.
 $$
 
-The far-end contributions accumulate along the line, because each slice's
-forward-going part travels together with the edge. That is why FEXT grows with
-length while loss is small. The near-end contributions leave each slice
-backwards at different times, so NEXT stops growing once the line is longer
-than about a quarter wavelength (a quarter of the edge's duration for a
-pulse). A4 derives both.
+![Why FEXT accumulates and NEXT saturates](coupled/accumulate.png)
+
+**Why the far end piles up and the near end does not** (figure above).
+
+1. *Snapshots.* The aggressor's edge (grey) runs to the right. Every slice it
+   passes throws a small bit into the victim, half forwards and half
+   backwards.
+2. *Forward bits (red)* travel at the same speed as the edge. A bit thrown at
+   the start of the line is still riding next to the edge when the next slice
+   throws its bit, and the next. They stay on top of each other and pile up:
+   the red pulse gets **taller** with every slice crossed. At the far end you
+   see one pulse whose height grows with the length.
+3. *Backward bits (blue)* travel the other way, towards the near end. Each is
+   thrown at a later time and from further away, so they arrive at the near
+   end **one after another**, not on top of each other. More line gives a
+   **longer** blue tail, not a taller one. The near-end height grows only
+   while the line is shorter than about half the edge; after that it stays
+   fixed and the plateau just lasts longer.
+4. *The same for a sine wave.* Add one arrow per slice. At the far end all
+   arrows point the same way: a straight chain, so a longer line gives a
+   longer total. At the near end each arrow is turned a little more than the
+   previous one: the chain curls into a circle and never gets far from the
+   start. That is the frequency-domain version of the same saturation, and
+   why NEXT in your s4p levels off at about $-60$ dB.
+
+A4 derives both.
 
 ### 1.6 Why FEXT vanishes in a homogeneous dielectric
 
