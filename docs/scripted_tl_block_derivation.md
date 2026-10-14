@@ -329,6 +329,100 @@ at the OM. Relays have no S-matrix of their own and carry no physics.
 
 ---
 
+### 6.4 Worked example: the far-end voltage, derived by hand
+
+![Every wave, named](scripted/waves_named.png)
+
+**The names.** Every wave is named as seen from EL_1: **a** goes *into*
+EL_1, **b** comes *out* of it. Port 1 is the left end of the line (z = 0),
+port 2 the right end (z = L).
+
+| Symbol | What it is |
+|---|---|
+| a_drv | wave the driver sends into SRC. A matched driver of EMF V_emf sends V_emf/2 |
+| a1 | wave entering the line at z = 0 (what SRC sends on) |
+| b1 | wave leaving the line at z = 0, back towards SRC (the line's reflection + what comes back from the load) |
+| b2 | wave leaving the line at z = L, towards LOAD |
+| a2 | wave entering the line at z = L: what LOAD reflects back |
+| T_f = 2R0/(Zs+R0) | SRC's transmission: the part of a_drv that SRC passes on |
+| Γ_s = (Zs−R0)/(Zs+R0) | SRC's reflection of a wave coming back from the line |
+| Γ_L = (Zt−R0)/(Zt+R0) | LOAD's reflection |
+| S11, S21 | the line's reflection and transmission (§3) |
+
+**Step 1: write one equation per element.**
+
+    (SRC)    a1 = T_f·a_drv + Γ_s·b1          sends on the drive + reflects what comes back
+    (line)   b1 = S11·a1 + S21·a2             out at the left = reflection of a1 + transmission of a2
+    (line)   b2 = S21·a1 + S11·a2             out at the right = transmission of a1 + reflection of a2
+    (LOAD)   a2 = Γ_L·b2                      reflects what arrives
+
+Four equations, four unknowns (a1, b1, a2, b2). a_drv is given.
+
+**Step 2: the voltage we want.** At junction J2, V = (wave in) + (wave out):
+
+    V(L) = a2 + b2 = Γ_L·b2 + b2 = (1 + Γ_L)·b2
+
+**Step 3: the load end.** Put a2 = Γ_L·b2 into the third equation:
+
+    b2 = S21·a1 + S11·Γ_L·b2    ⇒    b2 = S21·a1 / (1 − S11·Γ_L)
+
+The denominator sums the bounces between the load and the line's own end
+reflection.
+
+**Step 4: what the source sees.** Put a2 into the second equation:
+
+    b1 = [ S11 + S21²·Γ_L/(1 − S11·Γ_L) ]·a1 = Γ_in·a1
+
+Γ_in is the reflection of the line-plus-load as seen from SRC.
+
+**Step 5: the source end.** Put b1 = Γ_in·a1 into the first equation:
+
+    a1 = T_f·a_drv + Γ_s·Γ_in·a1    ⇒    a1 = T_f·a_drv / (1 − Γ_s·Γ_in)
+
+The denominator sums the round trips between source and line.
+
+**Step 6: assemble.** With T_f·a_drv = V_emf·R0/(Zs+R0):
+
+    V(L) = V_emf · R0/(Zs+R0) · S21 · (1+Γ_L) / [ (1 − S11·Γ_L)(1 − Γ_s·Γ_in) ]
+           └ launched ┘  └ cross ┘ └ load ┘   └ bounces at load ┘└ bounces at source ┘
+
+**Check 1: DC.** The line is a wire: S11 = 0, S21 = 1, Γ_in = Γ_L. Then
+
+    V(L) = V_emf · R0/(Zs+R0) · (1+Γ_L)/(1 − Γ_s·Γ_L)
+
+With 1 + Γ_L = 2Zt/(Zt+R0) and 1 − Γ_s·Γ_L = 2R0(Zs+Zt)/[(Zs+R0)(Zt+R0)],
+everything with R0 cancels:
+
+    V(L) = V_emf · Zt/(Zs + Zt)
+
+the voltage divider. **R0 has disappeared**: it was bookkeeping.
+
+**Check 2: everything matched** (Zs = Zt = Zc = R0). Γ_s = Γ_L = S11 = 0,
+S21 = e^{−γL}:
+
+    V(L) = (V_emf/2)·e^{−γL}
+
+half the EMF (matched divider), attenuated and delayed by the line.
+
+**Check 3: numbers** (`docs/scripted/check_far_end.py`). Against the textbook
+formula V(L) = V(0)/(cosh γL + (Zc/Zt)·sinh γL), with V(0) from the divider on
+Zin, for Zs = 60 Ω, Zt = 55 Ω, Zc = 45 − 1j Ω, 0–100 GHz: equal to 1e-15.
+Changing R0 to 20 or 100 Ω changes V(L) by 1e-15.
+
+**How the element stores this.** EL_1's `far end` port holds two numbers per
+frequency, the far-end voltage per unit wave entering each port:
+
+    V(L) = S21·a1 + (1 + S11)·a2        (= b2 + a2, from the line equation)
+
+INTERCONNECT supplies a1 and a2 (Steps 3–5); the port multiplies and adds.
+**T1 and T2 are exactly the same idea for the modulation output:**
+V_mod = T1·a1 + T2·a2, where T1 is the modulation produced by a unit wave
+entering at port 1 alone and T2 by a unit wave entering at port 2 alone
+(§4–5). A wave entering at port 2 is the reflection from the load; it
+travels backwards, which is why T2 is small.
+
+---
+
 ## 7. Equality with the TW formula: the central result
 
 **Claim.** For one straight line, the modulation output of the scripted
