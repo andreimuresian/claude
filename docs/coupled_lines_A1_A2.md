@@ -127,12 +127,49 @@ $L_s$ is the self inductance and $L_m > 0$ the mutual inductance.
 
 ### 1.4 Losses, and the coupling coefficients
 
-- **$\mathbf{R}$**: each line's own conductor loss on the diagonal ($R_s$).
-  Where the two lines share return conductors, the return current of line 1
-  flows partly through resistance that is also in line 2's loop. That gives an
-  off-diagonal $R_m$. Physically it is a voltage drop along a shared ground.
-  It is the only coupling that survives at DC, and a likely reason why your
-  s4p shows $|S_{31}| \approx 3\times10^{-5}$ at 0 Hz. We will test that in A6.
+- **$\mathbf{R}$**: series resistance per unit length, the conductor loss.
+  The resistance of a line is the resistance of its whole current **loop**:
+  the signal conductor, where the current goes, plus the grounds, where it
+  comes back. Split the loop resistances into what is private to each line and
+  what is shared:
+
+  - $r_1$, $r_2$: the signal conductors, plus any ground carrying only that
+    line's return current;
+  - $R_g$: the part of the ground carrying the return currents of **both**
+    lines.
+
+  Kirchhoff's voltage law around loop 1 over $dz$ picks up $r_1 I_1$ in its
+  signal and $R_g (I_1 + I_2)$ in the shared ground, because the shared ground
+  carries both return currents:
+
+  $$
+  \Delta V_1 = \left[ r_1 I_1 + R_g (I_1 + I_2) \right] dz = \left[ (r_1 + R_g)\,I_1 + R_g\,I_2 \right] dz ,
+  $$
+
+  and likewise for loop 2. Hence
+
+  $$
+  \mathbf{R} = \begin{pmatrix} r_1 + R_g & R_g \\ R_g & r_2 + R_g \end{pmatrix}
+  \equiv \begin{pmatrix} R_{11} & R_m \\ R_m & R_{22} \end{pmatrix}.
+  $$
+
+  - **The diagonal** $R_{11}$, $R_{22}$ is each line's own loop resistance.
+    It is the same $R$ as in the single-line model, the conductor part of
+    the attenuation we measured: $\alpha \approx R/(2|Z_c|) + G|Z_c|/2$. For
+    identical lines $R_{11} = R_{22} = R_s$; for different lines they differ.
+  - **The off-diagonal** $R_m = R_g$ is the **mutual resistance**: only the
+    shared part of the return. It is *not* the victim's own resistance (that
+    is $R_{22}$). It couples because the aggressor's return current
+    $I_1$ produces a voltage drop $R_g I_1\,dz$ along a conductor that is also
+    in the victim's loop. The victim sees it as a small series source, in the
+    same place as the mutual-inductance term $j\omega L_m I_1$. This is called
+    **common-impedance coupling**.
+  - It is the only coupling that survives at DC (no $\omega$ in it), a likely
+    reason why your s4p shows $|S_{31}| \approx 3\times10^{-5}$ at 0 Hz. We will
+    test that in A6. At high frequency the skin and proximity effects
+    redistribute the currents, so $R_g$ is frequency dependent like $R_s$.
+  - The same structure holds for $\mathbf{L}$ (shared flux): for different
+    lines $L_{11} \neq L_{22}$, with $L_{12} = L_{21} = L_m$ by reciprocity.
 - **$\mathbf{G}$**: dielectric loss, with the same structure as $\mathbf{C}$.
   It is negligible here.
 
