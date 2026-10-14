@@ -29,11 +29,12 @@ class Stack:
 
 
 class Solver:
-    def __init__(self, cell, line, Mc=8, Ks=3e6, verbose=True, cache=None):
+    def __init__(self, cell, line, Mc=8, Ks=3e6, verbose=True, cache=None, workers=4):
         """cache: path prefix naming this cell, mesh and frequency; every Z(beta) is stored as
         <cache>_n<beta/k0>.npy and reloaded instead of rebuilt (runs survive a restart)."""
         self.cell, self.line, self.Mc, self.Ks, self.v = cell, line, Mc, Ks, verbose
         self.cache = cache
+        self.workers, self.sc = workers, None   # processes; StaticCache (built on the first Z)
         self.F = K.Faces(cell)
         self.maps = K.basis_maps(cell, self.F)
         self.xs = K.XS(cell)
@@ -63,9 +64,13 @@ class Solver:
 
     def _Z(self, beta):
         t0 = time.time()
-        Zs = K.static_Z(self.cell, self.F, self.maps, beta, self.line.w, self.line.K)
+        if self.sc is None:                    # near-image static part: once per geometry
+            self.sc = K.StaticCache(self.cell, self.F, self.maps, self.line.K, workers=self.workers)
+            self.log(f"  static part precomputed ({time.time() - t0:.0f} s)")
+            t0 = time.time()
+        Zs = self.sc.Z(beta, self.line.w)
         t1 = time.time()
-        Zh = K.harmonic_Z(self.cell, self.xs, self.line, beta, self.Mc, self.Ks, self.pm)
+        Zh = K.harmonic_Z(self.cell, self.xs, self.line, beta, self.Mc, self.Ks, self.pm, workers=self.workers)
         self.log(f"  Z({beta/self.line.k0:.5f} k0): static {t1 - t0:.0f} s, harmonics {time.time() - t1:.0f} s, N {self.cell.N}")
         return Zs + Zh
 

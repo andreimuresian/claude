@@ -256,6 +256,124 @@ def static_Z(cell, F, maps, beta, w, K, chunk=60, tgauss=0, near=1):
     return Z
 
 
+def _near_buckets(F, P, mir, a0, a1, near=1):
+    """Near-image part of static_face_matrix for obs faces a0:a1 without its Bloch phases:
+    {q: M_q (3 nc x 3 nf, real)}, the total phase of M_q being exp(-j beta q P)."""
+    m = MIRRORS[mir]
+    om = F.o*m; E1m = F.E1*m; E2m = F.E2*m; cm = F.c*m
+    nf = F.n
+    sel = (F.pf >= a0) & (F.pf < a1)
+    pts, pw, pf, pu1, pu2 = F.pts[sel], F.pw[sel], F.pf[sel], F.pu1[sel], F.pu2[sel]
+    dzc = F.c[a0:a1, None, 2] - cm[None, :, 2]
+    nst = np.round(dzc/P)
+    nsp = nst[pf - a0]
+    nc = a1 - a0
+    rowsO = np.concatenate([3*(pf - a0) + kk for kk in range(3)])
+    colsO = np.tile(np.arange(len(pf)), 3)
+    O = sparse.csr_matrix((np.concatenate([pw, pw*pu1, pw*pu2]), (rowsO, colsO)), shape=(3*nc, len(pf)))
+    out = {}
+    for s_ in range(-near, near + 1):
+        shift = np.zeros((len(pf), nf, 3)); shift[..., 2] = (nsp + s_)*P
+        I0, I1, I2 = rect_moments(pts[:, None, :], om[None] + shift, E1m[None], E2m[None], F.l[None, :, 0], F.l[None, :, 1])
+        Mn = (O @ (np.stack([I0, I1, I2], -1)/(4*np.pi)).reshape(len(pf), 3*nf)).reshape(nc, 3, nf, 3)
+        for q0 in np.unique(nst):
+            q = int(q0) + s_
+            Mq = np.where((nst == q0)[:, None, :, None], Mn, 0.0)
+            out[q] = out.get(q, 0) + Mq
+    return {q: v.reshape(3*nc, 3*nf) for q, v in out.items()}
+
+
+def _wsplit(maps, c, nf, N):
+    """Basis map of component c split into its unwrapped and wrapped entries (real)."""
+    r, cc, v, w = maps[c]
+    return [sparse.csr_matrix((np.where(w == f, v, 0.0), (r, cc)), shape=(3*nf, N)) for f in (False, True)]
+
+
+def _static_chunks(args):
+    F, maps, N, P, K, chunks, near = args
+    nf = F.n
+    W = [_wsplit(maps, c, nf, N) for c in range(4)]
+    A = {p: np.zeros((N, N)) for p in range(-2*near - 1, 2*near + 2)}
+    Phi = {p: np.zeros((N, N)) for p in A}
+    for a0, a1 in chunks:
+        rs = slice(3*a0, 3*a1)
+        B = {mir: _near_buckets(F, P, mir, a0, a1, near) for mir in MIRRORS}
+        qs = set().union(*[set(b) for b in B.values()])
+        z = lambda mir, q: B[mir].get(q, 0.0)
+        for c in range(4):
+            for q in qs:
+                if c < 3:
+                    M = z("d", q) + XSIGN[c]*z("x", q); tgt = A
+                else:
+                    M = (z("d", q) + z("x", q)) + K*(z("y", q) + z("xy", q)); tgt = Phi
+                if np.isscalar(M):
+                    continue
+                for a in (0, 1):                       # obs wrapped: exp(-j beta P)
+                    Oc = W[c][a][rs]
+                    if Oc.nnz == 0:
+                        continue
+                    rows = np.unique(Oc.indices)
+                    Oc = Oc.tocsc()[:, rows]
+                    for b in (0, 1):                   # src wrapped: exp(+j beta P)
+                        if W[c][b].nnz == 0:
+                            continue
+                        tgt[q + a - b][rows] += Oc.T @ (W[c][b].T @ M.T).T
+    return A, Phi
+
+
+class StaticCache:
+    """The near-image part of static_Z does not depend on beta except through the Bloch phases
+    exp(-j beta p P), p = -3..3: it is stored per p at basis level (vector part A_p, scalar part
+    Phi_p, both real N x N) once per geometry; static_Z(beta) is then sum_p phase_p (-j w mu0 A_p
+    - Phi_p/(j w eps0)) + the far-image tail (cheap, evaluated per beta).  Same result as static_Z."""
+
+    def __init__(self, cell, F, maps, K, chunk=60, near=1, workers=4):
+        import multiprocessing as mp
+        self.cell, self.F, self.maps, self.K, self.near = cell, F, maps, K, near
+        N, nf, P = cell.N, F.n, cell.P
+        allc = [(a0, min(nf, a0 + chunk)) for a0 in range(0, nf, chunk)]
+        parts = [allc[i::workers] for i in range(workers)]
+        args = [(F, maps, N, P, K, pc, near) for pc in parts if pc]
+        if workers > 1:
+            with mp.get_context("fork").Pool(len(args)) as pool:
+                res = pool.map(_static_chunks, args)
+        else:
+            res = [_static_chunks(a) for a in args]
+        self.A = {p: sum(r[0][p] for r in res) for p in res[0][0]}
+        self.Phi = {p: sum(r[1][p] for r in res) for p in res[0][1]}
+        # tail: monopole moments of each face mapped to the bases
+        mom = np.stack([F.area, F.area/2, F.area/2], -1).ravel()
+        S = sparse.csr_matrix((np.ones(3*nf), (np.repeat(np.arange(nf), 3), np.arange(3*nf))), shape=(nf, 3*nf))
+        self.U = [[S @ sparse.diags(mom) @ Wc for Wc in _wsplit(maps, c, nf, N)] for c in range(4)]
+
+    def Z(self, beta, w):
+        P, F, near = self.cell.P, self.F, self.near
+        N = self.cell.N
+        Z = np.zeros((N, N), complex)
+        for p in self.A:
+            ph = np.exp(-1j*beta*p*P)
+            Z += ph*((-1j*w*MU0)*self.A[p] + (-1/(1j*w*EPS0))*self.Phi[p])
+        # far images (|n - n*| > near) at the face centres
+        T = {}
+        for mir, m in MIRRORS.items():
+            cm = F.c*m
+            rho_max = np.max(np.hypot(F.c[:, None, 0] - cm[None, :, 0], F.c[:, None, 1] - cm[None, :, 1]))*1.05 + 1e-6
+            tab = tail_table(beta, P, rho_max, m0=near + 1)
+            dzc = F.c[:, None, 2] - cm[None, :, 2]
+            nst = np.round(dzc/P)
+            rho = np.hypot(F.c[:, None, 0] - cm[None, :, 0], F.c[:, None, 1] - cm[None, :, 1])
+            T[mir] = tail_eval(tab, rho.ravel(), (dzc - nst*P).ravel()).reshape(F.n, F.n)*np.exp(-1j*beta*nst*P)
+        for c in range(4):
+            Tc = (T["d"] + XSIGN[c]*T["x"]) if c < 3 else (T["d"] + T["x"]) + self.K*(T["y"] + T["xy"])
+            fac = (-1j*w*MU0) if c < 3 else (-1/(1j*w*EPS0))
+            Uo = self.U[c][0] + np.exp(-1j*beta*P)*self.U[c][1]
+            Us = self.U[c][0] + np.exp(1j*beta*P)*self.U[c][1]
+            if Uo.nnz == 0:
+                continue
+            Z += fac*(Uo.T @ (Us.T @ Tc.T).T)
+        return Z
+
+
 # ------------------------------------------------------------------ harmonic parts (cross-section)
 def sinh_grid(km, kmax=1e7, dt=0.05):
     """k >= 0 grid for an evanescent harmonic (|k_m| >> k_Si): k = |k_m| sinh(t), trapezoid in t;
@@ -336,21 +454,43 @@ class XS:
         return out
 
 
-def dyn_kernel(xs, km, k0):
+def _dyn_f(r, gam, kap):
+    return (special.k0(gam.real*r) - 1j*gam.imag*r*special.k1(gam.real*r)
+            - special.k0(kap.real*r) + 1j*kap.imag*r*special.k1(kap.real*r))
+
+
+def dyn_kernel(xs, km, k0, table=True):
     """X (npieces^2): [K0(gamma rho) - K0(kappa rho)]/(2 pi), gamma = sqrt(km^2 - k0^2),
     kappa = sqrt(km^2); first order in the (tiny) imaginary parts, real Bessel functions.
-    Returns dict mirror -> matrix (pieces x pieces, source mirrored)."""
+    Returns dict mirror -> matrix (pieces x pieces, source mirrored).
+    table: the function of rho is tabulated once per harmonic (cubic spline on a grid refined
+    towards rho = 0, where it behaves as rho^2 ln rho) and interpolated at the ~10^7 point pairs,
+    whose distances are computed once per cell (xs._rho); False: Bessel functions at every pair."""
+    from scipy.interpolate import CubicSpline
     gam = np.sqrt(km**2 - k0**2 + 0j); kap = np.sqrt(km**2 + 0j)
     gam = gam if gam.real > 0 else -gam; kap = kap if kap.real > 0 else -kap
     out = {}
     p = xs.pts
-    for mir, m in MIRRORS.items():
-        q = p*m[:2]
-        rho = np.hypot(p[:, None, 0] - q[None, :, 0], p[:, None, 1] - q[None, :, 1])
-        r = np.maximum(rho, 1e-30)
-        D = (special.k0(gam.real*r) - 1j*gam.imag*r*special.k1(gam.real*r)
-             - special.k0(kap.real*r) + 1j*kap.imag*r*special.k1(kap.real*r))
-        D = np.where(rho < 1e-15, np.log(kap/gam), D)/(2*np.pi)
+    if not hasattr(xs, "_rho"):
+        xs._rho = {}
+        for mir, m in MIRRORS.items():
+            q = p*m[:2]
+            xs._rho[mir] = np.hypot(p[:, None, 0] - q[None, :, 0], p[:, None, 1] - q[None, :, 1])
+    if table:
+        if not hasattr(xs, "_t"):
+            xs._rmax = max(r.max() for r in xs._rho.values())*1.0001
+            xs._t = {mir: np.cbrt(r/xs._rmax) for mir, r in xs._rho.items()}
+        t = np.linspace(0, 1, 6001)
+        rg = xs._rmax*t**3
+        fg = np.empty(len(rg), complex); fg[0] = np.log(kap/gam); fg[1:] = _dyn_f(rg[1:], gam, kap)
+        spl = CubicSpline(t, fg/(2*np.pi))             # in t = (rho/rmax)^(1/3): smooth near 0
+    for mir in MIRRORS:
+        rho = xs._rho[mir]
+        if table:
+            D = spl(xs._t[mir])
+        else:
+            r = np.maximum(rho, 1e-30)
+            D = np.where(rho < 1e-15, np.log(kap/gam), _dyn_f(r, gam, kap))/(2*np.pi)
         out[mir] = xs.Wp @ (xs.Wp @ D.T).T
     return out
 
@@ -509,23 +649,26 @@ def piece_maps(cell):
     return np.array(rows), np.array(cols), np.array(coef), np.array(zf)
 
 
-def harmonic_Z(cell, xs, line, beta, Mc, Ks, pm=None, verbose=False):
-    """Sum over harmonics of the dynamic correction (|m| <= Mc) and the reflected part
-    (|k_m| <= Ks), assembled with the z spectra."""
-    import time
+_HCTX = {}
+
+
+def _harm_part(ms):
+    """Sum of the harmonic terms m in ms (worker; context in _HCTX, inherited by fork)."""
+    try:
+        from threadpoolctl import threadpool_limits
+        lim = threadpool_limits(1)
+    except ImportError:
+        lim = None
+    cell, xs, line, beta, Mc, pm = (_HCTX[k] for k in ("cell", "xs", "line", "beta", "Mc", "pm"))
     N, P, w, k0 = cell.N, cell.P, line.w, line.k0
-    rows, cols, coef, zf = pm if pm is not None else piece_maps(cell)
+    rows, cols, coef, zf = pm
     comp = xs.comp
     same = (comp[:, None] == comp[None, :])
     isq = comp == 3
-    Mmax = int(np.floor(Ks*P/(2*np.pi))) + 1
     Z = np.zeros((N, N), complex)
-    t0 = time.time()
-    for m in range(-Mmax, Mmax + 1):
+    for m in ms:
         km = beta + 2*np.pi*m/P
         kref = abs(2*np.pi*m/P) + np.sqrt(line.eps_bot.real)*k0      # beta-independent choices
-        if kref > Ks and abs(m) > Mc:
-            continue
         X = spec_kernel(xs, line, km, kref=kref)
         if abs(m) <= Mc:
             D = dyn_kernel(xs, km, k0)
@@ -537,6 +680,27 @@ def harmonic_Z(cell, xs, line, beta, Mc, Ks, pm=None, verbose=False):
         V = sparse.csr_matrix((coef*Tz[zf], (rows, cols)), shape=(xs.n, N))
         W = sparse.csr_matrix((coef*Cz[zf], (rows, cols)), shape=(xs.n, N))
         Z += V.T @ (W.T @ X.T).T
-        if verbose and m % 10 == 0:
-            print(f"    m {m:4d}  {time.time() - t0:.0f} s", flush=True)
     return Z
+
+
+def harmonic_Z(cell, xs, line, beta, Mc, Ks, pm=None, verbose=False, workers=4):
+    """Sum over harmonics of the dynamic correction (|m| <= Mc) and the reflected part
+    (|k_m| <= Ks), assembled with the z spectra.  workers: harmonics shared among processes
+    (each harmonic is independent; the sum is the same up to rounding)."""
+    import multiprocessing as mp
+    P, k0 = cell.P, line.k0
+    pm = pm if pm is not None else piece_maps(cell)
+    Mmax = int(np.floor(Ks*P/(2*np.pi))) + 1
+    ms = [m for m in range(-Mmax, Mmax + 1)
+          if not (abs(2*np.pi*m/P) + np.sqrt(line.eps_bot.real)*k0 > Ks and abs(m) > Mc)]
+    if not hasattr(xs, "_t"):                        # pair distances, shared with the workers
+        dyn_kernel(xs, beta, k0)
+    _HCTX.update(cell=cell, xs=xs, line=line, beta=beta, Mc=Mc, pm=pm)
+    if workers <= 1:
+        return _harm_part(ms)
+    # the costly harmonics (|m| <= Mc: dynamic part as well) dealt out first, round robin
+    order = sorted(ms, key=lambda m: (abs(m) > Mc, abs(m)))
+    parts = [order[i::workers] for i in range(workers)]
+    with mp.get_context("fork").Pool(workers) as pool:
+        res = pool.map(_harm_part, parts)
+    return sum(res)

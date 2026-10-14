@@ -2,6 +2,8 @@
 usage: python run_tee_cell.py f_GHz {tee|plain} hmin_um hmax_um hz_min_um hz_max_um n_guess [cache_prefix]
 Dataset row: environment variable ROW (default 49)."""
 import os, sys, time
+for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
+    os.environ.setdefault(_v, "1")      # parallel over processes (harmonics, static chunks)
 import numpy as np, pandas as pd
 import stack as S, tee3d as T, tee3d_solve as TS
 d = pd.read_excel("../mom/data/EVALUATED_FULL_LHS_DATASET.xlsx").loc[int(os.environ.get("ROW", 49))]
