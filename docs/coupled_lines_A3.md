@@ -246,20 +246,119 @@ two modes instead of one.
 
 ### 3.1 Characteristic impedance matrix
 
-For a single line, a forward wave has $V = Z_c I$. For the pair, a forward
-wave has $\mathbf{V} = \mathbf{Z}_c\,\mathbf{I}$ with a $2\times2$ matrix.
-From $-d\mathbf{V}/dz = \mathbf{Z}\mathbf{I}$ applied to
-$\mathbf{V} = \mathbf{T}_V e^{-\boldsymbol{\Gamma} z}\mathbf{a}^+$:
+#### The picture: how hard you must push
+
+Think of a very long queue of people standing shoulder to shoulder, and you push
+the first one. To get the queue moving at a given speed you have to push with
+a certain force. That force does not depend on what happens at the far end of
+the queue, because the far end has not felt anything yet. It depends only on
+the queue itself: how heavy each person is and how springy the shoulders are.
+
+A line works the same way. When a wave enters a long line, the source has to
+charge each new piece of capacitance and push current through each new piece
+of inductance. The ratio "voltage needed / current delivered" is set by the
+line alone. That ratio is the **characteristic impedance** $Z_c$.
+
+It looks like Ohm's law, and it is used like Ohm's law, but there is no
+resistor: no energy is turned into heat. The energy is stored in the line and
+carried away by the wave. The source cannot tell the difference between a
+long line and a resistor of value $Z_c$, until the first reflection comes back.
+
+#### Where $-dV/dz = Z\,I$ comes from (A2 §2.2)
+
+Take a short piece $dz$ of a single line. Its series branch has resistance
+$R\,dz$ and inductance $L\,dz$, i.e. impedance $Z\,dz$ with
+$Z = R + j\omega L$ (per metre). The current $I$ flows through it, so the
+voltage drops across it by Ohm's law:
 
 $$
-\mathbf{Z}_c = \mathbf{T}_V\,\boldsymbol{\Gamma}^{-1}\,\mathbf{T}_V^{-1}\,\mathbf{Z}.
+V(z) - V(z+dz) = Z\,dz\;I .
 $$
 
-For identical lines this simplifies to
+Divide by $dz$:
 
 $$
+-\frac{dV}{dz} = Z\,I .
+$$
+
+In words: **the voltage falls along the line at a rate equal to the series
+impedance per metre times the current.** The minus sign means "falls" in the
+direction the current flows. For the pair, line A's voltage falls because of
+its own current (self term) and its neighbour's current (mutual term); writing
+both lines together gives the same equation with $2\times2$ matrices,
+$-d\mathbf V/dz = \mathbf Z\,\mathbf I$ (A2 §2.2).
+
+#### Single line: $Z_c$ in two lines of algebra
+
+A forward wave has $V(z) = V^+ e^{-\gamma z}$ and $I(z) = I^+ e^{-\gamma z}$.
+Its derivative is $dV/dz = -\gamma V$. Put that into $-dV/dz = Z\,I$:
+
+$$
+\gamma\,V^+ = Z\,I^+
+\qquad\Longrightarrow\qquad
+Z_c = \frac{V^+}{I^+} = \frac{Z}{\gamma} = \sqrt{\frac{Z}{Y}}
+\quad\left(\text{lossless: } \sqrt{L/C}\right).
+$$
+
+A backward wave gives $V^- = -Z_c I^-$: same ratio, but its current flows
+the other way.
+
+#### Pair of identical lines: mode by mode
+
+Each mode is a single line on its own, so each has its own characteristic
+impedance, $Z_e$ for the even mode and $Z_o$ for the odd mode (per line:
+the voltage on one strip divided by the current in that strip).
+
+Now push a forward current into line A only, $\mathbf I = (1, 0)$ A, and ask
+which voltages appear. Split the current into modes and treat each mode as a
+single line:
+
+$$
+\begin{pmatrix} 1 \\ 0 \end{pmatrix}
+= \tfrac12\begin{pmatrix} 1 \\ 1 \end{pmatrix} + \tfrac12\begin{pmatrix} 1 \\ -1 \end{pmatrix}
+\quad\Longrightarrow\quad
+\mathbf V = \tfrac12 Z_e\begin{pmatrix} 1 \\ 1 \end{pmatrix} + \tfrac12 Z_o\begin{pmatrix} 1 \\ -1 \end{pmatrix}
+= \begin{pmatrix} \tfrac12(Z_e + Z_o) \\ \tfrac12(Z_e - Z_o) \end{pmatrix}.
+$$
+
+So 1 A on line A produces $\tfrac12(Z_e+Z_o)$ volts on line A and
+$\tfrac12(Z_e-Z_o)$ volts on line B. Doing the same with $(0, 1)$ gives the
+mirror image. Collecting both into a table gives the characteristic impedance
+matrix, the matrix version of $V = Z_c I$:
+
+$$
+\mathbf V = \mathbf Z_c\,\mathbf I,
+\qquad
 \mathbf{Z}_c = \frac12 \begin{pmatrix} Z_e + Z_o & Z_e - Z_o \\ Z_e - Z_o & Z_e + Z_o \end{pmatrix}.
 $$
+
+#### General formula (any two lines)
+
+The recipe is the same: translate the current into modes, apply each mode's
+own impedance, translate back. In matrix form, the forward wave is
+
+$$
+\mathbf V(z) = \mathbf T_V\, e^{-\boldsymbol\Gamma z}\,\mathbf a^{+},
+\qquad
+e^{-\boldsymbol\Gamma z} = \begin{pmatrix} e^{-\gamma_1 z} & 0 \\ 0 & e^{-\gamma_2 z} \end{pmatrix},
+$$
+
+read right to left: $\mathbf a^{+}$ holds the starting amount of each mode,
+$e^{-\boldsymbol\Gamma z}$ makes each amount travel with its own $\gamma$,
+and $\mathbf T_V$ translates the amounts into line voltages (§2.1). Taking
+the derivative and using $-d\mathbf V/dz = \mathbf Z\,\mathbf I$ exactly as
+for the single line gives
+
+$$
+\mathbf{Z}_c = \mathbf{T}_V\,\boldsymbol{\Gamma}^{-1}\,\mathbf{T}_V^{-1}\,\mathbf{Z},
+$$
+
+the matrix version of $Z_c = Z/\gamma$. For identical lines it reduces to the
+table above (checked numerically: both give
+$36.651 - 0.012j\ \Omega$ on the diagonal and $0.044 - 0.003j\ \Omega$ off it
+at 30 GHz).
+
+#### What the entries mean
 
 - **Diagonal** $\tfrac12(Z_e + Z_o)$: the impedance one line shows when the
   other carries no wave. With our numbers, $36.66\ \Omega$, essentially the
