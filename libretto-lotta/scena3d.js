@@ -234,7 +234,8 @@ function mocapState(M,tt){const pts=mcPts(M,tt),T={A:mcTorso(pts.A),B:mcTorso(pt
     for(const s of ['L','R']){const q=pts[W],j=J[W],el=q['el'+s],wr=q['wr'+s],dir=wr.clone().sub(el).normalize(),hd=wr.clone().addScaledVector(dir,5);
       j['hand'+s]=hd;const sp=mcCloseOnSpine(wr,T[O]);const dist=sp.distanceTo(wr);const appr=sp.clone().sub(wr).normalize();
       H[W][s]={sh:q['sh'+s],el,wr,hd,tgt:wr,grip:dist<26?.85:.15,appr:dist<40?appr:V(0,-1,0)}}}
-  return {J,S,H}}
+  const fi=clamp(Math.round((tt-M.t0)*M.fps),0,M.cam.length-1),cp=M.cam[fi],cd=M.camdir[fi];
+  return {J,S,H,cam:{p:V(cp[0],cp[1],cp[2]),d:V(cd[0],cd[1],cd[2])}}}
 
 /* ---------- modello del lottatore ---------- */
 function mats(team){
@@ -362,11 +363,12 @@ function createView(container){
       const ar=new THREE.ArrowHelper(d.normalize(),a,L,col,Math.min(14,L*.35),Math.min(9,L*.22));ar.line.material.linewidth=3;
       ar.traverse(o=>{if(o.material){o.material.depthTest=false;o.material.transparent=true;o.renderOrder=10}});arrows.add(ar)}},
     frameOn(st){const c=st.J.A.P.clone().add(st.J.B.P).multiplyScalar(.5);c.y=80;view.center.copy(c);controls.target.copy(c)},
-    camPreset(name,st){const J=st.J;const f=J.A.F.f;const r=J.A.F.r;const c=controls.target.clone();let p;
+    camPreset(name,st){view.lockTarget=false;const J=st.J;const f=J.A.F.f;const r=J.A.F.r;const c=controls.target.clone();let p;
       if(name==='lato')p=c.clone().addScaledVector(r,-330).add(V(0,40,0));
       else if(name==='lato2')p=c.clone().addScaledVector(r,330).add(V(0,40,0));
       else if(name==='dietro')p=c.clone().addScaledVector(f,-320).add(V(0,70,0));
       else if(name==='davanti')p=c.clone().addScaledVector(f,320).add(V(0,70,0));
+      else if(name==='video'&&st.cam){p=st.cam.p.clone();controls.target.copy(p.clone().addScaledVector(st.cam.d,300));view.lockTarget=true}
       else if(name==='alto')p=c.clone().add(V(0,380,30));
       else if(name==='mani'){const hc=st.H.A.L.wr.clone().add(st.H.A.R.wr).multiplyScalar(.5);const mid=st.J.A.P.clone().add(st.J.B.P).multiplyScalar(.5);
         let d=hc.clone().sub(mid);d.y=0;if(d.length()<8)d=r.clone().multiplyScalar(-1);d.normalize();

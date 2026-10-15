@@ -110,7 +110,7 @@ h4{font-family:var(--display);font-size:1rem;letter-spacing:.1em;text-transform:
           <span>Guarda da:</span>
           <button class="chip" data-cam="lato">Lato S</button><button class="chip" data-cam="lato2">Lato D</button>
           <button class="chip" data-cam="dietro">Dietro di te</button><button class="chip" data-cam="davanti">Davanti a te</button>
-          <button class="chip" data-cam="alto">Dall'alto</button><button class="chip" data-cam="mani">Zoom mani</button>
+          <button class="chip" data-cam="alto">Dall'alto</button><button class="chip" data-cam="mani">Zoom mani</button><button class="chip" data-cam="video">Camera del video</button>
           <label class="chip"><input type="checkbox" id="autoRot"> Giro automatico</label>
           <label class="chip"><input type="checkbox" id="showLab" checked> Etichette S/D</label>
         </div>
@@ -143,6 +143,7 @@ h4{font-family:var(--display);font-size:1rem;letter-spacing:.1em;text-transform:
       <div class="card err"><h5>Errori comuni</h5><ul id="errs"></ul></div>
     </div>
   </section>
+  <p class="note"><b>Doppia gamba: da un video reale.</b> L'attacco è ricostruito da un video che mi hai fornito: ho tracciato i due scheletri in 2D e li ho portati in 3D con ossa a lunghezza fissa, piedi sul tappeto e senza compenetrazioni. La profondità non si vede in un video con una sola camera, quindi è stimata. Il confronto con il video (pulsante «Camera del video») mostra che impostazione, distanze e posizioni coincidono, ma qualche dettaglio no: per esempio il ginocchio a terra del ragazzo nelle fasi 3 e 4 non è sempre chiaro, e mani e dita sono approssimate. Il video non è incluso nel libretto.</p>
   <p class="note"><b>Fonti e limiti.</b> Le sequenze uniscono le indicazioni standard degli allenatori di lotta libera e folkstyle con i riassunti di guide tecniche online (Fanatic Wrestling, Evolve MMA, JitsuIQ, Digitsu, Coaches Insider). I video completi non erano accessibili da qui. Lati, prese e tempi seguono la versione più insegnata, ma possono cambiare da club a club: confrontali con il tuo istruttore e segnami le differenze. Le proiezioni e il ritorno a terra vanno provati solo su tappeto e con supervisione.</p>
 </div>
 
@@ -170,7 +171,7 @@ function buildTimeline(){
   for(const [W,el,lab] of TRACKS){const l=document.createElement('div');l.className='lab';l.textContent=lab;if(W==='B')l.style.color='var(--blue)';g.appendChild(l);
     for(let k=1;k<n;k++){const c=document.createElement('div');c.className='cell';c.onclick=()=>jump(k);
       const els=el==='*'?ELEMS:[el];let lo=1,hi=0;
-      for(const e of els)if(changed(K[k-1],K[k],W,e)){const w=windowOf(K[k],W,e);lo=Math.min(lo,w[0]);hi=Math.max(hi,w[1])}
+      for(const e of els)if(!K[k].mc&&!K[k-1].mc&&changed(K[k-1],K[k],W,e)){const w=windowOf(K[k],W,e);lo=Math.min(lo,w[0]);hi=Math.max(hi,w[1])}
       if(hi>lo){const b=document.createElement('div');b.className='bar '+W;b.style.left=(lo*100)+'%';b.style.width=((hi-lo)*100)+'%';c.appendChild(b)}
       g.appendChild(c)}}
 }
@@ -184,13 +185,13 @@ function phaseCard(){const K=keys(),k=K[i];
   $('pWhen').hidden=!k.tempo;$('pWhen').textContent=k.tempo?('Tempo: '+k.tempo):'';
   const L={piedi:'Piedi',mani:'Mani',testa:'Testa e anche',intento:'Intento'};
   $('pRows').innerHTML=Object.keys(L).filter(x=>k.d[x]).map(x=>'<div><dt>'+L[x]+'</dt><dd>'+k.d[x]+'</dd></div>').join('');
-  const g=[];for(const W of ['A','B'])for(const s of ['L','R']){const h=k[W]['h'+s];if(h&&h.g)g.push('<li><span style="background:var(--'+(W==='A'?'red':'blue')+')">'+(s==='L'?'S':'D')+'</span><span>'+h.g+'</span></li>')}
+  const g=[];for(const W of ['A','B'])for(const s of ['L','R']){const h=(k[W]||{})['h'+s];if(h&&h.g)g.push('<li><span style="background:var(--'+(W==='A'?'red':'blue')+')">'+(s==='L'?'S':'D')+'</span><span>'+h.g+'</span></li>')}
   $('pGrips').innerHTML=g.length?'<li style="display:block;font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Prese</li>'+g.join(''):'';}
 function draw(){curSt=view.pose(keys(),i,T);view.setArrows(T>=.15||i===0?keys()[i].arrows:null,curSt);placeHead()}
 function jump(k){setPlaying(false);i=k;T=1;mode='hold';phaseCard();draw()}
 function load(){const t=TECHS[cur];renderTechs();$('title').textContent=t.it;$('en').textContent=t.en;$('intro').textContent=t.intro;
   $('tabAtt').setAttribute('aria-selected',side==='att');$('tabDef').setAttribute('aria-selected',side==='def');
-  $('sideIntro').textContent=side==='att'?'Tu (pelle chiara, body rosso) esegui la tecnica. L\'avversario ha pelle scura e body blu.':'Tu: pelle chiara, body rosso. Lui: pelle scura, body blu. '+t.defIntro;
+  $('sideIntro').textContent=side==='att'?(t.att[0].mc?'Tu (pelle chiara, body rosso) esegui la tecnica; l\'avversario ha pelle scura e body blu. Il movimento viene da un video reale, ricostruito in 3D.':'Tu (pelle chiara, body rosso) esegui la tecnica. L\'avversario ha pelle scura e body blu.'):'Tu: pelle chiara, body rosso. Lui: pelle scura, body blu. '+t.defIntro;
   $('startCard').innerHTML=side==='att'
     ?'<h5>Posizione di partenza</h5><b>Tu</b><ul>'+t.start.tu.map(x=>'<li>'+x+'</li>').join('')+'</ul><b>Lui</b><ul>'+t.start.lui.map(x=>'<li>'+x+'</li>').join('')+'</ul>'
     :'<h5>Situazione</h5><ul><li>'+t.defIntro+'</li></ul>';
