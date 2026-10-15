@@ -11,7 +11,7 @@ F = np.abs(np.fft.rfft(d, 1024)); fr = np.fft.rfftfreq(1024, 0.1); P = 1 / fr[1:
 fig, (a, b) = plt.subplots(2, 1, figsize=(10, 7), sharex=True)
 a.plot(w, il, "o-", ms=3, c="#c0392b"); a.axvline(10.15, c="k", ls="--"); a.text(10.2, il.max()*0.95, "Istanbul nominal\n10.15 µm")
 a.set_ylabel("IL (dB/cm)"); a.set_title(f"Istanbul, gap 4.45 µm, 1575 nm: IL vs slab width (ripple period ≈ {P:.2f} µm)"); a.grid(alpha=.3)
-b.plot(w, v, "o-", ms=3, c="#1f4e79"); b.axvline(10.15, c="k", ls="--"); b.set_ylabel("Vπ·L (V·cm)"); b.set_xlabel("slab width (µm)"); b.grid(alpha=.3)
+b.plot(w, v, "o-", ms=3, c="#1f4e79"); b.axvline(10.15, c="k", ls="--"); b.set_ylim(v.mean()*0.95, v.mean()*1.05); b.text(0.02, 0.85, f"Vπ·L = {v.mean():.3f} V·cm, flat within ±{(v.max()-v.min())/2/v.mean()*100:.2f} % (axis ±5 %)", transform=b.transAxes); b.set_ylabel("Vπ·L (V·cm)"); b.set_xlabel("slab width (µm)"); b.grid(alpha=.3)
 sec = a.secondary_xaxis("top", functions=(lambda x: x - GAP, lambda x: x + GAP)); sec.set_xlabel("slab width − gap (µm)")
 plt.tight_layout(); plt.savefig("istanbul_IL_VpiL_vs_slab_w.png", dpi=130)
 i0 = np.argmin(abs(w - 10.15))
