@@ -1,7 +1,7 @@
 import json, numpy as np, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 ld = lambda f: sorted((json.loads(l[7:]) for l in open(f) if l.startswith("RESULT")), key=lambda r: (r.get("gap", 0), r["slab_w"]))
-G = ld("gap_coarse.txt") + ld("gap_fine.txt"); G.sort(key=lambda r: r["gap"])
-S = ld("sweep_gap3.65.txt"); U = ld("../istanbul/results.txt")
+A = ld("all.txt"); S = [r for r in A if abs(r["gap"] - 3.65) < 1e-9]
+G = sorted([r for r in A if abs(r["slab_w"] - 10.15) < 1e-9], key=lambda r: r["gap"]); U = ld("../istanbul/results.txt")
 V0 = [r for r in U if abs(r["slab_w"] - 10.15) < 1e-6][0]["VpiL_Vcm"]
 g = np.array([r["gap"] for r in G]); gv = np.array([r["VpiL_Vcm"] for r in G]); gi = np.array([r["IL_dBcm"] for r in G])
 Gs = float(np.interp(V0, gv, g))

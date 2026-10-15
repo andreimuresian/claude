@@ -3,14 +3,14 @@ def build_polygons():
     x_out = X_EL_OUT                                # electrode outer edge
     x_dev_max = DEV_W / 2.0
     xs = SLAB_W / 2.0                               # LN slab edge
-    xb = xs + BUFFER_H                              # buffer edge on the slab side wall
+    xb = round(xs + BUFFER_H, 9)                    # buffer edge on the slab side wall
     x_fine = max(X_FINE_MIN, xb + 1.0)              # end of the finely meshed slab / buffer
     x_near = min(x_fine + 15.0, x_dev_max - 2.0)
 
     y_slab_top = SLAB_H
-    y_buf_top = SLAB_H + BUFFER_H                   # bottom of the gold on the slab
-    y_el_top = y_buf_top + MTX                      # gold top on the slab
-    y_el_top_out = BUFFER_H + MTX                   # gold top beyond the slab (drops by SLAB_H)
+    y_buf_top = round(SLAB_H + BUFFER_H, 9)         # rounded: must equal the buffer() vertex exactly; bottom of the gold on the slab
+    y_el_top = round(y_buf_top + MTX, 9)            # gold top on the slab
+    y_el_top_out = round(BUFFER_H + MTX, 9)         # gold top beyond the slab (drops by SLAB_H)
     y_cap_top = y_buf_top + CAP_H                   # cap height measured from the buffer top
     y_clad_top = y_slab_top + CLAD_H
     y_fine_top = y_buf_top + 0.6
@@ -23,9 +23,9 @@ def build_polygons():
 
     # ---- 2. Conformal SiO2 buffer: BUFFER_H on the slab top, on the slab side
     #         walls and on the BOX beyond the slab (deposited after the slab etch)
-    sub = unary_union([slab, box(-x_dev_max, -BOX_H, x_dev_max, 0.0)])
-    buf_all = _areal(sub.buffer(BUFFER_H, join_style=2).intersection(
-        box(-x_dev_max, 0.0, x_dev_max, y_clad_top)).difference(slab).difference(core_poly))
+    # built from rectangles (not shapely buffer()) so every vertex is exact
+    buf_all = _areal(unary_union([box(-x_dev_max, 0.0, x_dev_max, BUFFER_H), box(-xb, 0.0, xb, y_buf_top)])
+                     .difference(slab).difference(core_poly))
 
     # ---- 3. SiO2 cap (2.0 x 1.4 um above the buffer), fused with the buffer
     cap_poly = _areal(box(-CAP_W / 2.0, y_slab_top, CAP_W / 2.0, y_fine_top)
