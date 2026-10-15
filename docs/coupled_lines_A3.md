@@ -126,15 +126,83 @@ $$
 
 ### 2.2 Identical lines: the modes are always $(1,1)$ and $(1,-1)$
 
-For identical lines both matrices have the form
-$`\begin{pmatrix} a & b \\ b & a \end{pmatrix}`$, and so does their product.
-Then
+Here "identical" means that the two strips have the same width, the same
+thickness and the same distance to ground, so the cross-section looks the same
+when seen from line A or from line B.
+
+**Step 1: which matrices.** The two matrices are the per-unit-length series
+impedance $\mathbf Z$ and shunt admittance $\mathbf Y$ from A2:
 
 $$
-\begin{pmatrix} a & b \\ b & a \end{pmatrix}\begin{pmatrix} 1 \\ 1 \end{pmatrix} = (a + b)\begin{pmatrix} 1 \\ 1 \end{pmatrix},
+\mathbf Z = \begin{pmatrix} z_s & z_m \\ z_m & z_s \end{pmatrix},
 \qquad
+\mathbf Y = \begin{pmatrix} y_s & y_m \\ y_m & y_s \end{pmatrix},
+$$
+
+with $z_s = r + R_g + j\omega L_s$ (self), $z_m = R_g + j\omega L_m$ (mutual),
+$y_s = G + j\omega(C_g + C_m)$ (self), $y_m = -j\omega C_m$ (mutual).
+
+**Step 2: why they have the form $`\begin{pmatrix} a & b \\ b & a \end{pmatrix}`$.**
+
+- Equal diagonals: line A seen alone is the same as line B seen alone, so the
+  "self" entries are equal ($z_s$ for both, $y_s$ for both).
+- Equal off-diagonals: what A does to B equals what B does to A (the same
+  mutual inductance $L_m$, the same gap capacitance $C_m$, the same shared
+  return $R_g$). This holds for any two lines, identical or not
+  (reciprocity).
+
+So each matrix has one number on the diagonal ($a$) and one off the diagonal
+($b$).
+
+**Step 3: the product keeps the form.** Multiply them out:
+
+$$
+\mathbf Z\mathbf Y =
+\begin{pmatrix} z_s y_s + z_m y_m & z_s y_m + z_m y_s \\ z_m y_s + z_s y_m & z_m y_m + z_s y_s \end{pmatrix}
+= \begin{pmatrix} a & b \\ b & a \end{pmatrix},
+\qquad a = z_s y_s + z_m y_m,\quad b = z_s y_m + z_m y_s .
+$$
+
+The two diagonal entries are equal and the two off-diagonal entries are equal.
+From now on $a$ and $b$ mean these two entries of $\mathbf{ZY}$.
+
+**Step 4: why try $(1,1)$ and $(1,-1)$.** Read the matrix row by row. Row 1
+says: the new value on line A is $a\times$(A's voltage) $+\ b\times$(B's
+voltage). Row 2 says the same for line B, with the roles swapped. Each line
+gets "$a$ times itself plus $b$ times the neighbour".
+
+The machine treats the two lines the same way, so the patterns that survive
+it unchanged must also treat the two lines fairly. There are only two fair
+ways to share a voltage between two equal lines:
+
+- the same on both: $(1,1)$;
+- equal and opposite: $(1,-1)$.
+
+Any other split, for example $(1, 0.5)$, favours one line. The machine then
+mixes it into a different ratio, so it does not keep its shape.
+
+**Step 5: check by multiplying.**
+
+Pattern $(1,1)$: line A gets $a\cdot1 + b\cdot1 = a+b$. Line B gets
+$b\cdot1 + a\cdot1 = a+b$. Both lines get the same factor, so the ratio stays
+$1:1$:
+
+$$
+\begin{pmatrix} a & b \\ b & a \end{pmatrix}\begin{pmatrix} 1 \\ 1 \end{pmatrix} = (a + b)\begin{pmatrix} 1 \\ 1 \end{pmatrix}.
+$$
+
+Pattern $(1,-1)$: line A gets $a\cdot1 + b\cdot(-1) = a-b$. Line B gets
+$b\cdot1 + a\cdot(-1) = -(a-b)$. Again both lines are multiplied by the same
+factor, $a-b$, so the ratio stays $1:-1$:
+
+$$
 \begin{pmatrix} a & b \\ b & a \end{pmatrix}\begin{pmatrix} 1 \\ -1 \end{pmatrix} = (a - b)\begin{pmatrix} 1 \\ -1 \end{pmatrix}.
 $$
+
+Physically, in the even mode the neighbour pushes in the same direction as the
+line itself, so the effects add ($a+b$). In the odd mode the neighbour pushes
+the opposite way, so they subtract ($a-b$). Different factors mean different
+propagation constants.
 
 The eigenvectors are $(1,1)$ and $(1,-1)$ **whatever** $a$ and $b$ are, so at
 every frequency, with any loss. That is the symmetry argument in one line:
