@@ -354,7 +354,7 @@ Z_c = \sqrt{\frac{j\omega L}{j\omega C}} = \sqrt{\frac{L}{C}},
 $$
 
 With our line, $L_s = 243$ nH/m and $C_g + C_m = 180.9$ pF/m give
-$\sqrt{L/C} = 36.65\ \Omega$, the value CST reports.
+$\sqrt{L/C} = 36.65\ \Omega$. That agrees with the $\tfrac12(Z_e+Z_o) = 36.66\ \Omega$ from the 1 mm file, as it must: $L_s$ and $C_g$ were extracted from that same file.
 
 **Picture.** $Z_c$ is a balance between two things. A large $L$ (heavy people
 in the queue) means you must push harder for the same current: $Z_c$ goes up.
