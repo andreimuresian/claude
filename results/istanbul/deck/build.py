@@ -29,7 +29,7 @@ text(s, 0.9, 6.2, 11.9, 0.8, [("Low loss comes from the wider gap (field at the 
 s = new("Slab-width sweep: strong IL ripples, flat Vπ·L", "Slab width from gap + 1 to gap + 8 µm, 100 nm step (71 points)")
 xy_chart(s, 0.6, 1.8, 8.2, 4.4, [("IL", [(r["slab_w"], r["IL_dBcm"]) for r in R], RED, 5, 2.0, False),
                                  ("Nominal 10.15 µm", [(10.15, 0), (10.15, 1.1)], NAVY, 0, 1.5, True)],
-         (5, 13), (0, 1.1), "Slab width (µm)", "Insertion loss (dB/cm)", legend=True, xmaj=1, ymaj=0.2)
+         (5, 13), (0, 1.1), "Slab width (µm)", "Insertion loss (dB/cm)", legend=True, xmaj=1, ymaj=0.1)
 stat(s, 9.2, 1.85, 3.6, 1.15, "1.8 µm", "ripple period in slab width\n(0.9 µm cavity per side)", NAVY)
 stat(s, 9.2, 3.2, 3.6, 1.15, "0.05 → 0.6", "dB/cm within ±0.4 µm\nof the nominal slab width", RED)
 stat(s, 9.2, 4.55, 3.6, 1.15, "±0.04 %", "Vπ·L variation over the sweep\n(2.421 V·cm)", NAVY)
