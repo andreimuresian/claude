@@ -356,6 +356,31 @@ $$
 With our line, $L_s = 243$ nH/m and $C_g + C_m = 180.9$ pF/m give
 $\sqrt{L/C} = 36.65\ \Omega$. That agrees with the $\tfrac12(Z_e+Z_o) = 36.66\ \Omega$ from the 1 mm file, as it must: $L_s$ and $C_g$ were extracted from that same file.
 
+**Why the lossless formula is good enough for $Z_c$ (but not for $\alpha$).**
+Our line is not lossless: at 30 GHz, $R \approx 2540\ \Omega/\text{m}$ against
+$\omega L \approx 45\,800\ \Omega/\text{m}$, a ratio $R/\omega L \approx 0.055$
+(and $G$ is negligible). Keeping $R$:
+
+$$
+Z_c = \sqrt{\frac{L}{C}}\,\sqrt{1 - j\frac{R}{\omega L}}
+\approx \sqrt{\frac{L}{C}}\left[1 - j\frac{R}{2\omega L} + \tfrac18\left(\frac{R}{\omega L}\right)^2\right].
+$$
+
+- The phase of $Z_c$ changes at **first order**: $\operatorname{Im} Z_c \approx -36.65 \times 0.028 \approx -1.0\ \Omega$.
+- The magnitude changes only at **second order**: $\tfrac18(0.055)^2 \approx 0.04\,\%$.
+
+Picture: a short step sideways from a straight path barely changes how far you
+are from the start. Loss pushes $Z_c$ sideways in the complex plane, so its
+length hardly moves.
+
+The quantities that loss changes at first order are the imaginary part of $Z_c$
+and, above all, the attenuation, $\alpha \approx R/(2Z_c) \approx 35$ Np/m,
+i.e. about 300 dB/m. That is the same $\alpha$ that puts the FEXT peak at
+$1/\alpha \approx 29$ mm (A1 §1.5). The models therefore always use the full
+complex $Z = R + j\omega L$ and $Y = G + j\omega C$; the lossless form is only
+for recognising the familiar formula.
+
+
 **Picture.** $Z_c$ is a balance between two things. A large $L$ (heavy people
 in the queue) means you must push harder for the same current: $Z_c$ goes up.
 A large $C$ (soft shoulders, lots of charge stored per volt) means a given
