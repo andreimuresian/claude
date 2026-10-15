@@ -1,4 +1,4 @@
-"""Second even mode of the tee cell: zero of (beta - beta1) / h_c(beta), h_c = y_c^T Z^-1 y_c with a
+"""Second even mode of the tee cell: zero of 1 / (h_c(beta) (beta - beta1)), h_c = y_c^T Z^-1 y_c with a
 common-mode drive y_c (J_z on all conductors across plane 0) and mom_cell's root beta1 deflated.
 Newton inside the linear model Z(b1) + (beta - b1) D as Solver.solve_driven, trust region per pass.
 usage: python diag_second.py f_GHz n_start n_root [trust]   (lossless Si; Z cached)"""
@@ -46,7 +46,7 @@ for it in range(12):
         lu = linalg.lu_factor(Z1 + (beta - b1)*D)
         x = linalg.lu_solve(lu, yc); xt = linalg.lu_solve(lu, yc, trans=1)
         h = yc @ x; hp = -(xt @ (D @ x))
-        F = (beta - br)/h; Fp = 1/h - (beta - br)*hp/h**2
+        F = 1/(h*(beta - br)); Fp = -(hp*(beta - br) + h)/(h*(beta - br))**2
         step = -F/Fp
         beta = beta + step
         if abs(step) < 1e-12*abs(beta):
