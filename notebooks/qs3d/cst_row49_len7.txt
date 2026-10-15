@@ -1,0 +1,20 @@
+--- 20 GHz
+  2 cells: |S11| 0.0011  |S21| 1.00000 ph   -27.51  lost 0.001 %  S21-S12 0.0e+00
+  3 cells: |S11| 0.0054  |S21| 0.99998 ph   -40.27  lost 0.002 %  S21-S12 0.0e+00
+  5 cells: |S11| 0.0112  |S21| 0.99985 ph   -65.54  lost 0.018 %  S21-S12 0.0e+00
+  7 cells: |S11| 0.1874  |S21| 0.98201 ph   -75.16  lost 0.053 %  S21-S12 0.0e+00
+  2->3: line-line alpha   0.003 dB/cm  n 2.6552  subtraction   0.003  ends sigma 1.0000 lost -0.002 %
+  3->5: line-line alpha   0.017 dB/cm  n 2.6307  subtraction   0.018  ends sigma 1.0002 lost -0.023 %
+  5->7: line-line alpha  12.501 dB/cm  n 0.0003  subtraction   0.040  ends sigma 1.0006 lost -0.067 %
+  3->7: line-line alpha   0.023 dB/cm  n 1.7430  subtraction   0.029  ends sigma 1.0004 lost -0.039 %
+  2->7: line-line alpha   0.020 dB/cm  n 1.9452  subtraction   0.024  ends sigma 1.0002 lost -0.023 %
+--- 60 GHz
+  2 cells: |S11| 0.0505  |S21| 0.99753 ph   -84.16  lost 0.239 %  S21-S12 0.0e+00
+  3 cells: |S11| 0.0706  |S21| 0.98378 ph  -124.00  lost 2.718 %  S21-S12 0.0e+00
+  5 cells: |S11| 0.0476  |S21| 0.95990 ph   161.34  lost 7.634 %  S21-S12 0.0e+00
+  7 cells: |S11| 0.3264  |S21| 0.88912 ph   135.46  lost 10.294 %  S21-S12 0.0e+00
+  2->3: line-line alpha   5.554 dB/cm  n 2.7731  subtraction   5.860  ends sigma 1.0479 lost -5.349 %
+  3->5: line-line alpha   6.440 dB/cm  n 2.5795  subtraction   6.504  ends sigma 1.0810 lost -7.333 %
+  5->7: line-line alpha  11.501 dB/cm  n 0.7332  subtraction  -0.099  ends sigma 1.0643 lost +12.298 %
+  3->7: line-line alpha   4.396 dB/cm  n 1.7471  subtraction   3.203  ends sigma 1.0587 lost -2.700 %
+  2->7: line-line alpha   7.075 dB/cm  n 2.9961  subtraction   3.734  ends sigma 1.1360 lost -6.558 %
