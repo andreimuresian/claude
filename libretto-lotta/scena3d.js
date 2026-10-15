@@ -64,6 +64,7 @@ function resolve(spec,J,owner,bodyN){
 }
 const PART_R={wrL:3.5,wrR:3.5,handL:3,handR:3,triL:5.5,triR:5.5,elbL:4.5,elbR:4.5,kneeL:6,kneeR:6,neck:6,head:10,shL:7,shR:7,hipL:9,hipR:9,armpitL:4,armpitR:4,ankleL:4,ankleR:4,heelL:4,heelR:4};
 function stateAt(keys,i,T){
+  if(keys[i].mc){const k=keys[i],M=(window.MOCAP||{})[k.src];if(M)return mocapState(M,lerp(k.mc[0],k.mc[1],T))}
   const k1=keys[i],k0=keys[Math.max(0,i-1)],J={},S={};
   for(const W of ['A','B']){const b0=norm(k0[W]),b1=norm(k1[W]);const e={};
     for(const el of ELEMS){const w=windowOf(k1,W,el);e[el]=i===0?1:ease(clamp((T-w[0])/((w[1]-w[0])||1),0,1))}
@@ -201,6 +202,40 @@ function physics(J,H,S){
     const tg=live(W,s);const ap=tg.sub(h.wr);if(h.grip>.3&&ap.lengthSq()>1)h.appr=ap.normalize();else h.appr=h.hd.clone().sub(h.wr).normalize()}}
 }
 
+
+/* ---------- modalità "da video": scheletri 3D ricostruiti dal video ---------- */
+const MC_R={head:10,shL:8,shR:8,elL:4.5,elR:4.5,wrL:4,wrR:4,hipL:9,hipR:9,knL:6,knR:6,anL:4,anR:4};
+function mcPts(M,tt){const n=M.A.length,f=clamp((tt-M.t0)*M.fps,0,n-1),i0=Math.floor(f),i1=Math.min(n-1,i0+1),e=f-i0,out={};
+  for(const W of ['A','B']){out[W]={};M.names.forEach((nm,k)=>{const a=M[W][i0],b=M[W][i1];
+    const p=V(lerp(a[k*3],b[k*3],e),lerp(a[k*3+1],b[k*3+1],e),lerp(a[k*3+2],b[k*3+2],e));
+    p.y=Math.max(p.y,MC_R[nm]);out[W][nm]=p})}
+  return out}
+const YUP=V(0,1,0);
+function mcCloseOnSpine(p,Q){const a=Q.P,b=Q.neckMid,ab=b.clone().sub(a),t=clamp(p.clone().sub(a).dot(ab)/ab.lengthSq(),0,1);return a.clone().addScaledVector(ab,t)}
+function mcTorso(q){const hipL=q.hipL,hipR=q.hipR,P=hipL.clone().add(hipR).multiplyScalar(.5),neckMid=q.shL.clone().add(q.shR).multiplyScalar(.5);
+  const u=neckMid.clone().sub(P).normalize();let r=q.shR.clone().sub(q.shL).normalize().add(hipR.clone().sub(hipL).normalize()).normalize();
+  r.addScaledVector(u,-r.dot(u)).normalize();const fw=u.clone().cross(r).normalize();
+  const rh=r.clone().setY(0);if(rh.lengthSq()<1e-4)rh.copy(r);rh.normalize();const f=YUP.clone().cross(rh).normalize();
+  return {P,neckMid,u,r,fw,f,F:{r,u,fw,f}}}
+function mocapState(M,tt){const pts=mcPts(M,tt),T={A:mcTorso(pts.A),B:mcTorso(pts.B)},J={},H={A:{},B:{}},S={A:{},B:{}};
+  for(const W of ['A','B']){const q=pts[W],t=T[W],{r,u,fw,f}=t,P=t.P,j={F:t.F,P};
+    j.c=add(P,u,10);j.hipL=q.hipL;j.hipR=q.hipR;j.N=add(t.neckMid,u,5);j.shL=q.shL;j.shR=q.shR;
+    j.chest=add(P,u,36,fw,12);j.back=add(P,u,36,fw,-12);j.belly=add(P,u,14,fw,12);j.waistBack=add(P,u,14,fw,-11);
+    j.sideL=add(P,u,26,r,-17);j.sideR=add(P,u,26,r,17);j.armpitL=add(j.N,u,-13,r,-14);j.armpitR=add(j.N,u,-13,r,14);j.neck=add(j.N,u,5,fw,-4);
+    const fh=fw.clone().lerp(f,.6).normalize();j.head=q.head.clone().addScaledVector(fh,-9).addScaledVector(YUP,0);
+    j.headQ=basisQuat(r,r.clone().cross(fh).normalize(),fh);
+    for(const s of ['L','R']){const kn=q['kn'+s],an=q['an'+s],v=an.clone().sub(kn).normalize();
+      j['knee'+s]=kn;j['ankle'+s]=an;
+      const fd=f.clone().setY(0).normalize();const plant=clamp((.75-Math.abs(v.y))*3,0,1);
+      const toe=an.clone().addScaledVector(fd,13*(1-plant)).addScaledVector(v,10*plant);toe.y=Math.max(toe.y,2.5);
+      j['toe'+s]=toe;j['heel'+s]=add(an,fd,-4,YUP,-4);j['foot'+s]=V(an.x,0,an.z);j['elb'+s]=q['el'+s];j['wr'+s]=q['wr'+s];j['tri'+s]=q['sh'+s].clone().lerp(q['el'+s],.55);}
+    J[W]=j}
+  for(const W of ['A','B']){const O=W==='A'?'B':'A';
+    for(const s of ['L','R']){const q=pts[W],j=J[W],el=q['el'+s],wr=q['wr'+s],dir=wr.clone().sub(el).normalize(),hd=wr.clone().addScaledVector(dir,5);
+      j['hand'+s]=hd;const sp=mcCloseOnSpine(wr,T[O]);const dist=sp.distanceTo(wr);const appr=sp.clone().sub(wr).normalize();
+      H[W][s]={sh:q['sh'+s],el,wr,hd,tgt:wr,grip:dist<26?.85:.15,appr:dist<40?appr:V(0,-1,0)}}}
+  return {J,S,H}}
+
 /* ---------- modello del lottatore ---------- */
 function mats(team){
   const singlet=team==='A'?0xc9302c:0x2457b0;
@@ -274,9 +309,10 @@ function poseWrestler(w,J,H,W){
   const j=J[W],F=j.F;const {r,u,fw}=F;
   const q=basisQuat(r,u,fw);
   const place=(m,p,qq)=>{m.position.copy(p);m.quaternion.copy(qq||q)};
+  const hasMc=!!j.headQ;
   place(w.torso,j.P);w.torso.scale.set(1.18,1,.7);place(w.trap,add(j.N,u,-3,fw,-2));
   w.neck.set(add(j.N,u,-2),add(j.N,u,8));
-  w.headG.position.copy(j.head);w.headG.quaternion.copy(q);
+  w.headG.position.copy(j.head);w.headG.quaternion.copy(j.headQ||q);
   for(const s of ['L','R']){const L=w.limb[s],h=H[W][s];
     L.delt.position.copy(j['sh'+s]);L.ua.set(j['sh'+s],h.el);L.fa.set(h.el,h.wr);
     poseHand(L.hand,h.wr,h.hd?h.wr.clone().multiplyScalar(2).sub(h.hd):h.el,h.appr,h.grip);
