@@ -290,15 +290,76 @@ $-d\mathbf V/dz = \mathbf Z\,\mathbf I$ (A2 §2.2).
 
 #### Single line: $Z_c$ in two lines of algebra
 
-A forward wave has $V(z) = V^+ e^{-\gamma z}$ and $I(z) = I^+ e^{-\gamma z}$.
-Its derivative is $dV/dz = -\gamma V$. Put that into $-dV/dz = Z\,I$:
+We use the two telegrapher's equations of a single line (A2 §2.2 and §2.3):
 
 $$
-\gamma\,V^+ = Z\,I^+
-\qquad\Longrightarrow\qquad
-Z_c = \frac{V^+}{I^+} = \frac{Z}{\gamma} = \sqrt{\frac{Z}{Y}}
-\quad\left(\text{lossless: } \sqrt{L/C}\right).
+-\frac{dV}{dz} = Z\,I \quad \text{(voltage falls through the series impedance)},
+\qquad
+-\frac{dI}{dz} = Y\,V \quad \text{(current leaks away through the shunt admittance)}.
 $$
+
+A forward wave is $V(z) = V^+ e^{-\gamma z}$ and $I(z) = I^+ e^{-\gamma z}$:
+the same exponential for both, because voltage and current travel together.
+
+**Step 1: take the derivative.** The derivative of $e^{-\gamma z}$ is
+$-\gamma\,e^{-\gamma z}$, so
+
+$$
+-\frac{dV}{dz} = \gamma\,V^+ e^{-\gamma z},
+\qquad
+-\frac{dI}{dz} = \gamma\,I^+ e^{-\gamma z}.
+$$
+
+**Step 2: substitute into the two equations and cancel $e^{-\gamma z}$**
+(it is on both sides):
+
+$$
+\gamma\,V^+ = Z\,I^+ \qquad (1)
+\qquad\qquad
+\gamma\,I^+ = Y\,V^+ \qquad (2)
+$$
+
+Equation (1) is Ohm's law for one metre of line: the voltage lost per metre,
+$\gamma V^+$, equals the series impedance per metre times the current.
+Equation (2) is the same for the current: the current lost per metre equals
+the shunt admittance per metre times the voltage.
+
+**Step 3: multiply (1) by (2)** to find $\gamma$:
+
+$$
+\gamma^2\,V^+ I^+ = Z Y\,V^+ I^+
+\quad\Longrightarrow\quad
+\gamma = \sqrt{Z Y}.
+$$
+
+**Step 4: divide (1) by (2)** to find $V^+/I^+$:
+
+$$
+\frac{V^+}{I^+} = \frac{Z\,I^+}{Y\,V^+}
+\quad\Longrightarrow\quad
+\left(\frac{V^+}{I^+}\right)^2 = \frac{Z}{Y}
+\quad\Longrightarrow\quad
+Z_c = \frac{V^+}{I^+} = \sqrt{\frac{Z}{Y}} .
+$$
+
+Equivalently, from (1) alone, $Z_c = Z/\gamma = Z/\sqrt{ZY} = \sqrt{Z/Y}$.
+
+**Step 5: lossless line.** With $Z = j\omega L$ and $Y = j\omega C$, the
+$j\omega$ cancels:
+
+$$
+Z_c = \sqrt{\frac{j\omega L}{j\omega C}} = \sqrt{\frac{L}{C}},
+\qquad
+\gamma = \sqrt{(j\omega L)(j\omega C)} = j\omega\sqrt{LC}.
+$$
+
+With our line, $L_s = 243$ nH/m and $C_g + C_m = 180.9$ pF/m give
+$\sqrt{L/C} = 36.65\ \Omega$, the value CST reports.
+
+**Picture.** $Z_c$ is a balance between two things. A large $L$ (heavy people
+in the queue) means you must push harder for the same current: $Z_c$ goes up.
+A large $C$ (soft shoulders, lots of charge stored per volt) means a given
+voltage pulls in more current: $Z_c$ goes down. Hence $\sqrt{L/C}$.
 
 A backward wave gives $V^- = -Z_c I^-$: same ratio, but its current flows
 the other way.
