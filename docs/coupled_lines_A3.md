@@ -94,7 +94,7 @@ into a different direction by a matrix; the few that are only scaled are its
 
 *How many, and are they enough?* A non-zero $\mathbf{V}_0$ exists only if
 $\det(\mathbf{Z}\mathbf{Y} - \gamma^2\mathbf{1}) = 0$. For
-$\mathbf{Z}\mathbf{Y} = \begin{pmatrix} a & b \\ b & a \end{pmatrix}$ that is
+$`\mathbf{Z}\mathbf{Y} = \begin{pmatrix} a & b \\ b & a \end{pmatrix}`$ that is
 $(a - \gamma^2)^2 - b^2 = 0$, so $\gamma^2 = a \pm b$: exactly two modes.
 Each travels forwards and backwards ($e^{\mp\gamma z}$), giving four
 solutions, which is the number of conditions a pair of lines has (one at each
@@ -127,7 +127,7 @@ $$
 ### 2.2 Identical lines: the modes are always $(1,1)$ and $(1,-1)$
 
 For identical lines both matrices have the form
-$\begin{pmatrix} a & b \\ b & a \end{pmatrix}$, and so does their product.
+$`\begin{pmatrix} a & b \\ b & a \end{pmatrix}`$, and so does their product.
 Then
 
 $$
@@ -293,7 +293,7 @@ Unvalidated: one length, CST port regions included (see A1–A2 §4).
 ## 7. Exercises
 
 1. Show that $(1,1)$ and $(1,-1)$ are eigenvectors of any matrix
-   $\begin{pmatrix} a & b \\ b & a \end{pmatrix}$, and find the eigenvalues.
+   $`\begin{pmatrix} a & b \\ b & a \end{pmatrix}`$, and find the eigenvalues.
 2. Derive $\mathbf{Z}_c$ for identical lines from
    $\mathbf{Z}_c = \mathbf{T}_V\boldsymbol{\Gamma}^{-1}\mathbf{T}_V^{-1}\mathbf{Z}$.
 3. Derive $V_A = e^{-\bar\gamma z}\cosh\delta z$ and
