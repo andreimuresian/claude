@@ -99,7 +99,7 @@ function build(T,i){
     const el=E('article','step');
     const dots=s.pts.map((p,k)=>`<g><circle cx="${p.x*960}" cy="${p.y*720}" r="17" fill="var(--accent)" stroke="#fff" stroke-width="3"/><text x="${p.x*960}" y="${p.y*720+7}" text-anchor="middle" font-size="20" font-weight="700" fill="var(--accent-ink)" font-family="Barlow,Arial,sans-serif">${k+1}</text></g>`).join('');
     const leg=s.pts.length?`<ul class="legend">${s.pts.map((p,k)=>`<li><i>${k+1}</i>${p.k}</li>`).join('')}</ul>`:'';
-    el.innerHTML=`<div class="pic"><img src="${pre}/s${String(s.n).padStart(2,'0')}.jpg" alt="Fotogramma ${s.n}: ${s.titolo}" width="960" height="720"><svg viewBox="0 0 960 720" preserveAspectRatio="none" aria-hidden="true">${dots}</svg><div class="badge"><span>${fmt(s.t)}</span><span>Vista: ${s.vista}</span></div></div>
+    el.innerHTML=`<div class="pic"><img src="${pre}/s${String(s.n).padStart(2,'0')}.jpg" alt="Fotogramma ${s.n}: ${s.titolo}" width="960" height="${s.h||720}"><svg viewBox="0 0 960 ${s.h||720}" preserveAspectRatio="none" aria-hidden="true">${dots}</svg><div class="badge"><span>${fmt(s.t)}</span><span>Vista: ${s.vista}</span></div></div>
     <div class="txt"><div class="head"><span class="num">${s.n}</span><h3>${s.titolo}</h3></div>${leg}
     <div><p class="lab">Cosa si vede</p><p>${s.vede}</p></div>
     <div><p class="lab">Cosa dice l'istruttore</p><p class="quote">${s.dice}</p></div>
@@ -112,7 +112,7 @@ function build(T,i){
   // lettore a fotogrammi (uno o più spezzoni)
   const N=SP.n,per=SP.cols*SP.rows;let idx=0,playing=false,last=0,acc=0,ci=0;
   const CL=SP.clips||[{name:null,t0:SP.t0,a:0,b:N-1}];
-  for(let k=0;k<SP.sheets;k++){const im=new Image();im.src=pre+'/sp'+k+'.jpg'}
+  let pre_done=false;const preload=()=>{if(pre_done)return;pre_done=true;for(let k=0;k<SP.sheets;k++){const im=new Image();im.src=pre+'/sp'+k+'.jpg'}};
   const fr=pl.querySelector('.frame'),tc=pl.querySelector('.tc'),seek=pl.querySelector('input'),btn=pl.querySelector('.main'),spd=pl.querySelector('select'),chips=pl.querySelector('.chips');
   const idxOf=(c,t)=>CL[c].a+Math.max(0,Math.min(CL[c].b-CL[c].a,Math.round((t-CL[c].t0)*SP.fps)));
   const P={show(j){const c0=CL[ci];idx=Math.max(c0.a,Math.min(c0.b,j));const sh=Math.floor(idx/per),k=idx%per,c=k%SP.cols,r=Math.floor(k/SP.cols);
@@ -121,6 +121,7 @@ function build(T,i){
     const t=c0.t0+(idx-c0.a)/SP.fps;tc.textContent=fmt(t);seek.value=idx;
     let cur=-1;S.forEach((s,j)=>{if((s.ci||0)===ci&&t>=(s.ct??s.t)-.05)cur=j});chips.querySelectorAll('button[data-s]').forEach((b,j)=>b.setAttribute('aria-current',j===cur))},
    clip(c){ci=c;seek.min=CL[c].a;seek.max=CL[c].b;chips.querySelectorAll('button[data-c]').forEach((b,j)=>b.setAttribute('aria-pressed',j===c));P.show(CL[c].a)},
+   preload,
    stop(){playing=false;btn.textContent='Play'},
    goStep(s){P.stop();P.clip(s.ci||0);P.show(idxOf(s.ci||0,s.ct??s.t))},
    tick(now){if(playing){acc+=(now-last)/1000*SP.fps*(+spd.value);last=now;while(acc>=1){acc-=1;if(idx>=CL[ci].b){P.stop();break}P.show(idx+1)}}else last=now}};
@@ -135,9 +136,10 @@ function build(T,i){
 DATA.techs.forEach((T,i)=>{
   $('techs').append(build(T,i));
   const b=E('button',null,T.nome);b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',i===0);
-  b.onclick=()=>{document.querySelectorAll('.tech').forEach((s,j)=>s.hidden=j!==i);document.querySelectorAll('#tabs button').forEach((x,j)=>x.setAttribute('aria-selected',j===i));players.forEach((p,j)=>{if(j!==i)p.stop()});history.replaceState(null,'','#'+T.id)};
+  b.onclick=()=>{document.querySelectorAll('.tech').forEach((s,j)=>s.hidden=j!==i);document.querySelectorAll('#tabs button').forEach((x,j)=>x.setAttribute('aria-selected',j===i));players.forEach((p,j)=>{if(j!==i)p.stop()});players[i].preload();history.replaceState(null,'','#'+T.id)};
   $('tabs').append(b);
 });
 const h=location.hash.slice(1),hi=DATA.techs.findIndex(T=>T.id===h);if(hi>0)$('tabs').children[hi].click();
+players[0].preload();
 (function loop(now){players.forEach(p=>p.tick(now));requestAnimationFrame(loop)})(performance.now());
 </script>
