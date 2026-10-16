@@ -1,223 +1,137 @@
-<title>Libretto di Lotta</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<title>Libretto di lotta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
 <style>
-/* Layout: scheda tecnica = vista dall'alto animata + scheda della fase, sotto la cronologia dei movimenti */
+/* Layout: lettura a colonna unica, un passaggio per riga (foto grande a sinistra, testo a destra su schermo largo).
+   Colori dal tappeto da lotta: verde cupo del muro, arancio dell'anello, grigio verdastro neutro. */
 :root{
-  --bg:#eef1f4; --surface:#ffffff; --ink:#18212b; --muted:#5b6876; --line:#d5dbe2;
-  --mat:#e4ebf2; --grid:#b3c3d4; --force:#d99a00;
-  --red:#d2382c; --blue:#2a5db0; --redsoft:#f9dcd8; --bluesoft:#d9e5f7;
-  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
-  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+  --bg:#edf0ee; --surface:#ffffff; --ink:#17211d; --muted:#56635d; --line:#d3dad6;
+  --accent:#d4561f; --accent-ink:#ffffff; --mat:#27493c; --quote-bg:#f4f6f4;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif; --body:'Barlow',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#11161c; --surface:#1a2129; --ink:#e6ebf0; --muted:#97a4b2; --line:#2c3743;
-  --mat:#1d2732; --grid:#3d5064; --force:#f0b429;
-  --red:#ef5a4c; --blue:#6a9ae8; --redsoft:#4a2622; --bluesoft:#1f3152; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#11161c; --surface:#1a2129; --ink:#e6ebf0; --muted:#97a4b2; --line:#2c3743;
-  --mat:#1d2732; --grid:#3d5064; --force:#f0b429;
-  --red:#ef5a4c; --blue:#6a9ae8; --redsoft:#4a2622; --bluesoft:#1f3152; color-scheme:dark}
+  --bg:#121815; --surface:#1b2420; --ink:#e8eeea; --muted:#9aa8a1; --line:#2c3833; --accent:#f07a42; --accent-ink:#17110d; --mat:#6fa58e; --quote-bg:#222c27; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121815; --surface:#1b2420; --ink:#e8eeea; --muted:#9aa8a1; --line:#2c3833; --accent:#f07a42; --accent-ink:#17110d; --mat:#6fa58e; --quote-bg:#222c27; color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
-.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
-header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 20px;border-bottom:3px solid var(--ink);padding-bottom:10px;margin-bottom:16px}
-h1{font-family:var(--display);font-weight:800;font-size:clamp(2rem,5vw,3rem);line-height:1;margin:0;text-transform:uppercase}
-h1 span{color:var(--red)}
-.club{font-family:var(--display);font-weight:600;font-size:1.05rem;color:var(--muted);letter-spacing:.06em;text-transform:uppercase}
-.techs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.tbtn{all:unset;box-sizing:border-box;cursor:pointer;padding:8px 14px;border:2px solid var(--line);border-radius:8px;background:var(--surface);display:flex;flex-direction:column;min-width:0}
-.tbtn small{font-family:var(--mono);font-size:.72rem;color:var(--muted);text-transform:uppercase}
-.tbtn b{font-family:var(--display);font-size:1.15rem;line-height:1.15}
-.tbtn[aria-current="true"]{border-color:var(--ink);box-shadow:inset 0 -4px 0 var(--red)}
-.tbtn:focus-visible,.btn:focus-visible,.tab:focus-visible{outline:2px solid var(--force);outline-offset:2px}
-h2{font-family:var(--display);font-weight:800;font-size:clamp(1.7rem,4vw,2.4rem);line-height:1.05;margin:0;text-wrap:balance}
-.en{font-family:var(--display);font-weight:600;color:var(--muted);font-size:1.1rem}
-.intro{max-width:72ch;margin:6px 0 14px}
-.tabs{display:flex}
-.tab{all:unset;cursor:pointer;font-family:var(--display);font-weight:700;font-size:1.05rem;letter-spacing:.06em;text-transform:uppercase;padding:9px 18px;border:2px solid var(--ink);border-bottom:none;border-radius:8px 8px 0 0;color:var(--muted)}
-.tab+.tab{margin-left:-2px}
-.tab[aria-selected="true"]{background:var(--surface);color:var(--ink)}
-.tab[data-side="att"][aria-selected="true"]{box-shadow:inset 0 4px 0 var(--red)}
-.tab[data-side="def"][aria-selected="true"]{box-shadow:inset 0 4px 0 var(--blue)}
-.panel{background:var(--surface);border:2px solid var(--ink);border-radius:0 10px 10px 10px;padding:16px}
-.sideintro{margin:0 0 12px;color:var(--muted);max-width:80ch}
-.main{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px}
-svg.stage{width:100%;height:auto;display:block;border-radius:8px;border:1px solid var(--line)}
-.view3d{position:relative;width:100%;aspect-ratio:4/3;max-height:72vh;border-radius:8px;overflow:hidden;border:1px solid var(--line);touch-action:none;background:#dfe5ec}
-.view3d canvas{display:block}
-.hint{position:absolute;left:10px;bottom:10px;font-size:.8rem;background:rgba(20,26,34,.72);color:#fff;padding:4px 10px;border-radius:6px;pointer-events:none;transition:opacity .4s}
-.cams{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:8px;font-size:.85rem;color:var(--muted)}
-.chip{all:unset;box-sizing:border-box;cursor:pointer;padding:4px 10px;border:1.5px solid var(--line);border-radius:999px;color:var(--ink);background:var(--surface);font-size:.85rem;display:inline-flex;gap:5px;align-items:center}
-.chip:hover{border-color:var(--ink)}.chip:focus-visible{outline:2px solid var(--force)}
-.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.8rem;color:var(--muted);margin-top:8px}
-.legend i{display:inline-block;vertical-align:-2px;margin-right:4px}
-.controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
-.btn{all:unset;box-sizing:border-box;cursor:pointer;font-family:var(--display);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:.95rem;padding:7px 14px;border-radius:6px;border:2px solid var(--ink);color:var(--ink);background:var(--surface)}
-.btn.primary{background:var(--ink);color:var(--surface)}
-.speed{display:flex;align-items:center;gap:6px;font-size:.85rem;color:var(--muted);margin-left:auto}
-.speed select{font:inherit;padding:4px;border-radius:6px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
-.phase .num{font-family:var(--mono);font-size:.8rem;color:var(--muted)}
-.phase h3{font-family:var(--display);font-size:1.6rem;line-height:1.1;margin:2px 0 8px}
-.when{display:inline-block;font-size:.88rem;font-weight:600;padding:4px 10px;border-radius:6px;background:var(--bg);border-left:4px solid var(--force);margin-bottom:10px}
-.rows{display:grid;gap:8px;margin:0}
-.rows div{display:grid;grid-template-columns:6.4em minmax(0,1fr);gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line)}
-.rows dt{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;font-size:.88rem;color:var(--muted);padding-top:2px}
-.rows dd{margin:0}
-.grips{margin:10px 0 0;padding:0;list-style:none;font-size:.88rem}
-.grips li{display:grid;grid-template-columns:1.6em minmax(0,1fr);gap:6px;margin-bottom:4px}
-.grips span:first-child{display:inline-grid;place-items:center;width:1.4em;height:1.4em;border-radius:50%;font-family:var(--display);font-weight:700;font-size:.8rem;color:var(--surface)}
-h4{font-family:var(--display);font-size:1rem;letter-spacing:.1em;text-transform:uppercase;margin:22px 0 8px;color:var(--muted)}
-.tl{overflow-x:auto}
-.tlwrap{position:relative;min-width:640px}
-.tlg{display:grid;font-size:.78rem}
-.tlg .lab{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:4px 6px 4px 0;white-space:nowrap;align-self:center}
-.tlg .hd{font-family:var(--mono);font-size:.72rem;color:var(--muted);padding:2px 4px;border-left:1px solid var(--line);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tlg .hd.on{color:var(--ink);font-weight:700;background:var(--bg)}
-.tlg .cell{position:relative;height:22px;border-left:1px solid var(--line);border-top:1px dashed var(--line);cursor:pointer}
-.bar{position:absolute;top:4px;height:14px;border-radius:4px}
-.bar.A{background:var(--red);opacity:.85}.bar.B{background:var(--blue);opacity:.75}
-.ph{position:absolute;top:0;bottom:0;width:2px;background:var(--force);pointer-events:none}
-.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:18px}
-.card{border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--bg)}
-.card h5{margin:0 0 6px;font-family:var(--display);font-size:1.05rem;text-transform:uppercase;letter-spacing:.06em}
-.card ul{margin:0 0 6px;padding-left:1.1em}
-.card li{margin-bottom:4px}
-.err li::marker{content:"✕  ";color:var(--red)}
-.note{font-size:.88rem;color:var(--muted);max-width:80ch;margin-top:26px;border-top:1px solid var(--line);padding-top:12px}
-@media (max-width:860px){.main{grid-template-columns:1fr}.speed{margin-left:0}}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:.005em}
+h1{font-size:clamp(2.2rem,6vw,3.4rem);text-transform:uppercase}
+h2{font-size:1.5rem;text-transform:uppercase}
+h3{font-size:1.5rem}
+.eyebrow{font-family:var(--display);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:.9rem;color:var(--accent);margin:0 0 6px}
+.lead{font-size:1.08rem;max-width:62ch;margin:10px 0 0;color:var(--muted)}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;max-width:75ch}
+.note b{font-family:var(--display);letter-spacing:.04em;text-transform:uppercase}
+.note p{margin:6px 0 0}
+.player{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.frame{width:100%;aspect-ratio:16/9;max-width:100%;background:#0b100e;background-repeat:no-repeat;border-radius:4px;position:relative;overflow:hidden}
+.frame .tc{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.6);color:#fff;font-variant-numeric:tabular-nums;font-size:.85rem;padding:2px 8px;border-radius:3px}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ctl button,.ctl select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 14px;cursor:pointer;min-height:40px}
+.ctl button.main{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;min-width:96px}
+.ctl input[type=range]{flex:1 1 220px;min-width:0;accent-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:99px;padding:4px 11px;cursor:pointer;min-height:32px}
+.chips button[aria-current=true]{background:var(--mat);border-color:var(--mat);color:var(--surface);font-weight:600}
+.step{align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
+@media(max-width:780px){.step{grid-template-columns:minmax(0,1fr)}}
+.pic{position:relative;min-width:0}
+.pic img{display:block;width:100%;height:auto;border-radius:4px}
+.pic svg{position:absolute;inset:0;width:100%;height:100%}
+.badge{position:absolute;left:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.badge span{background:rgba(10,16,13,.78);color:#fff;font-size:.8rem;padding:2px 8px;border-radius:3px;font-variant-numeric:tabular-nums}
+.txt{min-width:0;display:flex;flex-direction:column;gap:12px}
+.head{display:flex;gap:12px;align-items:baseline}
+.num{font-family:var(--display);font-weight:700;font-size:2.4rem;color:var(--accent);line-height:1}
+.lab{font-family:var(--display);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:.82rem;color:var(--muted);margin:0 0 2px}
+.txt p{margin:0}
+.quote{background:var(--quote-bg);border-radius:5px;padding:9px 12px;font-style:italic}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;padding:0;list-style:none;font-size:.9rem}
+.legend li{display:flex;gap:6px;align-items:center}
+.legend i{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-style:normal;font-weight:600;font-size:.8rem}
+.go{align-self:flex-start;font:inherit;font-size:.9rem;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:5px;padding:6px 12px;cursor:pointer;min-height:36px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-family:var(--display);font-weight:600;font-size:1.15rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 18px;cursor:pointer;min-height:44px}
+.tabs button[aria-selected=true]{background:var(--mat);border-color:var(--mat);color:var(--surface)}
+.tech[hidden]{display:none}
+.tech{display:flex;flex-direction:column;gap:28px}
+.small{font-size:.9rem;color:var(--muted);max-width:75ch}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 </style>
 
 <div class="wrap">
-  <header class="top">
-    <div><div class="club">Lotta Club Seggiano</div><h1>Libretto di <span>Lotta</span></h1></div>
-    <div style="color:var(--muted);font-size:.9rem;max-width:44ch">Tutte le tecniche sono descritte in <b>guardia sinistra</b> (piede S avanti). Per l'altro lato inverti S e D.</div>
+  <header>
+    <p class="eyebrow">Lotta Club Seggiano · Libretto tecnico</p>
+    <h1>Libretto di lotta</h1>
+    <p class="lead">Ogni tecnica è divisa in passaggi, con fotogrammi reali presi da un video di allenamento: ciò che si vede, ciò che dice l'istruttore, il perché. In alto trovi lo stesso video in lentissimo.</p>
   </header>
-  <nav class="techs" id="techs" aria-label="Tecniche"></nav>
-  <h2 id="title"></h2><div class="en" id="en"></div>
-  <p class="intro" id="intro"></p>
-
-  <div class="tabs" role="tablist">
-    <button class="tab" role="tab" data-side="att" id="tabAtt">Attacco</button>
-    <button class="tab" role="tab" data-side="def" id="tabDef">Difesa</button>
-  </div>
-  <section class="panel">
-    <p class="sideintro" id="sideIntro"></p>
-    <div class="main">
-      <div style="min-width:0">
-        <div class="view3d" id="view"><div class="hint" id="hint">Trascina per girare attorno · pizzica o rotella per avvicinarti</div></div>
-        <div class="cams" role="group" aria-label="Punto di vista">
-          <span>Guarda da:</span>
-          <button class="chip" data-cam="lato">Lato S</button><button class="chip" data-cam="lato2">Lato D</button>
-          <button class="chip" data-cam="dietro">Dietro di te</button><button class="chip" data-cam="davanti">Davanti a te</button>
-          <button class="chip" data-cam="alto">Dall'alto</button><button class="chip" data-cam="mani">Zoom mani</button><button class="chip" data-cam="video">Camera del video</button>
-          <label class="chip"><input type="checkbox" id="autoRot"> Giro automatico</label>
-          <label class="chip"><input type="checkbox" id="showLab" checked> Etichette S/D</label>
-        </div>
-        <div class="controls">
-          <button class="btn" id="bPrev" aria-label="Fase precedente">◀</button>
-          <button class="btn primary" id="bPlay">Pausa</button>
-          <button class="btn" id="bNext" aria-label="Fase successiva">▶</button>
-          <button class="btn" id="bRep">Ripeti fase</button>
-          <label class="speed" for="speedSel">Velocità
-            <select id="speedSel"><option value="0.35">0.35×</option><option value="0.6" selected>0.6×</option><option value="1">1×</option></select>
-          </label>
-        </div>
-      </div>
-      <div class="phase" style="min-width:0">
-        <div class="num" id="pNum"></div>
-        <h3 id="pTitle"></h3>
-        <div class="when" id="pWhen"></div>
-        <dl class="rows" id="pRows"></dl>
-        <ul class="grips" id="pGrips"></ul>
-      </div>
-    </div>
-
-    <h4>Cronologia: cosa si muove, e quando</h4>
-    <div class="tl"><div class="tlwrap"><div class="tlg" id="tl"></div><div class="ph" id="playhead"></div></div></div>
-    <p style="font-size:.82rem;color:var(--muted);margin:6px 0 0">Ogni colonna è il passaggio verso la fase indicata. Barre sovrapposte in verticale = movimenti simultanei; barre una dopo l'altra = in sequenza. Tocca una colonna per vedere quella fase.</p>
-
-    <div class="cols" style="margin-top:20px">
-      <div class="card" id="startCard"></div>
-      <div class="card"><h5>Consigli chiave</h5><ul id="tips"></ul></div>
-      <div class="card err"><h5>Errori comuni</h5><ul id="errs"></ul></div>
-    </div>
+  <div class="tabs" role="tablist" id="tabs" aria-label="Tecniche"></div>
+  <div id="techs"></div>
+  <section class="note">
+    <b>Cosa non è sicuro</b>
+    <p>Le descrizioni sono mie, scritte guardando i fotogrammi; le frasi degli istruttori sono tradotte dalle trascrizioni dei video. Il lato (destro e sinistro) è dedotto dai fotogrammi: confrontalo con il tuo istruttore. Dove il lato non si vede bene dico «la gamba più vicina a lui» invece di destra o sinistra.</p>
+    <p>I video sono tuoi e restano fuori dal libretto: qui ci sono solo i fotogrammi, per studio personale.</p>
   </section>
-  <p class="note"><b>Doppia gamba: da un video reale.</b> L'attacco è ricostruito da un video che mi hai fornito: ho tracciato i due scheletri in 2D e li ho portati in 3D con ossa a lunghezza fissa, piedi sul tappeto e senza compenetrazioni. La profondità non si vede in un video con una sola camera, quindi è stimata. Il confronto con il video (pulsante «Camera del video») mostra che impostazione, distanze e posizioni coincidono, ma qualche dettaglio no: per esempio il ginocchio a terra del ragazzo nelle fasi 3 e 4 non è sempre chiaro, e mani e dita sono approssimate. Il video non è incluso nel libretto.</p>
-  <p class="note"><b>Fonti e limiti.</b> Le sequenze uniscono le indicazioni standard degli allenatori di lotta libera e folkstyle con i riassunti di guide tecniche online (Fanatic Wrestling, Evolve MMA, JitsuIQ, Digitsu, Coaches Insider). I video completi non erano accessibili da qui. Lati, prese e tempi seguono la versione più insegnata, ma possono cambiare da club a club: confrontali con il tuo istruttore e segnami le differenze. Le proiezioni e il ritorno a terra vanno provati solo su tappeto e con supervisione.</p>
 </div>
 
-<script src="lib/three.min.js"></script>
-<script src="lib/OrbitControls.js"></script>
-<script src="scena3d.js"></script>
-<script src="mocap/dl.js"></script>
-<script src="tecniche.js"></script>
 <script>
-const $=id=>document.getElementById(id);
-const {createView,changed,windowOf,ELEMS}=window.LOTTA3D;
-const view=createView($('view'));let lastT=performance.now(),curSt=null;
-let cur=0,side='att',i=0,T=1,playing=true,speed=.6,mode='hold',t0=performance.now();
-const MOVE=1900,HOLD=2200;
-const keys=()=>TECHS[cur][side];
-
-function renderTechs(){$('techs').innerHTML='';TECHS.forEach((t,k)=>{const b=document.createElement('button');b.className='tbtn';
-  b.innerHTML='<small>'+String(k+1).padStart(2,'0')+' · '+t.cat+'</small><b>'+t.it+'</b>';b.setAttribute('aria-current',k===cur);
-  b.onclick=()=>{cur=k;side='att';load()};$('techs').appendChild(b)})}
-const TRACKS=[['A','fL','Piede S'],['A','fR','Piede D'],['A','hL','Mano S'],['A','hR','Mano D'],['A','body','Anche e testa'],['B','*','Avversario']];
-function buildTimeline(){
-  const K=keys(),n=K.length,g=$('tl');g.innerHTML='';g.style.gridTemplateColumns='8.5em repeat('+(n-1)+',minmax(0,1fr))';
-  g.appendChild(document.createElement('div'));
-  for(let k=1;k<n;k++){const h=document.createElement('div');h.className='hd';h.dataset.k=k;h.textContent=k+'. '+K[k].t;h.title=K[k].t;h.onclick=()=>jump(k);g.appendChild(h)}
-  for(const [W,el,lab] of TRACKS){const l=document.createElement('div');l.className='lab';l.textContent=lab;if(W==='B')l.style.color='var(--blue)';g.appendChild(l);
-    for(let k=1;k<n;k++){const c=document.createElement('div');c.className='cell';c.onclick=()=>jump(k);
-      const els=el==='*'?ELEMS:[el];let lo=1,hi=0;
-      for(const e of els)if(!K[k].mc&&!K[k-1].mc&&changed(K[k-1],K[k],W,e)){const w=windowOf(K[k],W,e);lo=Math.min(lo,w[0]);hi=Math.max(hi,w[1])}
-      if(hi>lo){const b=document.createElement('div');b.className='bar '+W;b.style.left=(lo*100)+'%';b.style.width=((hi-lo)*100)+'%';c.appendChild(b)}
-      g.appendChild(c)}}
+const DATA={"techs": [{"id": "doppia", "nome": "Doppia gamba", "titolo": "Doppia gamba, passo per passo", "dir": "doppia", "sp": {"t0": 28.0, "fps": 10, "n": 251, "fw": 480, "fh": 270, "cols": 5, "rows": 5, "sheets": 11}, "steps": [{"n": 1, "t": 28.75, "vista": "Laterale", "titolo": "Guardia e distanza", "vede": "Entrambi in guardia con le ginocchia piegate e la schiena inclinata in avanti ma dritta. Il ragazzo in verde, a destra, ha il piede destro avanti e il sinistro dietro. Le mani sono davanti, all'altezza dei fianchi, quasi a contatto con quelle dell'allenatore in nero, a sinistra: il braccio non è del tutto teso.", "dice": "«Siamo in una buona guardia. Voglio essere abbastanza vicino da toccarlo, con il braccio non del tutto esteso, ma sparare da lontano.»", "perche": "Se sei troppo lontano devi coprire troppo spazio. Se sei troppo vicino lui può bloccarti o colpirti. Toccare il suo braccio è il modo per controllare la distanza.", "pts": [{"x": 0.6701, "y": 0.265, "k": "testa", "kp": 0}, {"x": 0.7791, "y": 0.4373, "k": "mano", "kp": 9}, {"x": 0.6622, "y": 0.4061, "k": "mano", "kp": 10}, {"x": 0.6514, "y": 0.659, "k": "piede avanti", "kp": 16}, {"x": 0.8206, "y": 0.6835, "k": "piede dietro", "kp": 15}]}, {"n": 2, "t": 29.5, "vista": "Laterale", "titolo": "Abbassa il livello", "vede": "In meno di mezzo secondo il ragazzo piega le ginocchia e porta il busto in avanti e in basso. La testa scende sotto il livello delle mani dell'allenatore. Il piede dietro resta teso e spinge sul tappeto.", "dice": "«Primo passo: abbasso il livello.»", "perche": "Le braccia dell'avversario sono ciò che ti blocca. Passandoci sotto non le incontri. Si scende con le ginocchia, non piegando la vita.", "pts": [{"x": 0.641, "y": 0.396, "k": "testa"}, {"x": 0.817, "y": 0.6813, "k": "piede dietro", "kp": 15}]}, {"n": 3, "t": 30.0, "vista": "Laterale", "titolo": "Il piede davanti entra tra le sue gambe", "vede": "La gamba davanti parte verso le gambe dell'allenatore, mentre quella dietro resta lunga e spinge. Il busto rimane basso e le mani restano tese davanti, vicino alle sue. L'immagine è un po' sfocata perché il movimento è rapido.", "dice": "«Faccio un passo profondo in mezzo alle sue gambe.»", "perche": "Il passo si fa con la gamba davanti, che è già avanti e arriva prima. Il piede dietro carica la spinta.", "pts": [{"x": 0.6059, "y": 0.3668, "k": "testa", "kp": 0}, {"x": 0.5663, "y": 0.502, "k": "ginocchio avanti", "kp": 14}, {"x": 0.8278, "y": 0.6777, "k": "piede dietro", "kp": 15}]}, {"n": 4, "t": 30.5, "vista": "Laterale", "titolo": "Sotto le sue mani", "vede": "La testa del ragazzo arriva all'altezza delle anche dell'allenatore, il ginocchio davanti è vicino alla sua gamba, il piede dietro è disteso all'indietro. Le mani dell'allenatore toccano il ragazzo, ma lui è già sotto.", "dice": "«Secondo passo: parte l'attacco, entro.»", "perche": "I due passi (abbassare, entrare) sono separati: prima il livello, poi il passo. Se il passo parte alto, le braccia dell'avversario lo fermano.", "pts": [{"x": 0.4892, "y": 0.4918, "k": "testa", "kp": 0}, {"x": 0.5714, "y": 0.6015, "k": "mano", "kp": 9}, {"x": 0.4354, "y": 0.5503, "k": "mano", "kp": 10}, {"x": 0.7948, "y": 0.6951, "k": "piede dietro", "kp": 15}]}, {"n": 5, "t": 33.0, "vista": "Obliqua (la camera si è spostata)", "titolo": "Dentro, con un ginocchio a terra", "vede": "Il ragazzo è dentro: il ginocchio davanti è appoggiato al tappeto tra i piedi dell'allenatore, l'altro piede è appoggiato di lato e la testa è accanto al suo fianco. Le braccia vanno in basso verso le sue gambe.", "dice": "«Il ginocchio sale, siamo dentro.»", "perche": "Con il ginocchio a terra hai una base bassa e stabile. La testa a lato e non davanti ti protegge e sposta il suo peso.", "pts": [{"x": 0.403, "y": 0.4531, "k": "testa", "kp": 0}, {"x": 0.4095, "y": 0.6758, "k": "mano", "kp": 9}, {"x": 0.3707, "y": 0.6856, "k": "mano", "kp": 10}]}, {"n": 6, "t": 36.0, "vista": "Obliqua", "titolo": "Anche alte, testa alta, mani dietro i polpacci", "vede": "Il busto è più dritto e la testa alta, appoggiata al fianco dell'allenatore. Le braccia avvolgono le sue gambe sotto il ginocchio. Il ragazzo guarda nella direzione in cui andrà.", "dice": "«Le mie anche sono alte, la mia testa è alta, guardo dove spingerò. Le mani sono dietro i suoi polpacci.»", "perche": "Con schiena dritta e testa alta lo scheletro regge il peso, non i muscoli. Le mani dietro i polpacci tirano le sue gambe verso di te.", "pts": [{"x": 0.4409, "y": 0.4283, "k": "testa", "kp": 0}, {"x": 0.4445, "y": 0.7383, "k": "mano", "kp": 9}]}, {"n": 7, "t": 46.0, "vista": "Da dietro l'allenatore", "titolo": "La presa dietro la gamba, il piede esterno", "vede": "Da questa inquadratura si vede bene: il ragazzo è con un ginocchio a terra tra i piedi dell'allenatore, l'altro piede appoggiato largo, di lato. La testa è a destra dell'anca dell'allenatore, le mani sono dietro la sua gamba. Resta in questa posizione per diversi secondi, in lento.", "dice": "«Quando finisco, spazzo un po' la gamba verso l'esterno.»", "perche": "Il piede largo e di lato prepara il cambio di direzione: non spingi dritto, spingi di lato.", "pts": [{"x": 0.5326, "y": 0.383, "k": "testa", "kp": 0}, {"x": 0.7077, "y": 0.7443, "k": "piede esterno", "kp": 15}, {"x": 0.5, "y": 0.755, "k": "ginocchio a terra"}, {"x": 0.547, "y": 0.667, "k": "mani"}]}, {"n": 8, "t": 49.5, "vista": "Da dietro l'allenatore", "titolo": "Il piede sale: un passo grande", "vede": "Il peso si sposta: il piede che era a terra con il ginocchio si pianta accanto ai piedi dell'allenatore, mentre l'altro piede resta largo. Il ragazzo sta per essere su due piedi, con la testa alta e il busto dritto.", "dice": "«Passo in alto, grande.»", "perche": "Per spingere con tutta la potenza servono entrambe le gambe a terra: il ginocchio non resta giù.", "pts": [{"x": 0.5536, "y": 0.3424, "k": "testa", "kp": 0}, {"x": 0.6955, "y": 0.831, "k": "piede esterno", "kp": 15}, {"x": 0.5625, "y": 0.708, "k": "ginocchio a terra"}]}, {"n": 9, "t": 50.25, "vista": "Obliqua, in movimento", "titolo": "Gira l'angolo e spingi", "vede": "Il ragazzo spinge con la gamba dietro, che è tesa, e gira. L'allenatore ha già perso l'appoggio: un piede è in aria e il corpo si sta girando in orizzontale. L'azione dura meno di mezzo secondo.", "dice": "«Giro l'angolo.»", "perche": "La rotazione avviene verso il lato della testa. Senza la testa a lato e le gambe tirate verso di te non gira.", "pts": []}, {"n": 10, "t": 51.0, "vista": "Obliqua, a terra", "titolo": "Atterraggio sopra e controllo", "vede": "Il ragazzo atterra sopra l'allenatore, con le ginocchia aperte e il petto sul suo busto. Dopo l'atterraggio le mani controllano il suo torso (la guida del video non dice altro su questa parte).", "dice": "La guida non commenta l'atterraggio.", "perche": "Il punto arriva con il controllo, non con la caduta: dopo l'atterraggio non si lascia andare.", "pts": []}], "lead": "Dieci fotogrammi reali del tiro alla doppia gamba, con ciò che si vede, ciò che dice l'istruttore e il perché.", "leggi": "Il ragazzo in maglia verde, a destra, esegue la tecnica. L'allenatore in nero, a sinistra, la subisce. I cerchi numerati indicano testa, mani, ginocchia e piedi del ragazzo che attacca. <b>Attenzione alla vista:</b> solo i passaggi 1-4 sono ripresi di lato; poi la camera si sposta e ogni foto dice da dove è ripresa.", "nota": "I passaggi 9 e 10 sono sfocati perché il movimento è veloce."}, {"id": "seatbelt", "nome": "Seatbelt toss", "titolo": "Seatbelt toss, passo per passo", "dir": "seatbelt", "sp": {"t0": 17.0, "fps": 10, "n": 261, "fw": 480, "fh": 360, "cols": 5, "rows": 5, "sheets": 11}, "steps": [{"n": 1, "t": 18.25, "titolo": "Guardia e inizio del tiro", "vede": "Kolat (maglia gialla, a destra) è in guardia bassa: ginocchia piegate, schiena inclinata in avanti, le mani davanti ai fianchi, aperte. Un piede è più avanti, vicino all'avversario in nero, l'altro è dietro. Lui è appena partito: non ha ancora toccato nessuno.", "dice": "«Faccio il mio tiro alla single leg.» Il video parte da quando la single leg è già stata fatta e l'avversario difende.", "perche": "Il seatbelt toss non è un attacco da fermo: è un secondo tempo, che usi quando la single leg si blocca. Per questo il video parte dal tiro.", "pts": [{"x": 0.55, "y": 0.22, "k": "testa"}, {"x": 0.48, "y": 0.54, "k": "mano"}, {"x": 0.575, "y": 0.53, "k": "mano"}, {"x": 0.67, "y": 0.92, "k": "piede avanti"}, {"x": 0.725, "y": 0.915, "k": "piede dietro"}], "vista": "Laterale"}, {"n": 2, "t": 19.5, "titolo": "Contatto: l'avversario fa il whizzer", "vede": "I due si toccano. L'avversario passa un braccio sopra la spalla di Kolat e lo preme verso il basso; Kolat tiene la testa sotto il suo petto e le mani cercano le sue gambe. I piedi dell'avversario si stringono e la gamba è appena sollevata.", "dice": "«Lui fa il whizzer.» Il whizzer è il braccio che passa sopra la spalla dell'attaccante e lo schiaccia verso il tappeto.", "perche": "È la difesa classica alla single leg: con il whizzer l'avversario ti appesantisce la spalla e non ti lascia salire. Da qui in poi Kolat non può più rialzarsi dritto con facilità.", "pts": [{"x": 0.49, "y": 0.36, "k": "testa"}], "vista": "Laterale"}, {"n": 3, "t": 21.0, "titolo": "Single leg con un ginocchio a terra", "vede": "Kolat è abbassato su un ginocchio appoggiato al tappeto e tiene la gamba dell'avversario con entrambe le mani, vicino al ginocchio. La sua testa è premuta contro le costole dell'avversario; il braccio dell'avversario è sopra la sua schiena. Il piede dell'avversario resta a terra tra le gambe di Kolat.", "dice": "«Cerca di tenere il piede dentro il mio cavallo. Non vuole che lo porti fuori, sull'anca o dentro.»", "perche": "Finché il piede dell'avversario resta tra le tue gambe, la gamba non esce: lui ha una base e tu non puoi sollevarla. Lo scopo della tecnica è risolvere questo stallo.", "pts": [{"x": 0.575, "y": 0.5, "k": "testa"}, {"x": 0.63, "y": 0.745, "k": "mani"}, {"x": 0.73, "y": 0.8, "k": "ginocchio a terra"}], "vista": "Laterale"}, {"n": 4, "t": 24.0, "titolo": "Lo stallo: Kolat si alza, la gamba resta bloccata", "vede": "Kolat è di nuovo in piedi, piegato in avanti, con la testa contro il torace dell'avversario. Le mani sono unite dietro la gamba catturata, che resta ripiegata sotto il suo braccio. L'avversario sta su un piede solo, con la schiena inclinata in avanti, il braccio libero penzola verso il tappeto.", "dice": "«Siamo bloccati in questa posizione. Non riesco a far uscire il piede. Tutto ciò che voglio fare ora è salire.»", "perche": "Non spingere né tirare a vuoto: se il piede non esce, il piano è salire lungo il corpo dell'avversario fino a un'altra presa. È questa la decisione chiave della tecnica.", "pts": [{"x": 0.556, "y": 0.39, "k": "testa"}, {"x": 0.625, "y": 0.61, "k": "mani"}, {"x": 0.73, "y": 0.91, "k": "piede avanti"}, {"x": 0.78, "y": 0.93, "k": "piede dietro"}], "vista": "Laterale"}, {"n": 5, "t": 28.0, "titolo": "Salire con la mano, in profondità", "vede": "La testa di Kolat resta premuta contro l'avversario. La mano sale lungo la gamba catturata, dalla caviglia verso il ginocchio; l'altra mano la accompagna. I piedi di Kolat restano fermi e larghi, le ginocchia piegate: sale con le mani, non alzandosi in piedi.", "dice": "«Prendo questa mano e salgo, vado in profondità dietro il ginocchio.»", "perche": "Più la mano è profonda dietro il ginocchio, più la gamba è controllata e meno spazio ha lui per ritrarla. Si sale con le mani perché la schiena non si deve sollevare e il whizzer non deve prendere spazio.", "pts": [{"x": 0.5625, "y": 0.36, "k": "testa"}, {"x": 0.594, "y": 0.64, "k": "mano"}, {"x": 0.73, "y": 0.91, "k": "piede avanti"}, {"x": 0.79, "y": 0.93, "k": "piede dietro"}], "vista": "Laterale"}, {"n": 6, "t": 30.5, "titolo": "Avvolgere dietro il ginocchio", "vede": "Il braccio di Kolat passa dietro il ginocchio dell'avversario e si chiude: il ginocchio dell'avversario è ora nell'incavo del braccio. La testa è ancora sotto il suo petto e i piedi di Kolat sono rimasti dove erano.", "dice": "«Una volta che ho avvolto, adesso posso cambiare.»", "perche": "La gamba è controllata dal gomito, non solo dalla mano. Solo ora si può lasciare la presa di prima senza che l'avversario la ritragga: il cambio si fa quando la gamba è già al sicuro.", "pts": [{"x": 0.55, "y": 0.38, "k": "testa"}, {"x": 0.58, "y": 0.74, "k": "mano"}, {"x": 0.56, "y": 0.61, "k": "braccio dietro il ginocchio"}, {"x": 0.64, "y": 0.92, "k": "piede avanti"}, {"x": 0.78, "y": 0.92, "k": "piede dietro"}], "vista": "Laterale"}, {"n": 7, "t": 34.5, "titolo": "Il cambio verso il seatbelt", "vede": "Le mani di Kolat si uniscono e la gamba è tenuta con la mano e l'avambraccio. Un braccio comincia a passare attorno al busto dell'avversario, ancora sotto la sua ascella. Il corpo di Kolat non si è mosso: cambiano solo le braccia.", "dice": "«Posso cambiare e andare alla seatbelt.»", "perche": "Il cambio è la parte che richiede tempo, perché le braccia lasciano una presa per prenderne un'altra. Si fa da fermi e a testa premuta, per non dargli il tempo di scappare.", "pts": [{"x": 0.53, "y": 0.38, "k": "testa"}, {"x": 0.68, "y": 0.65, "k": "mano"}, {"x": 0.575, "y": 0.61, "k": "mano"}, {"x": 0.74, "y": 0.92, "k": "piede"}], "vista": "Laterale"}, {"n": 8, "t": 40.0, "titolo": "Seatbelt: braccio attorno al busto, profondo", "vede": "Il braccio di Kolat è passato attorno alla vita dell'avversario e l'altro braccio completa la presa, come una cintura di sicurezza. La testa di Kolat è contro le sue costole, il peso in avanti. L'avversario ha ancora un piede a terra e una mano appoggiata al proprio ginocchio.", "dice": "«Così profondo: ho la seatbelt.»", "perche": "Una presa profonda attorno al busto serve a farlo caricare sulle tue anche quando ti giri. Se la presa è superficiale, nell'arco si scivola via.", "pts": [{"x": 0.54, "y": 0.36, "k": "testa"}, {"x": 0.59, "y": 0.58, "k": "avambraccio"}, {"x": 0.64, "y": 0.91, "k": "piede avanti"}, {"x": 0.8, "y": 0.91, "k": "piede dietro"}], "vista": "Laterale"}, {"n": 9, "t": 40.75, "titolo": "Passo inverso: il piede attraversa il suo corpo", "vede": "Kolat sposta un piede con un passo largo, di taglio, davanti al corpo dell'avversario, e inizia a girarsi: il busto passa da frontale a dorso verso la camera. Il piede che passa è quello dietro. Le braccia restano chiuse attorno al busto.", "dice": "«Faccio un passo inverso. Prendo questa gamba e voglio passare attraverso il suo corpo, per l'arco all'indietro.»", "perche": "Il passo porta le tue anche sotto le sue. Se il piede non attraversa abbastanza, hai la schiena davanti al suo petto, non sotto.", "pts": [{"x": 0.5, "y": 0.35, "k": "testa"}, {"x": 0.68, "y": 0.88, "k": "piede che attraversa"}], "vista": "Laterale"}, {"n": 10, "t": 41.25, "titolo": "Anche sotto di lui, ginocchia piegate", "vede": "Kolat è ora di schiena alla camera, accovacciato con le ginocchia aperte e i piedi larghi. L'avversario è piegato sopra la sua schiena, con le gambe che stanno ormai lasciando il tappeto. Il busto di Kolat è completamente girato.", "dice": "«Ora faccio l'arco.»", "perche": "Ti accovacci per metterti sotto di lui, poi lo sollevi spingendo le anche in avanti e verso l'alto, non tirando con le braccia.", "pts": [{"x": 0.41, "y": 0.51, "k": "testa"}, {"x": 0.375, "y": 0.9, "k": "piede"}, {"x": 0.58, "y": 0.92, "k": "piede"}], "vista": "Laterale"}, {"n": 11, "t": 41.55, "titolo": "L'arco: lui passa sopra la schiena", "vede": "Un solo istante, sfocato: l'avversario è sollevato sopra la schiena di Kolat, con le gambe in aria. Kolat ha i piedi ancora larghi e ben piantati.", "dice": "«Poi l'arco.»", "perche": "La spinta vera si fa con le gambe e le anche, che si distendono in un movimento solo.", "pts": [], "vista": "Laterale"}, {"n": 12, "t": 42.0, "titolo": "Atterraggio: lui sulla schiena, Kolat sopra", "vede": "L'avversario sta cadendo di schiena, con le gambe in aria, e Kolat è sopra di lui, con le braccia ancora attorno al busto. La caduta dura meno di mezzo secondo.", "dice": "La trascrizione si ferma qui: nel video seguono azioni dal vivo.", "perche": "Il punto più alto è il lancio, ma la tecnica finisce quando atterri sopra, in controllo. Un seatbelt toss ben fatto dà punti e posizione.", "pts": [], "vista": "Laterale"}], "lead": "Dodici fotogrammi reali del seatbelt toss di Cary Kolat: una single leg che si blocca contro un whizzer e si trasforma in un lancio con l'arco.", "leggi": "Kolat, in maglia gialla a destra, esegue la tecnica. L'avversario, in nero a sinistra, la subisce. La camera è sempre ferma e di lato, quindi tutti i passaggi sono ripresi dalla stessa vista. I cerchi numerati indicano testa, mani, piedi e ginocchio di Kolat.", "nota": "Nel video l'istruttore dice che questa tecnica vale «3, a volte 5» punti, secondo l'arco. Il lato (destro o sinistro) di piedi e braccia non è confermato dalla trascrizione: nelle descrizioni uso «un piede» e «il piede dietro» invece di inventare un lato."}]};
+const $=(id)=>document.getElementById(id);
+const fmt=t=>t.toFixed(1).replace('.',',')+' s';
+const E=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
+const players=[];
+function build(T,i){
+  const sec=E('section','tech');sec.id='tech'+i;sec.hidden=i>0;sec.setAttribute('role','tabpanel');sec.setAttribute('aria-label',T.titolo);
+  const SP=T.sp,S=T.steps,pre=T.dir;
+  sec.append(E('div',null,`<h2>${T.titolo}</h2><p class="lead">${T.lead}</p>`));
+  sec.append(E('section','note',`<b>Come leggerla</b><p>${T.leggi}</p>`));
+  const pl=E('section','player');pl.setAttribute('aria-label','Video in lento');
+  pl.innerHTML=`<div class="frame" role="img" aria-label="Fotogramma del video" style="aspect-ratio:${SP.fw}/${SP.fh}"><span class="tc">0,0 s</span></div>
+  <div class="ctl"><button class="main" type="button">Play</button><input type="range" min="0" value="0" step="1" aria-label="Posizione nel video"><label>Velocità <select><option value="0.25">Molto lenta</option><option value="0.5" selected>Lenta</option><option value="1">Normale</option></select></label></div><div class="chips" aria-label="Vai al passaggio"></div>`;
+  sec.append(pl);
+  const steps=E('section');steps.style.cssText='display:flex;flex-direction:column;gap:20px';steps.setAttribute('aria-label','I passaggi');
+  S.forEach(s=>{
+    const el=E('article','step');
+    const dots=s.pts.map((p,k)=>`<g><circle cx="${p.x*960}" cy="${p.y*720}" r="17" fill="var(--accent)" stroke="#fff" stroke-width="3"/><text x="${p.x*960}" y="${p.y*720+7}" text-anchor="middle" font-size="20" font-weight="700" fill="var(--accent-ink)" font-family="Barlow,Arial,sans-serif">${k+1}</text></g>`).join('');
+    const leg=s.pts.length?`<ul class="legend">${s.pts.map((p,k)=>`<li><i>${k+1}</i>${p.k}</li>`).join('')}</ul>`:'';
+    el.innerHTML=`<div class="pic"><img src="${pre}/s${String(s.n).padStart(2,'0')}.jpg" alt="Fotogramma ${s.n}: ${s.titolo}" width="960" height="720"><svg viewBox="0 0 960 720" preserveAspectRatio="none" aria-hidden="true">${dots}</svg><div class="badge"><span>${fmt(s.t)}</span><span>Vista: ${s.vista}</span></div></div>
+    <div class="txt"><div class="head"><span class="num">${s.n}</span><h3>${s.titolo}</h3></div>${leg}
+    <div><p class="lab">Cosa si vede</p><p>${s.vede}</p></div>
+    <div><p class="lab">Cosa dice l'istruttore</p><p class="quote">${s.dice}</p></div>
+    <div><p class="lab">Perché</p><p>${s.perche}</p></div>
+    <button class="go" type="button">Vedi nel video</button></div>`;
+    el.querySelector('.go').onclick=()=>{P.stop();P.show(Math.round((s.t-SP.t0)*SP.fps));pl.scrollIntoView({behavior:'smooth',block:'center'})};
+    steps.append(el);
+  });
+  sec.append(steps);
+  if(T.nota)sec.append(E('section','note',`<b>Su questa tecnica</b><p>${T.nota}</p>`));
+  // lettore a fotogrammi
+  const N=SP.n,per=SP.cols*SP.rows;let idx=0,playing=false,last=0,acc=0;
+  for(let k=0;k<SP.sheets;k++){const im=new Image();im.src=pre+'/sp'+k+'.jpg'}
+  const fr=pl.querySelector('.frame'),tc=pl.querySelector('.tc'),seek=pl.querySelector('input'),btn=pl.querySelector('.main'),spd=pl.querySelector('select'),chips=pl.querySelector('.chips');
+  seek.max=N-1;
+  const P={show(j){idx=Math.max(0,Math.min(N-1,j));const sh=Math.floor(idx/per),k=idx%per,c=k%SP.cols,r=Math.floor(k/SP.cols);
+    fr.style.backgroundImage=`url(${pre}/sp${sh}.jpg)`;fr.style.backgroundSize=`${SP.cols*100}% ${SP.rows*100}%`;
+    fr.style.backgroundPosition=`${c/(SP.cols-1)*100}% ${r/(SP.rows-1)*100}%`;
+    const t=SP.t0+idx/SP.fps;tc.textContent=fmt(t);seek.value=idx;
+    let cur=0;S.forEach((s,j)=>{if(t>=s.t-.05)cur=j});chips.querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-current',j===cur))},
+   stop(){playing=false;btn.textContent='Play'},
+   tick(now){if(playing){acc+=(now-last)/1000*SP.fps*(+spd.value);last=now;while(acc>=1){acc-=1;if(idx>=N-1){P.stop();break}P.show(idx+1)}}else last=now}};
+  btn.onclick=()=>{if(!playing&&idx>=N-1)P.show(0);playing=!playing;last=performance.now();btn.textContent=playing?'Pausa':'Play'};
+  seek.oninput=()=>{P.stop();P.show(+seek.value)};
+  S.forEach(s=>{const b=E('button',null,s.n+'. '+s.titolo.split(',')[0]);b.type='button';b.onclick=()=>{P.stop();P.show(Math.round((s.t-SP.t0)*SP.fps))};chips.append(b)});
+  P.show(0);players.push(P);return sec;
 }
-function placeHead(){const hd=$('tl').querySelectorAll('.hd'),ph=$('playhead');
-  hd.forEach(h=>h.classList.toggle('on',+h.dataset.k===i));
-  if(i===0||!hd.length){ph.style.display='none';return}ph.style.display='block';
-  const h=hd[i-1];ph.style.left=(h.offsetLeft+h.offsetWidth*Math.min(1,T))+'px';}
-function phaseCard(){const K=keys(),k=K[i];
-  $('pNum').textContent=i===0?'Partenza':'Fase '+i+' di '+(K.length-1);
-  $('pTitle').textContent=k.t;
-  $('pWhen').hidden=!k.tempo;$('pWhen').textContent=k.tempo?('Tempo: '+k.tempo):'';
-  const L={piedi:'Piedi',mani:'Mani',testa:'Testa e anche',intento:'Intento'};
-  $('pRows').innerHTML=Object.keys(L).filter(x=>k.d[x]).map(x=>'<div><dt>'+L[x]+'</dt><dd>'+k.d[x]+'</dd></div>').join('');
-  const g=[];for(const W of ['A','B'])for(const s of ['L','R']){const h=(k[W]||{})['h'+s];if(h&&h.g)g.push('<li><span style="background:var(--'+(W==='A'?'red':'blue')+')">'+(s==='L'?'S':'D')+'</span><span>'+h.g+'</span></li>')}
-  $('pGrips').innerHTML=g.length?'<li style="display:block;font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Prese</li>'+g.join(''):'';}
-function draw(){curSt=view.pose(keys(),i,T);view.setArrows(T>=.15||i===0?keys()[i].arrows:null,curSt);placeHead()}
-function jump(k){setPlaying(false);i=k;T=1;mode='hold';phaseCard();draw()}
-function load(){const t=TECHS[cur];renderTechs();$('title').textContent=t.it;$('en').textContent=t.en;$('intro').textContent=t.intro;
-  $('tabAtt').setAttribute('aria-selected',side==='att');$('tabDef').setAttribute('aria-selected',side==='def');
-  $('sideIntro').textContent=side==='att'?(t.att[0].mc?'Tu (pelle chiara, body rosso) esegui la tecnica; l\'avversario ha pelle scura e body blu. Il movimento viene da un video reale, ricostruito in 3D.':'Tu (pelle chiara, body rosso) esegui la tecnica. L\'avversario ha pelle scura e body blu.'):'Tu: pelle chiara, body rosso. Lui: pelle scura, body blu. '+t.defIntro;
-  $('startCard').innerHTML=side==='att'
-    ?'<h5>Posizione di partenza</h5><b>Tu</b><ul>'+t.start.tu.map(x=>'<li>'+x+'</li>').join('')+'</ul><b>Lui</b><ul>'+t.start.lui.map(x=>'<li>'+x+'</li>').join('')+'</ul>'
-    :'<h5>Situazione</h5><ul><li>'+t.defIntro+'</li></ul>';
-  const tips=side==='att'?t.attTips:t.defTips,errs=side==='att'?t.attErr:t.defErr;
-  $('tips').innerHTML=tips.map(x=>'<li>'+x+'</li>').join('');$('errs').innerHTML=errs.map(x=>'<li>'+x+'</li>').join('');
-  buildTimeline();i=0;T=1;mode='hold';t0=performance.now();phaseCard();draw();view.frameOn(curSt);if(!view.started){view.started=1;view.camPreset('lato',curSt)}
-  try{history.replaceState(null,'','#'+t.id+(side==='def'?'-difesa':''))}catch(e){}}
-function setPlaying(p){playing=p;$('bPlay').textContent=p?'Pausa':'Play';t0=performance.now()}
-function tick(now){
-  if(playing){const el=now-t0,n=keys().length;
-    if(mode==='hold'&&el>HOLD/speed){if(i<n-1){i++;T=0;mode='move';t0=now;phaseCard()}else{i=0;T=1;t0=now;phaseCard();draw()}}
-    else if(mode==='move'){T=Math.min(1,el/(MOVE/speed));draw();if(T>=1){mode='hold';t0=now}}}
-  view.tick(now-lastT);lastT=now;requestAnimationFrame(tick)}
-function animate(k){setPlaying(false);i=k;T=0;phaseCard();const s=performance.now();
-  const step=n=>{T=Math.min(1,(n-s)/(MOVE/speed));draw();if(T<1&&!playing)requestAnimationFrame(step)};requestAnimationFrame(step)}
-$('bPlay').onclick=()=>setPlaying(!playing);
-$('bNext').onclick=()=>{if(i<keys().length-1)animate(i+1)};
-$('bPrev').onclick=()=>{if(i>0)jump(i-1)};
-$('bRep').onclick=()=>{if(i>0)animate(i)};
-$('speedSel').onchange=e=>{speed=+e.target.value};
-$('tabAtt').onclick=()=>{side='att';load()};$('tabDef').onclick=()=>{side='def';load()};
-addEventListener('resize',placeHead);
-document.querySelectorAll('[data-cam]').forEach(b=>b.onclick=()=>view.camPreset(b.dataset.cam,curSt));
-$('autoRot').onchange=e=>{view.autoRot=e.target.checked};$('showLab').onchange=e=>{view.showLabels=e.target.checked;draw()};
-$('view').addEventListener('pointerdown',()=>{$('hint').style.opacity=0},{once:true});
-const h=location.hash.slice(1);TECHS.forEach((t,k)=>{if(h.startsWith(t.id)){cur=k;if(h.endsWith('-difesa'))side='def'}});
-if(matchMedia('(prefers-reduced-motion: reduce)').matches)playing=false;
-load();setPlaying(playing);requestAnimationFrame(tick);
+DATA.techs.forEach((T,i)=>{
+  $('techs').append(build(T,i));
+  const b=E('button',null,T.nome);b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',i===0);
+  b.onclick=()=>{document.querySelectorAll('.tech').forEach((s,j)=>s.hidden=j!==i);document.querySelectorAll('#tabs button').forEach((x,j)=>x.setAttribute('aria-selected',j===i));players.forEach((p,j)=>{if(j!==i)p.stop()});history.replaceState(null,'','#'+T.id)};
+  $('tabs').append(b);
+});
+const h=location.hash.slice(1),hi=DATA.techs.findIndex(T=>T.id===h);if(hi>0)$('tabs').children[hi].click();
+(function loop(now){players.forEach(p=>p.tick(now));requestAnimationFrame(loop)})(performance.now());
 </script>

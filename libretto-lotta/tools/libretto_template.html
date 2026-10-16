@@ -1,0 +1,137 @@
+<title>Libretto di lotta</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: lettura a colonna unica, un passaggio per riga (foto grande a sinistra, testo a destra su schermo largo).
+   Colori dal tappeto da lotta: verde cupo del muro, arancio dell'anello, grigio verdastro neutro. */
+:root{
+  --bg:#edf0ee; --surface:#ffffff; --ink:#17211d; --muted:#56635d; --line:#d3dad6;
+  --accent:#d4561f; --accent-ink:#ffffff; --mat:#27493c; --quote-bg:#f4f6f4;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif; --body:'Barlow',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121815; --surface:#1b2420; --ink:#e8eeea; --muted:#9aa8a1; --line:#2c3833; --accent:#f07a42; --accent-ink:#17110d; --mat:#6fa58e; --quote-bg:#222c27; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#121815; --surface:#1b2420; --ink:#e8eeea; --muted:#9aa8a1; --line:#2c3833; --accent:#f07a42; --accent-ink:#17110d; --mat:#6fa58e; --quote-bg:#222c27; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;margin:0;
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);font-weight:700;line-height:1.05;margin:0;text-wrap:balance;letter-spacing:.005em}
+h1{font-size:clamp(2.2rem,6vw,3.4rem);text-transform:uppercase}
+h2{font-size:1.5rem;text-transform:uppercase}
+h3{font-size:1.5rem}
+.eyebrow{font-family:var(--display);font-weight:600;letter-spacing:.14em;text-transform:uppercase;font-size:.9rem;color:var(--accent);margin:0 0 6px}
+.lead{font-size:1.08rem;max-width:62ch;margin:10px 0 0;color:var(--muted)}
+.note{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:14px 16px;max-width:75ch}
+.note b{font-family:var(--display);letter-spacing:.04em;text-transform:uppercase}
+.note p{margin:6px 0 0}
+.player{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.frame{width:100%;aspect-ratio:16/9;max-width:100%;background:#0b100e;background-repeat:no-repeat;border-radius:4px;position:relative;overflow:hidden}
+.frame .tc{position:absolute;left:8px;top:8px;background:rgba(0,0,0,.6);color:#fff;font-variant-numeric:tabular-nums;font-size:.85rem;padding:2px 8px;border-radius:3px}
+.ctl{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.ctl button,.ctl select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:7px 14px;cursor:pointer;min-height:40px}
+.ctl button.main{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;min-width:96px}
+.ctl input[type=range]{flex:1 1 220px;min-width:0;accent-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:99px;padding:4px 11px;cursor:pointer;min-height:32px}
+.chips button[aria-current=true]{background:var(--mat);border-color:var(--mat);color:var(--surface);font-weight:600}
+.step{align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
+@media(max-width:780px){.step{grid-template-columns:minmax(0,1fr)}}
+.pic{position:relative;min-width:0}
+.pic img{display:block;width:100%;height:auto;border-radius:4px}
+.pic svg{position:absolute;inset:0;width:100%;height:100%}
+.badge{position:absolute;left:8px;top:8px;display:flex;gap:6px;flex-wrap:wrap}
+.badge span{background:rgba(10,16,13,.78);color:#fff;font-size:.8rem;padding:2px 8px;border-radius:3px;font-variant-numeric:tabular-nums}
+.txt{min-width:0;display:flex;flex-direction:column;gap:12px}
+.head{display:flex;gap:12px;align-items:baseline}
+.num{font-family:var(--display);font-weight:700;font-size:2.4rem;color:var(--accent);line-height:1}
+.lab{font-family:var(--display);font-weight:600;letter-spacing:.1em;text-transform:uppercase;font-size:.82rem;color:var(--muted);margin:0 0 2px}
+.txt p{margin:0}
+.quote{background:var(--quote-bg);border-radius:5px;padding:9px 12px;font-style:italic}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0;padding:0;list-style:none;font-size:.9rem}
+.legend li{display:flex;gap:6px;align-items:center}
+.legend i{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-style:normal;font-weight:600;font-size:.8rem}
+.go{align-self:flex-start;font:inherit;font-size:.9rem;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:5px;padding:6px 12px;cursor:pointer;min-height:36px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px}
+.tabs button{font:inherit;font-family:var(--display);font-weight:600;font-size:1.15rem;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 18px;cursor:pointer;min-height:44px}
+.tabs button[aria-selected=true]{background:var(--mat);border-color:var(--mat);color:var(--surface)}
+.tech[hidden]{display:none}
+.tech{display:flex;flex-direction:column;gap:28px}
+.small{font-size:.9rem;color:var(--muted);max-width:75ch}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Lotta Club Seggiano · Libretto tecnico</p>
+    <h1>Libretto di lotta</h1>
+    <p class="lead">Ogni tecnica è divisa in passaggi, con fotogrammi reali presi da un video di allenamento: ciò che si vede, ciò che dice l'istruttore, il perché. In alto trovi lo stesso video in lentissimo.</p>
+  </header>
+  <div class="tabs" role="tablist" id="tabs" aria-label="Tecniche"></div>
+  <div id="techs"></div>
+  <section class="note">
+    <b>Cosa non è sicuro</b>
+    <p>Le descrizioni sono mie, scritte guardando i fotogrammi; le frasi degli istruttori sono tradotte dalle trascrizioni dei video. Il lato (destro e sinistro) è dedotto dai fotogrammi: confrontalo con il tuo istruttore. Dove il lato non si vede bene dico «la gamba più vicina a lui» invece di destra o sinistra.</p>
+    <p>I video sono tuoi e restano fuori dal libretto: qui ci sono solo i fotogrammi, per studio personale.</p>
+  </section>
+</div>
+
+<script>
+const DATA=/*DATA*/null;
+const $=(id)=>document.getElementById(id);
+const fmt=t=>t.toFixed(1).replace('.',',')+' s';
+const E=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
+const players=[];
+function build(T,i){
+  const sec=E('section','tech');sec.id='tech'+i;sec.hidden=i>0;sec.setAttribute('role','tabpanel');sec.setAttribute('aria-label',T.titolo);
+  const SP=T.sp,S=T.steps,pre=T.dir;
+  sec.append(E('div',null,`<h2>${T.titolo}</h2><p class="lead">${T.lead}</p>`));
+  sec.append(E('section','note',`<b>Come leggerla</b><p>${T.leggi}</p>`));
+  const pl=E('section','player');pl.setAttribute('aria-label','Video in lento');
+  pl.innerHTML=`<div class="frame" role="img" aria-label="Fotogramma del video" style="aspect-ratio:${SP.fw}/${SP.fh}"><span class="tc">0,0 s</span></div>
+  <div class="ctl"><button class="main" type="button">Play</button><input type="range" min="0" value="0" step="1" aria-label="Posizione nel video"><label>Velocità <select><option value="0.25">Molto lenta</option><option value="0.5" selected>Lenta</option><option value="1">Normale</option></select></label></div><div class="chips" aria-label="Vai al passaggio"></div>`;
+  sec.append(pl);
+  const steps=E('section');steps.style.cssText='display:flex;flex-direction:column;gap:20px';steps.setAttribute('aria-label','I passaggi');
+  S.forEach(s=>{
+    const el=E('article','step');
+    const dots=s.pts.map((p,k)=>`<g><circle cx="${p.x*960}" cy="${p.y*720}" r="17" fill="var(--accent)" stroke="#fff" stroke-width="3"/><text x="${p.x*960}" y="${p.y*720+7}" text-anchor="middle" font-size="20" font-weight="700" fill="var(--accent-ink)" font-family="Barlow,Arial,sans-serif">${k+1}</text></g>`).join('');
+    const leg=s.pts.length?`<ul class="legend">${s.pts.map((p,k)=>`<li><i>${k+1}</i>${p.k}</li>`).join('')}</ul>`:'';
+    el.innerHTML=`<div class="pic"><img src="${pre}/s${String(s.n).padStart(2,'0')}.jpg" alt="Fotogramma ${s.n}: ${s.titolo}" width="960" height="720"><svg viewBox="0 0 960 720" preserveAspectRatio="none" aria-hidden="true">${dots}</svg><div class="badge"><span>${fmt(s.t)}</span><span>Vista: ${s.vista}</span></div></div>
+    <div class="txt"><div class="head"><span class="num">${s.n}</span><h3>${s.titolo}</h3></div>${leg}
+    <div><p class="lab">Cosa si vede</p><p>${s.vede}</p></div>
+    <div><p class="lab">Cosa dice l'istruttore</p><p class="quote">${s.dice}</p></div>
+    <div><p class="lab">Perché</p><p>${s.perche}</p></div>
+    <button class="go" type="button">Vedi nel video</button></div>`;
+    el.querySelector('.go').onclick=()=>{P.stop();P.show(Math.round((s.t-SP.t0)*SP.fps));pl.scrollIntoView({behavior:'smooth',block:'center'})};
+    steps.append(el);
+  });
+  sec.append(steps);
+  if(T.nota)sec.append(E('section','note',`<b>Su questa tecnica</b><p>${T.nota}</p>`));
+  // lettore a fotogrammi
+  const N=SP.n,per=SP.cols*SP.rows;let idx=0,playing=false,last=0,acc=0;
+  for(let k=0;k<SP.sheets;k++){const im=new Image();im.src=pre+'/sp'+k+'.jpg'}
+  const fr=pl.querySelector('.frame'),tc=pl.querySelector('.tc'),seek=pl.querySelector('input'),btn=pl.querySelector('.main'),spd=pl.querySelector('select'),chips=pl.querySelector('.chips');
+  seek.max=N-1;
+  const P={show(j){idx=Math.max(0,Math.min(N-1,j));const sh=Math.floor(idx/per),k=idx%per,c=k%SP.cols,r=Math.floor(k/SP.cols);
+    fr.style.backgroundImage=`url(${pre}/sp${sh}.jpg)`;fr.style.backgroundSize=`${SP.cols*100}% ${SP.rows*100}%`;
+    fr.style.backgroundPosition=`${c/(SP.cols-1)*100}% ${r/(SP.rows-1)*100}%`;
+    const t=SP.t0+idx/SP.fps;tc.textContent=fmt(t);seek.value=idx;
+    let cur=0;S.forEach((s,j)=>{if(t>=s.t-.05)cur=j});chips.querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-current',j===cur))},
+   stop(){playing=false;btn.textContent='Play'},
+   tick(now){if(playing){acc+=(now-last)/1000*SP.fps*(+spd.value);last=now;while(acc>=1){acc-=1;if(idx>=N-1){P.stop();break}P.show(idx+1)}}else last=now}};
+  btn.onclick=()=>{if(!playing&&idx>=N-1)P.show(0);playing=!playing;last=performance.now();btn.textContent=playing?'Pausa':'Play'};
+  seek.oninput=()=>{P.stop();P.show(+seek.value)};
+  S.forEach(s=>{const b=E('button',null,s.n+'. '+s.titolo.split(',')[0]);b.type='button';b.onclick=()=>{P.stop();P.show(Math.round((s.t-SP.t0)*SP.fps))};chips.append(b)});
+  P.show(0);players.push(P);return sec;
+}
+DATA.techs.forEach((T,i)=>{
+  $('techs').append(build(T,i));
+  const b=E('button',null,T.nome);b.type='button';b.setAttribute('role','tab');b.setAttribute('aria-selected',i===0);
+  b.onclick=()=>{document.querySelectorAll('.tech').forEach((s,j)=>s.hidden=j!==i);document.querySelectorAll('#tabs button').forEach((x,j)=>x.setAttribute('aria-selected',j===i));players.forEach((p,j)=>{if(j!==i)p.stop()});history.replaceState(null,'','#'+T.id)};
+  $('tabs').append(b);
+});
+const h=location.hash.slice(1),hi=DATA.techs.findIndex(T=>T.id===h);if(hi>0)$('tabs').children[hi].click();
+(function loop(now){players.forEach(p=>p.tick(now));requestAnimationFrame(loop)})(performance.now());
+</script>
