@@ -12,6 +12,7 @@ doppia={'id':'doppia','nome':'Doppia gamba','titolo':'Doppia gamba, passo per pa
  'nota':'I passaggi 9 e 10 sono sfocati perché il movimento è veloce.'}
 M={m['n']:m for m in json.load(open(sv+'/steps_meta.json'))}
 sp=json.load(open(sv+'/sprite_meta.json'))
+CT={1:58.5,2:59.1,3:60.0,4:60.5,5:60.75,6:61.0,7:62.0,8:62.5,9:63.0,10:63.75,11:64.0,12:64.6}
 L='Laterale'
 ST=[
 {'n':1,'t':18.25,'titolo':'Guardia e inizio del tiro',
@@ -62,10 +63,10 @@ ST=[
  'vede':'L\'avversario sta cadendo di schiena, con le gambe in aria, e Kolat è sopra di lui, con le braccia ancora attorno al busto. La caduta dura meno di mezzo secondo.',
  'dice':'La trascrizione si ferma qui: nel video seguono azioni dal vivo.',
  'perche':'Il punto più alto è il lancio, ma la tecnica finisce quando atterri sopra, in controllo. Un seatbelt toss ben fatto dà punti e posizione.'}]
-for s in ST:s['pts']=M[s['n']]['pts'];s['vista']=L
+for s in ST:s['pts']=M[s['n']]['pts'];s['vista']=L;s['ci']=1;s['ct']=CT[s['n']]
 sb={'id':'seatbelt','nome':'Seatbelt toss','titolo':'Seatbelt toss, passo per passo','dir':'seatbelt','sp':sp,'steps':ST,
  'lead':'Dodici fotogrammi reali del seatbelt toss di Cary Kolat: una single leg che si blocca contro un whizzer e si trasforma in un lancio con l\'arco.',
- 'leggi':'Kolat, in maglia gialla a destra, esegue la tecnica. L\'avversario, in nero a sinistra, la subisce. La camera è sempre ferma e di lato, quindi tutti i passaggi sono ripresi dalla stessa vista. I cerchi numerati indicano testa, mani, piedi e ginocchio di Kolat.',
+ 'leggi':'Kolat, in maglia gialla a destra, esegue la tecnica. L\'avversario, in nero a sinistra, la subisce. La camera è sempre ferma e di lato, quindi tutti i passaggi sono ripresi dalla stessa vista. I fotogrammi grandi vengono dalla dimostrazione lenta dell\'istruttore; il lettore in alto mostra invece solo le ripetizioni fluide, senza la parte in cui spiega, e «Vedi nel video» porta al momento corrispondente della seconda ripetizione (i tempi coincidono solo in modo approssimato). I cerchi numerati indicano testa, mani, piedi e ginocchio di Kolat.',
  'nota':'Nel video l\'istruttore dice che questa tecnica vale «3, a volte 5» punti, secondo l\'arco. Il lato (destro o sinistro) di piedi e braccia non è confermato dalla trascrizione: nelle descrizioni uso «un piede» e «il piede dietro» invece di inventare un lato.'}
 tpl=open(os.path.join(os.path.dirname(__file__),'libretto_template.html')).read()
 out=tpl.replace('/*DATA*/null',json.dumps({'techs':[doppia,sb]},ensure_ascii=False))

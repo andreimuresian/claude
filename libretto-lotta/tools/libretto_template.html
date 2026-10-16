@@ -36,6 +36,7 @@ h3{font-size:1.5rem}
 button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chips button{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--bg);color:var(--muted);border-radius:99px;padding:4px 11px;cursor:pointer;min-height:32px}
+.chips button[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--surface);font-weight:600}
 .chips button[aria-current=true]{background:var(--mat);border-color:var(--mat);color:var(--surface);font-weight:600}
 .step{align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px}
 @media(max-width:780px){.step{grid-template-columns:minmax(0,1fr)}}
@@ -67,7 +68,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
   <header>
     <p class="eyebrow">Lotta Club Seggiano · Libretto tecnico</p>
     <h1>Libretto di lotta</h1>
-    <p class="lead">Ogni tecnica è divisa in passaggi, con fotogrammi reali presi da un video di allenamento: ciò che si vede, ciò che dice l'istruttore, il perché. In alto trovi lo stesso video in lentissimo.</p>
+    <p class="lead">Ogni tecnica è divisa in passaggi, con fotogrammi reali presi da un video di allenamento: ciò che si vede, ciò che dice l'istruttore, il perché. In ogni tecnica il lettore in alto mostra il video, anche al rallentatore.</p>
   </header>
   <div class="tabs" role="tablist" id="tabs" aria-label="Tecniche"></div>
   <div id="techs"></div>
@@ -104,27 +105,32 @@ function build(T,i){
     <div><p class="lab">Cosa dice l'istruttore</p><p class="quote">${s.dice}</p></div>
     <div><p class="lab">Perché</p><p>${s.perche}</p></div>
     <button class="go" type="button">Vedi nel video</button></div>`;
-    el.querySelector('.go').onclick=()=>{P.stop();P.show(Math.round((s.t-SP.t0)*SP.fps));pl.scrollIntoView({behavior:'smooth',block:'center'})};
-    steps.append(el);
+        steps.append(el);
   });
   sec.append(steps);
   if(T.nota)sec.append(E('section','note',`<b>Su questa tecnica</b><p>${T.nota}</p>`));
-  // lettore a fotogrammi
-  const N=SP.n,per=SP.cols*SP.rows;let idx=0,playing=false,last=0,acc=0;
+  // lettore a fotogrammi (uno o più spezzoni)
+  const N=SP.n,per=SP.cols*SP.rows;let idx=0,playing=false,last=0,acc=0,ci=0;
+  const CL=SP.clips||[{name:null,t0:SP.t0,a:0,b:N-1}];
   for(let k=0;k<SP.sheets;k++){const im=new Image();im.src=pre+'/sp'+k+'.jpg'}
   const fr=pl.querySelector('.frame'),tc=pl.querySelector('.tc'),seek=pl.querySelector('input'),btn=pl.querySelector('.main'),spd=pl.querySelector('select'),chips=pl.querySelector('.chips');
-  seek.max=N-1;
-  const P={show(j){idx=Math.max(0,Math.min(N-1,j));const sh=Math.floor(idx/per),k=idx%per,c=k%SP.cols,r=Math.floor(k/SP.cols);
+  const idxOf=(c,t)=>CL[c].a+Math.max(0,Math.min(CL[c].b-CL[c].a,Math.round((t-CL[c].t0)*SP.fps)));
+  const P={show(j){const c0=CL[ci];idx=Math.max(c0.a,Math.min(c0.b,j));const sh=Math.floor(idx/per),k=idx%per,c=k%SP.cols,r=Math.floor(k/SP.cols);
     fr.style.backgroundImage=`url(${pre}/sp${sh}.jpg)`;fr.style.backgroundSize=`${SP.cols*100}% ${SP.rows*100}%`;
     fr.style.backgroundPosition=`${c/(SP.cols-1)*100}% ${r/(SP.rows-1)*100}%`;
-    const t=SP.t0+idx/SP.fps;tc.textContent=fmt(t);seek.value=idx;
-    let cur=0;S.forEach((s,j)=>{if(t>=s.t-.05)cur=j});chips.querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-current',j===cur))},
+    const t=c0.t0+(idx-c0.a)/SP.fps;tc.textContent=fmt(t);seek.value=idx;
+    let cur=-1;S.forEach((s,j)=>{if((s.ci||0)===ci&&t>=(s.ct??s.t)-.05)cur=j});chips.querySelectorAll('button[data-s]').forEach((b,j)=>b.setAttribute('aria-current',j===cur))},
+   clip(c){ci=c;seek.min=CL[c].a;seek.max=CL[c].b;chips.querySelectorAll('button[data-c]').forEach((b,j)=>b.setAttribute('aria-pressed',j===c));P.show(CL[c].a)},
    stop(){playing=false;btn.textContent='Play'},
-   tick(now){if(playing){acc+=(now-last)/1000*SP.fps*(+spd.value);last=now;while(acc>=1){acc-=1;if(idx>=N-1){P.stop();break}P.show(idx+1)}}else last=now}};
-  btn.onclick=()=>{if(!playing&&idx>=N-1)P.show(0);playing=!playing;last=performance.now();btn.textContent=playing?'Pausa':'Play'};
+   goStep(s){P.stop();P.clip(s.ci||0);P.show(idxOf(s.ci||0,s.ct??s.t))},
+   tick(now){if(playing){acc+=(now-last)/1000*SP.fps*(+spd.value);last=now;while(acc>=1){acc-=1;if(idx>=CL[ci].b){P.stop();break}P.show(idx+1)}}else last=now}};
+  btn.onclick=()=>{if(!playing&&idx>=CL[ci].b)P.show(CL[ci].a);playing=!playing;last=performance.now();btn.textContent=playing?'Pausa':'Play'};
   seek.oninput=()=>{P.stop();P.show(+seek.value)};
-  S.forEach(s=>{const b=E('button',null,s.n+'. '+s.titolo.split(',')[0]);b.type='button';b.onclick=()=>{P.stop();P.show(Math.round((s.t-SP.t0)*SP.fps))};chips.append(b)});
-  P.show(0);players.push(P);return sec;
+  if(SP.clips)CL.forEach((c,j)=>{const b=E('button',null,c.name);b.type='button';b.dataset.c=j;b.style.fontWeight='600';b.onclick=()=>{P.stop();P.clip(j)};chips.append(b)});
+  S.forEach(s=>{const b=E('button',null,s.n+'. '+s.titolo.split(',')[0]);b.type='button';b.dataset.s=1;b.onclick=()=>P.goStep(s);chips.append(b)});
+  steps.querySelectorAll('.go').forEach((g,j)=>g.onclick=()=>{P.goStep(S[j]);pl.scrollIntoView({behavior:'smooth',block:'center'})});
+  P.clip(0);
+  players.push(P);return sec;
 }
 DATA.techs.forEach((T,i)=>{
   $('techs').append(build(T,i));
