@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Crosstalk from a 2-D cross-section</title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+  </style>
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="/usr/share/javascript/mathjax/MathJax.js"
+  type="text/javascript"></script>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Crosstalk from a 2-D cross-section</h1>
+</header>
+<h1
+id="crosstalk-of-two-coupled-tfln-electrodes-from-a-2-d-cross-section">Crosstalk
+of two coupled TFLN electrodes from a 2-D cross-section</h1>
+<p>What was done, step by step, with the equations actually used. Pitch
+200 µm unless stated. Scripts are in <code>docs/cst/xtalk/</code>; each
+section names the one that produces its numbers.</p>
+<p><strong>Notation</strong></p>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>GSG</td>
+<td>ground–signal–ground coplanar waveguide (CPW)</td>
+</tr>
+<tr class="even">
+<td>Ports</td>
+<td>1 → 2 is line A, 3 → 4 is line B; ports 1 and 3 are at the same
+end</td>
+</tr>
+<tr class="odd">
+<td>NEXT</td>
+<td>near-end crosstalk, <span class="math inline">\(S_{31}\)</span></td>
+</tr>
+<tr class="even">
+<td>FEXT</td>
+<td>far-end crosstalk, <span class="math inline">\(S_{41}\)</span></td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(z_0\)</span></td>
+<td>port reference impedance, 50 Ω</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\gamma=\alpha+j\beta\)</span></td>
+<td>propagation constant; <span class="math inline">\(n=\beta c/(2\pi
+f)\)</span> is the effective index</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(L\)</span></td>
+<td>line length</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="the-3-d-data-and-their-error-floor">1. The 3-D data and their
+error floor</h2>
+<p>The coworker’s CST runs give 4-port S-matrices
+(<code>LINEA0_1MM_*</code>,
+<code>LINEA0_5MM_200UM_PITCH.s4p</code>).</p>
+<p>Lines A and B are geometrically identical, so in an exact solution
+<span class="math inline">\(S_{21}=S_{43}\)</span>. Their complex
+difference measures the numerical error of the run:</p>
+<p><span class="math display">\[e = 20\log_{10}\lvert
+S_{21}-S_{43}\rvert .\]</span></p>
+<p>At 30 GHz this gives:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Run</th>
+<th><span class="math inline">\(e\)</span></th>
+<th>FEXT</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1 mm</td>
+<td>−72.7 dB</td>
+<td>−70.6 dB</td>
+</tr>
+<tr class="even">
+<td>5 mm</td>
+<td>−56.3 dB</td>
+<td>−56.8 dB</td>
+</tr>
+</tbody>
+</table>
+<p>Crosstalk at or below <span class="math inline">\(e\)</span> is not
+trustworthy. The phase of <span
+class="math inline">\(S_{43}/S_{21}\)</span> grows linearly with <span
+class="math inline">\(f\cdot L\)</span>, so the error behaves like a
+slightly different index on the two lines (<span
+class="math inline">\(\Delta n\approx 4\)</span>–<span
+class="math inline">\(7\times10^{-4}\)</span>). That points to mesh
+asymmetry (<code>pitch_compare.py</code>).</p>
+<hr />
+<h2 id="why-chaining-five-1-mm-blocks-failed">2. Why chaining five 1 mm
+blocks failed</h2>
+<p><strong>What was done.</strong> Two 4-port blocks are joined by
+connecting port 2 → next port 1 and port 4 → next port 3. Group each
+block’s ports into a left pair <span
+class="math inline">\((1,3)\)</span> and a right pair <span
+class="math inline">\((2,4)\)</span>, so each S-matrix splits into 2 × 2
+blocks <span class="math inline">\(S_{LL}, S_{LR}, S_{RL},
+S_{RR}\)</span>. The connection is the Redheffer star product
+(<code>cascade_naive.py</code>):</p>
+<p><span class="math display">\[
+\begin{aligned}
+M_1 &amp;= (I - B_{LL}A_{RR})^{-1}, \qquad M_2=(I-A_{RR}B_{LL})^{-1}\\
+S_{LL} &amp;= A_{LL} + A_{LR}M_1B_{LL}A_{RL}, \qquad
+S_{LR}=A_{LR}M_1B_{LR}\\
+S_{RL} &amp;= B_{RL}M_2A_{RL}, \qquad
+S_{RR}=B_{RR}+B_{RL}M_2A_{RR}B_{LR}
+\end{aligned}
+\]</span></p>
+<p>Applied four times to the 1 mm block, it reproduces the 5 mm through
+path (S21). It does not reproduce NEXT and FEXT: at 30 GHz, NEXT is
+−78.7 dB chained against −52.5 dB direct.</p>
+<p><strong>Three suspected causes were tested and ruled
+out.</strong></p>
+<ol type="1">
+<li><strong>Port phase.</strong> Removing the fitted port model (≈ 3 pH
+series, 1.5 fF shunt) changes nothing.</li>
+<li><strong>50 Ω vs 37 Ω mismatch.</strong> The block was renormalised
+to 36.66 Ω before chaining (<code>renorm.py</code>): <span
+class="math display">\[Z = z_0(I+S)(I-S)^{-1}, \qquad S&#39; =
+(Z-z_rI)(Z+z_rI)^{-1}.\]</span> The dips remain.</li>
+<li><strong>A/B asymmetry.</strong> The block was symmetrised first,
+with <span class="math inline">\(P\)</span> the A↔︎B port swap
+(<code>symtest.py</code>): <span class="math display">\[S_{\rm sym} =
+\tfrac12\left(S + PSP\right).\]</span> The chained result changes by 0.0
+dB.</li>
+</ol>
+<p><strong>What remained.</strong> The 5 mm crosstalk sits at its own
+error floor (§1), and the chained crosstalk near the 1 mm error floor.
+Chaining cannot fix either, so a method was needed that does not depend
+on 3-D crosstalk values.</p>
+<hr />
+<h2 id="the-2-d-port-mode-run">3. The 2-D port-mode run</h2>
+<p>The 1 mm model was modified as follows: - the lumped ports and PEC
+bars were removed; - the protruding Si was trimmed; - one waveguide port
+was placed covering both lines: 650 µm wide, from 300 µm above the metal
+to about 70 µm below the Si; - the port edge was made a metal frame
+(electric shielding); - the time-domain solver was run with “port modes
+only”.</p>
+<p>Each run is solved at one “mode calculation frequency”: 6, 18, 30, 42
+and 60 GHz.</p>
+<p><strong>Number of modes.</strong> With <span
+class="math inline">\(N\)</span> separate conductors there are <span
+class="math inline">\(N-1\)</span> quasi-TEM modes. Here there are 6
+metal strips plus the frame, so 7 conductors and 6 modes. That is
+exactly what CST found.</p>
+<p>There can’t be more quasi-TEM modes. Any further mode has a cutoff
+frequency (a substrate or box mode). None appeared among the modes
+computed.</p>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Mode</th>
+<th>β at 30 GHz (1/m)</th>
+<th><span class="math inline">\(n\)</span></th>
+<th>Field pattern (pictures in <code>modes_montage.png</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>1517.63</td>
+<td>2.414</td>
+<td>each whole line against the frame</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>1462.87</td>
+<td>2.327</td>
+<td>same, other symmetry</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>1303.83</td>
+<td>2.074</td>
+<td>a line’s left ground against its right ground (slot)</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>1293.67</td>
+<td>2.058</td>
+<td>same, other symmetry</td>
+</tr>
+<tr class="odd">
+<td><strong>5</strong></td>
+<td><strong>1186.97</strong></td>
+<td><strong>1.8878</strong></td>
+<td>CPW field in the gaps, same sign on A and B:
+<strong>even</strong></td>
+</tr>
+<tr class="even">
+<td><strong>6</strong></td>
+<td><strong>1186.02</strong></td>
+<td><strong>1.8863</strong></td>
+<td>same, opposite sign: <strong>odd</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="why-only-modes-5-and-6-carry-the-crosstalk">4. Why only modes 5
+and 6 carry the crosstalk</h2>
+<p>Write the transverse state of the line as the voltages of the 6
+strips relative to the frame, <span class="math inline">\(\mathbf
+v\in\mathbb R^6\)</span>. The 6 modes form a basis, so any launch is a
+combination of them. The launch sets the amplitudes; propagation along a
+uniform line never mixes the modes.</p>
+<p>The 3-D lumped-port launch imposes, at each end of each line:</p>
+<ol type="1">
+<li><strong>Both grounds of a line at the same potential, signal fed
+symmetrically between them.</strong> The PEC bar ties them. The slot
+modes 3 and 4 need the two grounds of a line at <em>opposite</em>
+potentials, so their amplitude is zero. That removes 2 directions.</li>
+<li><strong>The current leaving on a signal returns on that line’s own
+grounds.</strong> The port sits between signal and bar. Modes 1 and 2
+carry net current on a line, returning through the frame or reference,
+so their amplitude is zero. That removes 2 more.</li>
+</ol>
+<p>That leaves <span class="math inline">\(6-2-2=2\)</span> directions:
+“line A in its CPW mode” and “line B in its CPW mode”. These are spanned
+by the even and odd pair modes 5 and 6. So for a single-line launch,</p>
+<p><span class="math display">\[\mathbf v_{\rm launch}=(1,0)_{\rm
+A,B}=\tfrac12(1,1)+\tfrac12(1,-1)=\tfrac12\,\mathbf v_{\rm
+even}+\tfrac12\,\mathbf v_{\rm odd}.\]</span></p>
+<p><strong>Caveats.</strong> - Each line is only <em>approximately</em>
+mirror-symmetric about its own signal, because the neighbour breaks the
+symmetry. A small conversion into modes 3 and 4 is therefore possible. -
+The agreement of §8 suggests this conversion is small for straight
+lines. - In the lab, the probe or pad must satisfy the same two
+conditions. Bends without ground bridges violate condition 1.</p>
+<hr />
+<h2 id="evenodd-impedance-ratio-from-the-exported-fields">5. Even/odd
+impedance ratio from the exported fields</h2>
+<p>CST’s “Line Impedance” is computed from the total power and the sum
+of all conductor currents. The help text says this “differs from the
+commonly used definition”. It is not the line-A impedance, so it was not
+used for the split.</p>
+<p>Instead (<code>port_voltages_sweep.py</code>):</p>
+<ol type="1">
+<li><strong>Export.</strong> <span
+class="math inline">\(E_y(x,y)\)</span> of modes 5 and 6 on a 0.5 µm
+grid around the metal, at each frequency.</li>
+<li><strong>Integrate.</strong> On a grid row through the 2 µm-thick
+metal, integrate from the left: <span class="math display">\[V(y) =
+-\int E_y\,dy .\]</span> <span class="math inline">\(E_y=0\)</span>
+inside metal, so <span class="math inline">\(V\)</span> is constant on
+each strip: that is the strip potential.</li>
+<li><strong>Line voltage.</strong> Signal minus the mean of its own
+grounds: <span class="math display">\[V_A =
+V_{S_A}-\tfrac12\left(V_{G_{A,\rm l}}+V_{G_{A,\rm r}}\right),\]</span>
+and the same for <span class="math inline">\(B\)</span>.</li>
+<li><strong>Impedance ratio.</strong> Both modes are normalised to the
+same power <span class="math inline">\(P\)</span>. Each line carries
+<span class="math inline">\(\lvert V\rvert^2/(2Z)\)</span>, so <span
+class="math display">\[P=\frac{V_A^2+V_B^2}{2Z}\;\Rightarrow\;\frac{Z_e}{Z_o}=\frac{V_{A,e}^2+V_{B,e}^2}{V_{A,o}^2+V_{B,o}^2}.\]</span>
+Using the sum <span class="math inline">\(V_A^2+V_B^2\)</span> also
+absorbs the ≈ 8 % A/B imbalance of each mode, which comes from the
+near-degenerate mode mixing (§1).</li>
+</ol>
+<p><strong>Results.</strong></p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>6</th>
+<th>18</th>
+<th>30</th>
+<th>42</th>
+<th>60 GHz</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(Z_e/Z_o-1\)</span>, rows inside metal (x
+= 0.5, 1.0, 1.5 µm)</td>
+<td>0.44 %</td>
+<td>0.44 %</td>
+<td>0.45 %</td>
+<td>0.45 %</td>
+<td>0.46 %</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(Z_e/Z_o-1\)</span>, row at metal top (x
+= 2.0 µm)</td>
+<td>0.30 %</td>
+<td>0.30 %</td>
+<td>0.30 %</td>
+<td>0.30 %</td>
+<td>0.31 %</td>
+</tr>
+</tbody>
+</table>
+<p>The rows disagree because the field peaks sharply at the metal edges:
+a 1 µm grid gave 0.34–0.66 %, a 0.5 µm grid gives 0.30–0.45 %.
+<strong>This spread is the uncertainty, and it is the reason the model
+is drawn as a band</strong> (§7).</p>
+<p>The absolute voltage depends on the unknown export normalisation, so
+only the ratio is used.</p>
+<hr />
+<h2 id="index-difference-from-β">6. Index difference from β</h2>
+<p>From the info boxes of e5 and e6 (<code>portmode_betas.txt</code>),
+using <span class="math inline">\(n=\beta c/(2\pi f)\)</span>:</p>
+<table>
+<thead>
+<tr class="header">
+<th>f (GHz)</th>
+<th><span class="math inline">\(n_e\)</span></th>
+<th><span class="math inline">\(n_o\)</span></th>
+<th><span class="math inline">\(\Delta n\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>6</td>
+<td>1.88764</td>
+<td>1.88614</td>
+<td>0.00150</td>
+</tr>
+<tr class="even">
+<td>18</td>
+<td>1.88770</td>
+<td>1.88619</td>
+<td>0.00151</td>
+</tr>
+<tr class="odd">
+<td>30</td>
+<td>1.88781</td>
+<td>1.88630</td>
+<td>0.00151</td>
+</tr>
+<tr class="even">
+<td>42</td>
+<td>1.88799</td>
+<td>1.88646</td>
+<td>0.00152</td>
+</tr>
+<tr class="odd">
+<td>60</td>
+<td>1.88837</td>
+<td>1.88680</td>
+<td>0.00157</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The index offset.</strong> The 3-D single line has <span
+class="math inline">\(n=2.02\to1.93\)</span> over the same band, with
+loss. The help text gives the reason: “lossy metal is treated as PEC” in
+the hexahedral port solver. So the 2-D modes miss the gold’s internal
+inductance and loss. That’s why the average comes from 3-D and only the
+<em>split</em> comes from 2-D (§7).</p>
+<hr />
+<h2 id="the-model">7. The model</h2>
+<h3 id="one-uniform-line-between-50-ω-ports">7.1 One uniform line
+between 50 Ω ports</h3>
+<p>A line with impedance <span class="math inline">\(Z\)</span> and
+propagation constant <span class="math inline">\(\gamma\)</span>, length
+<span class="math inline">\(L\)</span>, between <span
+class="math inline">\(z_0\)</span> ports. Define</p>
+<p><span class="math display">\[\Gamma=\frac{Z-z_0}{Z+z_0}, \qquad
+t=e^{-\gamma L}.\]</span></p>
+<p>Summing the multiple reflections (a geometric series in <span
+class="math inline">\(\Gamma^2t^2\)</span>) gives</p>
+<p><span
+class="math display">\[S_{11}=\frac{\Gamma\,(1-t^2)}{1-\Gamma^2t^2},
+\qquad S_{21}=\frac{(1-\Gamma^2)\,t}{1-\Gamma^2t^2}.\]</span></p>
+<h3 id="two-lines-evenodd-superposition">7.2 Two lines: even/odd
+superposition</h3>
+<p>Driving port 1 with port 3 idle is <span
+class="math inline">\(\tfrac12\)</span>(even drive) + <span
+class="math inline">\(\tfrac12\)</span>(odd drive) (§4). Each half sees
+a single line with its own <span
+class="math inline">\((Z,\gamma)\)</span>, so</p>
+<p><span class="math display">\[
+S_{11}=\tfrac12(S_{11}^e+S_{11}^o),\quad
+S_{21}=\tfrac12(S_{21}^e+S_{21}^o),\quad
+\boxed{S_{31}=\tfrac12(S_{11}^e-S_{11}^o)},\quad
+\boxed{S_{41}=\tfrac12(S_{21}^e-S_{21}^o)}.
+\]</span></p>
+<p>That is all the model computes (<code>modal_vs_s4p_v3.py</code>).</p>
+<h3 id="what-controls-fext-and-next">7.3 What controls FEXT and
+NEXT</h3>
+<ul>
+<li><strong>FEXT, matched case</strong> (<span
+class="math inline">\(\Gamma\approx0\)</span>): <span
+class="math display">\[S_{41}=\tfrac12\left(e^{-j\beta_eL}-e^{-j\beta_oL}\right)\;\Rightarrow\;\lvert
+S_{41}\rvert=\left\lvert\sin\frac{(\beta_e-\beta_o)L}{2}\right\rvert\approx\frac{\pi
+f L\,\Delta n}{c}.\]</span> It grows linearly with <span
+class="math inline">\(f\)</span> and <span
+class="math inline">\(L\)</span>, and is set by <span
+class="math inline">\(\Delta n\)</span>.</li>
+<li><strong>NEXT, small split</strong> <span
+class="math inline">\(Z_{e,o}=Z(1\pm\delta/2)\)</span>: <span
+class="math display">\[S_{31}\approx\frac{\delta}{2}\,Z\frac{\partial
+S_{11}}{\partial Z}\propto \delta\,(1-t^2).\]</span> It is set by <span
+class="math inline">\(\delta=Z_e/Z_o-1\)</span>, and vanishes whenever
+<span class="math inline">\(t^2=1\)</span>, i.e. <span
+class="math inline">\(\beta L=m\pi\)</span>: <span
+class="math display">\[f_m=\frac{m\,c}{2nL}\approx 15\text{ GHz}\cdot m\
+\ (L=5\text{ mm}).\]</span> <strong>A uniform line must show these NEXT
+nulls.</strong></li>
+</ul>
+<h3 id="the-three-versions">7.4 The three versions</h3>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Version</th>
+<th>Average line</th>
+<th>Split</th>
+<th>Figure</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>v1</td>
+<td>2-D, 30 GHz: <span class="math inline">\(n=1.888\)</span>, <span
+class="math inline">\(Z=34.6\)</span> Ω (from CST Z-Line × 2)</td>
+<td><span class="math inline">\(\Delta n\)</span> only, or CST Z-Line
+split (1.2 %)</td>
+<td><code>modal_vs_s4p.png</code></td>
+</tr>
+<tr class="even">
+<td>v2</td>
+<td>same</td>
+<td><span class="math inline">\(\Delta n\)</span> + <span
+class="math inline">\(\delta=0.30\)</span>–<span
+class="math inline">\(0.45\)</span> %</td>
+<td><code>modal_vs_s4p_v2.png</code></td>
+</tr>
+<tr class="odd">
+<td><strong>v3 (hybrid)</strong></td>
+<td><strong>3-D single-line fit</strong> <span
+class="math inline">\(\gamma_{3D}(f)\)</span>, <span
+class="math inline">\(Z_{3D}(f)\)</span>
+(<code>cascade/three_lengths_results.npz</code>)</td>
+<td><span class="math inline">\(\Delta\beta(f)\)</span> from §6, <span
+class="math inline">\(\delta\)</span> from §5</td>
+<td><code>modal_vs_s4p_v3.png</code></td>
+</tr>
+</tbody>
+</table>
+<p>The hybrid sets</p>
+<p><span
+class="math display">\[\gamma_{e,o}=\gamma_{3D}\pm\tfrac{j}{2}\Delta\beta(f),
+\qquad Z_{e,o}=Z_{3D}\left(1\pm\tfrac{\delta}{2}\right), \qquad
+\delta\in[0.30\,\%,\,0.45\,\%].\]</span></p>
+<p><strong>The band.</strong> The model is evaluated twice, with <span
+class="math inline">\(\delta=0.30\)</span> % and <span
+class="math inline">\(\delta=0.45\)</span> %, and the region between the
+two curves is shaded. FEXT depends weakly on <span
+class="math inline">\(\delta\)</span>, so its band is thin. NEXT is
+proportional to <span class="math inline">\(\delta\)</span>, so its band
+is about 3.5 dB thick (<span
+class="math inline">\(20\log_{10}0.45/0.30\)</span>).</p>
+<hr />
+<h2 id="comparison-with-the-3-d-cst-runs">8. Comparison with the 3-D CST
+runs</h2>
+<p>Values in dB, CST / model (<code>modal_vs_s4p_v3.py</code>):</p>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th></th>
+<th>6 GHz</th>
+<th>18 GHz</th>
+<th>30 GHz</th>
+<th>42 GHz</th>
+<th>60 GHz</th>
+<th>Verdict</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1 mm NEXT</td>
+<td>−70.8 / −69…−65</td>
+<td>−62.1 / −61…−57</td>
+<td>−59.6 / −58…−55</td>
+<td>−61.2 / −58…−54</td>
+<td>−61.4 / −59…−56</td>
+<td>1–5 dB high</td>
+</tr>
+<tr class="even">
+<td>1 mm FEXT</td>
+<td>−80.8 / −97…−84</td>
+<td>−72.4 / −76…−72</td>
+<td>−70.6 / −67…−65</td>
+<td>−70.3 / −63…−61</td>
+<td>−59.0 / −59…−58</td>
+<td>good at 18 and 60 GHz</td>
+</tr>
+<tr class="odd">
+<td>5 mm FEXT</td>
+<td>−66.8 / −68…−66</td>
+<td>−80.0 / −59</td>
+<td>−56.8 / −54</td>
+<td>−50.1 / −51</td>
+<td>−44.1 / −48</td>
+<td>envelope agrees; dips do not</td>
+</tr>
+<tr class="even">
+<td>5 mm NEXT</td>
+<td>−59.7 / −58…−55</td>
+<td>−64.5 / −68…−62</td>
+<td>−52.5 / −62…−61</td>
+<td>−48.1 / −57…−54</td>
+<td>−46.4 / −56…−55</td>
+<td>6–10 dB low above 25 GHz</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reading.</strong> - <strong>1 mm:</strong> levels and trends
+agree. The 1 mm run has the lower error floor (−73 dB), so it is the
+reliable reference. - <strong>5 mm FEXT:</strong> the envelope agrees.
+Single-frequency differences near a dip look large: at 18 GHz the CST
+curve is in a −80 dB dip that the model doesn’t have. - <strong>5 mm
+NEXT above 25 GHz:</strong> the model has the nulls of §7.3 (17, 33, 49
+GHz); CST has none and rises smoothly to −46 dB. A uniform two-mode line
+cannot produce that. Either there is extra near-end coupling (port
+region, ground modes) or numerical error. - <strong>Why we can’t decide
+yet:</strong> the 5 mm error floor is −56 dB at 30 GHz, so the disputed
+CST values sit on it. The test is a 5 mm 3-D run with finer mesh around
+the ports.</p>
+<h2 id="prediction-for-14-mm">9. Prediction for 14 mm</h2>
+<p>From the v3 model with <span
+class="math inline">\(\delta=0.45\)</span> %
+(<code>predict_14mm.py</code>):</p>
+<table>
+<thead>
+<tr class="header">
+<th></th>
+<th>10 GHz</th>
+<th>30 GHz</th>
+<th>60 GHz</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>FEXT</td>
+<td>−55 dB</td>
+<td>−48 dB</td>
+<td>−43 dB</td>
+</tr>
+<tr class="even">
+<td>NEXT (line only)</td>
+<td>−58 dB</td>
+<td>−57 dB</td>
+<td>−54 dB</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Correction:</strong> an earlier estimate from the lossless
+2-D line alone gave −46 and −40 dB for FEXT. Including the 3-D losses
+lowers it by about 2–3 dB.</p>
+<hr />
+<h2 id="slow-wave-t-loaded-lines">10. Slow-wave (T-loaded) lines</h2>
+<p><strong>Still effectively uniform.</strong> The tees repeat with
+period <span class="math inline">\(p\)</span> of a few tens of µm, far
+below the RF wavelength (several mm), and the first stop band sits
+near</p>
+<p><span
+class="math display">\[f_B=\frac{c}{2np}\sim\text{THz}.\]</span></p>
+<p>Over 0–60 GHz, the line therefore behaves as a uniform line with one
+effective <span class="math inline">\(n\)</span>, <span
+class="math inline">\(Z\)</span>, <span
+class="math inline">\(\alpha\)</span> (the Bloch-wave values).</p>
+<p><strong>Still even + odd.</strong> Two identical lines with aligned
+tees keep the A↔︎B mirror symmetry, so the pair modes are still even and
+odd, and §7 applies unchanged with Bloch <span
+class="math inline">\(\gamma_{e,o}\)</span>, <span
+class="math inline">\(Z_{e,o}\)</span>.</p>
+<p><strong>What changes is how to get the four numbers.</strong> A 2-D
+port sees one cross-section and cannot see the tees. Two options:</p>
+<ol type="1">
+<li><strong>3-D eigenmode solve of one period of both lines</strong>,
+with periodic boundaries along <span class="math inline">\(z\)</span>
+and a phase shift <span class="math inline">\(\phi=\beta p\)</span>.
+This gives <span class="math inline">\(\beta_e\)</span> and <span
+class="math inline">\(\beta_o\)</span> directly. Whether CST’s eigenmode
+solver accepts the anisotropic LiNbO₃ needs checking.</li>
+<li><strong>Short 3-D runs of <span class="math inline">\(N\)</span> and
+<span class="math inline">\(2N\)</span> periods.</strong> Convert each
+4-port to a 4 × 4 transfer matrix <span class="math inline">\(T\)</span>
+(as in <code>deembed4.py</code>). The eigenvalues of <span
+class="math inline">\(T_N^{-1}T_{2N}\)</span> are <span
+class="math inline">\(e^{\pm\gamma_{e,o}Np}\)</span>, so the port
+regions cancel. The eigenvectors give the even/odd voltage patterns and
+the Bloch impedances.</li>
+</ol>
+<p>Option 2 reuses tools already written. It needs only a few periods of
+geometry, so it stays far cheaper than a 14 mm run.</p>
+<hr />
+<h2 id="files">Files</h2>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Script / data</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>3-D error floor, pitch study</td>
+<td><code>pitch_compare.py</code>, <code>*.s4p</code></td>
+</tr>
+<tr class="even">
+<td>Cascade and its tests</td>
+<td><code>cascade_naive.py</code>, <code>renorm.py</code>,
+<code>symtest.py</code>, <code>deembed4.py</code></td>
+</tr>
+<tr class="odd">
+<td>Mode voltages, impedance ratio</td>
+<td><code>port_voltages_05um.py</code>,
+<code>port_voltages_sweep.py</code>,
+<code>2D port simulation/*.zip</code></td>
+</tr>
+<tr class="even">
+<td>β values</td>
+<td><code>portmode_betas.txt</code></td>
+</tr>
+<tr class="odd">
+<td>Model vs 3-D</td>
+<td><code>modal_vs_s4p.py</code> (v1), <code>modal_vs_s4p_v2.py</code>,
+<code>modal_vs_s4p_v3.py</code></td>
+</tr>
+<tr class="even">
+<td>14 mm prediction</td>
+<td><code>predict_14mm.py</code></td>
+</tr>
+<tr class="odd">
+<td>Slides</td>
+<td><code>crosstalk_cross_section.pptx</code></td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
