@@ -1,0 +1,73 @@
+# =============================================================================
+# Turn an EMPTY scripted element into a "Coupled TL" element (MZM Studio,
+# crosstalk between two adjacent electrodes A and B).
+#
+# 1. In the schematic: right-click > Create scripted element. Rename it (the
+#    name below is CTL_1) and leave it empty.
+# 2. Edit the lines under "settings", then run this file from the Script File
+#    Editor (or paste it into the Script Prompt).
+# 3. If the last message says the setup script could not be set automatically,
+#    open the element's Edit window, Scripts tab, Setup, and paste the content
+#    of coupled_element_setup.lsf there.
+#
+# The two tables (even and odd mode) are written by MZM Studio's Crosstalk
+# window ("Export tables"): coupled_even.txt and coupled_odd.txt.
+# Do not leave an output port unconnected inside a Compound: create only the
+# outputs you wire.
+# =============================================================================
+
+# ---- settings ---------------------------------------------------------------
+el = "CTL_1";                    # name of the empty scripted element
+modulating = 1;                  # 1 = add "modulation A" and "modulation B"
+second_mod = 0;                  # 1 = add "modulation 2 A/B" (second arm, own n_g)
+far_end = 0;                     # 1 = add "far end A" and "far end B"
+near_end = 0;                    # 1 = add "near end A" and "near end B"
+setup_file = "coupled_element_setup.lsf";   # full path if not in the working directory
+# ------------------------------------------------------------------------------
+
+addproperty(el, "table_even", "Coupled TL", "FileOpen", 0, 0, "NonQuantity", "", "coupled_even.txt");
+addproperty(el, "table_odd", "Coupled TL", "FileOpen", 0, 0, "NonQuantity", "", "coupled_odd.txt");
+addproperty(el, "line_length", "Coupled TL", "Number", 0, 1, "FixedUnit", "m", 0.014);
+addproperty(el, "ng", "Coupled TL", "Number", 0, 100, "FixedUnit", "-", 2.27);
+addproperty(el, "second_modulation", "Coupled TL", "Logical", 0, 0, "NonQuantity", "", second_mod);
+addproperty(el, "ng2", "Coupled TL", "Number", 0, 100, "FixedUnit", "-", 2.27);
+addproperty(el, "R0", "Coupled TL", "Number", 1, 10000, "FixedUnit", "ohm", 50);
+addproperty(el, "modulating", "Coupled TL", "Logical", 0, 0, "NonQuantity", "", modulating);
+addproperty(el, "far_end_output", "Coupled TL", "Logical", 0, 0, "NonQuantity", "", far_end);
+addproperty(el, "near_end_output", "Coupled TL", "Logical", 0, 0, "NonQuantity", "", near_end);
+addproperty(el, "wave_convention", "Coupled TL", "ComboChoice", 0, 0, "NonQuantity", "", "voltage;power");
+addproperty(el, "fir_taps", "Coupled TL", "Number", 0, 100000, "FixedUnit", "-", 1024);
+addproperty(el, "phase_convention", "Coupled TL", "ComboChoice", 0, 0, "NonQuantity", "", "physics;engineering");
+
+addport(el, "A1", "Bidirectional", "Electrical Signal", "Left", 0.3);
+addport(el, "B1", "Bidirectional", "Electrical Signal", "Left", 0.7);
+addport(el, "A2", "Bidirectional", "Electrical Signal", "Right", 0.3);
+addport(el, "B2", "Bidirectional", "Electrical Signal", "Right", 0.7);
+if (modulating) {
+    addport(el, "modulation A", "Output", "Electrical Signal", "Top", 0.2);
+    addport(el, "modulation B", "Output", "Electrical Signal", "Top", 0.4);
+    if (second_mod) {
+        addport(el, "modulation 2 A", "Output", "Electrical Signal", "Top", 0.6);
+        addport(el, "modulation 2 B", "Output", "Electrical Signal", "Top", 0.8);
+    }
+}
+if (far_end) {
+    addport(el, "far end A", "Output", "Electrical Signal", "Bottom", 0.6);
+    addport(el, "far end B", "Output", "Electrical Signal", "Bottom", 0.8);
+}
+if (near_end) {
+    addport(el, "near end A", "Output", "Electrical Signal", "Bottom", 0.2);
+    addport(el, "near end B", "Output", "Electrical Signal", "Bottom", 0.4);
+}
+
+ok = 0;
+try {
+    setnamed(el, "setup script", read(setup_file));
+    ok = 1;
+} catch(err);
+
+if (ok) {
+    ?"Coupled TL: properties, ports and setup script set on " + el + ".";
+} else {
+    ?"Coupled TL: properties and ports set on " + el + ". The setup script could not be set automatically: paste coupled_element_setup.lsf into Edit > Scripts > Setup.";
+}

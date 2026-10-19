@@ -35,6 +35,7 @@ SETUP_LSF = os.path.join(LSF_DIR, "tl_element_setup.lsf")
 LOAD_LSF = os.path.join(LSF_DIR, "termination_setup.lsf")
 SOURCE_LSF = os.path.join(LSF_DIR, "source_setup.lsf")
 ELECTRODE_LSF = os.path.join(LSF_DIR, "tl_electrode_setup.lsf")
+COUPLED_LSF = os.path.join(LSF_DIR, "coupled_element_setup.lsf")
 
 SCRIPTED = ['Scripted Element', 'scripted element', 'Scripted element']
 
@@ -182,6 +183,62 @@ class TLElementsMixin:
                           ("second_modulation", int(second)),
                           ("ng2", float(ng2 if second else ng)), ("R0", self.R0),
                           ("far_end_output", int(far_end)), ("wave_convention", "voltage"),
+                          ("fir_taps", int(fir_taps)), ("phase_convention", "physics")):
+            self.setp(name, [prop], val)
+
+    def make_coupled(self, name: str, x: int, y: int, table_even: str, table_odd: str,
+                     L: float, ng: float, ng2: Optional[float] = None,
+                     modulating: bool = True, far_end: bool = False,
+                     near_end: bool = False, fir_taps: int = 1024):
+        """Two coupled identical lines A, B as one scripted element
+        (coupled_element_setup.lsf): bidirectional ports A1, A2, B1, B2 and the
+        outputs asked for -- 'modulation A/B' (and 'modulation 2 A/B' with
+        *ng2*), 'far end A/B', 'near end A/B'. Only those ports are created, so
+        none is left dangling inside a Compound."""
+        second = bool(modulating) and ng2 is not None
+        self._new_scripted(name, x, y)
+        s = self.sim
+        cat = "Coupled TL"
+        for prop, val in (("table_even", fwd(table_even)), ("table_odd", fwd(table_odd))):
+            s.addproperty(name, prop, cat, "FileOpen", 0, 0, "NonQuantity", "", val)
+        s.addproperty(name, "line_length", cat, "Number", 0, 1, "FixedUnit", "m", float(L))
+        s.addproperty(name, "ng", cat, "Number", 0, 100, "FixedUnit", "-", float(ng))
+        s.addproperty(name, "second_modulation", cat, "Logical", 0, 0, "NonQuantity", "",
+                      int(second))
+        s.addproperty(name, "ng2", cat, "Number", 0, 100, "FixedUnit", "-",
+                      float(ng2 if second else ng))
+        s.addproperty(name, "R0", cat, "Number", 1, 10000, "FixedUnit", "ohm", self.R0)
+        for prop, val in (("modulating", modulating), ("far_end_output", far_end),
+                          ("near_end_output", near_end)):
+            s.addproperty(name, prop, cat, "Logical", 0, 0, "NonQuantity", "", int(val))
+        s.addproperty(name, "wave_convention", cat, "ComboChoice", 0, 0, "NonQuantity", "",
+                      "voltage;power")
+        s.addproperty(name, "fir_taps", cat, "Number", 0, 100000, "FixedUnit", "-", int(fir_taps))
+        s.addproperty(name, "phase_convention", cat, "ComboChoice", 0, 0, "NonQuantity", "",
+                      "physics;engineering")
+        s.addport(name, "A1", "Bidirectional", "Electrical Signal", "Left", 0.3)
+        s.addport(name, "B1", "Bidirectional", "Electrical Signal", "Left", 0.7)
+        s.addport(name, "A2", "Bidirectional", "Electrical Signal", "Right", 0.3)
+        s.addport(name, "B2", "Bidirectional", "Electrical Signal", "Right", 0.7)
+        if modulating:
+            s.addport(name, "modulation A", "Output", "Electrical Signal", "Top", 0.2)
+            s.addport(name, "modulation B", "Output", "Electrical Signal", "Top", 0.4)
+        if second:
+            s.addport(name, "modulation 2 A", "Output", "Electrical Signal", "Top", 0.6)
+            s.addport(name, "modulation 2 B", "Output", "Electrical Signal", "Top", 0.8)
+        if far_end:
+            s.addport(name, "far end A", "Output", "Electrical Signal", "Bottom", 0.6)
+            s.addport(name, "far end B", "Output", "Electrical Signal", "Bottom", 0.8)
+        if near_end:
+            s.addport(name, "near end A", "Output", "Electrical Signal", "Bottom", 0.2)
+            s.addport(name, "near end B", "Output", "Electrical Signal", "Bottom", 0.4)
+        self._set_setup(name, COUPLED_LSF)
+        for prop, val in (("table_even", fwd(table_even)), ("table_odd", fwd(table_odd)),
+                          ("line_length", float(L)), ("ng", float(ng)),
+                          ("second_modulation", int(second)),
+                          ("ng2", float(ng2 if second else ng)), ("R0", self.R0),
+                          ("modulating", int(modulating)), ("far_end_output", int(far_end)),
+                          ("near_end_output", int(near_end)), ("wave_convention", "voltage"),
                           ("fir_taps", int(fir_taps)), ("phase_convention", "physics")):
             self.setp(name, [prop], val)
 

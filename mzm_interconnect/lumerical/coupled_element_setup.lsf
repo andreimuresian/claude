@@ -1,0 +1,282 @@
+# =============================================================================
+# SETUP script of the "Coupled TL" scripted element (MZM Studio, crosstalk).
+#
+# Two identical, parallel uniform lines A and B (two GSG electrodes side by
+# side), with their exact 4x4 S-matrix and the exact voltage the light
+# integrates on each line:
+#
+#   A1, A2          bidirectional, electrical   input / far end of line A
+#   B1, B2          bidirectional, electrical   input / far end of line B
+#   modulation A    output, electrical          V_avg of line A (as "modulation"
+#   modulation B    output, electrical          of the TL line element)
+#   modulation 2 A  output (optional)           the same at the second arm's n_g
+#   modulation 2 B  output (optional)
+#   far end A       output (optional)           line voltage at A2
+#   far end B       output (optional)           line voltage at B2
+#   near end A      output (optional)           line voltage at A1 (NEXT on
+#   near end B      output (optional)           the victim: near end B)
+#
+# Two identical coupled lines are two independent uniform lines: the even mode
+# (V_A = V_B) and the odd mode (V_A = -V_B). Each is computed exactly as in
+# tl_element_setup.lsf, from its own table, and recombined:
+#   own line   (even + odd)/2        other line   (even - odd)/2
+# The modulation outputs are linear in the line voltage, so they recombine the
+# same way: no slicing, every integral is closed-form.
+#
+# Properties (created by create_coupled_element.lsf):
+#   line_length, ng, second_modulation, ng2, R0, far_end_output,
+#   wave_convention, fir_taps, phase_convention   as in the TL line element
+#   modulating      0/1     1: the modulation outputs exist
+#   near_end_output 0/1     1: the near end A / B outputs exist
+#   table_even, table_odd   paths, same columns as the TL line table:
+#                           frequency (Hz), loss (dB/m), microwave index,
+#                           Re Z0 (ohm), Im Z0 (ohm); same frequency grid.
+#
+# Python twin: mzm_interconnect/coupled_line.py (coupled_sparams).
+# No user-defined functions and one statement per line, as in the TL line.
+# =============================================================================
+
+c0 = 299792458;
+NP_PER_DB = log(10) / 20;
+
+# ---- 1. read both mode tables ------------------------------------------------
+if (fileexists(table_even) == 0) {
+    logmessage("Coupled TL: even table not found: " + table_even);
+    break;
+}
+if (fileexists(table_odd) == 0) {
+    logmessage("Coupled TL: odd table not found: " + table_odd);
+    break;
+}
+Me = readdata(table_even);
+Mo = readdata(table_odd);
+if (length(Me(:, 1)) != length(Mo(:, 1))) {
+    logmessage("Coupled TL: even and odd tables must have the same frequency points");
+    break;
+}
+if (max(abs(Me(:, 1) - Mo(:, 1))) > 0) {
+    logmessage("Coupled TL: even and odd tables must have the same frequency points");
+    break;
+}
+fr = Me(:, 1);
+lossE = Me(:, 2);
+nE = Me(:, 3);
+ZE = Me(:, 4) + 1i * Me(:, 5);
+lossO = Mo(:, 2);
+nO = Mo(:, 3);
+ZO = Mo(:, 4) + 1i * Mo(:, 5);
+
+# DC row copied from the first point, as in the TL line
+if (fr(1) > 0) {
+    fr = [0; fr];
+    lossE = [lossE(1); lossE];
+    nE = [nE(1); nE];
+    ZE = [ZE(1); ZE];
+    lossO = [lossO(1); lossO];
+    nO = [nO(1); nO];
+    ZO = [ZO(1); ZO];
+}
+nf = length(fr);
+Lline = line_length;
+w = 2 * pi * fr;
+
+# ---- 2. each mode's own S-matrix, reference R0 -------------------------------
+gE = lossE * NP_PER_DB + 1i * w * nE / c0;
+GE = (ZE - R0) / (ZE + R0);
+e1 = exp(-gE * Lline);
+e2 = e1 * e1;
+den = 1 - GE * GE * e2;
+S11E = GE * (1 - e2) / den;
+S21E = (1 - GE * GE) * e1 / den;
+
+gO = lossO * NP_PER_DB + 1i * w * nO / c0;
+GO = (ZO - R0) / (ZO + R0);
+e1 = exp(-gO * Lline);
+e2 = e1 * e1;
+den = 1 - GO * GO * e2;
+S11O = GO * (1 - e2) / den;
+S21O = (1 - GO * GO) * e1 / den;
+
+ws = 1;
+if (wave_convention == "power") { ws = sqrt(R0); }
+Rw = R0 / ws;
+ps = -1;
+if (phase_convention == "engineering") { ps = 1; }
+
+# ---- 3. the 4x4 S-matrix -----------------------------------------------------
+# reflection at the same end, own line / other line
+Sown = (S11E + S11O) / 2;
+Soth = (S11E - S11O) / 2;
+# transmission to the other end, own line / other line
+Town = (S21E + S21O) / 2;
+Toth = (S21E - S21O) / 2;
+
+T = matrix(nf, 3);
+T(:, 1) = fr;
+
+T(:, 2) = abs(Sown);
+T(:, 3) = ps * unwrap(angle(Sown));
+setsparameter("A1", "A1", "transmission", T);
+setsparameter("A2", "A2", "transmission", T);
+setsparameter("B1", "B1", "transmission", T);
+setsparameter("B2", "B2", "transmission", T);
+
+T(:, 2) = abs(Soth);
+T(:, 3) = ps * unwrap(angle(Soth));
+setsparameter("B1", "A1", "transmission", T);
+setsparameter("A1", "B1", "transmission", T);
+setsparameter("B2", "A2", "transmission", T);
+setsparameter("A2", "B2", "transmission", T);
+
+T(:, 2) = abs(Town);
+T(:, 3) = ps * unwrap(angle(Town));
+setsparameter("A2", "A1", "transmission", T);
+setsparameter("A1", "A2", "transmission", T);
+setsparameter("B2", "B1", "transmission", T);
+setsparameter("B1", "B2", "transmission", T);
+
+T(:, 2) = abs(Toth);
+T(:, 3) = ps * unwrap(angle(Toth));
+setsparameter("B2", "A1", "transmission", T);
+setsparameter("A1", "B2", "transmission", T);
+setsparameter("A2", "B1", "transmission", T);
+setsparameter("B1", "A2", "transmission", T);
+
+# ---- 4. modulation outputs: exact integral per mode, then recombined ----------
+# Per mode, as in the TL line: V(z) = Vp exp(-g z) + Vm exp(+g z), Vp and Vm
+# from the voltage and current at the mode's end 1 for a unit wave entering at
+# end 1 (index 1) or end 2 (index 2).
+V1 = ws * (1 + S11E);
+I1 = (1 - S11E) / Rw;
+Vp1E = (V1 + ZE * I1) / 2;
+Vm1E = (V1 - ZE * I1) / 2;
+V1 = ws * S21E;
+I1 = -S21E / Rw;
+Vp2E = (V1 + ZE * I1) / 2;
+Vm2E = (V1 - ZE * I1) / 2;
+V1 = ws * (1 + S11O);
+I1 = (1 - S11O) / Rw;
+Vp1O = (V1 + ZO * I1) / 2;
+Vm1O = (V1 - ZO * I1) / 2;
+V1 = ws * S21O;
+I1 = -S21O / Rw;
+Vp2O = (V1 + ZO * I1) / 2;
+Vm2O = (V1 - ZO * I1) / 2;
+
+nmod = 0;
+if (modulating) { nmod = 1; }
+if (modulating * second_modulation) { nmod = 2; }
+for (km = 1:nmod) {
+    ngk = ng;
+    pA = "modulation A";
+    pB = "modulation B";
+    if (km == 2) {
+        ngk = ng2;
+        pA = "modulation 2 A";
+        pB = "modulation 2 B";
+    }
+    bo = w * ngk / c0;
+    Xo = exp(-1i * bo * Lline) / Lline;
+    # even mode: (exp(qL) - 1)/q with the series where |qL| < 1e-6
+    q1 = -gE + 1i * bo;
+    qL = q1 * Lline;
+    sm = abs(qL) < 1e-6;
+    F1 = sm * Lline * (1 + qL / 2 + qL * qL / 6) + (1 - sm) * (exp(qL) - 1) / (q1 + sm);
+    q2 = gE + 1i * bo;
+    qL = q2 * Lline;
+    sm = abs(qL) < 1e-6;
+    F2 = sm * Lline * (1 + qL / 2 + qL * qL / 6) + (1 - sm) * (exp(qL) - 1) / (q2 + sm);
+    T1E = (Vp1E * F1 + Vm1E * F2) * Xo;
+    T2E = (Vp2E * F1 + Vm2E * F2) * Xo;
+    # odd mode
+    q1 = -gO + 1i * bo;
+    qL = q1 * Lline;
+    sm = abs(qL) < 1e-6;
+    F1 = sm * Lline * (1 + qL / 2 + qL * qL / 6) + (1 - sm) * (exp(qL) - 1) / (q1 + sm);
+    q2 = gO + 1i * bo;
+    qL = q2 * Lline;
+    sm = abs(qL) < 1e-6;
+    F2 = sm * Lline * (1 + qL / 2 + qL * qL / 6) + (1 - sm) * (exp(qL) - 1) / (q2 + sm);
+    T1O = (Vp1O * F1 + Vm1O * F2) * Xo;
+    T2O = (Vp2O * F1 + Vm2O * F2) * Xo;
+
+    # own line: (even + odd)/2, other line: (even - odd)/2
+    Mown1 = (T1E + T1O) / 2;
+    Moth1 = (T1E - T1O) / 2;
+    Mown2 = (T2E + T2O) / 2;
+    Moth2 = (T2E - T2O) / 2;
+
+    T(:, 2) = abs(Mown1);
+    T(:, 3) = ps * unwrap(angle(Mown1));
+    setsparameter(pA, "A1", "transmission", T);
+    setsparameter(pB, "B1", "transmission", T);
+    T(:, 2) = abs(Moth1);
+    T(:, 3) = ps * unwrap(angle(Moth1));
+    setsparameter(pB, "A1", "transmission", T);
+    setsparameter(pA, "B1", "transmission", T);
+    T(:, 2) = abs(Mown2);
+    T(:, 3) = ps * unwrap(angle(Mown2));
+    setsparameter(pA, "A2", "transmission", T);
+    setsparameter(pB, "B2", "transmission", T);
+    T(:, 2) = abs(Moth2);
+    T(:, 3) = ps * unwrap(angle(Moth2));
+    setsparameter(pB, "A2", "transmission", T);
+    setsparameter(pA, "B2", "transmission", T);
+}
+
+# ---- 5. optional far-end voltages: V at end 2 of each line --------------------
+# per mode: wave at end 1 -> ws S21, wave at end 2 -> ws (1 + S11)
+if (far_end_output) {
+    X = ws * (S21E + S21O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("far end A", "A1", "transmission", T);
+    setsparameter("far end B", "B1", "transmission", T);
+    X = ws * (S21E - S21O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("far end B", "A1", "transmission", T);
+    setsparameter("far end A", "B1", "transmission", T);
+    X = ws * (2 + S11E + S11O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("far end A", "A2", "transmission", T);
+    setsparameter("far end B", "B2", "transmission", T);
+    X = ws * (S11E - S11O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("far end B", "A2", "transmission", T);
+    setsparameter("far end A", "B2", "transmission", T);
+}
+
+# ---- 6. optional near-end voltages: V at end 1 of each line ------------------
+# per mode: wave at end 1 -> ws (1 + S11), wave at end 2 -> ws S21
+if (near_end_output) {
+    X = ws * (2 + S11E + S11O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("near end A", "A1", "transmission", T);
+    setsparameter("near end B", "B1", "transmission", T);
+    X = ws * (S11E - S11O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("near end B", "A1", "transmission", T);
+    setsparameter("near end A", "B1", "transmission", T);
+    X = ws * (S21E + S21O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("near end A", "A2", "transmission", T);
+    setsparameter("near end B", "B2", "transmission", T);
+    X = ws * (S21E - S21O) / 2;
+    T(:, 2) = abs(X);
+    T(:, 3) = ps * unwrap(angle(X));
+    setsparameter("near end B", "A2", "transmission", T);
+    setsparameter("near end A", "B2", "transmission", T);
+}
+
+# ---- 7. time-domain filter ---------------------------------------------------
+if (fir_taps > 0) {
+    setfir("rectangular", fir_taps, 0, 0.01, max([fir_taps, 4096]));
+}
+
+logmessage("Coupled TL ready: L = " + num2str(Lline * 1e3) + " mm, R0 = " + num2str(R0) + " ohm, " + num2str(nf) + " points up to " + num2str(fr(nf) / 1e9) + " GHz");

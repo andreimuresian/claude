@@ -361,6 +361,7 @@ class MZMStudio(tk.Tk):
         self._init_style()
         self._build_header()
         self._build_body()
+        self._build_model_selector()
         self._build_status()
 
         params = P.defaults()
@@ -434,6 +435,7 @@ class MZMStudio(tk.Tk):
         tk.Label(bar, text="traveling-wave Mach-Zehnder  |  CST S-parameters "
                            "-> EO bandwidth -> INTERCONNECT",
                  bg=t["bg"], fg=t["muted"], font=("Segoe UI", 9)).pack(side="left", padx=12)
+        self._header_bar = bar
 
         ttk.Button(bar, text="Load session", command=self.action_load_session).pack(side="right", padx=3)
         ttk.Button(bar, text="Bend window", command=self.action_open_bend).pack(side="right", padx=3)
@@ -457,6 +459,47 @@ class MZMStudio(tk.Tk):
                   activebackground=t["err"], cursor="hand2",
                   font=("Segoe UI", 9, "bold"),
                   command=self.hide_banner).pack(side="right", padx=(4, 10))
+
+    def _build_model_selector(self):
+        """Single line (the device, unchanged) or Crosstalk (two adjacent
+        electrodes, in their own window). The variable is a registry
+        parameter, so sessions keep the choice."""
+        t = self.theme
+        bar = self._header_bar
+        tk.Label(bar, text="Model:", bg=t["bg"], fg=t["muted"],
+                 font=("Segoe UI", 9)).pack(side="left", padx=(18, 4))
+        var = self.vars["xt_model"]
+        cb = ttk.Combobox(bar, textvariable=var, state="readonly", width=22,
+                          values=P.BY_KEY["xt_model"].choices)
+        cb.pack(side="left")
+        Tooltip(cb, P.BY_KEY["xt_model"].help, t)
+        var.trace_add("write", lambda *a: self.after_idle(self._on_model_change))
+
+    def _on_model_change(self):
+        if str(self.vars["xt_model"].get()).startswith("Crosstalk"):
+            self.action_open_xtalk()
+        else:
+            win = getattr(self, "xtalk_window", None)
+            if win is not None:
+                try:
+                    win.close()
+                except tk.TclError:
+                    self.xtalk_window = None
+
+    def action_open_xtalk(self):
+        """The Crosstalk window (gui_xtalk.py): two adjacent electrodes as one
+        coupled line. The single-line model is not touched."""
+        win = getattr(self, "xtalk_window", None)
+        if win is not None:
+            try:
+                win.deiconify()
+                win.lift()
+                win.focus_set()
+                return
+            except tk.TclError:
+                self.xtalk_window = None
+        from .gui_xtalk import XtalkWindow
+        self.xtalk_window = XtalkWindow(self)
 
     def show_banner(self, message: str):
         try:
@@ -539,8 +582,8 @@ class MZMStudio(tk.Tk):
         self._rows = []                     # (spec, row frame) in display order
         for group in P.GROUPS:
             specs = [s for s in P.PARAMS if s.group == group]
-            if group == "Bend design":
-                # edited in the Bend window; the variables live here so that
+            if group in ("Bend design", "Crosstalk"):
+                # edited in the Bend / Crosstalk window; the variables live here so that
                 # sessions save and load them with everything else
                 for spec in specs:
                     self.vars[spec.key] = tk.StringVar(value=str(spec.default))

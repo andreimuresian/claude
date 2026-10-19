@@ -25,6 +25,7 @@ Port order: A1, A2, B1, B2 (1 = input end, 2 = far end). Keys:
               wave at port j (same normalisation as T1/T2 of tl_sparams)
   T2[k][j]    the same at the second arm's group index (if ng2 is given)
   FE[k][j]    far-end voltage of line k per unit incident wave at port j
+  NE[k][j]    near-end voltage of line k (at its end 1), same normalisation
 """
 
 from __future__ import annotations
@@ -63,6 +64,12 @@ def coupled_sparams(f_Hz, even: tuple, odd: tuple, L, ng=None, R0=50.0,
     FEe = {1: e["FE1"], 2: e["FE2"]}
     FEo = {1: o["FE1"], 2: o["FE2"]}
     out["FE"] = [[comb(FEe[end[j]], FEo[end[j]], k == line[j]) for j in range(4)]
+                 for k in range(2)]
+    # near end: by symmetry of each mode line, a wave entering at end 1 gives
+    # at end 1 what a wave entering at end 2 gives at end 2
+    NEe = {1: e["FE2"], 2: e["FE1"]}
+    NEo = {1: o["FE2"], 2: o["FE1"]}
+    out["NE"] = [[comb(NEe[end[j]], NEo[end[j]], k == line[j]) for j in range(4)]
                  for k in range(2)]
     if modulating:
         for key, sfx in (("T", ""), ("T2", "_2")):
@@ -160,3 +167,130 @@ def brute_force(f_Hz, even, odd, L, ng, R0=50.0, nz=4001, drive=0):
         res["T"][n] = [np.trapezoid(X[:, k] * ph, z) for k in (0, 1)]
         res["FE"][n] = VL
     return res
+
+
+# ---------------------------------------------------------------------------
+# The network INTERCONNECT will solve
+# ---------------------------------------------------------------------------
+def terminated_response(block: dict, Zs, Rt, R0=50.0) -> dict:
+    """
+    Aggressor A driven by an EMF of 1 V behind Zs at A1; the victim's input B1
+    sees its own (idle) driver Zs; both far ends A2, B2 end in Rt. *Zs* and
+    *Rt* are scalars or arrays on the block's grid (see scripted_line.rlc_z).
+    Same normalisation as scripted_line.chain_response, so the aggressor's H
+    equals the single-line H when the coupling is removed.
+
+    Returns H_A, H_B (voltage the light integrates on each line, referenced to
+    the light leaving the line), H2_A, H2_B (second arm, if present), the
+    far-end voltages FE_A, FE_B, the port voltages V (4 x nf, order A1 A2 B1
+    B2) and s11_in at A1 (reference Zs).
+    """
+    f = block["f_Hz"]
+    nf = len(f)
+    Zs = np.broadcast_to(np.asarray(Zs, complex), f.shape)
+    Rt = np.broadcast_to(np.asarray(Rt, complex), f.shape)
+    Gs = (Zs - R0) / (Zs + R0)
+    Gt = (Rt - R0) / (Rt + R0)
+    src = R0 / (Zs + R0)
+    S = np.array([[np.broadcast_to(block["S"][i][j], f.shape) for j in range(4)]
+                  for i in range(4)])                       # 4 x 4 x nf
+    a = np.zeros((nf, 4), complex)
+    for n in range(nf):
+        G = np.diag([Gs[n], Gt[n], Gs[n], Gt[n]])
+        rhs = np.array([src[n], 0, 0, 0], complex)
+        a[n] = np.linalg.solve(np.eye(4) - G @ S[:, :, n], rhs)
+    b = np.einsum("ijn,nj->ni", S, a)
+    out = dict(f_Hz=f, a=a, V=(a + b).T)
+
+    def lin(rows):
+        return [sum(rows[k][j] * a[:, j] for j in range(4)) for k in range(2)]
+    out["FE_A"], out["FE_B"] = lin(block["FE"])
+    out["NE_A"], out["NE_B"] = lin(block["NE"])
+    if "T" in block:
+        out["H_A"], out["H_B"] = lin(block["T"])
+    if "T2" in block:
+        out["H2_A"], out["H2_B"] = lin(block["T2"])
+    Zin = (a[:, 0] + b[:, 0]) / ((a[:, 0] - b[:, 0]) / R0)
+    out["s11_in"] = (Zin - Zs) / (Zin + Zs)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Tables for a device: the GUI's own line + the 2-D even/odd split
+# ---------------------------------------------------------------------------
+def read_betas(path: str):
+    """2-D port-mode table: columns frequency (GHz), beta_even, beta_odd (1/m).
+    Lines starting with a letter or '#' are skipped. Returns (f_Hz, dbeta)."""
+    rows = []
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            s = line.strip()
+            if not s or s[0].isalpha() or s[0] == "#":
+                continue
+            rows.append([float(x) for x in s.replace(",", " ").split()[:3]])
+    M = np.array(rows)
+    return M[:, 0] * 1e9, M[:, 1] - M[:, 2]
+
+
+def dbeta_on_grid(f_Hz, betas_path=None, dn=None):
+    """beta_even - beta_odd on *f_Hz*: from a 2-D port-mode table (dbeta/f
+    interpolated, held constant outside the table, i.e. dn held constant), or
+    from a constant index split *dn* = n_even - n_odd."""
+    f = np.asarray(f_Hz, float)
+    if betas_path:
+        fb, db = read_betas(betas_path)
+        return np.interp(f, fb, db / fb) * f
+    return 2 * np.pi * f * float(dn) / C0
+
+
+def device_mode_tables(fit, p: dict, f_GHz, dz: float, betas_path=None, dn=None):
+    """Even/odd tables on *f_GHz*: the GUI's fitted electrode line (the same
+    line as the single-line model, from line_tables, with the GUI's what-if
+    knobs) split by the 2-D even/odd results. Returns (even, odd, dn(f))."""
+    from .extractor import line_tables
+    f = np.asarray(f_GHz, float) * 1e9
+    alpha, Zc, nm = line_tables(fit, p, np.asarray(f_GHz, float))
+    w = 2 * np.pi * f
+    gamma = np.asarray(alpha) * 100.0 * NP_PER_DB_EXACT + 1j * w * np.asarray(nm) / C0
+    db = dbeta_on_grid(f, betas_path, dn)
+    even, odd = hybrid_mode_tables(f, gamma, np.asarray(Zc, complex), db, float(dz))
+    return even, odd, db * C0 / w
+
+
+def device_crosstalk(fit, p: dict, dz: float, betas_path=None, dn=None, f_GHz=None) -> dict:
+    """The twin for the GUI's device: the 4-port at R0 (NEXT/FEXT as a VNA
+    would measure them) and the circuit with the GUI's source and termination
+    (resistance, series L and shunt C, as the TL source/load elements)."""
+    from .scripted_line import rlc_z
+    if f_GHz is None:
+        f_GHz = np.linspace(max(fit.f_min_sim_GHz, 0.05), float(p["f_max_GHz"]), 600)
+    f = np.asarray(f_GHz, float) * 1e9
+    even, odd, dn_f = device_mode_tables(fit, p, f_GHz, dz, betas_path, dn)
+    L = float(p["L_target_mm"]) * 1e-3
+    blk = coupled_sparams(f, even, odd, L, ng=float(p["ng"]))
+    Zs = rlc_z(f, float(p["Zs_R"]), float(p["Zs_L_pH"]) * 1e-12, float(p["Zs_C_fF"]) * 1e-15)
+    Rt = rlc_z(f, float(p["Rt_R"]), float(p["Rt_L_pH"]) * 1e-12, float(p["Rt_C_fF"]) * 1e-15)
+    return dict(f_GHz=np.asarray(f_GHz, float), block=blk, resp=terminated_response(blk, Zs, Rt),
+                dn=dn_f, dz=float(dz), L=L)
+
+
+def export_coupled_tables(fit, p: dict, out_dir: str, dz: float, betas_path=None,
+                          dn=None, f_top_GHz=None, points_per_GHz: float = 20.0) -> dict:
+    """
+    Write coupled_even.txt and coupled_odd.txt (device_mode_tables) on the grid
+    and density of export_tl_tables.
+    """
+    import os
+    from .scripted_line import default_table_top_GHz
+    os.makedirs(out_dir, exist_ok=True)
+    top = float(f_top_GHz or default_table_top_GHz(p))
+    f_lo = max(fit.f_min_sim_GHz, 1e-3)
+    f_GHz = np.linspace(f_lo, top, max(int((top - f_lo) * points_per_GHz), 32))
+    even, odd, dn_f = device_mode_tables(fit, p, f_GHz, dz, betas_path, dn)
+    src = (f"2-D split from {os.path.basename(betas_path)}" if betas_path
+           else f"constant index split dn = {float(dn):.6g}")
+    notes = [f"coupled electrodes: line from {os.path.basename(fit.source_file)}",
+             src, f"Ze/Zo - 1 = {float(dz):.6g}",
+             "columns frequency Hz, loss dB per m, microwave index, Re Z0, Im Z0"]
+    pe, po = write_mode_tables(os.path.join(out_dir, "coupled"), f_GHz * 1e9, even, odd, notes)
+    return dict(even=pe, odd=po, f_Hz=f_GHz * 1e9, dn=dn_f, dz=float(dz), table_top_GHz=top)

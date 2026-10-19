@@ -149,6 +149,47 @@ its cross-section and shows what it does.
 The line model (`bend_cpw/model.py`) and its validation are documented in
 `tools/bend_cpw/README.md`.
 
+## Crosstalk: two adjacent electrodes
+
+Header selector **Model**: *Single line* is the device exactly as before.
+*Crosstalk (two lines)* opens the **Crosstalk window**; the single-line
+model, its tabs and its INTERCONNECT build are not touched. The choice is
+saved with the session.
+
+Two identical electrodes side by side, A (driven, the aggressor) and B (idle,
+the victim), are one coupled line. Two identical coupled lines are two
+independent uniform lines, the even mode (V_A = V_B) and the odd mode
+(V_A = -V_B), so the model is the single TL line element twice, recombined:
+own line = (even + odd)/2, other line = (even - odd)/2. That holds for the
+S-matrix, for the voltage the light integrates (closed-form integral, no
+slicing) and for the end voltages.
+
+* **Line**: the device's own line from *Extract + analyse* (what-if knobs,
+  length, n_g, source and termination from the sidebar).
+* **Coupling**: from the CST 2-D port modes, n_even - n_odd from a beta table
+  (columns GHz, beta_even, beta_odd in 1/m; e.g.
+  `docs/cst/xtalk/portmode_betas.txt`) or a constant, and Ze/Zo - 1 as a
+  low/high pair (200 um pitch: 0.30-0.45 %). The figures draw the band.
+* **Compute**: NEXT and FEXT at 50 ohm (as a VNA), the voltage the light
+  integrates on each line, the EO crosstalk (victim / aggressor modulation)
+  and the victim's near- and far-end voltages, with the device's source and
+  load (the victim's input ends in its own idle source).
+* **Export tables**: `coupled_even.txt`, `coupled_odd.txt` (high Ze/Zo - 1)
+  for the **Coupled TL** scripted element,
+  `lumerical/coupled_element_setup.lsf` (by hand:
+  `lumerical/create_coupled_element.lsf`). Ports A1, A2, B1, B2; outputs
+  `modulation A/B`, optionally `modulation 2 A/B`, `far end A/B`,
+  `near end A/B`.
+* **INTERCONNECT check**: builds the element in a Compound with
+  ENA -> source -> A1, idle source on B1, loads on A2 and B2, reads every
+  output, and compares it with the twin (`xtalk_test.py`, report
+  `xtalk_check/xtalk_check_report.txt`). The victim gets the aggressor's
+  phase-convention, latency and scale corrections, so its error is the
+  coupling error alone.
+
+Code: `coupled_line.py` (Python twin, reuses `scripted_line.tl_sparams`),
+`gui_xtalk.py`, `xtalk_test.py`. Checks: `docs/cst/xtalk/coupled_twin_check.py`.
+
 ## Adding a parameter
 
 Every knob lives in `parameters.py` as one `ParamSpec`. Add an entry and the
