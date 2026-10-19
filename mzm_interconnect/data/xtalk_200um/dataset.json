@@ -1,0 +1,13 @@
+{
+  "name": "200 um pitch, uniform (non slow-wave) GSG line LINEA0",
+  "pitch_um": 200,
+  "line_table": "line_3d.txt",
+  "betas_table": "portmode_betas.txt",
+  "dz_lo": 0.003,
+  "dz_hi": 0.0045,
+  "sources": {
+    "line": "3-D CST cascade, docs/cst/cascade/three_lengths_results.npz",
+    "split": "2-D CST port modes 5/6 (even/odd): beta from portmode_betas.txt; Ze/Zo-1 from port_voltages_sweep.py"
+  },
+  "data_top_GHz": 60.0
+}

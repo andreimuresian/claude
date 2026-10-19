@@ -1,0 +1,7 @@
+# CST port modes 5 (even) and 6 (odd), 200 um pitch, beta in 1/m (TD port solver, lossless)
+# f_GHz  beta5      beta6
+6        237.372    237.183
+18       712.138    711.57
+30       1186.97    1186.02
+42       1661.91    1660.57
+60       2374.64    2372.67
