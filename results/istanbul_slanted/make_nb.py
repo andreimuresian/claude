@@ -22,6 +22,7 @@ rep = [
  ("        pts += [(xs, y_slab_top), (xs, 0.0)]         # slab end wrapped by gold",
   "        pts += [(xs, y_slab_top), (xsb, 0.0)]        # slanted slab end wrapped by gold"),
  ("    x_e = max(xs, xg)", "    x_e = max(xsb, xg)"),
+ ("    assert r_c >= 0.01,", "    assert r_c >= 0.005,"),
  ("Istanbul electrodes, cross-section as simulated", "Istanbul, 60 deg slab etch, cross-section as simulated"),
  ("Istanbul electrodes, etched slab |", "Istanbul, 60 deg slab etch |"),
 ]

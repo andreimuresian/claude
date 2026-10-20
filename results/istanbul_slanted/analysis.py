@@ -8,7 +8,9 @@ def peaks(w, il): return [(float(w[i]), float(il[i])) for i in range(1, len(il) 
 def troughs(w, il): return [(float(w[i]), float(il[i])) for i in range(1, len(il) - 1) if il[i] < il[i-1] and il[i] <= il[i+1]]
 with open("istanbul_slanted_vs_vertical.csv", "w") as f:
     f.write("slab_w_top_um,IL_vertical_dB_per_cm,IL_60deg_dB_per_cm,VpiL_vertical_Vcm,VpiL_60deg_Vcm\n")
-    for a, b in zip(V, S): f.write(f"{a['slab_w']:.2f},{a['IL_dBcm']:.5f},{b['IL_dBcm']:.5f},{a['VpiL_Vcm']:.4f},{b['VpiL_Vcm']:.4f}\n")
+    for a, b in zip(V, S):
+        assert abs(a['slab_w'] - b['slab_w']) < 1e-9
+        f.write(f"{a['slab_w']:.2f},{a['IL_dBcm']:.5f},{b['IL_dBcm']:.5f},{a['VpiL_Vcm']:.4f},{b['VpiL_Vcm']:.4f}\n")
 fig, (a, b) = plt.subplots(2, 1, figsize=(10, 7.5), sharex=True, gridspec_kw=dict(height_ratios=[2, 1]))
 a.plot(wv, ilv, "o-", ms=2.5, c="#c0392b", label="vertical slab end (90°)")
 a.plot(w, il, "o-", ms=2.5, c="#1f4e79", label="60° slab end (process)")
@@ -19,6 +21,7 @@ b.plot(wv, [r["VpiL_Vcm"] for r in V], "o-", ms=2.5, c="#c0392b"); b.plot(w, v, 
 b.set_ylim(v.mean() * 0.95, v.mean() * 1.05); b.set_ylabel("Vπ·L (V·cm)"); b.set_xlabel("slab width at the top (µm)"); b.grid(alpha=.3)
 plt.tight_layout(); plt.savefig("istanbul_slanted_vs_vertical.png", dpi=130)
 i0 = int(np.argmin(abs(w - 10.15)))
-Sm = dict(vertical=dict(IL_nominal=float(ilv[i0]), peaks=peaks(wv, ilv), troughs=troughs(wv, ilv)),
+j0 = int(np.argmin(abs(wv - 10.15)))
+Sm = dict(vertical=dict(IL_nominal=float(ilv[j0]), peaks=peaks(wv, ilv), troughs=troughs(wv, ilv)),
           slanted60=dict(IL_nominal=float(il[i0]), VpiL_nominal=float(v[i0]), peaks=peaks(w, il), troughs=troughs(w, il)))
 json.dump(Sm, open("summary.json", "w"), indent=1); print(json.dumps(Sm, indent=1))
