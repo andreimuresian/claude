@@ -171,7 +171,11 @@ def format_report(pred, meas, status, band) -> str:
 
 
 def run_xtalk_check(p: dict, out_dir: Optional[str] = None,
-                    log: Optional[Callable[[str], None]] = None) -> str:
+                    log: Optional[Callable[[str], None]] = None, keep_open: bool = False):
+    """Returns (report, builder). With *keep_open* the INTERCONNECT session is
+    left open (builder returned; the caller must keep a reference to it, or
+    the session is garbage-collected and the window closes); otherwise it is
+    closed and builder is None."""
     log = log or print
     p = _step0_params(p, log)
     out_dir = out_dir or os.path.join(str(p["out_dir"]) or ".", "xtalk_check")
@@ -207,11 +211,12 @@ def run_xtalk_check(p: dict, out_dir: Optional[str] = None,
         status.append(f"FAILED -- {type(exc).__name__}: {str(exc).strip()}")
         log("  " + traceback.format_exc().strip().splitlines()[-1])
     finally:
-        if b is not None:
+        if b is not None and not keep_open:
             try:
                 b.close()
             except Exception:
                 pass
+            b = None
     band = (1.0, 0.95 * float(p["f_max_GHz"]))
     rep = format_report(pred, meas, status, band)
     with open(os.path.join(out_dir, "xtalk_check_report.txt"), "w") as fh:
@@ -223,4 +228,4 @@ def run_xtalk_check(p: dict, out_dir: Optional[str] = None,
             for fi, h in zip(f, H):
                 wr.writerow([label, k, f"{fi:.9g}", f"{h.real:.9e}", f"{h.imag:.9e}"])
     log(rep)
-    return rep
+    return rep, b

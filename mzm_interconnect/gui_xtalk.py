@@ -265,7 +265,15 @@ class XtalkWindow(tk.Toplevel):
                 app.ic_builder = None
             out = os.path.join(self._out_dir(p), "xtalk_check")
             app.log(f"Crosstalk INTERCONNECT check: files in {out}")
-            return run_xtalk_check(p, out_dir=out, log=lambda m: app.log(m))
+            keep = bool(app.lum_keep.get())
+            rep, b = run_xtalk_check(p, out_dir=out, log=lambda m: app.log(m), keep_open=keep)
+            # held on the app, like the main build: an unreferenced lumapi
+            # session is garbage-collected and INTERCONNECT closes
+            app.ic_builder = b
+            if b is not None:
+                app.log("INTERCONNECT left open (untick 'Leave INTERCONNECT open afterwards' "
+                        "on the INTERCONNECT tab to close it automatically).")
+            return rep
         self._run("INTERCONNECT check", work, lambda rep: (
             self.num_txt.delete("1.0", "end"), self.num_txt.insert("1.0", rep)))
 
