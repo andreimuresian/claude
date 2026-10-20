@@ -122,8 +122,13 @@ def _victim_compare(f_ref, A_ref, B_ref, f_t, A_t, B_t, band):
     dph = np.degrees(np.angle(Bt[keep] / B_ref[keep]))
     ratio_t, ratio_r = on_ref(B_t) / on_ref(A_t), B_ref / A_ref
     dR = 20 * np.log10(np.abs(ratio_t[keep]) / np.abs(ratio_r[keep]))
+    # the error of the crosstalk itself, re the aggressor, over the whole band
+    # (no null exclusion): what decides whether the element can be trusted
+    ferr = np.abs(ratio_t[b] - ratio_r[b])
     return cA, dict(max_dB=float(np.max(np.abs(dB))), max_deg=float(np.max(np.abs(dph))),
-                    ratio_dB=float(np.max(np.abs(dR))), n=int(keep.sum()))
+                    ratio_dB=float(np.max(np.abs(dR))), n=int(keep.sum()),
+                    floor_dB=float(20 * np.log10(np.max(ferr) + 1e-300)),
+                    floor_med_dB=float(20 * np.log10(np.median(ferr) + 1e-300)))
 
 
 def format_report(pred, meas, status, band) -> str:
@@ -137,7 +142,7 @@ def format_report(pred, meas, status, band) -> str:
         A(f"  {s}")
     A("")
     A(f"{'row':5s} {'aggressor: scale':>16s} {'latency ps':>10s} {'max dB':>8s} {'max deg':>8s}"
-      f" | {'victim max dB':>13s} {'max deg':>8s} {'ratio dB':>9s}")
+      f" | {'victim max dB':>13s} {'max deg':>8s} {'ratio dB':>9s} {'err floor dB':>13s}")
     r = pred["resp"]
     for label, _, _, key in ROWS:
         if (label, 1) not in meas:
@@ -154,10 +159,14 @@ def format_report(pred, meas, status, band) -> str:
             Hb = np.interp(fa, fb, Hb.real) + 1j * np.interp(fa, fb, Hb.imag)
         cA, v = _victim_compare(pred["f_GHz"], r[key + "_A"], r[key + "_B"], fa, Ha, Hb, band)
         A(f"{label:5s} {cA['scale_abs']:16.4f} {cA['latency_ps']:10.2f} {cA['max_dB']:8.4f} "
-          f"{cA['max_deg']:8.3f} | {v['max_dB']:13.4f} {v['max_deg']:8.3f} {v['ratio_dB']:9.4f}")
+          f"{cA['max_deg']:8.3f} | {v['max_dB']:13.4f} {v['max_deg']:8.3f} {v['ratio_dB']:9.4f} "
+          f"{v['floor_dB']:6.1f} ({v['floor_med_dB']:.0f})")
     A("")
-    A("A pass: aggressor and victim within a few hundredths of a dB and a few tenths of a")
-    A("degree (the FIR filter's own error), and the same scale and latency in every row.")
+    A("err floor: max (median) over the band of |victim/aggressor, INTERCONNECT - twin|, in dB")
+    A("re the aggressor. It is the absolute error of the crosstalk: the victim's dB error grows")
+    A("where the victim itself is weak (low-frequency far end, near-end dips), the floor does not.")
+    A("A pass: aggressor within a few hundredths of a dB and a few tenths of a degree, the same")
+    A("scale and latency in every row, and an error floor well below the crosstalk (> 30 dB).")
     return "\n".join(out)
 
 
