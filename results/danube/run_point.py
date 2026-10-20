@@ -2,7 +2,7 @@
 import json, os, re, sys, time
 TEE, OE, W = bool(int(sys.argv[1])), float(sys.argv[2]), float(sys.argv[3])
 WL = float(sys.argv[4]) if len(sys.argv) > 4 else 1.310
-nb = json.load(open("/home/user/claude/VPI_interface_optimized_Danube.ipynb"))
+nb = json.load(open(os.environ.get("NB", "/home/user/claude/VPI_interface_optimized_Danube.ipynb")))
 src = "import matplotlib; matplotlib.use('Agg')\nimport matplotlib.pyplot as plt\nplt.show=lambda *a,**k: plt.close('all')\n"
 src += "\n".join("".join(c["source"]) for c in nb["cells"][:5])
 for k, v in (("TEE", TEE), ("OE", OE), ("SLAB_W", W), ("wl", WL)):

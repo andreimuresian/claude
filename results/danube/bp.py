@@ -101,6 +101,10 @@ def build_polygons():
         box(xg, 0.0, xg + SKIN_T, y_clad_top), box(-xg - SKIN_T, 0.0, -xg, y_clad_top),
         box(x_gout, 0.0, x_gout + SKIN_T, y_slab_top + OUTER_WALL_SKIN_H),
     ])
+    # refinement helper only: snap it to a 1 nm grid so its offset corners cannot land
+    # ~1e-16 um from an electrode vertex (gmsh rejects the resulting zero-length line)
+    import shapely
+    skin_zone = shapely.set_precision(skin_zone, 1e-3)
 
     polys = OrderedDict()
     for name, reg in base.items():
