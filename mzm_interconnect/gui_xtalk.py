@@ -157,6 +157,14 @@ class XtalkWindow(tk.Toplevel):
             f"{float(p['Rt_C_fF']):.0f} fF\n"
             f"victim input ends in its own idle source"))
 
+    def _out_dir(self, p) -> str:
+        """The Working / export folder, or, if it is empty, a 'crosstalk' folder
+        in the current directory. Never the Touchstone file's folder: crosstalk
+        does not use that file."""
+        out = str(p["out_dir"]).strip() or os.path.join(os.getcwd(), "crosstalk")
+        os.makedirs(out, exist_ok=True)
+        return os.path.abspath(out)
+
     # ------------------------------------------------------------------ plumbing
     def close(self):
         self._closing = True
@@ -235,7 +243,7 @@ class XtalkWindow(tk.Toplevel):
 
         def work():
             from .coupled_line import export_coupled_tables
-            out = self.app._resolve_out_dir(p)
+            out = self._out_dir(p)
             r = export_coupled_tables(p, out, float(ds["dz_hi"]))
             self.app.log(f"Crosstalk tables (200 um pitch line) written: {r['even']}, {r['odd']} "
                          f"(Ze/Zo - 1 = {r['dz']:.4g}, up to {r['table_top_GHz']:.1f} GHz)", "ok")
@@ -255,7 +263,8 @@ class XtalkWindow(tk.Toplevel):
                 except Exception:
                     pass
                 app.ic_builder = None
-            out = os.path.join(app._resolve_out_dir(p), "xtalk_check")
+            out = os.path.join(self._out_dir(p), "xtalk_check")
+            app.log(f"Crosstalk INTERCONNECT check: files in {out}")
             return run_xtalk_check(p, out_dir=out, log=lambda m: app.log(m))
         self._run("INTERCONNECT check", work, lambda rep: (
             self.num_txt.delete("1.0", "end"), self.num_txt.insert("1.0", rep)))
