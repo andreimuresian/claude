@@ -66,6 +66,11 @@ class XtalkBuilder(Step0Builder):
             ena, cs, ct = f"ENA_{label}", f"SRC_{label}", f"CTL_{label}"
             la, lb1, lb2 = f"LOAD_A2_{label}", f"LOAD_B1_{label}", f"LOAD_B2_{label}"
             self._ena(ena, 0, y, p)
+            # A Network Analyzer has one input by default. Set two BEFORE any
+            # wire: changing the count rebuilds its ports and drops links.
+            if not self.setp(ena, ['number of input ports', 'number of inputs', 'input ports'],
+                             2, required=False):
+                self.log(f"  {ena}: could not set 2 input ports; the victim trace will be missing")
             self.make_source(cs, 200, y, Zs)
             self.make_coupled(ct, 360, y + 40, tables["even"], tables["odd"], L, ng,
                               modulating=(kind == "modulation"), far_end=(kind == "far end"),
@@ -125,6 +130,8 @@ def format_report(pred, meas, status, band) -> str:
     out = []
     A = out.append
     A("Coupled TL element: INTERCONNECT vs Python twin (coupled_line.py)")
+    if "settings" in pred:
+        A(pred["settings"])
     A(f"band {band[0]:.1f}-{band[1]:.1f} GHz; victim points within {NULL_DB:.0f} dB of its maximum")
     for s in status:
         A(f"  {s}")
@@ -133,10 +140,15 @@ def format_report(pred, meas, status, band) -> str:
       f" | {'victim max dB':>13s} {'max deg':>8s} {'ratio dB':>9s}")
     r = pred["resp"]
     for label, _, _, key in ROWS:
-        if (label, 1) not in meas or (label, 2) not in meas:
+        if (label, 1) not in meas:
             A(f"{label:5s} not measured")
             continue
         fa, Ha = meas[(label, 1)][:2]
+        if (label, 2) not in meas:
+            cA = SL.compare_traces(pred["f_GHz"], r[key + "_A"], fa, Ha, band)
+            A(f"{label:5s} {cA['scale_abs']:16.4f} {cA['latency_ps']:10.2f} {cA['max_dB']:8.4f} "
+              f"{cA['max_deg']:8.3f} | victim not measured")
+            continue
         fb, Hb = meas[(label, 2)][:2]
         if not np.allclose(fa, fb):
             Hb = np.interp(fa, fb, Hb.real) + 1j * np.interp(fa, fb, Hb.imag)
@@ -158,6 +170,9 @@ def run_xtalk_check(p: dict, out_dir: Optional[str] = None,
     L = float(p["xt_L_mm"]) * 1e-3
     dz = float(CL.load_dataset()["dz_hi"])
     pred = python_prediction(p, out_dir, L, dz)
+    pred["settings"] = (f"L = {L*1e3:.3f} mm, n_g = {float(p['ng']):.4f}, Zs = {float(p['Zs_R']):.2f} ohm, "
+                        f"Rt = {float(p['Rt_R']):.2f} ohm, Ze/Zo - 1 = {dz:.4g}, sample rate "
+                        f"{float(p['ic_sample_rate_GHz']):.0f} GHz")
     log(f"  Tables in {out_dir}: coupled_even.txt, coupled_odd.txt, up to {pred['top']:.1f} GHz.")
     meas, status, b = {}, [], None
     try:
