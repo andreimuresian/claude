@@ -30,6 +30,8 @@ hdr = ("# %% [0] Geometry, Mesh & Material Configuration  --  DANUBE (O-band pus
 c0 = (hdr + head + open(H + "params.py").read() + mat + mesh_sc + mats
       + "# ============================================================\n# 2. GEOMETRY GENERATOR\n# ============================================================\n"
       + open(H + "bp.py").read() + res + val + open(H + "plot0.py").read())
+c0 = c0.replace("h_skin = 0.012                      # gold on LN: the SPP decays into Au in ~22 nm",
+  "h_skin = 0.006                      # 1310 nm: optical skin depth in Au ~12 nm; converged (mesh_check.txt)")
 c0 = c0.replace("X_FINE_MIN = 8.0                    # fine slab mesh reaches at least |x| = 8 um\n", "")
 nb = copy.deepcopy(nb)
 def setsrc(c, t):
