@@ -58,7 +58,21 @@ box(s, 9.1, 3.65, 3.7, 2.5, [("What changes with λ", {"size": 14, "bold": True,
 text(s, 0.6, 6.35, 12.2, 0.8, [("At the nominal slab, IL falls 3× from 1525 to 1625 nm, opposite to the normal gold-loss trend: "
      "a clear signature to look for in the measured C-band data.", {"size": 13, "bold": True, "color": NAVY})])
 
-# 4 buffered: cross-section + gap -----------------------------------------------
+# 4 slab-end etch angle -----------------------------------------------------------
+SL = sorted([json.loads(l[7:]) for l in open(H + "../istanbul_slanted/results.txt") if l.startswith("RESULT") and '"alpha_slab": 60' in l], key=lambda r: r["slab_w"])
+s = new("Real 60° slab etch: ripples survive, shifted by 0.1 µm", "No buffer, gap 4.45 µm, 1575 nm; slab width = top width for both")
+xy_chart(s, 0.6, 1.8, 8.2, 4.4, [("Vertical slab end (90°)", [(r["slab_w"], r["IL_dBcm"]) for r in R], RED, 4, 1.75, False),
+                                 ("60° slab end (process)", [(r["slab_w"], r["IL_dBcm"]) for r in SL], NAVY, 4, 1.75, False),
+                                 ("Nominal 10.15 µm", [(10.15, 0), (10.15, 1.1)], GREY, 0, 1.5, True)],
+         (5, 13), (0, 1.1), "Slab top width (µm)", "Insertion loss (dB/cm)", legend=True, xmaj=1, ymaj=0.1)
+image(s, H + "deck/xs_slant_zoom.png", 9.15, 1.75, w=3.65)
+table(s, [["", "90°", "60°"], ["Period", "1.80 µm", "1.80 µm"], ["Peaks, dB/cm", "0.49–1.03", "0.50–0.96"],
+          ["Troughs, dB/cm", "0.017–0.059", "0.016–0.059"], ["IL @ 10.15, dB/cm", "0.092", "0.138"]],
+      9.15, 4.1, 3.65, [1.35, 1.15, 1.15], size=10, highlight=(4,))
+text(s, 0.6, 6.35, 12.2, 0.8, [("The 275 nm, 60° slope still reflects the slab mode: same period and depth, pattern shifted by −0.10 µm "
+     "(acts like a vertical end 0.10 µm wider). Vπ·L unchanged (2.421 V·cm).", {"size": 13, "bold": True, "color": NAVY})])
+
+# 5 buffered: cross-section + gap -----------------------------------------------
 B = H + "../istanbul_buffer/"
 BA = [json.loads(l[7:]) for l in open(B + "all.txt") if l.startswith("RESULT")]
 BG = sorted([r for r in BA if abs(r["slab_w"] - 10.15) < 1e-9], key=lambda r: r["gap"])
