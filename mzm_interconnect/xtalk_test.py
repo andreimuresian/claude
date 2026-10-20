@@ -13,7 +13,9 @@ only there are reflections exact) and its own Network Analyzer:
   FE    'far end A'    -> input 1,      'far end B'    -> input 2   (FEXT)
   NE    'near end A'   -> input 1,      'near end B'   -> input 2   (NEXT)
 
-The victim's input B1 ends in its own idle driver, Zs. Source and loads are
+The line is the 200 um pitch dataset (coupled_line.load_dataset) at length
+xt_L_mm, with the worse impedance split; the sidebar Touchstone file is not
+used. The victim's input B1 ends in its own idle driver, Zs. Source and loads are
 the scripted TL source / TL load (resistive, as in Step 0).
 
 The report compares each trace with the twin after removing, from the
@@ -37,7 +39,7 @@ import numpy as np
 
 from . import coupled_line as CL
 from . import scripted_line as SL
-from .interconnect import InterconnectBuilder, P_IN1, P_IN2, P_OUT
+from .interconnect import P_IN1, P_IN2, P_OUT
 from .scripted_test import FIR_TAPS, FULL_POINTS_PER_GHZ, Step0Builder, _step0_params
 from .tl_schematic import ScriptedElementUnavailable
 
@@ -86,13 +88,12 @@ class XtalkBuilder(Step0Builder):
         return built
 
 
-def python_prediction(fit, p: dict, out_dir: str, L: float, dz: float,
-                      betas_path=None, dn=None) -> dict:
+def python_prediction(p: dict, out_dir: str, L: float, dz: float) -> dict:
     """Tables up to the simulation's Nyquist frequency and the twin's response
     of the circuit above."""
     top = 0.5 * float(p["ic_sample_rate_GHz"])
-    tables = CL.export_coupled_tables(fit, p, out_dir, dz, betas_path, dn,
-                                      f_top_GHz=top, points_per_GHz=FULL_POINTS_PER_GHZ)
+    tables = CL.export_coupled_tables(p, out_dir, dz, f_top_GHz=top,
+                                      points_per_GHz=FULL_POINTS_PER_GHZ)
     ng = float(p["ng"])
     blk = CL.coupled_sparams_from_tables(tables["even"], tables["odd"], L, ng=ng,
                                          R0=XtalkBuilder.R0)
@@ -148,15 +149,15 @@ def format_report(pred, meas, status, band) -> str:
     return "\n".join(out)
 
 
-def run_xtalk_check(fit, p: dict, dz: float, betas_path=None, dn=None,
-                    out_dir: Optional[str] = None,
+def run_xtalk_check(p: dict, out_dir: Optional[str] = None,
                     log: Optional[Callable[[str], None]] = None) -> str:
     log = log or print
     p = _step0_params(p, log)
     out_dir = out_dir or os.path.join(str(p["out_dir"]) or ".", "xtalk_check")
     os.makedirs(out_dir, exist_ok=True)
-    L = float(p["L_target_mm"]) * 1e-3
-    pred = python_prediction(fit, p, out_dir, L, dz, betas_path, dn)
+    L = float(p["xt_L_mm"]) * 1e-3
+    dz = float(CL.load_dataset()["dz_hi"])
+    pred = python_prediction(p, out_dir, L, dz)
     log(f"  Tables in {out_dir}: coupled_even.txt, coupled_odd.txt, up to {pred['top']:.1f} GHz.")
     meas, status, b = {}, [], None
     try:

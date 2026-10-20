@@ -509,26 +509,13 @@ PARAMS: list[ParamSpec] = [
     ParamSpec("xt_model", "Electrode model", "Single line", "Crosstalk", kind="choice",
               choices=("Single line", "Crosstalk (two lines)"), affects="lumerical",
               help="Single line: the device as before, untouched. Crosstalk: two "
-                   "identical adjacent electrodes A (aggressor) and B (victim), in the "
-                   "Crosstalk window."),
-    ParamSpec("xt_split_source", "Even/odd index split from", "2-D beta table", "Crosstalk",
-              kind="choice", choices=("2-D beta table", "constant dn"), affects="lumerical",
-              help="2-D beta table: beta_even and beta_odd of the CST 2-D port modes "
-                   "(columns GHz, beta_even, beta_odd in 1/m). Constant dn: one value of "
-                   "n_even - n_odd at every frequency."),
-    ParamSpec("xt_betas_path", "2-D beta table", "", "Crosstalk", kind="path",
-              affects="lumerical", help="e.g. docs/cst/xtalk/portmode_betas.txt"),
-    ParamSpec("xt_dn", "Index split n_even - n_odd", 0.00153, "Crosstalk", "-",
-              affects="lumerical", vmin=-0.1, vmax=0.1,
-              help="Used with 'constant dn'. 200 um pitch: 0.00150-0.00157 (6-60 GHz)."),
-    ParamSpec("xt_dz_lo", "Ze/Zo - 1, low", 0.0030, "Crosstalk", "-", affects="lumerical",
-              vmin=-0.2, vmax=0.2,
-              help="Impedance split from the 2-D field integration. 200 um pitch: "
-                   "0.30 % to 0.45 %; the band between low and high is drawn."),
-    ParamSpec("xt_dz_hi", "Ze/Zo - 1, high", 0.0045, "Crosstalk", "-", affects="lumerical",
-              vmin=-0.2, vmax=0.2,
-              help="Upper end of the impedance split. INTERCONNECT tables and the "
-                   "INTERCONNECT check use this value (the worse case)."),
+                   "adjacent electrodes A (aggressor) and B (victim) of the 200 um pitch "
+                   "uniform (non slow-wave) line ONLY, from its own CST crosstalk "
+                   "simulations; the sidebar Touchstone file is not used."),
+    ParamSpec("xt_L_mm", "Crosstalk electrode length", 14.0, "Crosstalk", "mm",
+              affects="lumerical", vmin=0.1, vmax=100.0,
+              help="Length of the two coupled 200 um pitch electrodes. Independent of "
+                   "the single-line device length."),
 ]
 
 BY_KEY: dict[str, ParamSpec] = {p.key: p for p in PARAMS}

@@ -30,6 +30,9 @@ Port order: A1, A2, B1, B2 (1 = input end, 2 = far end). Keys:
 
 from __future__ import annotations
 
+import json
+import os
+
 import numpy as np
 
 from .scripted_line import NP_PER_DB_EXACT, read_tl_table, tl_sparams, write_tl_table
@@ -243,54 +246,82 @@ def dbeta_on_grid(f_Hz, betas_path=None, dn=None):
     return 2 * np.pi * f * float(dn) / C0
 
 
-def device_mode_tables(fit, p: dict, f_GHz, dz: float, betas_path=None, dn=None):
-    """Even/odd tables on *f_GHz*: the GUI's fitted electrode line (the same
-    line as the single-line model, from line_tables, with the GUI's what-if
-    knobs) split by the 2-D even/odd results. Returns (even, odd, dn(f))."""
-    from .extractor import line_tables
+# ---------------------------------------------------------------------------
+# The crosstalk dataset: 200 um pitch uniform line, nothing else
+# ---------------------------------------------------------------------------
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "xtalk_200um")
+
+
+def load_dataset(path: str = DATA_DIR) -> dict:
+    """The only line the crosstalk model knows: 200 um pitch, uniform (non
+    slow-wave) GSG line. Line from the 3-D crosstalk runs (even/odd average),
+    split from the 2-D port modes. The sidebar Touchstone file is NOT used."""
+    with open(os.path.join(path, "dataset.json"), encoding="utf-8") as fh:
+        d = json.load(fh)
+    d["betas_path"] = os.path.join(path, d["betas_table"])
+    d["line_path"] = os.path.join(path, d["line_table"])
+    return d
+
+
+def dataset_line(f_GHz, ds: dict = None):
+    """gamma (1/m) and Zc of the line on *f_GHz*, from the fit stored in the
+    dataset (the single-line extraction's forms, fitted to the crosstalk data
+    from 0.5 to 60 GHz). Valid below 60 GHz; above, the forms' extrapolation,
+    as for a single-line Touchstone file."""
+    from .physics import (fit_alpha_scaled, fit_impedance_imag, fit_impedance_physical,
+                          fit_nm_saturating)
+    ds = ds or load_dataset()
+    fit = ds["fit"]
+    fG = np.maximum(np.asarray(f_GHz, float), float(fit["f_min_GHz"]))
+    loss = fit_alpha_scaled(fG, *fit["alpha_dB_cm"]) * 100.0
+    nm = fit_nm_saturating(fG, *fit["nm_saturating"])
+    Z = fit_impedance_physical(fG, *fit["ReZ"]) + 1j * fit_impedance_imag(fG, *fit["ImZ"])
+    w = 2 * np.pi * np.asarray(f_GHz, float) * 1e9
+    return loss * NP_PER_DB_EXACT + 1j * w * nm / C0, Z
+
+
+def dataset_mode_tables(f_GHz, dz: float, ds: dict = None):
+    """Even/odd tables on *f_GHz* (GHz). Returns (even, odd, dn(f))."""
+    ds = ds or load_dataset()
     f = np.asarray(f_GHz, float) * 1e9
-    alpha, Zc, nm = line_tables(fit, p, np.asarray(f_GHz, float))
-    w = 2 * np.pi * f
-    gamma = np.asarray(alpha) * 100.0 * NP_PER_DB_EXACT + 1j * w * np.asarray(nm) / C0
-    db = dbeta_on_grid(f, betas_path, dn)
-    even, odd = hybrid_mode_tables(f, gamma, np.asarray(Zc, complex), db, float(dz))
-    return even, odd, db * C0 / w
+    gamma, Z = dataset_line(f_GHz, ds)
+    db = dbeta_on_grid(f, ds["betas_path"])
+    even, odd = hybrid_mode_tables(f, gamma, Z, db, float(dz))
+    return even, odd, db * C0 / (2 * np.pi * f)
 
 
-def device_crosstalk(fit, p: dict, dz: float, betas_path=None, dn=None, f_GHz=None) -> dict:
-    """The twin for the GUI's device: the 4-port at R0 (NEXT/FEXT as a VNA
-    would measure them) and the circuit with the GUI's source and termination
-    (resistance, series L and shunt C, as the TL source/load elements)."""
+def device_crosstalk(p: dict, dz: float, f_GHz=None) -> dict:
+    """The twin for the 200 um pair at length p['xt_L_mm']: the 4-port at R0
+    (NEXT/FEXT as a VNA would measure them) and the circuit with the GUI's
+    source and termination and n_g (circuit settings, not line settings)."""
     from .scripted_line import rlc_z
+    ds = load_dataset()
     if f_GHz is None:
-        f_GHz = np.linspace(max(fit.f_min_sim_GHz, 0.05), float(p["f_max_GHz"]), 600)
+        f_GHz = np.linspace(0.1, min(float(p["f_max_GHz"]), float(ds["data_top_GHz"])), 600)
     f = np.asarray(f_GHz, float) * 1e9
-    even, odd, dn_f = device_mode_tables(fit, p, f_GHz, dz, betas_path, dn)
-    L = float(p["L_target_mm"]) * 1e-3
+    even, odd, dn_f = dataset_mode_tables(f_GHz, dz, ds)
+    L = float(p["xt_L_mm"]) * 1e-3
     blk = coupled_sparams(f, even, odd, L, ng=float(p["ng"]))
     Zs = rlc_z(f, float(p["Zs_R"]), float(p["Zs_L_pH"]) * 1e-12, float(p["Zs_C_fF"]) * 1e-15)
     Rt = rlc_z(f, float(p["Rt_R"]), float(p["Rt_L_pH"]) * 1e-12, float(p["Rt_C_fF"]) * 1e-15)
     return dict(f_GHz=np.asarray(f_GHz, float), block=blk, resp=terminated_response(blk, Zs, Rt),
-                dn=dn_f, dz=float(dz), L=L)
+                dn=dn_f, dz=float(dz), L=L, dataset=ds)
 
 
-def export_coupled_tables(fit, p: dict, out_dir: str, dz: float, betas_path=None,
-                          dn=None, f_top_GHz=None, points_per_GHz: float = 20.0) -> dict:
-    """
-    Write coupled_even.txt and coupled_odd.txt (device_mode_tables) on the grid
-    and density of export_tl_tables.
-    """
-    import os
+def export_coupled_tables(p: dict, out_dir: str, dz: float, f_top_GHz=None,
+                          points_per_GHz: float = 20.0) -> dict:
+    """Write coupled_even.txt and coupled_odd.txt from the 200 um dataset, up
+    to the simulation's Nyquist frequency (as export_tl_tables)."""
     from .scripted_line import default_table_top_GHz
+    ds = load_dataset()
     os.makedirs(out_dir, exist_ok=True)
     top = float(f_top_GHz or default_table_top_GHz(p))
-    f_lo = max(fit.f_min_sim_GHz, 1e-3)
+    f_lo = 0.05
     f_GHz = np.linspace(f_lo, top, max(int((top - f_lo) * points_per_GHz), 32))
-    even, odd, dn_f = device_mode_tables(fit, p, f_GHz, dz, betas_path, dn)
-    src = (f"2-D split from {os.path.basename(betas_path)}" if betas_path
-           else f"constant index split dn = {float(dn):.6g}")
-    notes = [f"coupled electrodes: line from {os.path.basename(fit.source_file)}",
-             src, f"Ze/Zo - 1 = {float(dz):.6g}",
+    even, odd, dn_f = dataset_mode_tables(f_GHz, dz, ds)
+    notes = [ds["name"], "line: " + ds["sources"]["line"], "split: " + ds["sources"]["split"],
+             f"Ze/Zo - 1 = {float(dz):.6g}",
+             f"data up to {ds['data_top_GHz']:.0f} GHz; above, the single-line fit forms' extrapolation",
              "columns frequency Hz, loss dB per m, microwave index, Re Z0, Im Z0"]
     pe, po = write_mode_tables(os.path.join(out_dir, "coupled"), f_GHz * 1e9, even, odd, notes)
     return dict(even=pe, odd=po, f_Hz=f_GHz * 1e9, dn=dn_f, dz=float(dz), table_top_GHz=top)

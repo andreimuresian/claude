@@ -156,25 +156,34 @@ Header selector **Model**: *Single line* is the device exactly as before.
 model, its tabs and its INTERCONNECT build are not touched. The choice is
 saved with the session.
 
-Two identical electrodes side by side, A (driven, the aggressor) and B (idle,
-the victim), are one coupled line. Two identical coupled lines are two
-independent uniform lines, the even mode (V_A = V_B) and the odd mode
-(V_A = -V_B), so the model is the single TL line element twice, recombined:
-own line = (even + odd)/2, other line = (even - odd)/2. That holds for the
-S-matrix, for the voltage the light integrates (closed-form integral, no
-slicing) and for the end voltages.
+The crosstalk model is tied to ONE line: the **200 um pitch, uniform (non
+slow-wave) GSG line**, from its own CST crosstalk simulations
+(`data/xtalk_200um/`). The sidebar Touchstone file and *Extract + analyse*
+are not used; only the circuit settings come from the sidebar (n_g, source,
+termination), and the length is its own (*Crosstalk electrode length*).
 
-* **Line**: the device's own line from *Extract + analyse* (what-if knobs,
-  length, n_g, source and termination from the sidebar).
-* **Coupling**: from the CST 2-D port modes, n_even - n_odd from a beta table
-  (columns GHz, beta_even, beta_odd in 1/m; e.g.
-  `docs/cst/xtalk/portmode_betas.txt`) or a constant, and Ze/Zo - 1 as a
-  low/high pair (200 um pitch: 0.30-0.45 %). The figures draw the band.
+Two identical electrodes side by side, A (driven, the aggressor) and B (idle,
+the victim), are one coupled line: two independent uniform lines, the even
+mode (V_A = V_B) and the odd mode (V_A = -V_B), each the single TL line
+element, recombined: own line = (even + odd)/2, other line = (even - odd)/2.
+That holds for the S-matrix, for the voltage the light integrates
+(closed-form integral, no slicing) and for the end voltages.
+
+* **Line** (loss, n_m, Zc): from the 3-D crosstalk runs
+  `LINEA0_1MM/5MM_200UM_PITCH.s4p`, even/odd average, two-length
+  de-embedding (`docs/cst/xtalk/line_from_s4p.py`). It agrees with the
+  single-line runs (cascade) within 0.6 % in n_m, 3.6 % in Zc and 2-6 % rms
+  in loss; the 14 mm crosstalk differs by 0.3 dB at most. Stored as the
+  single-line extraction's fit forms (fitted 0.5-60 GHz), which also extend
+  the INTERCONNECT tables above 60 GHz.
+* **Coupling**: from the 2-D port modes of the pair, n_even - n_odd from
+  `portmode_betas.txt` and Ze/Zo - 1 = 0.30-0.45 % (the figures draw the
+  band). The 3-D runs cannot resolve it (error floor).
 * **Compute**: NEXT and FEXT at 50 ohm (as a VNA), the voltage the light
   integrates on each line, the EO crosstalk (victim / aggressor modulation)
   and the victim's near- and far-end voltages, with the device's source and
   load (the victim's input ends in its own idle source).
-* **Export tables**: `coupled_even.txt`, `coupled_odd.txt` (high Ze/Zo - 1)
+* **Export tables**: `coupled_even.txt`, `coupled_odd.txt` (Ze/Zo - 1 = 0.45 %)
   for the **Coupled TL** scripted element,
   `lumerical/coupled_element_setup.lsf` (by hand:
   `lumerical/create_coupled_element.lsf`). Ports A1, A2, B1, B2; outputs
