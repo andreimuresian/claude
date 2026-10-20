@@ -17,7 +17,10 @@ def build_polygons():
     core_poly = Polygon([
         (-WG_BOTTOM / 2.0, y_slab_top), (-WG_TOP / 2.0, y_slab_top + WG_H),
         (WG_TOP / 2.0, y_slab_top + WG_H), (WG_BOTTOM / 2.0, y_slab_top)])
-    slab = Polygon([(-xsb, 0.0), (xsb, 0.0), (xs, y_slab_top), (-xs, y_slab_top)])
+    _ring = [(-xsb, 0.0), (xsb, 0.0), (xs, y_slab_top), (-xs, y_slab_top)]
+    if TEE and xs < -x_gout < xsb:                  # stub ends on the 60 deg slope: put that point
+        _ring.append((x_gout, r9((xsb + x_gout) * np.tan(np.deg2rad(ALPHA_SLAB)))))   # in the slab
+    slab = Polygon(_ring)                           # ring exactly (else two copies 1e-16 apart)
 
     # ---- 2. SiO2 cap ---------------------------------------------------------
     cap_poly = box(-CAP_W / 2.0, y_slab_top, CAP_W / 2.0, y_fine_top).difference(core_poly)
@@ -76,7 +79,10 @@ def build_polygons():
            (xs, y_slab_top), (xsb, 0.0)]                        # signal-side slab end (in gold)
     pts += [(-xs, y_slab_top), (-xsb, 0.0)]                     # ground-side slab end (gold or air)
     if TEE:
-        pts.append((x_gout, y_slab_top) if -x_gout < xs else (x_gout, 0.0))   # stub end
+        _ys = min(y_slab_top, max(0.0, (xsb + x_gout) * np.tan(np.deg2rad(ALPHA_SLAB))))
+        if not (xs < -x_gout < xsb):                # stub end ON the 60 deg slope: its patch
+            pts.append((x_gout, r9(_ys)))           # would cut the slope patches into slivers; the
+                                                    # slab-end patches already refine that spot
     if OE > 0:
         pts += [(xsb, y_rec), (-xsb, y_rec)]                    # pedestal feet
     pts = list(dict.fromkeys((r9(px), r9(py)) for px, py in pts))

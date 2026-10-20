@@ -1,5 +1,5 @@
 import json, numpy as np, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-R = [json.loads(l[7:]) for l in open("sweep.txt") if l.startswith("RESULT")]
+R = [json.loads(l[7:]) for f in ("sweep.txt", "redo.txt") for l in open(f) if l.startswith("RESULT")]
 CASES = [((0, 0.0), "1. outside of tee, standard", "#c0392b", "-"), ((1, 0.0), "2. inside of tee, standard", "#2a78d6", "-"),
          ((0, 0.7), "3. outside of tee, over-etched", "#c0392b", "--"), ((1, 0.7), "4. inside of tee, over-etched", "#2a78d6", "--")]
 fig, (a, b) = plt.subplots(2, 1, figsize=(11, 8), sharex=True, gridspec_kw=dict(height_ratios=[2, 1]))
