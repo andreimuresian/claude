@@ -126,3 +126,7 @@ with n_g = 1.91 from 3-D data (3-D 2.90 / 3.02 dB/cm). Solver 131 s, 8 GB.
 | Ze/Zo - 1 PEC (coarse) | +0.54 % | | |
 
 Net line current / I_s: even -6.6 %, odd -11.2 % (PEC: -5.7 / -9.7 %).
+Odd (gold): 28.8899 GHz, Q = 18.06. odd - even = 25.50 MHz (PEC 22.87 MHz).
+dn gold = 0.001731 (n_e 1.96127, n_o 1.95954): +19.6 % vs PEC (0.001447),
++14.6 % vs the 2-D (PEC) value 0.001511. Gold raises both splits by ~20 %:
+FEXT +1.2 dB, NEXT +1.7 dB relative to the PEC-based values.
