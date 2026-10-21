@@ -14,25 +14,38 @@ def build_polygons():
     y_fine_top = r9(y_buf_top + 0.6)
 
     # ---- substrate profile (right half): slab top, 60 deg slope, pedestal wall
-    #      down to -OE (over-etch, vertical), recess floor.  The conformal buffer
-    #      surface is that profile offset by b (mitred corners), computed exactly:
+    #      down to -OE (over-etch, vertical), recess floor.  The buffer surface:
+    #        top of the slab ......... BUFFER_H above the slab top
+    #        side walls (slope, pedestal wall): BUFFER_L thick, normal to the wall
+    #        recess floor / BOX ...... BUFFER_H above the floor
+    #      Mitred where the layers meet; for BUFFER_L < BUFFER_H / 2 the top layer
+    #      ends at the slab corner and drops vertically onto the thinner side layer
+    #      (BUFFER_L = 0: gold on the 60 deg LN slope).  All vertices exact.
+    L = BUFFER_L
     nx, ny = np.sin(a), np.cos(a)                   # outward normal of the slope
-    # slope offset line: points p with (p - (xs,SH)) . n = b
-    def on_slope_y(x):                              # y of the offset slope line at x
-        return SLAB_H + (b - (x - xs) * nx) / ny
+    def on_slope_y(x):                              # side-layer surface (slope offset by L)
+        return SLAB_H + (L - (x - xs) * nx) / ny
     def on_slope_x(y):
-        return xs + (b - (y - SLAB_H) * ny) / nx
-    C1 = (r9(on_slope_x(SLAB_H + b)), y_buf_top)    # top / slope corner
-    if OE > 0:
-        C2 = (r9(xsb + b), r9(on_slope_y(xsb + b)))  # slope / pedestal-wall corner (convex)
-        C3 = (r9(xsb + b), r9(-OE + b))              # wall / recess-floor corner (concave)
-        surf_r = [C1, C2, C3, (X, C3[1])]
+        return xs + (L - (y - SLAB_H) * ny) / nx
+    surf_r = []
+    xa = on_slope_x(y_buf_top)
+    if xa >= xs:
+        surf_r.append((r9(xa), y_buf_top))          # mitred top corner
     else:
-        C2 = (r9(on_slope_x(b)), r9(b))              # slope / BOX corner (concave)
-        surf_r = [C1, C2, (X, r9(b))]
-    x_foot = C2[0]                                   # where the gold leaves the slope
+        surf_r += [(xs, y_buf_top), (xs, r9(on_slope_y(xs)))]   # vertical drop at the slab corner
+    y_floor = r9(b - OE)                            # recess floor (or BOX) + buffer
+    x_w = r9(xsb + L)                               # side layer on the pedestal wall
+    y_w = r9(on_slope_y(x_w))
+    if OE > 0 and y_floor < y_w - 0.02:             # (a wall stub < 20 nm is merged into the slope corner)
+        surf_r += [(x_w, y_w), (x_w, y_floor)]      # slope -> pedestal wall -> floor
+    else:
+        surf_r.append((r9(on_slope_x(y_floor)), y_floor))   # floor meets the slope layer
+    surf_r.append((X, y_floor))
+    surf_r = list(dict.fromkeys(surf_r))
+    x_foot = surf_r[-2][0] if surf_r[-2][1] == y_floor else surf_r[-3][0]   # where the gold leaves the slope
     surf = [(-x, y) for x, y in reversed(surf_r)] + surf_r
     UNDER = Polygon([(-X, -BOX_H)] + surf + [(X, -BOX_H)])     # everything below the buffer top
+    CORNERS = surf_r[:-1]
 
     # ---- 1. LN ------------------------------------------------------------------
     core_poly = Polygon([
@@ -60,7 +73,7 @@ def build_polygons():
     #         top + MTX on the slab, b + MTX beyond (step at the slope foot);
     #         below that it fills the buffer-lined recess
     el_r = _areal(unary_union([box(xg, -BOX_H, x_foot, r9(y_buf_top + MTX)),
-                               box(x_foot, -BOX_H, x_out, r9(b + MTX))]).difference(UNDER))
+                               box(x_foot, -BOX_H, x_out, r9(max(y_floor, b) + MTX))]).difference(UNDER))
     assert el_r.geom_type == "Polygon", "electrode is not a single body"
 
     # ---- 6. Air -----------------------------------------------------------------
@@ -93,7 +106,7 @@ def build_polygons():
     base["clad_far"] = clad_far
 
     # ---- 7. Refinement: corner patches + gold skin -------------------------------
-    pts = [(xg, y_buf_top), C1, C2] + ([C3] if OE > 0 else []) + [(xs, y_slab_top), (xsb, 0.0)]
+    pts = [(xg, y_buf_top)] + CORNERS + [(xs, y_slab_top), (xsb, 0.0)]
     pts = list(dict.fromkeys((r9(px), r9(py)) for px, py in pts))
     r_c = CORNER_R
     edges = [xb1, x_fine, CAP_W / 2.0]
@@ -110,9 +123,9 @@ def build_polygons():
     import shapely
     skin_r = unary_union([
         box(xg, y_buf_top, x_foot, y_buf_top + SKIN_T),                  # gold on the slab buffer
-        UNDER.buffer(SKIN_T, join_style=2).intersection(box(C1[0] - SKIN_T, -BOX_H, x_foot + BOT_SKIN_L, y_buf_top + SKIN_T)),
+        UNDER.buffer(SKIN_T, join_style=2).intersection(box(min(xs, CORNERS[0][0]) - SKIN_T, -BOX_H, x_foot + BOT_SKIN_L, y_buf_top + SKIN_T)),
         box(xg, y_buf_top, xg + SKIN_T, y_clad_top),                     # inner wall
-        box(x_out - SKIN_T, -BOX_H, x_out, b + OUTER_WALL_SKIN_H),       # outer wall foot
+        box(x_out - SKIN_T, -BOX_H, x_out, max(y_floor, b) + OUTER_WALL_SKIN_H),       # outer wall foot
     ])
     skin_zone = shapely.set_precision(unary_union([skin_r, mirror(skin_r)]), 1e-3)   # helper only
 

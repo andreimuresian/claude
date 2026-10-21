@@ -13,7 +13,8 @@ rep = [
   "#   OVER-ETCH: the BOX is recessed by OE (vertical walls at the slab foot) wherever the slab\n"
   "#   is removed, BEFORE the buffer: the buffer lines the recess and the gold fills it.\n"),
  ("BUFFER_H = 0.200    # conformal SiO2 buffer under all the gold\n",
-  "BUFFER_H = 0.200    # conformal SiO2 buffer under all the gold\nALPHA_SLAB = 60.0   # slab-end sidewall angle (deg)\nOE = 0.7            # BOX over-etch depth outside the slab footprint (um); 0 = none\n"),
+  "BUFFER_H = 0.200    # conformal SiO2 buffer under all the gold\nBUFFER_L = 0.200    # SiO2 buffer on the side walls (60 deg slope, pedestal wall), normal thickness\nALPHA_SLAB = 60.0   # slab-end sidewall angle (deg)\nOE = 0.7            # BOX over-etch depth outside the slab footprint (um); 0 = none\n"),
+ ("GAP = 4.45\n", "GAP = 3.65          # buffered design point: same Vpi*L as unbuffered Istanbul at 4.45 um\n"),
  ("Istanbul + SiO2 buffer, cross-section as simulated", "Istanbul + buffer + over-etch, cross-section as simulated"),
  ("Istanbul + buffer, etched slab |", "Istanbul + buffer + over-etch |"),
  ("assert abs(_tot - DEV_W * (BOX_H + Y_TOP)) < 1e-8", "assert abs(_tot - DEV_W * (BOX_H + Y_TOP)) < 1e-7"),
