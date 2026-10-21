@@ -90,3 +90,15 @@ Solver 264 s / 275 s, peak memory 20 GB (coarse: 95 s, 6.5 GB).
 
 Both splits move < 5 %: the coarse recipe is adequate (<= 10 % budget,
 ~1 dB on crosstalk). Scaling: time ~ N^1.07, memory ~ N^1.18.
+
+### Impedance definition check (refined fields, eigenmode/eig_z_definitions.py)
+| | Z_PV = V^2/2P | Z_VI = V/I | Z_PI = 2P/I^2 | 3-D cascade Zc (gold) |
+|---|---|---|---|---|
+| even | 45.25 | 41.46 | 37.99 | 36.6 ohm |
+| odd | 45.02 | 41.62 | 38.48 | |
+| Ze/Zo - 1 | +0.51 % | -0.38 % | -1.27 % | |
+
+P != V I / 2 (by 9 %): mode 3 is not a pure signal-vs-own-ground mode, so the
+impedance, and its even/odd split, depend on the definition. Model NEXT at
+1 mm / 30 GHz: 0.26 % reproduces CST (-59.6 dB); VI -56.1, PV -53.2, PI -45.4 dB.
+Open question before the eigenmode Z can be used.
