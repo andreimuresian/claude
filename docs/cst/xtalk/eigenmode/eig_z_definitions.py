@@ -16,10 +16,11 @@ def loop_current(x, y, H, x0, x1, y0, y1):
     I -= np.trapezoid(H[ix1, iy0:iy1+1, 1], y[iy0:iy1+1])
     I -= np.trapezoid(H[ix0:ix1+1, iy0, 0], x[ix0:ix1+1])
     return I
-for tag in ("even", "odd"):
-    P, V, Zpv, Sz, x, y = analyse(tag)
-    _, _, H = load(f"Mode_3_h_{tag}.txt")
-    Is = [loop_current(x, y, H, -m, 2e-6 + m, 82.5e-6 - m, 117.5e-6 + m) for m in (0.5e-6, 1.0e-6)]
-    I = np.mean(np.abs(Is)); Vm = np.mean(np.abs(V))
-    print(f"{tag}: I loops {np.round(np.abs(Is)/I, 4)} (rel.)  Z_PV {Vm**2/(2*P):6.2f}  "
-          f"Z_PI {2*P/I**2:6.2f}  Z_VI {Vm/I:6.2f} ohm")
+if __name__ == "__main__":
+    for tag in ("even", "odd"):
+      P, V, Zpv, Sz, x, y = analyse(tag)
+      _, _, H = load(f"Mode_3_h_{tag}.txt")
+      Is = [loop_current(x, y, H, -m, 2e-6 + m, 82.5e-6 - m, 117.5e-6 + m) for m in (0.5e-6, 1.0e-6)]
+      I = np.mean(np.abs(Is)); Vm = np.mean(np.abs(V))
+      print(f"{tag}: I loops {np.round(np.abs(Is)/I, 4)} (rel.)  Z_PV {Vm**2/(2*P):6.2f}  "
+            f"Z_PI {2*P/I**2:6.2f}  Z_VI {Vm/I:6.2f} ohm")

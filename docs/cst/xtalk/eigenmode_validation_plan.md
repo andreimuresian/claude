@@ -102,3 +102,14 @@ P != V I / 2 (by 9 %): mode 3 is not a pure signal-vs-own-ground mode, so the
 impedance, and its even/odd split, depend on the definition. Model NEXT at
 1 mm / 30 GHz: 0.26 % reproduces CST (-59.6 dB); VI -56.1, PV -53.2, PI -45.4 dB.
 Open question before the eigenmode Z can be used.
+
+### Conductor currents of mode 3 (eigenmode/eig_conductor_currents.py, refined)
+| | I_g1/I_s (inner) | I_g2/I_s (outer) | net line current / I_s |
+|---|---|---|---|
+| even | -0.505 | -0.553 | -0.057 |
+| odd | -0.552 | -0.545 | -0.097 |
+
+The grounds carry 6-10 % more current than the signal: the excess returns via
+the enclosure (even) or the neighbour (odd). Mode 3 is not a pure GSG mode,
+hence P != VI/2 and the definition dependence. For a GSG port (V signal-to-
+ground, I in the signal) the circuit-consistent impedance is Z_VI.
