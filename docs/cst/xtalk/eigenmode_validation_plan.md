@@ -130,3 +130,13 @@ Odd (gold): 28.8899 GHz, Q = 18.06. odd - even = 25.50 MHz (PEC 22.87 MHz).
 dn gold = 0.001731 (n_e 1.96127, n_o 1.95954): +19.6 % vs PEC (0.001447),
 +14.6 % vs the 2-D (PEC) value 0.001511. Gold raises both splits by ~20 %:
 FEXT +1.2 dB, NEXT +1.7 dB relative to the PEC-based values.
+
+### GSG impedance from all three modes (impedance diagnostic/gsg_impedance.py, gold)
+Multiconductor Z = V I^-1 from modes 1-3 per symmetry, grounds tied:
+Z_GSG even 42.60 - 1.14j, odd 42.51 - 1.14j ohm -> Ze/Zo - 1 = +0.21 %.
+Same as mode 3's V/I (42.5-42.7): mode mixing does NOT explain the gap to the
+3-D 36.6 ohm (raw two-length residues 35.8-37.5 ohm at 30 GHz). Z matrices are
+5-15 % non-reciprocal off-diagonal (modes at different frequencies), so the
+GSG split is approximate. Splits so far: PV +0.61, VI -0.47, PI -1.53,
+GSG +0.21 %. Open: independent 2-D (CST port) impedance; geometry check of
+the 3-D single-line model (stack width).
