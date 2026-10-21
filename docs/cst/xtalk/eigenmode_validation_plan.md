@@ -113,3 +113,16 @@ The grounds carry 6-10 % more current than the signal: the excess returns via
 the enclosure (even) or the neighbour (odd). Mode 3 is not a pure GSG mode,
 hence P != VI/2 and the definition dependence. For a GSG port (V signal-to-
 ground, I in the signal) the circuit-consistent impedance is Z_VI.
+
+### Gold + lossy Si (coarse mesh), mode 3
+Even: 28.8644 GHz, Q = 18 -> n = 1.9613 (3-D 1.9498 / 1.9486), alpha ~ 2.79 dB/cm
+with n_g = 1.91 from 3-D data (3-D 2.90 / 3.02 dB/cm). Solver 131 s, 8 GB.
+
+| | Z_PV | Z_VI | Z_PI |
+|---|---|---|---|
+| even | 46.20 | 42.53 | 39.15 ohm |
+| odd | 45.92 | 42.73 | 39.76 ohm |
+| Ze/Zo - 1 gold | +0.61 % | -0.47 % | -1.53 % |
+| Ze/Zo - 1 PEC (coarse) | +0.54 % | | |
+
+Net line current / I_s: even -6.6 %, odd -11.2 % (PEC: -5.7 / -9.7 %).
