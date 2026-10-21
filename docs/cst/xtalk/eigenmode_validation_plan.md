@@ -60,3 +60,20 @@ mode 3: CPW pair (field plot confirmed for even).
 dn within 4.2 % of the 2-D reference on the first, coarse mesh;
 absolute index 0.3 % higher. Next: refined pair (convergence), then
 Ze/Zo from the mode fields.
+
+### Impedance split from the eigenmode fields (run A)
+eigenmode/eig_impedance.py: Z = |V|^2/(2P), V = gap voltage on rows inside the
+metal, P = Poynting flux of the half domain (99.3 % within |x| <= 40 um).
+
+| row x | Ze/Zo - 1, eigenmode | Ze/Zo - 1, 2-D port modes 5/6 |
+|---|---|---|
+| 0.5 um | 0.536 % | 0.447 % |
+| 1.0 um | 0.540 % | 0.453 % |
+| 1.5 um | 0.540 % | 0.440 % |
+| 2.0 um (top surface) | - | 0.300 % |
+
+The eigenmode value is consistent across rows; the 2-D modes were not pure
+even/odd (line B/A amplitude 1.083 / 0.921) and their ratio assumed equal
+power, the eigenmode imposes exact symmetry and integrates P. 14 mm hybrid
+model at 30 GHz: NEXT -59.7 / -56.9 / -55.4 dB for 0.30 / 0.45 / 0.54 %;
+FEXT unchanged (-48.3 dB). Mesh convergence still to be checked.
