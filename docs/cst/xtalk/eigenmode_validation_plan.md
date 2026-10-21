@@ -37,3 +37,26 @@ Start with 30 GHz only. The even/odd difference is what matters
 Quasi-TEM eigenfrequency, run time, field picture, E and H exported on the
 mid-cell cross-section plane (as for the 2-D ports) -> Ze/Zo - 1 from
 port_voltages_sweep.py, adapted.
+
+## Results
+
+### Run A: 10 um cell, PEC metal, lossless Si, 64,507 tets (coarse)
+phi = 0.6798 deg -> beta = 1186.47 1/m. General (Lossy), tet, order 2.
+Solver time 95 s (even), 88 s (odd); peak memory 6.6 GB.
+
+| mode set | mode 1 | mode 2 | mode 3 (CPW) |
+|---|---|---|---|
+| even (XZ magnetic) | 25.7572 | 27.6336 | 29.8984 GHz |
+| odd (XZ electric)  | 25.2692 | 27.6308 | 29.9212 GHz |
+
+Modes 1-2: line-vs-frame and slot modes (higher index, more field in Si);
+mode 3: CPW pair (field plot confirmed for even).
+
+| | n_even | n_odd | dn |
+|---|---|---|---|
+| eigenmode (coarse) | 1.89344 | 1.89199 | 0.001447 |
+| 2-D port solve, 30 GHz | 1.88781 | 1.88630 | 0.001511 |
+
+dn within 4.2 % of the 2-D reference on the first, coarse mesh;
+absolute index 0.3 % higher. Next: refined pair (convergence), then
+Ze/Zo from the mode fields.
