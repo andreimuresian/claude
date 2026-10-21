@@ -77,3 +77,16 @@ even/odd (line B/A amplitude 1.083 / 0.921) and their ratio assumed equal
 power, the eigenmode imposes exact symmetry and integrates P. 14 mm hybrid
 model at 30 GHz: NEXT -59.7 / -56.9 / -55.4 dB for 0.30 / 0.45 / 0.54 %;
 FEXT unchanged (-48.3 dB). Mesh convergence still to be checked.
+
+### Mesh convergence (run B: refined, 168,416 tets; slab 0.5 um, edge 0.3 um)
+Solver 264 s / 275 s, peak memory 20 GB (coarse: 95 s, 6.5 GB).
+
+| | coarse (64.5k) | refined (168k) | change |
+|---|---|---|---|
+| f even / odd (GHz) | 29.8984 / 29.9212 | 29.9576 / 29.9803 | +0.2 % abs. |
+| odd - even | 22.870 MHz | 22.715 MHz | -0.7 % |
+| dn | 0.001447 | 0.001432 | -1.0 % |
+| Ze/Zo - 1 (rows 0.5/1/1.5 um) | 0.536/0.540/0.540 % | 0.520/0.525/0.541 % | -2.0 % (mean 0.528 %) |
+
+Both splits move < 5 %: the coarse recipe is adequate (<= 10 % budget,
+~1 dB on crosstalk). Scaling: time ~ N^1.07, memory ~ N^1.18.

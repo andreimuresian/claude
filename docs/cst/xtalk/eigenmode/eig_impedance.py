@@ -8,7 +8,8 @@ P = 1/2 Re int (E x H*)_z dA over the half domain (= power carried by line A);
 Z = |V|^2 / (2 P). CST's eigenmode normalisation cancels."""
 import numpy as np
 import io, os, zipfile
-ZIP = "mode3_fields_10um_cell.zip"
+import sys
+ZIP = sys.argv[1] if len(sys.argv) > 1 else "mode3_fields_10um_cell.zip"
 def load(fn):
     if not os.path.exists(fn):
         fn = io.TextIOWrapper(zipfile.ZipFile(ZIP).open(fn))
