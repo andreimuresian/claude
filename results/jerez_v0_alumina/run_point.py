@@ -8,11 +8,13 @@ for c in nb["cells"][:5]:
 src = re.sub(r"\nT_ALD = [0-9.]+", f"\nT_ALD = {T}", src)
 src = re.sub(r"\nMESH_SCALE = [0-9.]+", f"\nMESH_SCALE = {MS}", src)
 src = re.sub(r"\nALD_CELLS = [0-9.]+", f"\nALD_CELLS = {AC}", src)
+import os
+if os.environ.get("SKIN_NEAR"): src = re.sub(r"\nSKIN_NEAR = [0-9.]+", "\nSKIN_NEAR = " + os.environ["SKIN_NEAR"], src)
 if len(sys.argv) > 4:
     src = re.sub(r"\nN_ALD = [0-9.]+", f"\nN_ALD = {float(sys.argv[4])}", src)
 t0 = time.time(); g = {}
 exec(compile(src, "nb", "exec"), g)
-print("RESULT " + json.dumps(dict(T_nm=T * 1e3, mesh_scale=MS, ald_cells=AC, n_ald=g["N_ALD"],
+print("RESULT " + json.dumps(dict(T_nm=T * 1e3, skin_near=g["SKIN_NEAR"], mesh_scale=MS, ald_cells=AC, n_ald=g["N_ALD"],
       tri=int(g["skfem_mesh"].nelements), neff=float(g["n_eff"].real), im_neff=float(g["n_eff"].imag),
       IL_dBcm=float(g["att_opt_dB_cm"]), VpiL_Vcm=float(g["Vpi_L_Vcm"]), Gamma=float(abs(g["overlap"])),
       t_s=round(time.time() - t0, 1))), flush=True)

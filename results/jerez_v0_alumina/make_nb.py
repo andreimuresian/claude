@@ -12,6 +12,17 @@ rep = [
  ("TECN = 0.550", "TECN = 0.400"), ("WG_H = 0.275", "WG_H = 0.170"),
  ("WG_TOP = 1.4\n", "WG_TOP = 1.0\n"), ("GAP = 4.2\n", "GAP = 4.15\n"),
  ("h_skin = 0.012", "h_skin = 0.006"),
+ ("            sk = _areal(reg.intersection(skin_zone))\n            polys[name.replace(\"bulk\", \"skin\")] = sk\n",
+  "            sk = _areal(reg.intersection(skin_zone))\n"
+  "            # 1310 nm needs a 6 nm skin, but the slab runs under 30 um of gold per side: keep\n"
+  "            # h_skin within SKIN_NEAR of the gap edge and 2 x h_skin beyond (memory)\n"
+  "            _nr = box(-GAP / 2.0 - SKIN_NEAR, -BOX_H, GAP / 2.0 + SKIN_NEAR, 1e3)\n"
+  "            polys[name.replace(\"bulk\", \"skin\")] = _areal(sk.intersection(_nr))\n"
+  "            _sf = _areal(sk.difference(_nr))\n"
+  "            if not _sf.is_empty:\n"
+  "                polys[name.replace(\"bulk\", \"skinfar\")] = _sf\n"),
+ ('    "elL_skin":    (h_skin, 0.20),\n', '    "elL_skin":    (h_skin, 0.20),\n    "elR_skinfar": (2.0 * h_skin, 0.20),\n    "elL_skinfar": (2.0 * h_skin, 0.20),\n'),
+ ("MESH_SCALE = 1.0    #", "SKIN_NEAR = 6.0     # um from the gap edge with the full-resolution gold skin\nMESH_SCALE = 1.0    #"),
 ]
 for a, b in rep:
     assert s.count(a) == 1, a
