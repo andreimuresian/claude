@@ -99,6 +99,28 @@ stat(s, 9.2, 4.55, 3.6, 1.15, "2.424 V·cm", "buffered Vπ·L, flat above 7 µm"
 text(s, 0.6, 6.35, 12.2, 0.8, [("The buffer removes the gold contact at the slab end: no cavity, no ripples, "
      "IL independent of slab-width errors, at equal Vπ·L.", {"size": 13, "bold": True, "color": NAVY})])
 
+# 7-8 buffered + over-etched ------------------------------------------------------
+OEd = H + "../istanbul_buffer_oe/"
+OR = [json.loads(l[7:]) for l in open(OEd + "sweep.txt") if l.startswith("RESULT")]
+A = sorted({round(r["oe"] * 1e3): r for r in OR if abs(r["L"] - 0.2) < 1e-9}.items())
+Bl = sorted({round(r["L"] * 1e3): r for r in OR if abs(r["oe"] - 0.7) < 1e-9}.items())
+s = new("Buffered Istanbul with the 700 nm BOX over-etch", "Gap 3.65 µm, slab 10.15 µm, 60° slab ends, 200 nm buffer, 1575 nm")
+image(s, H + "../istanbul_buffer_oe/preview_nominal.png", 0.6, 1.7, w=12.1)
+image(s, H + "deck/xs_buf_oe_zooms.png", 0.6, 4.85, h=2.0)
+box(s, 9.3, 5.0, 3.5, 1.65, [("Two sweeps", {"size": 14, "bold": True, "color": NAVY, "space": 4}),
+    ("Over-etch 0 → 900 nm", {"size": 12, "space": 2}), ("Lateral (side-wall) buffer 0 → 400 nm", {"size": 12, "space": 2}),
+    ("Top and floor buffer fixed at 200 nm", {"size": 11, "color": MUT})])
+s = new("Over-etch and lateral buffer: no effect on IL", "Same buffered design; IL axis 0–0.03 dB/cm")
+xy_chart(s, 0.6, 1.75, 6.0, 3.3, [("IL", [(k, r["IL_dBcm"]) for k, r in A], GREEN2, 6, 2.0, False)],
+         (0, 900), (0, 0.03), "Over-etch (nm)   [lateral buffer 200 nm]", "IL (dB/cm)", legend=False, xmaj=100, ymaj=0.005)
+xy_chart(s, 6.8, 1.75, 6.0, 3.3, [("IL", [(k, r["IL_dBcm"]) for k, r in Bl], GREEN2, 6, 2.0, False)],
+         (0, 400), (0, 0.03), "Lateral buffer (nm)   [over-etch 700 nm]", "IL (dB/cm)", legend=False, xmaj=50, ymaj=0.005)
+stat(s, 0.6, 5.25, 3.9, 1.15, "0.0126 dB/cm", "IL at every point (within 1.4 %)", GREEN2)
+stat(s, 4.75, 5.25, 3.9, 1.15, "−0.24 %", "Vπ·L from 0 to 900 nm over-etch\n(2.424 → 2.418 V·cm)", NAVY)
+stat(s, 8.9, 5.25, 3.9, 1.15, "0 nm OK", "even gold on the LN slope\ngives the same IL", NAVY)
+text(s, 0.6, 6.55, 12.2, 0.6, [("The top buffer removes the guided slab wave under the gold: no power reaches the slab end, "
+     "so what surrounds it (recess, side buffer, gold) no longer matters.", {"size": 13, "bold": True, "color": NAVY})])
+
 sldIdLst = prs.slides._sldIdLst
 for sid in list(sldIdLst)[:first_new]:
     prs.part.drop_rel(sid.rId); sldIdLst.remove(sid)
