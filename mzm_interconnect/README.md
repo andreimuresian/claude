@@ -101,13 +101,14 @@ to build the system model around it.
 
 | Tab | What it shows |
 |---|---|
-| Response | Normalised EO S21 with the bandwidth marker, electrical S11 into the loaded line, and electrical S21 (z0_sys source into R_T; same held-below / extrapolated-above fit as S11 and the EO S21) |
+| Response | Normalised EO S21 with the bandwidth marker, electrical S11 into the loaded line, and electrical S21 with its -3 dB bandwidth (z0_sys source into R_T, absolute level; same held-below / extrapolated-above fit as S11 and the EO S21) |
 | Line diagnostics | α(f), Zc(f), n_m(f): de-embedded points against the physical fit, with n_g drawn in |
 | Sweep | Pick any sweepable parameter, sweep it, plot any metric; optional second parameter gives a family of curves |
 | INTERCONNECT | Export the tables, build the schematic, run it, overlay the solver trace on the Python one |
 | Log | Everything the engine said, including every warning about extrapolation |
 
-The KPI strip across the top always shows EO bandwidth, effective V_pi,
+The KPI strip across the top always shows EO bandwidth, electrical S21
+bandwidth, effective V_pi,
 V_pi·L, extinction ratio, chirp parameter, velocity walk-off at the bandwidth
 frequency, and worst-case S11.
 

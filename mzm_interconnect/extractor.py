@@ -622,6 +622,8 @@ def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
       + ("  (LOWER BOUND: never crossed the criterion)" if res.bw_clipped else ""))
     A(f"  EO S21 at {float(p['f_probe_GHz']):g} GHz    {res.s21_at_probe_dB:+.3f} dB")
     A(f"  worst S11           {res.s11_worst_dB:.3f} dB")
+    A(f"  electrical S21 BW   {res.bw_elec_GHz:.3f} GHz  (-3 dB, absolute)"
+      + ("  (LOWER BOUND: never crossed -3 dB)" if res.bw_elec_clipped else ""))
     A(f"  V_pi (device)       {lm.vpi_eff_V:.4f} V   (V_pi.L = {lm.vpi_L_Vcm:.4f} V.cm)")
     A(f"  extinction ratio    {lm.er_dB:.2f} dB")
     A(f"  chirp parameter     {lm.chirp_alpha:.5f}")
@@ -812,10 +814,14 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
 
     if has_s21e:
         z_ref = float(p["z0_sys_ohm"])
-        i3 = int(np.argmin(np.abs(res.f_GHz - fit.f_max_sim_GHz)))
+        bw_e = float(getattr(res, "bw_elec_GHz", float("nan")))
+        clip_e = bool(getattr(res, "bw_elec_clipped", False))
         axe.plot(res.f_GHz, s21e, "-", lw=1.8, color="#2e8b57",
                  label=f"$S_{{21}}$, {z_ref:.0f} $\\Omega$ source into $R_T$ = "
-                       f"{float(p['Rt_R']):.0f} $\\Omega$ ({s21e[i3]:.1f} dB at {res.f_GHz[i3]:.0f} GHz)")
+                       f"{float(p['Rt_R']):.0f} $\\Omega$ (-3 dB BW = {bw_e:.2f} GHz"
+                       + (" +" if clip_e else "") + ")")
+        if np.isfinite(bw_e) and not clip_e:
+            axe.axvline(bw_e, color="#4fae7c", ls=":", lw=1.4)
         axe.axhline(-3, color=theme["grid"], ls="--", lw=1.0, label="-3 dB")
         axe.axvline(fit.f_max_sim_GHz, color=theme["grid"], ls=":", lw=1.2)
         if far_end is None:

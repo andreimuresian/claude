@@ -48,6 +48,9 @@ METRICS: list[MetricSpec] = [
     MetricSpec("s21_at_probe_dB", "EO S21 at probe frequency", "dB",
                "Response at the probe frequency -- stays meaningful when the "
                "-3 dB point runs off the top of the sweep."),
+    MetricSpec("bw_elec_GHz", "Electrical S21 bandwidth", "GHz",
+               "The -3 dB point (absolute) of the electrical S21, z0_sys source "
+               "into the termination; same line data and extrapolation as S11."),
     MetricSpec("s11_worst_dB", "Worst electrical S11", "dB",
                "Input match of the loaded electrode over the band."),
     MetricSpec("walkoff_at_bw", "Velocity walk-off |n_m - n_g|", "-",
@@ -137,6 +140,7 @@ def evaluate_point(p: dict, fit: Optional[LineFit] = None,
         "bend_eff_dB": bend_efficiency_dB(fit, p),
         **extra,
         "bw_GHz": res.bw_GHz,
+        "bw_elec_GHz": res.bw_elec_GHz,
         "bw_clipped": res.bw_clipped,
         "s21_at_probe_dB": res.s21_at_probe_dB,
         "s11_worst_dB": res.s11_worst_dB,

@@ -178,6 +178,7 @@ class KpiStrip(ttk.Frame):
 
     FIELDS = [
         ("bw", "EO bandwidth", "GHz", "accent"),
+        ("bwe", "Electrical S21 BW", "GHz (-3 dB)", "accent"),
         ("vpi", "V_pi (device)", "V", "fg"),
         ("vpil", "V_pi x L", "V.cm", "fg"),
         ("er", "Extinction ratio", "dB", "fg"),
@@ -219,6 +220,11 @@ class KpiStrip(ttk.Frame):
         self.values["bw"].config(
             text=fmt(res.bw_GHz) + (" +" if clipped else ""),
             fg=self.theme["warn"] if clipped else self.theme["accent"])
+        bwe = getattr(res, "bw_elec_GHz", float("nan"))
+        clip_e = bool(getattr(res, "bw_elec_clipped", False))
+        self.values["bwe"].config(
+            text=fmt(bwe) + (" +" if clip_e else ""),
+            fg=self.theme["warn"] if clip_e else self.theme["accent"])
         self.values["vpi"].config(text=fmt(lm.vpi_eff_V))
         self.values["vpil"].config(text=fmt(lm.vpi_L_Vcm))
         self.values["er"].config(text=fmt(lm.er_dB, 1))

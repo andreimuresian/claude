@@ -750,6 +750,10 @@ class EOResult:
     # gain; the line's two-port S21 when R_T = z0_sys). Same line data and
     # extrapolation as S11 and the EO S21.
     s21_elec_dB: np.ndarray = field(default_factory=lambda: np.empty(0))
+    # -3 dB point of that trace, absolute (0 dB = lossless and matched); a
+    # lower bound when the trace never gets there inside the sweep.
+    bw_elec_GHz: float = float("nan")
+    bw_elec_clipped: bool = False
     # The same electrical two-port, complex, for the Touchstone export. Port 1
     # is referenced to z0_sys, port 2 to the termination Z_T (power waves).
     s21_elec: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=complex))
@@ -830,6 +834,10 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     s11_dB = 20.0 * np.log10(np.clip(np.abs(gamma_in), 1e-12, None))
     s21_el, _, s12_el, s22_el = electrical_s21(f, alpha, nm, Zc, p, Zt, z_ref)
     s21_elec_dB = 20.0 * np.log10(np.clip(np.abs(s21_el), 1e-12, None))
+    bw_el = first_crossing(f, s21_elec_dB, -3.0)
+    bw_el_clipped = bw_el is None
+    if bw_el_clipped:
+        bw_el = float(f[-1])
 
     f_probe = float(p["f_probe_GHz"])
     i_probe = int(np.argmin(np.abs(f - f_probe)))
@@ -845,7 +853,8 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
         H=H, gamma_in=gamma_in, ref_dB=float(ref),
         norm_mode=norm_mode, norm_window_GHz=norm_window,
         ripple_period_GHz=float(period), ripple_pp_dB=ripple_pp,
-        s21_elec_dB=s21_elec_dB, s21_elec=s21_el, s12_elec=s12_el, s22_elec=s22_el,
+        s21_elec_dB=s21_elec_dB, bw_elec_GHz=float(bw_el), bw_elec_clipped=bw_el_clipped,
+        s21_elec=s21_el, s12_elec=s12_el, s22_elec=s22_el,
     )
 
 
