@@ -372,5 +372,56 @@ def run_xtalk_cascade(p: dict, out_dir: Optional[str] = None, mode: str = "ena",
     rep = format_report(tw, meas, status, band)
     with open(os.path.join(out_dir, f"xtalk_cascade_{mode}_report.txt"), "w") as fh:
         fh.write(rep + "\n")
+    if meas:
+        save_eo_traces(tw, meas, out_dir, log)
     log(rep)
     return rep, b
+
+
+def save_eo_traces(tw, meas, out_dir, log=print):
+    """The EO responses as INTERCONNECT gives them AFTER clean_eo_trace (the
+    raw ENA trace is dominated by a delay-free spike: a flat level with the
+    real response as a fast ripple on it), next to the twin: a CSV and a PNG
+    with A and B normalised to A at low frequency, and the ratio B/A."""
+    import csv
+    f1, H1 = meas[1]
+    ref = np.abs(H1[np.argmin(np.abs(f1 - 1.0))])
+    with open(os.path.join(out_dir, "xtalk_cascade_eo.csv"), "w", newline="") as fh:
+        wr = csv.writer(fh)
+        wr.writerow(["f_GHz", "A_dB", "B_dB", "B_over_A_dB"])
+        H2 = meas[2][1] if 2 in meas else np.full_like(H1, np.nan)
+        for f, a, b in zip(f1, H1, H2):
+            wr.writerow([f"{f:.6g}", f"{20*np.log10(abs(a)/ref):.4f}",
+                         f"{20*np.log10(abs(b)/ref):.4f}", f"{20*np.log10(abs(b/a)):.4f}"])
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except Exception:
+        return
+    fq = tw["f_GHz"]
+    tA = tw["opt"]["A"]
+    t0 = np.abs(tA[np.argmin(np.abs(fq - 1.0))])
+    fig, axs = plt.subplots(1, 2, figsize=(11, 4))
+    axs[0].plot(f1, 20 * np.log10(np.abs(H1) / ref), "k", lw=1.6, label="A, INTERCONNECT")
+    axs[0].plot(fq, 20 * np.log10(np.abs(tA) / t0), "--", color="#0E2268", label="A, twin")
+    if 2 in meas:
+        axs[0].plot(f1, 20 * np.log10(np.abs(meas[2][1]) / ref), color="#d0453f", lw=1.6,
+                    label="B, INTERCONNECT")
+        axs[1].plot(f1, 20 * np.log10(np.abs(meas[2][1] / H1)), color="#d0453f", lw=1.6,
+                    label="B/A, INTERCONNECT")
+    axs[0].plot(fq, 20 * np.log10(np.abs(tw["opt"]["B"]) / t0), "--", color="#e88", label="B, twin")
+    axs[1].plot(fq, 20 * np.log10(np.abs(tw["opt"]["B"] / tA)), "--", color="#0E2268",
+                label="B/A, twin")
+    axs[0].set_title("EO response re A at 1 GHz (EO bandwidth: A at -3 dB)")
+    axs[1].set_title("EO crosstalk in the receiver, B/A")
+    for ax in axs:
+        ax.set_xlabel("frequency (GHz)")
+        ax.set_ylabel("dB")
+        ax.grid(alpha=0.3)
+        ax.legend(fontsize=8)
+    fig.tight_layout()
+    path = os.path.join(out_dir, "xtalk_cascade_eo.png")
+    fig.savefig(path, dpi=130)
+    plt.close(fig)
+    log(f"  EO responses (cleaned): {path} and xtalk_cascade_eo.csv")
