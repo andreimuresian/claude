@@ -1,7 +1,7 @@
 import csv, matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
 R = list(csv.DictReader(open("group_index_ALD.csv")))
-fig, axs = plt.subplots(1, 3, figsize=(17, 4.8))
-for ax, (d, lab, c) in zip(axs, (("cordoba", "Cordoba, 1575 nm (rib 1.4 µm)", "#e8590c"), ("cordoba_wg1.0", "Cordoba, 1575 nm (rib 1.0 µm)", "#7b3fa0"), ("jerez", "Jerez V0, 1310 nm (rib 1.0 µm)", "#1b9e77"))):
+fig, axs = plt.subplots(1, 4, figsize=(22, 4.8))
+for ax, (d, lab, c) in zip(axs, (("cordoba", "Cordoba, 1575 nm (rib 1.4 µm)", "#e8590c"), ("cordoba_wg1.0", "Cordoba, 1575 nm (rib 1.0 µm)", "#7b3fa0"), ("cordoba_wg1.0_buffer200", "Cordoba, rib 1.0 µm + 200 nm SiO₂ buffer", "#2a78d6"), ("jerez", "Jerez V0, 1310 nm (rib 1.0 µm)", "#1b9e77"))):
     rows = [r for r in R if r["design"] == d]; base = [r for r in rows if r["T_ALD_nm"] == "0"][0]
     for m, ls, mk, ml in (("sellmeier", "-", "o", "ALD Sellmeier (n ≈ 1.61)"), ("scaled", "--", "s", "ALD scaled to n = 1.74")):
         pts = [(0, float(base["ng_pm1nm"]))] + sorted((int(r["T_ALD_nm"]), float(r["ng_pm1nm"])) for r in rows if r["ALD_model"] == m)

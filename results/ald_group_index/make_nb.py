@@ -43,7 +43,7 @@ if design == "cordoba":
 if BUF:
     rep("CAP_H = 1.40\n", "CAP_H = 1.40\nBUFFER_H = 0.200    # SiO2 buffer on the whole slab: under the gold and across the gap (fused with the cap)\n")
     rep("    y_el_top = y_slab_top + MTX                     # 2.275\n    y_cap_top = y_slab_top + CAP_H                  # 1.675\n",
-        "    y_buf = y_slab_top + BUFFER_H                   # buffer top = bottom of the gold\n"
+        "    y_buf = round(y_slab_top + BUFFER_H, 9)         # buffer top = bottom of the gold (rounded: exact vertices)\n"
         "    y_el_top = y_buf + MTX\n    y_cap_top = y_buf + CAP_H                       # cap height from the buffer top\n")
     rep("    y_fine_top = y_slab_top + 0.6 ", "    y_fine_top = y_buf + 0.6 ")
     rep("    el_r = box(xg, 0.0, x_out, y_el_top).difference(slab)\n",
