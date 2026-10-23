@@ -25,7 +25,10 @@ network is the Python twin's terminated_response, so:
     reaches B's receiver while B's driver is idle: pure crosstalk.
 
 Scope: a straight electrode (the crosstalk dataset is one uniform section).
-Bends between coupled sections are not modelled.
+Bends between coupled sections are not modelled. With source='s4p' the
+electrode is instead the pair of the Crosstalk-from-s4p window: the even/odd
+equivalent lines of a 4-port Touchstone file at its simulated length
+(xtalk_s4p.py).
 
 Nothing here imports lumapi unless run_xtalk_cascade() is called.
 """
@@ -64,19 +67,31 @@ def arm_weights(p: dict):
     return c1, c2, ng * (1.0 + dn / 2.0), ng * (1.0 - dn / 2.0), pushpull
 
 
-def twin(p: dict, out_dir: str, top_GHz: float, points_per_GHz: float = 40.0) -> dict:
+def twin(p: dict, out_dir: str, top_GHz: float, points_per_GHz: float = 40.0,
+         source: str = "dataset") -> dict:
     """Tables up to *top_GHz* and the Python twin of the cascade: the line
     voltages each arm's light integrates (H_A, H_B, and H2_A, H2_B at the
     second arm's n_g) with the sidebar's source and termination, and the
     small-signal photocurrent of each modulator, w1 H(ng1) + w2 H(ng2) with
     w1 = c1, w2 = -c2 (push-pull) or w2 = 0 (single arm). Both modulators are
-    biased alike, so their ratio is the receiver's EO crosstalk."""
-    ds = CL.load_dataset()
-    dz = float(ds["dz_hi"])
-    tables = CL.export_coupled_tables(p, out_dir, dz, f_top_GHz=top_GHz,
-                                      points_per_GHz=points_per_GHz)
+    biased alike, so their ratio is the receiver's EO crosstalk.
+
+    *source*: 'dataset' (the 200 um pitch line at xt_L_mm) or 's4p' (the pair
+    from its own Touchstone file at its simulated length, xtalk_s4p.py)."""
+    if source == "s4p":
+        from . import xtalk_s4p as XS
+        tables = XS.export_tables(p, out_dir, f_top_GHz=top_GHz, points_per_GHz=points_per_GHz)
+        dz, L = float(tables["dz"]), float(tables["L"])
+        name = f"{tables['name']} ({tables['variant']})"
+        data_top = float(tables["data_top_GHz"])
+    else:
+        ds = CL.load_dataset()
+        dz = float(ds["dz_hi"])
+        tables = CL.export_coupled_tables(p, out_dir, dz, f_top_GHz=top_GHz,
+                                          points_per_GHz=points_per_GHz)
+        L = float(p["xt_L_mm"]) * 1e-3
+        name, data_top = "200 um pitch uniform line", float(ds["data_top_GHz"])
     c1, c2, ng1, ng2, pp = arm_weights(p)
-    L = float(p["xt_L_mm"]) * 1e-3
     blk = CL.coupled_sparams_from_tables(tables["even"], tables["odd"], L, ng=ng1,
                                          ng2=ng2 if pp else None, R0=InterconnectBuilder.R0)
     f = blk["f_Hz"]
@@ -86,7 +101,7 @@ def twin(p: dict, out_dir: str, top_GHz: float, points_per_GHz: float = 40.0) ->
     w2 = -c2 if pp else 0.0
     opt = {k: c1 * r[f"H_{k}"] + (w2 * r[f"H2_{k}"] if pp else 0.0) for k in MZMS}
     return dict(tables=tables, f_GHz=f / 1e9, resp=r, opt=opt, L=L, dz=dz,
-                ng1=ng1, ng2=ng2, pushpull=pp)
+                ng1=ng1, ng2=ng2, pushpull=pp, name=name, data_top_GHz=data_top)
 
 
 class XtalkCascadeBuilder(InterconnectBuilder):
@@ -269,8 +284,9 @@ class XtalkCascadeBuilder(InterconnectBuilder):
             if self.ena_inputs >= 2:
                 self._try_connect('PIN_B', P_OUT[0], 'ENA_1', 'input 2')
         kind = "push-pull" if tw["pushpull"] else "single-arm"
-        self.log(f"  Crosstalk cascade: two {kind} modulators on the coupled 200 um pitch "
-                 f"electrode, L = {tw['L']*1e3:.2f} mm; {len(self._wiring)} links.")
+        self.log(f"  Crosstalk cascade: two {kind} modulators on the coupled electrode "
+                 f"({tw.get('name', '200 um pitch uniform line')}), L = {tw['L']*1e3:.2f} mm; "
+                 f"{len(self._wiring)} links.")
         for m in self.pending_manual:
             self.log(f"  MANUAL WIRE NEEDED: {m}")
         return f"crosstalk pair, {kind}"
@@ -282,6 +298,7 @@ def format_report(tw, meas, status, band) -> str:
     out = []
     A = out.append
     A("Full MZM cascade, crosstalk mode: INTERCONNECT vs Python twin")
+    A(f"line: {tw.get('name', '200 um pitch uniform line')}")
     A(f"L = {tw['L']*1e3:.3f} mm, Ze/Zo - 1 = {tw['dz']:.4g}, "
       f"{'push-pull' if tw['pushpull'] else 'single arm'}, n_g {tw['ng1']:.4f}"
       + (f" / {tw['ng2']:.4f}" if tw["pushpull"] else ""))
@@ -321,18 +338,20 @@ def format_report(tw, meas, status, band) -> str:
 
 
 def run_xtalk_cascade(p: dict, out_dir: Optional[str] = None, mode: str = "ena",
-                      log: Optional[Callable[[str], None]] = None, keep_open: bool = False):
+                      log: Optional[Callable[[str], None]] = None, keep_open: bool = False,
+                      source: str = "dataset"):
     """Build (and in ENA mode run and check) the two-modulator cascade.
-    Returns (report, builder); builder is None unless *keep_open*."""
+    *source*: 'dataset' or 's4p' (see twin). Returns (report, builder);
+    builder is None unless *keep_open*."""
     log = log or print
     p = P.normalise(p)
     if int(p.get("n_bends", 0)) > 0:
-        log("  NOTE: the crosstalk cascade is a straight coupled electrode of length "
-            f"xt_L_mm = {float(p['xt_L_mm']):.2f} mm; the device's bends are not used.")
+        log("  NOTE: the crosstalk cascade is a straight coupled electrode; the device's "
+            "bends are not used.")
     out_dir = out_dir or os.path.join(str(p["out_dir"]) or ".", "xtalk_cascade")
     os.makedirs(out_dir, exist_ok=True)
     top = 0.5 * float(p["ic_sample_rate_GHz"])
-    tw = twin(p, out_dir, top)
+    tw = twin(p, out_dir, top, source=source)
     log(f"  Tables in {out_dir}: coupled_even.txt, coupled_odd.txt, up to {top:.1f} GHz.")
     meas, status, b = {}, [], None
     try:
@@ -368,7 +387,7 @@ def run_xtalk_cascade(p: dict, out_dir: Optional[str] = None, mode: str = "ena",
             except Exception:
                 pass
             b = None
-    band = (1.0, min(0.95 * float(p["f_max_GHz"]), float(CL.load_dataset()["data_top_GHz"])))
+    band = (1.0, min(0.95 * float(p["f_max_GHz"]), float(tw["data_top_GHz"])))
     rep = format_report(tw, meas, status, band)
     with open(os.path.join(out_dir, f"xtalk_cascade_{mode}_report.txt"), "w") as fh:
         fh.write(rep + "\n")

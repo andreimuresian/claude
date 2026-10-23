@@ -517,15 +517,38 @@ PARAMS: list[ParamSpec] = [
 
     # ---- Crosstalk (edited in the Crosstalk window, saved with the session) ----
     ParamSpec("xt_model", "Electrode model", "Single line", "Crosstalk", kind="choice",
-              choices=("Single line", "Crosstalk (two lines)"), affects="lumerical",
+              choices=("Single line", "Crosstalk (two lines)", "Crosstalk from s4p"),
+              affects="lumerical",
               help="Single line: the device as before, untouched. Crosstalk: two "
                    "adjacent electrodes A (aggressor) and B (victim) of the 200 um pitch "
                    "uniform (non slow-wave) line ONLY, from its own CST crosstalk "
-                   "simulations; the sidebar Touchstone file is not used."),
+                   "simulations; the sidebar Touchstone file is not used. Crosstalk "
+                   "from s4p: any coupled pair from its own 4-port Touchstone file, at "
+                   "the simulated length (no length extrapolation)."),
     ParamSpec("xt_L_mm", "Crosstalk electrode length", 14.0, "Crosstalk", "mm",
               affects="lumerical", vmin=0.1, vmax=100.0,
               help="Length of the two coupled 200 um pitch electrodes. Independent of "
                    "the single-line device length."),
+    ParamSpec("xs_s4p_path", "Pair Touchstone (.s4p)", "", "Crosstalk", kind="path",
+              affects="lumerical",
+              help="4-port Touchstone file of the coupled pair, simulated at the device "
+                   "length."),
+    ParamSpec("xs_L_mm", "Simulated length", 8.75, "Crosstalk", "mm", affects="lumerical",
+              vmin=0.1, vmax=100.0,
+              help="Length of the line in the .s4p. It is also the device length: the "
+                   "pair is used as simulated, without length extrapolation."),
+    ParamSpec("xs_port_order", "Port order", "1 A near, 2 A far, 3 B near, 4 B far",
+              "Crosstalk", kind="choice",
+              choices=("1 A near, 2 A far, 3 B near, 4 B far",
+                       "1 A near, 2 B near, 3 A far, 4 B far"), affects="lumerical"),
+    ParamSpec("xs_variant", "Equivalent line for EO / INTERCONNECT",
+              "Ze = Zo (forward waves)", "Crosstalk", kind="choice",
+              choices=("Ze = Zo (forward waves)", "exact terminals"), affects="lumerical",
+              help="Exact terminals: reproduces the .s4p exactly (NEXT included), but a "
+                   "NEXT that is not two-mode physics becomes an impedance split that "
+                   "overstates the EO crosstalk. Ze = Zo: same even/odd propagation, "
+                   "mean impedance; FEXT kept, NEXT not, EO crosstalk from the forward "
+                   "waves as in the CST fields."),
 ]
 
 BY_KEY: dict[str, ParamSpec] = {p.key: p for p in PARAMS}

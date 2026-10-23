@@ -157,7 +157,8 @@ The line model (`bend_cpw/model.py`) and its validation are documented in
 ## Crosstalk: two adjacent electrodes
 
 Header selector **Model**: *Single line* is the device exactly as before.
-*Crosstalk (two lines)* opens the **Crosstalk window**; the single-line
+*Crosstalk (two lines)* opens the **Crosstalk window**; *Crosstalk from s4p*
+opens the **Crosstalk-from-s4p window** (next section). The single-line
 model, its tabs and its INTERCONNECT build are not touched. The choice is
 saved with the session.
 
@@ -216,6 +217,42 @@ That holds for the S-matrix, for the voltage the light integrates
 
 Code: `coupled_line.py` (Python twin, reuses `scripted_line.tl_sparams`),
 `gui_xtalk.py`, `xtalk_test.py`, `xtalk_cascade.py`. Checks: `docs/cst/xtalk/coupled_twin_check.py`.
+
+## Crosstalk from s4p: a pair at its simulated length
+
+For a pair simulated at the device length and pitch (e.g. Istanbul,
+`ISTANBUL_SW_8p75mm.s4p`, 625 um interaxis), with no length extrapolation.
+Inputs: the `.s4p`, its length, its port order (`1 A near, 2 A far, 3 B near,
+4 B far` for the Istanbul files). Source, termination, n_g and the optics come
+from the sidebar, as in the 200 um window. Code: `xtalk_s4p.py`,
+`gui_xtalk_s4p.py`.
+
+The mirror-symmetric pair splits exactly into an even and an odd 2-port; each
+end-symmetric 2-port is one uniform line, cosh(gamma L) = (A + D)/2,
+Z = sqrt(B/C). The two equivalent lines feed the same coupled-line element,
+twin and full cascade as the 200 um dataset. The window prints the file's A/B
+and end asymmetry and how well the equivalent line gives the file back
+(8.75 mm: 2.8e-4; the 1 mm file, whose ends differ, only to 2.4e-2).
+
+Two equivalent lines are computed and plotted:
+
+* **exact terminals**: gamma and Z of each mode as extracted; the `.s4p` is
+  reproduced exactly, NEXT included. But the Istanbul NEXT is a far-end round
+  trip on a second, slower wave (`docs/cst/xtalk/istanbul/fields_30GHz`), not
+  two-mode physics; the extraction turns it into an impedance split (63.3 vs
+  58.2 ohm at 30 GHz on the 8.75 mm file) that launches a forward wave on B
+  the real structure does not have (5 mm file at 30 GHz: -32.5 dB along the
+  line, against -45..-50 dB in CST's fields). The EO crosstalk, which rides
+  on B's forward wave, is overstated.
+* **Ze = Zo (forward waves)**, the default: the same gamma_e, gamma_o, with Z
+  set to their mean. FEXT stays within 1.5-3.6 dB of the file, NEXT is not
+  reproduced (~20 dB low), and B's forward wave is the FEXT build-up, as in
+  the fields.
+
+The electrical NEXT and FEXT panel always shows the file itself. The setting
+*Equivalent line for EO / INTERCONNECT* chooses what the tables and the full
+cascade use. Tables above the file's top frequency hold the last values; the
+analysis band stops at the data.
 
 ## Adding a parameter
 

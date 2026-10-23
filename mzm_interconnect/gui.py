@@ -475,37 +475,56 @@ class MZMStudio(tk.Tk):
         tk.Label(bar, text="Model:", bg=t["bg"], fg=t["muted"],
                  font=("Segoe UI", 9)).pack(side="left", padx=(18, 4))
         var = self.vars["xt_model"]
-        cb = ttk.Combobox(bar, textvariable=var, state="readonly", width=22,
+        cb = ttk.Combobox(bar, textvariable=var, state="readonly", width=24,
                           values=P.BY_KEY["xt_model"].choices)
         cb.pack(side="left")
         Tooltip(cb, P.BY_KEY["xt_model"].help, t)
         var.trace_add("write", lambda *a: self.after_idle(self._on_model_change))
 
     def _on_model_change(self):
-        if str(self.vars["xt_model"].get()).startswith("Crosstalk"):
-            self.action_open_xtalk()
-        else:
-            win = getattr(self, "xtalk_window", None)
-            if win is not None:
+        model = str(self.vars["xt_model"].get())
+        wanted = ("xtalk_s4p_window" if "s4p" in model else
+                  "xtalk_window" if model.startswith("Crosstalk") else None)
+        for attr in ("xtalk_window", "xtalk_s4p_window"):
+            win = getattr(self, attr, None)
+            if win is not None and attr != wanted:
                 try:
                     win.close()
                 except tk.TclError:
-                    self.xtalk_window = None
+                    setattr(self, attr, None)
+        if wanted == "xtalk_window":
+            self.action_open_xtalk()
+        elif wanted == "xtalk_s4p_window":
+            self.action_open_xtalk_s4p()
+
+    def _raise_window(self, attr: str) -> bool:
+        win = getattr(self, attr, None)
+        if win is None:
+            return False
+        try:
+            win.deiconify()
+            win.lift()
+            win.focus_set()
+            return True
+        except tk.TclError:
+            setattr(self, attr, None)
+            return False
 
     def action_open_xtalk(self):
         """The Crosstalk window (gui_xtalk.py): two adjacent electrodes as one
         coupled line. The single-line model is not touched."""
-        win = getattr(self, "xtalk_window", None)
-        if win is not None:
-            try:
-                win.deiconify()
-                win.lift()
-                win.focus_set()
-                return
-            except tk.TclError:
-                self.xtalk_window = None
+        if self._raise_window("xtalk_window"):
+            return
         from .gui_xtalk import XtalkWindow
         self.xtalk_window = XtalkWindow(self)
+
+    def action_open_xtalk_s4p(self):
+        """The Crosstalk-from-s4p window (gui_xtalk_s4p.py): a coupled pair from
+        its own 4-port Touchstone file, at the simulated length."""
+        if self._raise_window("xtalk_s4p_window"):
+            return
+        from .gui_xtalk_s4p import XtalkS4PWindow
+        self.xtalk_s4p_window = XtalkS4PWindow(self)
 
     def show_banner(self, message: str):
         try:
