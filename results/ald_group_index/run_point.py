@@ -16,6 +16,10 @@ if LIGHT:   # light mesh for ng: coarser gold skin, 2 elements across the alumin
     src, k4 = re.subn(r"x_fine = max\(X_FINE_MIN, min\(xs, x_out\) \+ 1\.0\)", "x_fine = X_FINE_MIN", src, count=1)
     src, k5 = re.subn(r'"slab_mid":    \(0\.110, 0\.40\)', '"slab_mid":    (0.050, 0.40)', src, count=1)
     assert k1 == k2 == k3 == k4 == k5 == 1
+if os.environ.get("WG_TOP"):   # rib top width override (+ matching n_guess)
+    src, k6 = re.subn(r"\nWG_TOP = [0-9.]+", "\nWG_TOP = " + os.environ["WG_TOP"], src, count=1)
+    src, k7 = re.subn(r"\nn_guess = [0-9.]+", "\nn_guess = " + os.environ.get("N_GUESS", "1.88"), src, count=1)
+    assert k6 == k7 == 1
 t0 = time.time(); g = {}
 src = re.sub(r"\nnum_modes_search = \d+", "\nnum_modes_search = 6", src, count=1)
 try:
@@ -23,7 +27,7 @@ try:
 except RuntimeError:                     # TE mode not among the 6 nearest: fall back to the 20-mode search
     src = src.replace("\nnum_modes_search = 6", "\nnum_modes_search = 20", 1); g = {}
     exec(compile(src, "nb", "exec"), g)
-print("RESULT " + json.dumps(dict(design=D, light=LIGHT, modes=int(g["num_modes_search"]), T_nm=round(T * 1e3), model=M, n_ald=float(g["n_ALD"](g["wl"])), tri=int(g["skfem_mesh"].nelements),
+print("RESULT " + json.dumps(dict(design=D, wg_top=float(g["WG_TOP"]), light=LIGHT, modes=int(g["num_modes_search"]), T_nm=round(T * 1e3), model=M, n_ald=float(g["n_ALD"](g["wl"])), tri=int(g["skfem_mesh"].nelements),
       neff=float(g["n_eff"].real), IL_dBcm=float(g["att_opt_dB_cm"]), VpiL_Vcm=float(g["Vpi_L_Vcm"]),
       neffs={f"{(g['wl'] + k) * 1e3:.1f}": [float(v[0].real), float(v[1])] for k, v in g["ng_rows"].items()},
       ng_1nm=float(g["ng_results"][0.001]), ng_2nm=float(g["ng_results"][0.002]), t_s=round(time.time() - t0, 1))), flush=True)
