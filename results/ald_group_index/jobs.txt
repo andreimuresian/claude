@@ -1,0 +1,10 @@
+cordoba 0 sellmeier
+cordoba 0.04 sellmeier
+cordoba 0.04 scaled
+cordoba 0.1 sellmeier
+cordoba 0.1 scaled
+jerez 0 sellmeier
+jerez 0.04 sellmeier
+jerez 0.04 scaled
+jerez 0.1 sellmeier
+jerez 0.1 scaled
