@@ -111,6 +111,10 @@ The KPI strip across the top always shows EO bandwidth, effective V_pi,
 V_pi·L, extinction ratio, chirp parameter, velocity walk-off at the bandwidth
 frequency, and worst-case S11.
 
+The vertical range of each Response panel is set in the Analysis group
+(**EO S21 / S11 / Electrical S21 axis min, max**), next to **Sweep ceiling**,
+which sets the horizontal one. A min >= max falls back to the automatic range.
+
 ## The Bend window
 
 Header button **Bend window** (or the button next to *Bend line from* in the
@@ -292,12 +296,14 @@ Three settings control the file, under **Export**:
 
 * `ts_format` -- `DB` (dB + degrees, matching the plots), `MA` (linear + degrees)
   or `RI` (real + imaginary).
-* `ts_ports` -- `4-column` writes exactly frequency + S11 pair + EO S21 pair, as
-  four data columns. That is *not* a valid 2-port Touchstone file and a strict
-  reader will reject it, so `full 2-port` pads S12 and S22 with zeros. S12 = 0
-  is honest rather than a fudge: the electro-optic path is unidirectional, and
-  the detected photocurrent does not feed back into the RF port.
-* `ts_normalised` -- whether the EO magnitude matches the plot (0 dB at the
+* `ts_content` -- `S11 + S21 (.s2p)` writes the electrical two-port of the
+  Response tab in the standard order S11 S21 S12 S22, like a CST export.
+  `S11 + S21 + EO S21 (.s3p)` adds port 3 = optical output with S31 = EO S21;
+  S13 = 0 because the EO path is unidirectional, and S23, S32, S33 are not
+  modelled (written as 0). Port 1 is referenced to `z0_sys_ohm`, port 2 to the
+  termination Z_T, so S11 and S21 are exactly the plotted traces; with
+  Z_T = z0_sys this is the plain S-matrix of the extrapolated line.
+* `ts_normalised` -- (.s3p only) whether the EO magnitude matches the plot (0 dB at the
   low-frequency reference) or is the raw transfer function. The header records
   the reference level either way, so the two are interconvertible.
 

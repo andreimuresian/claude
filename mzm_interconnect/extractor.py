@@ -503,24 +503,33 @@ def _export_bend_tables(p: dict, f_table, alpha, nm, Zc, out_dir: str, prov: str
 
 def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
     """
-    Write the two Response-tab traces to a Touchstone-style file.
+    Write the Response-tab traces to a Touchstone file.
 
-    Column 1/2 is the electrical input match S11 of the loaded electrode;
-    column 3/4 is the electro-optic S21. The EO phase is a genuine model
-    output, not a placeholder: ``eo_transfer`` is complex throughout, and the
-    group delay of that phase comes out at the optical transit time n_g.L/c.
+    'S11 + S21 (.s2p)': the electrical two-port of the loaded electrode,
+    S11 S21 S12 S22 in the standard 2-port order (as CST writes it). Port 1 is
+    referenced to z0_sys, port 2 to the termination Z_T, so S11 and S21 are
+    exactly the plotted traces; when Z_T = z0_sys this is the plain 50-ohm
+    S-matrix of the (extrapolated) line.
+
+    'S11 + S21 + EO S21 (.s3p)': the same, plus port 3 = optical output with
+    S31 = EO S21. The EO phase is a genuine model output: ``eo_transfer`` is
+    complex throughout, and its group delay is the optical transit n_g.L/c.
 
     The whole parameter set that produced the file is written into the header,
     so a file can always be traced back to the settings behind it.
     """
     fmt = str(p.get("ts_format", "DB")).upper()
-    ports = str(p.get("ts_ports", "4-column"))
+    content = str(p.get("ts_content", "S11 + S21 (.s2p)"))
+    with_eo = "EO" in content
     normalised = bool(p.get("ts_normalised", True))
     z_ref = float(p["z0_sys_ohm"])
+    if len(getattr(res, "s21_elec", ())) != len(res.f_GHz):
+        raise ValueError("this result has no electrical S21 -- re-run Extract + analyse")
 
-    f_Hz = res.f_GHz * 1e9
-    s11 = res.gamma_in
-    s21 = res.H / (10 ** (res.ref_dB / 20.0)) if normalised else res.H
+    f_GHz = res.f_GHz
+    s11, s21, s12, s22 = res.gamma_in, res.s21_elec, res.s12_elec, res.s22_elec
+    s31 = res.H / (10 ** (res.ref_dB / 20.0)) if normalised else res.H
+    zero = np.zeros_like(s11)
 
     def pair(z):
         if fmt == "RI":
@@ -530,9 +539,11 @@ def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
             return np.abs(z), ang
         return 20.0 * np.log10(np.clip(np.abs(z), 1e-300, None)), ang
 
-    a1, a2 = pair(s11)
-    b1, b2 = pair(s21)
-    zero1, zero2 = pair(np.zeros_like(s21))
+    if with_eo:     # 3-port: one matrix row per line, row-major
+        rows = [[s11, s12, zero], [s21, s22, zero], [s31, zero, zero]]
+    else:           # 2-port: the Touchstone special order S11 S21 S12 S22
+        rows = [[s11, s21, s12, s22]]
+    rows = [[pair(z) for z in r] for r in rows]
 
     lm = link_metrics(p)
     lo, hi = res.norm_window_GHz
@@ -544,18 +555,25 @@ def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
     pair_name = {"DB": "dB(mag), angle[deg]", "MA": "mag(linear), angle[deg]",
                  "RI": "real, imag"}[fmt]
     A("COLUMNS")
-    if ports == "4-column":
-        A(f"  1 frequency[Hz]   2-3 S11 as {pair_name}   4-5 EO-S21 as {pair_name}")
-        A("  NOTE: 4 data columns is NOT a valid 2-port Touchstone file. A strict")
-        A("  reader (scikit-rf, ADS, CST) will reject it. Use 'full 2-port' for those.")
+    zt = (f"R = {float(p['Rt_R']):g} ohm, L = {float(p['Rt_L_pH']):g} pH, "
+          f"C = {float(p['Rt_C_fF']):g} fF")
+    if with_eo:
+        A(f"  3-port, each as {pair_name}: per frequency three lines,")
+        A("  S11 S12 S13 / S21 S22 S23 / S31 S32 S33")
+        A("  port 1 = RF input, port 2 = electrode termination, port 3 = optical output")
+        A("  S31 = EO S21, a mixed-domain transfer (RF drive in, detected photocurrent")
+        A("  out); its reference impedance is nominal. S13 = 0: the EO path is")
+        A("  unidirectional. S23, S32, S33 are not modelled and written as 0.")
+        A(f"  EO magnitude is {'NORMALISED to the low-frequency reference' if normalised else 'the RAW transfer function'}.")
+        A("  EO phase is the model phase; its group delay is the optical transit n_g.L/c.")
     else:
-        A(f"  frequency[Hz], then S11, S21(EO), S12(=0), S22(=0), each as {pair_name}")
-        A("  S12 = 0 because the electro-optic path is unidirectional: the detected")
-        A("  photocurrent does not feed back into the RF port. S22 is not modelled.")
-    A(f"  S11 is referenced to {z_ref:g} ohm. EO S21 is a mixed-domain transfer")
-    A("  (RF drive in, detected photocurrent out); its reference impedance is nominal.")
-    A(f"  EO magnitude is {'NORMALISED to the low-frequency reference' if normalised else 'the RAW transfer function'}.")
-    A(f"  EO phase is the model phase; its group delay is the optical transit n_g.L/c.")
+        A(f"  2-port, standard order S11 S21 S12 S22, each as {pair_name}")
+    A(f"  Electrical ports: port 1 referenced to {z_ref:g} ohm, port 2 to the")
+    A(f"  termination Z_T ({zt}), power waves.")
+    A("  S11 and S21 are the plotted traces (z0_sys source, Z_T load); when")
+    A("  Z_T = z0_sys this is the plain S-matrix of the line.")
+    A(f"  Line data below {fit.f_min_sim_GHz:.3f} GHz held at that frequency; above")
+    A(f"  {fit.f_max_sim_GHz:.3f} GHz the fitted forms are extrapolated.")
     A("")
     A("SOURCE DATA")
     A(f"  touchstone          {fit.source_file}")
@@ -594,7 +612,7 @@ def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
     A("ANALYSIS")
     A(f"  normalisation       {res.norm_mode}"
       + (f", mean over {lo:.3f} - {hi:.3f} GHz" if hi > lo else f", point at {lo:.3f} GHz"))
-    A(f"  reference level     {res.ref_dB:.6f} dB  (add this to column 3 for the raw value)")
+    A(f"  reference level     {res.ref_dB:.6f} dB  (add this to the normalised EO S21 for the raw value)")
     A(f"  ripple averaged out {res.ripple_pp_dB:.3f} dB p-p, period {res.ripple_period_GHz:.3f} GHz")
     A(f"  criterion           {float(p['bw_level_dB']):g} dB")
     A(f"  grid                0 - {float(p['f_max_GHz']):g} GHz, {int(p['n_points'])} points")
@@ -616,21 +634,13 @@ def export_touchstone(fit: LineFit, res: EOResult, p: dict, path: str) -> dict:
     with open(path, "w") as fh:
         for line in H:
             fh.write(("! " + line).rstrip() + "\n")
-        fh.write(f"# HZ S {fmt} R {z_ref:g}\n")
-        if ports == "4-column":
-            fh.write("! freq          S11            EO-S21\n")
-            for i in range(len(f_Hz)):
-                fh.write(f"{f_Hz[i]:.9e} {a1[i]:+.9e} {a2[i]:+.9e} "
-                         f"{b1[i]:+.9e} {b2[i]:+.9e}\n")
-        else:
-            fh.write("! freq          S11            S21(EO)        S12            S22\n")
-            for i in range(len(f_Hz)):
-                fh.write(f"{f_Hz[i]:.9e} {a1[i]:+.9e} {a2[i]:+.9e} "
-                         f"{b1[i]:+.9e} {b2[i]:+.9e} "
-                         f"{zero1[i]:+.9e} {zero2[i]:+.9e} "
-                         f"{zero1[i]:+.9e} {zero2[i]:+.9e}\n")
-    return {"path": path, "points": len(f_Hz), "format": fmt, "ports": ports,
-            "normalised": normalised}
+        fh.write(f"# GHz S {fmt} R {z_ref:g}\n")
+        for i in range(len(f_GHz)):
+            for k, r in enumerate(rows):
+                lead = f"{f_GHz[i]:<14.9g}" if k == 0 else " " * 14
+                fh.write(lead + "".join(f" {a[i]:+.9e} {b[i]:+.9e}" for a, b in r) + "\n")
+    return {"path": path, "points": len(f_GHz), "format": fmt, "content": content,
+            "normalised": normalised, "ports": 3 if with_eo else 2}
 
 
 def _wrap(text: str, width: int) -> list:
@@ -708,6 +718,16 @@ def diagnostic_figure(fit: LineFit, p: dict, theme=LIGHT) -> Figure:
     return fig
 
 
+def _ylim(ax, p: dict, key: str, auto: tuple) -> None:
+    """Vertical range from the y_<key>_min/max_dB settings; automatic if they
+    are missing or min >= max."""
+    try:
+        lo, hi = float(p[f"y_{key}_min_dB"]), float(p[f"y_{key}_max_dB"])
+    except (KeyError, TypeError, ValueError):
+        lo, hi = auto
+    ax.set_ylim(*((lo, hi) if lo < hi else auto))
+
+
 def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
               lumerical=None, far_end=None) -> Figure:
     """Normalised EO S21 with the bandwidth marker, electrical return loss and
@@ -768,7 +788,7 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
         ax.axvline(lo, color="#4fae7c", ls="-.", lw=1.2,
                    label=f"0 dB reference: single point at {lo:.2f} GHz")
     ax.set_ylabel("Normalised EO S21 (dB)")
-    ax.set_ylim(min(-40, level - 10), 3)
+    _ylim(ax, p, "eo", (min(-40, level - 10), 3))
     from .physics import electrode_layout, bend_efficiency_dB
     _lay = electrode_layout(p)
     if len(_lay) > 1:
@@ -788,7 +808,7 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
     if far_end is None and not has_s21e:
         axr.set_xlabel("Frequency (GHz)")
     axr.set_ylabel("Electrical $S_{11}$ (dB)")
-    axr.set_ylim(-40, 0)
+    _ylim(axr, p, "s11", (-40, 0))
 
     if has_s21e:
         z_ref = float(p["z0_sys_ohm"])
@@ -801,7 +821,7 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
         if far_end is None:
             axe.set_xlabel("Frequency (GHz)")
         axe.set_ylabel("Electrical $S_{21}$ (dB)")
-        axe.set_ylim(min(-20.0, float(np.floor(np.min(s21e) / 5) * 5)), 1)
+        _ylim(axe, p, "s21", (min(-20.0, float(np.floor(np.min(s21e) / 5) * 5)), 1))
 
     for a in axes:
         _style(a, theme)

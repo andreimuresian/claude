@@ -446,6 +446,17 @@ PARAMS: list[ParamSpec] = [
               help="Only used when Normalisation = 'point'. 0 means DC."),
     ParamSpec("f_max_GHz", "Sweep ceiling", 150.0, "Analysis", "GHz",
               affects="circuit"),
+    ParamSpec("y_eo_min_dB", "EO S21 axis min", -40.0, "Analysis", "dB", affects="circuit",
+              help="Vertical range of the Response tab panels, set like the sweep "
+                   "ceiling sets the horizontal one. If min >= max the panel falls "
+                   "back to its automatic range."),
+    ParamSpec("y_eo_max_dB", "EO S21 axis max", 3.0, "Analysis", "dB", affects="circuit"),
+    ParamSpec("y_s11_min_dB", "S11 axis min", -40.0, "Analysis", "dB", affects="circuit"),
+    ParamSpec("y_s11_max_dB", "S11 axis max", 0.0, "Analysis", "dB", affects="circuit"),
+    ParamSpec("y_s21_min_dB", "Electrical S21 axis min", -20.0, "Analysis", "dB",
+              affects="circuit"),
+    ParamSpec("y_s21_max_dB", "Electrical S21 axis max", 1.0, "Analysis", "dB",
+              affects="circuit"),
     ParamSpec("n_points", "Frequency points", 1000, "Analysis", "-", kind="int",
               affects="circuit"),
     ParamSpec("bw_level_dB", "Bandwidth criterion", -3.0, "Analysis", "dB",
@@ -460,19 +471,18 @@ PARAMS: list[ParamSpec] = [
     # ---------------- Touchstone export -----------------------------------
     ParamSpec("ts_format", "Touchstone data format", "DB", "Export",
               kind="choice", choices=("DB", "MA", "RI"), affects="circuit",
-              help="DB = dB magnitude + angle in degrees (matches the two plots). "
+              help="DB = dB magnitude + angle in degrees (matches the plots). "
                    "MA = linear magnitude + angle. RI = real + imaginary."),
-    ParamSpec("ts_ports", "Touchstone columns", "4-column", "Export",
-              kind="choice", choices=("4-column", "full 2-port"), affects="circuit",
-              help="'4-column' writes exactly frequency + S11 pair + EO S21 pair. "
-                   "It is not a valid 2-port .s2p, so a strict Touchstone reader "
-                   "(scikit-rf, ADS, CST) will reject it -- use it for numpy, "
-                   "Excel or MATLAB. 'full 2-port' pads S12 and S22 with zeros so "
-                   "the file parses everywhere; the EO path really is "
-                   "unidirectional, so S12 = 0 is honest."),
+    ParamSpec("ts_content", "Touchstone content", "S11 + S21 (.s2p)", "Export",
+              kind="choice", choices=("S11 + S21 (.s2p)", "S11 + S21 + EO S21 (.s3p)"),
+              affects="circuit",
+              help="S11 + S21: the electrical two-port of the Response tab (S11, S21, "
+                   "S12, S22), a standard .s2p like a CST export. With EO S21: a .s3p "
+                   "whose port 3 is the optical output, S31 = EO S21; the EO path is "
+                   "unidirectional, so S13 = 0, and S23, S32, S33 are not modelled (0)."),
     ParamSpec("ts_normalised", "Export normalised EO S21", True, "Export",
               kind="bool", affects="circuit",
-              help="On: the EO magnitude matches the plot (0 dB at the low-frequency "
+              help="Only used by the .s3p export. On: the EO magnitude matches the plot (0 dB at the low-frequency "
                    "reference). Off: the raw transfer function. The header records "
                    "the reference either way, so the two are interconvertible."),
 

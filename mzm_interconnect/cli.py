@@ -104,11 +104,12 @@ def cmd_analyse(args):
         out = str(p["out_dir"])
         os.makedirs(out, exist_ok=True)
         stem = os.path.splitext(os.path.basename(str(p["s2p_path"])))[0]
+        ext = ".s3p" if "EO" in str(p["ts_content"]) else ".s2p"
         ts = os.path.join(out, f"{stem}_L{float(p['L_target_mm']):g}mm_"
-                               f"Rt{float(p['Rt_R']):g}.s2p")
+                               f"Rt{float(p['Rt_R']):g}{ext}")
         info = export_touchstone(fit, res, p, ts)
         print(f"\ntouchstone  {ts}  ({info['points']} points, {info['format']}, "
-              f"{info['ports']})")
+              f"{info['content']})")
 
     if args.plot:
         out = str(p["out_dir"])

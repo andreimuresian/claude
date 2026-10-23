@@ -489,7 +489,12 @@ def electrical_s21(f_GHz, alpha, nm, Zc, p: dict, Zt, z_ref: float):
     vt = Zt / (A * Zt + B + z_ref * (C * Zt + D))
     s21 = 2.0 * vt * np.sqrt(z_ref * np.real(1.0 / Zt))
     zin = (A * Zt + B) / (C * Zt + D)
-    return s21, zin
+    # reverse direction: source Z_T at port 2, z_ref load at port 1
+    v1 = z_ref / (D * z_ref + B + Zt * (C * z_ref + A))
+    s12 = 2.0 * v1 * np.sqrt(np.real(Zt) / z_ref)
+    zout = (D * z_ref + B) / (C * z_ref + A)
+    s22 = (zout - np.conj(Zt)) / (zout + Zt)
+    return s21, zin, s12, s22
 
 
 # ---------------------------------------------------------------------
@@ -745,6 +750,11 @@ class EOResult:
     # gain; the line's two-port S21 when R_T = z0_sys). Same line data and
     # extrapolation as S11 and the EO S21.
     s21_elec_dB: np.ndarray = field(default_factory=lambda: np.empty(0))
+    # The same electrical two-port, complex, for the Touchstone export. Port 1
+    # is referenced to z0_sys, port 2 to the termination Z_T (power waves).
+    s21_elec: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=complex))
+    s12_elec: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=complex))
+    s22_elec: np.ndarray = field(default_factory=lambda: np.empty(0, dtype=complex))
 
 
 def eo_response(fit: LineFit, p: dict) -> EOResult:
@@ -818,7 +828,7 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     z_ref = float(p["z0_sys_ohm"])
     gamma_in = (zin - z_ref) / (zin + z_ref)
     s11_dB = 20.0 * np.log10(np.clip(np.abs(gamma_in), 1e-12, None))
-    s21_el, _ = electrical_s21(f, alpha, nm, Zc, p, Zt, z_ref)
+    s21_el, _, s12_el, s22_el = electrical_s21(f, alpha, nm, Zc, p, Zt, z_ref)
     s21_elec_dB = 20.0 * np.log10(np.clip(np.abs(s21_el), 1e-12, None))
 
     f_probe = float(p["f_probe_GHz"])
@@ -835,7 +845,7 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
         H=H, gamma_in=gamma_in, ref_dB=float(ref),
         norm_mode=norm_mode, norm_window_GHz=norm_window,
         ripple_period_GHz=float(period), ripple_pp_dB=ripple_pp,
-        s21_elec_dB=s21_elec_dB,
+        s21_elec_dB=s21_elec_dB, s21_elec=s21_el, s12_elec=s12_el, s22_elec=s22_el,
     )
 
 

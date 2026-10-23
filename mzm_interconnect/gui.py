@@ -562,9 +562,10 @@ class MZMStudio(tk.Tk):
         rbar.pack(fill="x", padx=8, pady=(8, 0))
         ttk.Button(rbar, text="Export Touchstone", style="Accent.TButton",
                    command=self.action_export_touchstone).pack(side="left")
-        ttk.Label(rbar, text="writes both traces on this tab -- S11 and EO S21, "
-                            "magnitude and phase -- at the settings currently in the "
-                            "sidebar, with every one of them recorded in the header",
+        ttk.Label(rbar, text="writes S11 and electrical S21 (.s2p), or also the EO S21 "
+                            "as port 3 (.s3p) -- set 'Touchstone content' under Export -- "
+                            "at the settings currently in the sidebar, with every one of "
+                            "them recorded in the header",
                   style="Muted.TLabel", wraplength=740, justify="left").pack(side="left", padx=12)
         self.fig_response = FigurePane(self.tab_response, t)
         self.fig_response.pack(fill="both", expand=True)
@@ -1365,22 +1366,26 @@ class MZMStudio(tk.Tk):
             self.log("Run 'Extract + analyse' first.", "warn")
             return
         stem = os.path.splitext(os.path.basename(str(p["s2p_path"])))[0]
+        ext = ".s3p" if "EO" in str(p["ts_content"]) else ".s2p"
         path = filedialog.asksaveasfilename(
-            defaultextension=".s2p", initialdir=self._resolve_out_dir(p),
-            initialfile=f"{stem}_L{float(p['L_target_mm']):g}mm_Rt{float(p['Rt_R']):g}.s2p",
-            filetypes=[("Touchstone", "*.s2p"), ("All files", "*.*")])
+            defaultextension=ext, initialdir=self._resolve_out_dir(p),
+            initialfile=f"{stem}_L{float(p['L_target_mm']):g}mm_Rt{float(p['Rt_R']):g}{ext}",
+            filetypes=[("Touchstone", "*" + ext), ("All files", "*.*")])
         if not path:
             return
 
         def work():
             info = export_touchstone(self.fit, self.result, p, path)
             self.log(f"Touchstone written to {path}", "ok")
-            self.log(f"  {info['points']} points, {info['format']} format, {info['ports']}, "
-                     f"EO magnitude {'normalised' if info['normalised'] else 'raw'}.")
-            if info["ports"] == "4-column":
-                self.log("  4 data columns is not a valid 2-port .s2p -- fine for numpy, "
-                         "Excel or MATLAB, but set 'Touchstone columns' to 'full 2-port' "
-                         "for scikit-rf, ADS or CST.", "warn")
+            self.log(f"  {info['points']} points, {info['format']} format, {info['content']}"
+                     + (f", EO magnitude {'normalised' if info['normalised'] else 'raw'}."
+                        if info["ports"] == 3 else "."))
+            if (float(p["Rt_R"]) != float(p["z0_sys_ohm"]) or float(p["Rt_L_pH"])
+                    or float(p["Rt_C_fF"])):
+                self.log("  Port 2 is referenced to the termination Z_T, not "
+                         f"{float(p['z0_sys_ohm']):g} ohm (recorded in the header); a "
+                         "Touchstone 1.0 reader assumes the '# ... R' value for all ports.",
+                         "warn")
         self._run_async(work, "Touchstone export")
 
     def action_export_tables(self):
