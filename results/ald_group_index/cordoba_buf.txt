@@ -1,0 +1,2 @@
+Exception: Start and end points of line should be different
+DONE cordoba_buf 0 sellmeier

@@ -1,7 +1,7 @@
 """usage: run_point.py cordoba|jerez T_ALD_um sellmeier|scaled -> RESULT json line with ng"""
 import json, re, sys, time
 D, T, M = sys.argv[1], float(sys.argv[2]), sys.argv[3]
-nb = json.load(open({"cordoba": "/home/user/claude/VPI_group_index_Cordoba_ALD.ipynb", "jerez": "/home/user/claude/VPI_group_index_JerezV0_ALD.ipynb"}[D]))
+nb = json.load(open({"cordoba_buf": "/home/user/claude/VPI_group_index_Cordoba_buffer_ALD.ipynb", "cordoba": "/home/user/claude/VPI_group_index_Cordoba_ALD.ipynb", "jerez": "/home/user/claude/VPI_group_index_JerezV0_ALD.ipynb"}[D]))
 src = "import matplotlib; matplotlib.use('Agg')\nimport matplotlib.pyplot as plt\nplt.show=lambda *a,**k: plt.close('all')\n"
 src += "\n".join("".join(c["source"]) for c in nb["cells"])
 src, n1 = re.subn(r"\nT_ALD = [0-9.]+", f"\nT_ALD = {T}", src, count=1)
