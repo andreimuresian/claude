@@ -710,19 +710,25 @@ def diagnostic_figure(fit: LineFit, p: dict, theme=LIGHT) -> Figure:
 
 def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
               lumerical=None, far_end=None) -> Figure:
-    """Normalised EO S21 with the bandwidth marker, plus electrical return loss.
+    """Normalised EO S21 with the bandwidth marker, electrical return loss and
+    electrical transmission (z0_sys source into the termination).
 
     *far_end* = (f_GHz, V/EMF Python, f_GHz, V/EMF INTERCONNECT or None) adds a
     third panel: the voltage across the termination relative to the source
     EMF (the TL line build reads it from the Compound's 'far end' output)."""
-    rows = 3 if far_end is not None else 2
-    fig = Figure(figsize=(10.5, 4.6 if rows == 2 else 6.6), dpi=100)
+    s21e = getattr(res, "s21_elec_dB", None)
+    has_s21e = s21e is not None and len(s21e) == len(res.f_GHz)
+    rows = 2 + int(has_s21e) + int(far_end is not None)
+    fig = Figure(figsize=(10.5, {2: 4.6, 3: 6.6, 4: 8.4}[rows]), dpi=100)
     fig.patch.set_facecolor(theme["bg"])
     ax = fig.add_subplot(rows, 1, 1)
     axr = fig.add_subplot(rows, 1, 2, sharex=ax)
     axes = [ax, axr]
+    if has_s21e:
+        axe = fig.add_subplot(rows, 1, 3, sharex=ax)
+        axes.append(axe)
     if far_end is not None:
-        axf = fig.add_subplot(rows, 1, 3, sharex=ax)
+        axf = fig.add_subplot(rows, 1, rows, sharex=ax)
         axes.append(axf)
         f_p, v_p, f_i, v_i = far_end
         db = lambda v: 20 * np.log10(np.maximum(np.abs(v), 1e-300))
@@ -779,10 +785,23 @@ def eo_figure(fit: LineFit, res: EOResult, p: dict, theme=LIGHT,
     axr.plot(res.f_GHz, res.s11_dB, "-", lw=1.8, color="#b06bd0",
              label=f"$S_{{11}}$ into the loaded line (worst {res.s11_worst_dB:.1f} dB)")
     axr.axhline(-10, color=theme["grid"], ls="--", lw=1.0, label="-10 dB")
-    if far_end is None:
+    if far_end is None and not has_s21e:
         axr.set_xlabel("Frequency (GHz)")
     axr.set_ylabel("Electrical $S_{11}$ (dB)")
     axr.set_ylim(-40, 0)
+
+    if has_s21e:
+        z_ref = float(p["z0_sys_ohm"])
+        i3 = int(np.argmin(np.abs(res.f_GHz - fit.f_max_sim_GHz)))
+        axe.plot(res.f_GHz, s21e, "-", lw=1.8, color="#2e8b57",
+                 label=f"$S_{{21}}$, {z_ref:.0f} $\\Omega$ source into $R_T$ = "
+                       f"{float(p['Rt_R']):.0f} $\\Omega$ ({s21e[i3]:.1f} dB at {res.f_GHz[i3]:.0f} GHz)")
+        axe.axhline(-3, color=theme["grid"], ls="--", lw=1.0, label="-3 dB")
+        axe.axvline(fit.f_max_sim_GHz, color=theme["grid"], ls=":", lw=1.2)
+        if far_end is None:
+            axe.set_xlabel("Frequency (GHz)")
+        axe.set_ylabel("Electrical $S_{21}$ (dB)")
+        axe.set_ylim(min(-20.0, float(np.floor(np.min(s21e) / 5) * 5)), 1)
 
     for a in axes:
         _style(a, theme)

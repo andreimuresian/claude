@@ -452,6 +452,46 @@ def line_transfer(f_GHz, alpha, nm, Zc, p: dict, ng: float, Zs, Zt):
     return seg.H, seg.zin
 
 
+def electrical_s21(f_GHz, alpha, nm, Zc, p: dict, Zt, z_ref: float):
+    """
+    Electrical transmission of the electrode, from a source of impedance
+    *z_ref* (the system impedance, as for S11) into the termination Zt:
+
+        |S21|^2 = P_termination / P_available = 4 z_ref Re(1/Zt) |V_t / E|^2
+
+    i.e. the transducer gain. With Zt = z_ref it is the ordinary two-port S21
+    of the line between z_ref ports. Uses the same line data as line_transfer
+    (the fitted alpha, n_m, Zc on the same grid, and the bend's own line for
+    a bent electrode), as an ABCD cascade. Returns (s21 complex, zin): zin
+    equals line_transfer's, which is the check that both see the same line.
+    """
+    f = np.asarray(f_GHz, dtype=float)
+    w = 2 * np.pi * f * 1e9
+    Zt = np.asarray(Zt, dtype=complex) * np.ones_like(f)
+    one = np.ones_like(f, dtype=complex)
+    A, B, C, D = one.copy(), 0 * one, 0 * one, one.copy()
+    if int(p.get("n_bends", 0)) <= 0:
+        pieces = [(np.asarray(alpha), np.asarray(nm), np.asarray(Zc, dtype=complex),
+                   float(p["L_target_mm"]) * 1e-3)]
+    else:
+        bl = bend_line(p, f)
+        a_b = bl.get("bend_alpha_dB_cm", 0.0)
+        n_b = nm if bl.get("bend_nm") is None else bl["bend_nm"]
+        z_b = Zc if bl.get("bend_Z") is None else bl["bend_Z"]
+        pieces = [((np.asarray(alpha), np.asarray(nm), np.asarray(Zc, dtype=complex), x["L_rf"])
+                   if x["kind"] == "mod" else
+                   (np.asarray(a_b) * one.real, np.asarray(n_b), np.asarray(z_b, dtype=complex) * one,
+                    x["L_rf"])) for x in electrode_layout(p)]
+    for a_dB, n_m, Zk, Lk in pieces:
+        g = a_dB * 100.0 * NP_PER_DB + 1j * n_m * w / C0
+        ch, sh = np.cosh(g * Lk), np.sinh(g * Lk)
+        A, B, C, D = A * ch + B * sh / Zk, A * Zk * sh + B * ch, C * ch + D * sh / Zk, C * Zk * sh + D * ch
+    vt = Zt / (A * Zt + B + z_ref * (C * Zt + D))
+    s21 = 2.0 * vt * np.sqrt(z_ref * np.real(1.0 / Zt))
+    zin = (A * Zt + B) / (C * Zt + D)
+    return s21, zin
+
+
 # ---------------------------------------------------------------------
 # The bend as a line of its own
 # ---------------------------------------------------------------------
@@ -701,6 +741,10 @@ class EOResult:
     # nominal n_g), kept alongside the whole-modulator curve for comparison.
     bw_electrode_GHz: float = float("nan")
     s21_electrode_dB: np.ndarray = field(default_factory=lambda: np.empty(0))
+    # Electrical transmission, z0_sys source into the termination (transducer
+    # gain; the line's two-port S21 when R_T = z0_sys). Same line data and
+    # extrapolation as S11 and the EO S21.
+    s21_elec_dB: np.ndarray = field(default_factory=lambda: np.empty(0))
 
 
 def eo_response(fit: LineFit, p: dict) -> EOResult:
@@ -774,6 +818,8 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
     z_ref = float(p["z0_sys_ohm"])
     gamma_in = (zin - z_ref) / (zin + z_ref)
     s11_dB = 20.0 * np.log10(np.clip(np.abs(gamma_in), 1e-12, None))
+    s21_el, _ = electrical_s21(f, alpha, nm, Zc, p, Zt, z_ref)
+    s21_elec_dB = 20.0 * np.log10(np.clip(np.abs(s21_el), 1e-12, None))
 
     f_probe = float(p["f_probe_GHz"])
     i_probe = int(np.argmin(np.abs(f - f_probe)))
@@ -789,6 +835,7 @@ def eo_response(fit: LineFit, p: dict) -> EOResult:
         H=H, gamma_in=gamma_in, ref_dB=float(ref),
         norm_mode=norm_mode, norm_window_GHz=norm_window,
         ripple_period_GHz=float(period), ripple_pp_dB=ripple_pp,
+        s21_elec_dB=s21_elec_dB,
     )
 
 

@@ -6,7 +6,7 @@ physical knob you add one ``ParamSpec`` and the widget, the tooltip, the sweep
 menu entry and the CLI flag all appear by themselves.
 
 Tabs
-  Response          normalised EO S21 + electrical S11, with the KPI strip
+  Response          normalised EO S21 + electrical S11 and S21, with the KPI strip
   Line diagnostics  alpha(f), Zc(f), n_m(f): de-embedded points vs the fit
   Sweep             pick any sweepable parameter, sweep it, plot any metric
   INTERCONNECT      export tables, build the schematic, overlay the solver
