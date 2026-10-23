@@ -86,6 +86,11 @@ svg .s { font-size: 12px; } svg .xs { font-size: 10.5px; fill: var(--muted); } s
 <li><a href="#cascade">Should it go into the full MZM cascade?</a></li>
 <li><a href="#limits">Limits and open points (likely questions)</a></li>
 <li><a href="#gui">GUI change made today</a></li>
+<li><a href="#appA">A. How δ relates to Δn</a></li>
+<li><a href="#appB">B. How Δn and δ were extracted; impedance definitions</a></li>
+<li><a href="#appC">C. Why δ drives NEXT and Δn drives FEXT (derivation)</a></li>
+<li><a href="#appD">D. The average line from the 3-D runs, step by step</a></li>
+<li><a href="#appE">E. How modes 5 and 6 were identified</a></li>
 </ol></nav>
 
 <!-- ===================================================================== -->
@@ -360,6 +365,106 @@ It's mostly the <i>denominator</i>. The aggressor's own response has a walk-off 
 <h2 id="gui">10. GUI change made today</h2>
 <p>The sidebar is 330 px wide, but its labels had a fixed 400 px wrap width, so text ran past the edge. The labels now re-wrap to the sidebar's actual width when it resizes. The "At 10 / 30 / 60 GHz" box, which also shows the INTERCONNECT check report (a wide table), is now taller (12 lines) and scrolls sideways instead of cutting the rows. This was not tested on screen here, because the sandbox has no Tk; please check it on your machine.</p>
 <p class="small">Sources: <code>mzm_interconnect/coupled_line.py</code>, <code>gui_xtalk.py</code>, <code>xtalk_test.py</code>, <code>lumerical/coupled_element_setup.lsf</code>, <code>docs/cst/xtalk/</code> (<code>line_from_s4p.py</code>, <code>port_voltages_sweep.py</code>, <code>portmode_betas.txt</code>, <code>modal_vs_s4p_v3.py</code>, <code>coupled_twin_check.py</code>, <code>lsf_check/</code>). Figures in §5–6 were regenerated today from the twin (<code>docs/cst/xtalk/report/</code>).</p>
+<!-- ===================================================================== -->
+<h2 id="appA">Appendix A. How δ relates to Δn</h2>
+<p>They are not derived from each other. Both come from the two coupling coefficients of the pair. Each line has a self inductance and capacitance per unit length, \(L'\) and \(C'\); the lines are coupled by a mutual inductance and a mutual capacitance:</p>
+<ul>
+<li><b>Even mode</b> (both signals at the same voltage, currents in the same direction): the mutual inductance adds, and with no voltage between the lines, the mutual capacitance carries no charge.</li>
+<li><b>Odd mode:</b> the mutual inductance subtracts, and the full voltage difference appears across the mutual capacitance.</li>
+</ul>
+<p>With small inductive and capacitive coupling coefficients \(k_L\) and \(k_C\):</p>
+\[ L'_{e}=L'(1+k_L),\quad L'_{o}=L'(1-k_L),\qquad C'_{e}=C'(1-k_C),\quad C'_{o}=C'(1+k_C). \]
+<p>Each mode is an ordinary line, with \(Z=\sqrt{L'/C'}\) and \(n=c\sqrt{L'C'}\). To first order:</p>
+\[ \delta=\frac{Z_e}{Z_o}-1\approx k_L+k_C,\qquad \frac{\Delta n}{n}=\frac{n_e-n_o}{n}\approx k_L-k_C . \]
+<div class="box key">δ is the <b>sum</b> of the inductive and capacitive couplings, and Δn/n is their <b>difference</b>. In a homogeneous dielectric (pure TEM), \(k_L=k_C\), so Δn = 0 (no far-end crosstalk) while δ = 2k ≠ 0. On LN/SiO₂/Si with air above, \(k_L\neq k_C\). With \(\Delta n/n=0.00173/1.95=0.089\,\%\) and δ ≈ 0.4 %: \(k_L\approx0.24\,\%\) and \(k_C\approx0.16\,\%\).</div>
+
+<!-- ===================================================================== -->
+<h2 id="appB">Appendix B. How Δn and δ were extracted; impedance definitions</h2>
+<h3>B.1 Index split Δn</h3>
+<ol>
+<li><b>2-D port solve (PEC metal).</b> CST solves the cross-section as an eigenvalue problem and reports each mode's propagation constant β ("Beta" in the port info box). Mode 5 is even and mode 6 odd (Appendix E), so \(\Delta n=(\beta_5-\beta_6)\,c/(2\pi f)\): 0.00151 at 30 GHz.</li>
+<li><b>Gold correction (eigenmode solver).</b> One 10 µm slice of the pair, periodic boundaries with a fixed phase advance φ, so β = φ/p is fixed. The solver returns each mode's frequency: the even mode with a magnetic wall at the midplane, the odd mode with an electric wall. With the same β, \(n=c\varphi/(2\pi f p)\), so \(\Delta n/n=(f_o-f_e)/f\). Gold: \(f_o-f_e=25.5\) MHz at 28.89 GHz, which gives Δn = 0.00173 (PEC, same mesh: 0.00145). The model keeps the 2-D frequency shape, scaled by 0.00173/0.00151 = 1.146.</li>
+</ol>
+<h3>B.2 Impedance split δ and the definitions</h3>
+<p>For each mode: <b>V</b> = signal potential minus the mean of that line's two ground potentials (integral of E across the strips); <b>I</b> = signal current (line integral of H around the signal strip); <b>P</b> = power flow (Poynting vector integrated over the cross-section).</p>
+<div class="tablewrap"><table>
+<tr><th>Definition</th><th>Run</th><th>δ</th></tr>
+<tr><td>Power–voltage \(Z=|V|^2/2P\)</td><td>2-D (CST exports modes at equal power, so \(Z_e/Z_o\) = ratio of \(V^2\))</td><td>0.30–0.45 % (PEC)</td></tr>
+<tr><td>Power–voltage</td><td>Eigenmode PEC / gold</td><td>+0.53 % / <b>+0.61 %</b></td></tr>
+<tr><td>Voltage–current \(Z=V/I\)</td><td>Eigenmode gold</td><td>−0.47 %</td></tr>
+<tr><td>Power–current \(Z=2P/|I|^2\)</td><td>Eigenmode gold</td><td>−1.53 % (excluded)</td></tr>
+<tr><td>Signal-to-own-grounds (GSG), from three eigenmodes with that line's grounds tied together</td><td>Eigenmode gold</td><td><b>+0.21 %</b></td></tr>
+</table></div>
+<h3>B.3 Why the definitions don't coincide: physics or artefact?</h3>
+<p><b>Mostly physics, with a contribution from the eigenmode set-up. Not the mesh.</b></p>
+<ol>
+<li><b>Intrinsic (physical).</b> \(Z_{PV}=Z_{VI}=Z_{PI}\) holds exactly only for a lossless TEM line, where \(P=\tfrac12 VI^*\) and the voltage between two conductors doesn't depend on the integration path. Ours isn't TEM:
+<ul>
+<li>the dielectric is inhomogeneous, so there are small longitudinal fields and the line voltage depends slightly on the path;</li>
+<li>gold is lossy: the field penetrates the metal and the current redistributes, so V, I and P are no longer in fixed ratios, and Z is complex.</li>
+</ul>
+The definitions then differ by small relative amounts, which are the same order as δ itself, since δ is a 0.2–0.6 % difference between two nearly equal impedances. The same is known for microstrip, where the three definitions differ at the percent level.</li>
+<li><b>Multi-conductor current sharing (physical, but set-up dependent).</b> In the eigenmode run, the coplanar mode isn't a pure three-conductor GSG mode. The grounds carry 6–11 % more current than the signal, and they sit at −0.26 to −0.30 of the signal's potential relative to the enclosure, so part of the return current flows in the enclosure walls. The power–current and voltage–current definitions take the signal current alone, so they are the most affected. That's why the GSG reconstruction, which enforces "signal current returns on its own grounds", is the physically closest to a probe launch. The enclosure is a property of the simulation set-up, so this part is set-up dependent.</li>
+<li><b>Not the mesh.</b> Refining the eigenmode mesh (64.5k → 168k cells) changed the power–voltage δ by 2 % of its value (0.539 → 0.528 %) and Δn by 1 %, far below the 0.2-vs-0.6 % spread.</li>
+</ol>
+<p><b>Which one is right for our S-parameters?</b> The one consistent with how the port defines voltage and current. A GSG probe or the 3-D bridge port imposes the signal against its own tied grounds, so the GSG value (+0.21 %) is the natural choice. The reliable 3-D data agree: fitting δ to the coworker's <b>1 mm</b> 3-D NEXT (error floor −73 dB), 5–50 GHz, with the gold Δn, gives <b>δ = 0.23 %</b> (rms 1.9 dB); δ = 0.61 % would be 8.7 dB too high. The 5 mm run can't decide (its NEXT sits on its error floor; no δ fits better than 9 dB rms). So the evidence points to the lower edge of the band. The band is kept until a second reliable 3-D length confirms it.</p>
+
+<!-- ===================================================================== -->
+<h2 id="appC">Appendix C. Why δ drives NEXT and Δn drives FEXT (derivation)</h2>
+<p>Single line between \(z_0\) ports, with \(\Gamma=(Z-z_0)/(Z+z_0)\) and \(t=e^{-\gamma L}\):</p>
+\[ S_{11}=\frac{\Gamma(1-t^2)}{1-\Gamma^2t^2},\qquad S_{21}=\frac{(1-\Gamma^2)\,t}{1-\Gamma^2t^2},\qquad
+\text{NEXT}=\tfrac12(S_{11}^e-S_{11}^o),\quad \text{FEXT}=\tfrac12(S_{21}^e-S_{21}^o). \]
+<p>The two modes differ by \(\Delta Z=Z\delta\) and \(\Delta\gamma=j\Delta\beta\), so to first order every even−odd difference is</p>
+\[ X^e-X^o\approx\frac{\partial X}{\partial Z}\,Z\delta+\frac{\partial X}{\partial \gamma}\,j\Delta\beta . \]
+<h3>NEXT</h3>
+<ul>
+<li><b>δ term.</b> \(\partial S_{11}/\partial\Gamma\approx1-t^2\), and \(\partial\Gamma/\partial Z=2z_0/(Z+z_0)^2\approx1/(2Z)\). So
+\[ \text{NEXT}_\delta\approx\frac{\delta}{4}(1-t^2), \]
+first order in δ, with no small prefactor.</li>
+<li><b>Δn term.</b> \(\partial S_{11}/\partial t\propto-2\Gamma t\), so \(\text{NEXT}_{\Delta n}\propto\Gamma\,\Delta\beta L\,t^2\). This is far-end crosstalk reflected back by the mismatch (Γ ≈ −0.16 for 36.6 Ω in 50 Ω). It is small, and zero for a matched line.</li>
+</ul>
+<p>So NEXT ∝ δ. A factor 0.61/0.21 in δ gives \(20\log_{10}(0.61/0.21)=9.3\) dB.</p>
+<h3>FEXT</h3>
+<ul>
+<li><b>Δn term.</b> \(\partial S_{21}/\partial t\approx1-\Gamma^2\approx1\), and \(t_e-t_o=-tL\,j\Delta\beta\). So
+\[ \text{FEXT}_{\Delta n}\approx-\tfrac{j}{2}\,t\,\Delta\beta L\;\Rightarrow\;|\text{FEXT}|\approx e^{-\alpha L}\frac{\pi f L\,\Delta n}{c}, \]
+first order in Δn.</li>
+<li><b>δ term.</b> \(\partial S_{21}/\partial\Gamma\approx-2\Gamma t(1-t^2)\), so \(\text{FEXT}_\delta\approx-\Gamma\,\delta\,t(1-t^2)\): second order (Γ × δ).</li>
+</ul>
+<p>At 14 mm and 30 GHz: \(\Delta\beta L/2=7.6\times10^{-3}\) (−42 dB), while \(|\Gamma|\delta\lesssim1\times10^{-3}\) (≤ −60 dB). So δ barely moves FEXT. At 1 mm the Δn term is 14 times smaller and the δ term becomes visible, which is why the FEXT band is wider at short lengths.</p>
+<p><b>Physical picture</b> (Appendix A): backward coupling adds the inductive and capacitive parts (\(k_L+k_C\approx\delta\)), and forward coupling subtracts them (\(k_L-k_C\approx\Delta n/n\)). It is the classic coupled-line result.</p>
+
+<!-- ===================================================================== -->
+<h2 id="appD">Appendix D. The average line from the 3-D runs, step by step</h2>
+<ol>
+<li><b>Even and odd 2-ports from a 4-port.</b> Each 3-D run gives a 4×4 S-matrix (A1, A2, B1, B2). Driving A1 and B1 with equal, in-phase waves is the even mode; with opposite signs, the odd mode. By symmetry, each behaves as a 2-port (near end → far end):
+\[ S^{e,o}_{11}=S_{A1A1}\pm S_{A1B1},\qquad S^{e,o}_{21}=S_{A2A1}\pm S_{A2B1}. \]</li>
+<li><b>Two lengths remove the ports.</b> Each measured 2-port is port transition × line × mirrored transition. In transfer matrices, \(T_L=P\,M(L)\,\tilde P\), with the same P in the 1 mm and 5 mm runs. Then \(T_5T_1^{-1}=P\,M(4\,\text{mm})\,P^{-1}\), whose eigenvalues are \(e^{\pm\gamma\cdot4\,\text{mm}}\): γ = α + jβ, exactly, with no port model.</li>
+<li><b>Impedance.</b> Each transition is modelled as a small series impedance plus a shunt admittance, fitted together with Z to both lengths' S-parameters.</li>
+<li><b>Average.</b> \(\gamma=\tfrac12(\gamma_e+\gamma_o)\) and \(Z=\tfrac12(Z_e+Z_o)\) give the isolated line to first order. The even/odd difference itself is below these runs' numerical noise, so only the average is used.</li>
+<li><b>Cross-check.</b> Within 0.6 % (index) and 3.6 % (impedance) of the coworker's separate single-line 3-D runs (§3.1).</li>
+</ol>
+
+<!-- ===================================================================== -->
+<h2 id="appE">Appendix E. How modes 5 and 6 were identified</h2>
+<p>Not by eye. The identification uses four independent criteria, and modes 5 and 6 pass all four:</p>
+<ol>
+<li><b>Count.</b> 6 strips + the port's metal frame = 7 conductors, so exactly 6 quasi-TEM modes. CST returned 6, so none is missing, and any further mode would have a cutoff.</li>
+<li><b>Symmetry under A ↔ B</b> (mirror plane between the lines). Every mode is either even or odd. For modes 5 and 6 this was checked numerically from the exported fields: integrating \(E_y\) gives each strip's potential, and \(V_A\approx+V_B\) for mode 5 and \(V_A\approx-V_B\) for mode 6. They agree within about 8 %, the residual mixing of two nearly degenerate modes, which the power-based δ formula absorbs.</li>
+<li><b>Symmetry of each line about its own signal (the coplanar mode).</b> In modes 5 and 6, each line's two grounds are at equal potential and the signal is opposite them, so each line's net current is zero (the signal returns on its own grounds). That is exactly what a GSG launch excites (§3.3). In contrast:
+<ul>
+<li>in modes 3 and 4, a line's two grounds are at opposite potentials (slot modes);</li>
+<li>in modes 1 and 2, the whole line (signal and grounds) is at one potential against the frame, with net current returning through the frame.</li>
+</ul></li>
+<li><b>Index and impedance.</b>
+<ul>
+<li>Modes 5 and 6 are a near-degenerate pair (n = 1.8878 and 1.8863, Δn = 1.5 × 10⁻³), as two weakly coupled identical lines must be, and at the coplanar index.</li>
+<li>Modes 1–4 have n = 2.06–2.41: more field in the Si, which modes involving the grounds or the frame have.</li>
+<li>CST's line impedance for modes 5 and 6 (17.4 and 17.2 Ω, total over both lines) is half of a single coplanar line's (~35 Ω): two lines in parallel, as expected.</li>
+</ul></li>
+</ol>
+<p>The field pictures (§3.3) are consistent with all of this, but the assignment rests on criteria 2–4.</p>
+
 </main>
 </body>
 </html>
