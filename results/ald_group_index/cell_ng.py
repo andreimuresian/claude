@@ -5,6 +5,7 @@
 #   ALD Al2O3 Sellmeier), so the discretisation error cancels in the differences.
 #   The fundamental TE mode at each wavelength is the one with the largest overlap
 #   with the mode selected in cell 4.
+NG_MODES = 4                        # modes per neighbour solve
 NG_DL = (0.001, 0.002)              # um: half-steps of the central differences (+-1 nm, +-2 nm)
 
 def _eps_tensors(lam):
@@ -15,8 +16,9 @@ def _eps_tensors(lam):
 
 def _neff_at(lam):
     exx, eyy, ezz = _eps_tensors(lam)
+    # shift-invert right at the known n_eff: the TE mode is the nearest eigenvalue, so a few modes suffice
     ms = compute_modes_anisotropic(basis_epsilon_r, exx, eyy, ezz, wavelength=lam,
-                                   num_modes=num_modes_search, n_guess=n_eff.real)
+                                   num_modes=NG_MODES, n_guess=n_eff.real)
     ov = [abs(calculate_overlap(fund_mode.basis, fund_mode.E, fund_mode.H, m.basis, m.E, m.H)) for m in ms]
     best = ms[int(np.argmax(ov))]
     return complex(best.k / (2.0 * np.pi / lam)), float(max(ov))

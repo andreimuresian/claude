@@ -28,6 +28,16 @@ if design == "cordoba":
     rep("TECN = 0.550\nWG_H = 0.275\nSLAB_H = TECN - WG_H                # 0.275 um LN slab\n",
         "TECN = 0.540\nWG_H = 0.270\nSLAB_H = TECN - WG_H                # 0.270 um LN slab\n")
     rep("GAP = 4.2\n", "GAP = 4.15\n")
+    # graded gold skin, as in Jerez V0: full resolution within SKIN_NEAR of the gap edge, 2x beyond
+    rep("            sk = _areal(reg.intersection(skin_zone))\n            polys[name.replace(\"bulk\", \"skin\")] = sk\n",
+        "            sk = _areal(reg.intersection(skin_zone))\n"
+        "            _nr = box(-GAP / 2.0 - SKIN_NEAR, -BOX_H, GAP / 2.0 + SKIN_NEAR, 1e3)\n"
+        "            polys[name.replace(\"bulk\", \"skin\")] = _areal(sk.intersection(_nr))\n"
+        "            _sf = _areal(sk.difference(_nr))\n"
+        "            if not _sf.is_empty:\n"
+        "                polys[name.replace(\"bulk\", \"skinfar\")] = _sf\n")
+    rep('    "elL_skin":    (h_skin, 0.20),\n', '    "elL_skin":    (h_skin, 0.20),\n    "elR_skinfar": (2.0 * h_skin, 0.20),\n    "elL_skinfar": (2.0 * h_skin, 0.20),\n')
+    rep("MESH_SCALE = 1.0    #", "SKIN_NEAR = 6.0     # um from the gap edge with the full-resolution gold skin\nMESH_SCALE = 1.0    #")
 s = s.replace("# %% [0] Geometry, Mesh & Material Configuration  --", "# %% [0] Geometry, Mesh & Material Configuration  --  GROUP INDEX STUDY --", 1)
 nb = copy.deepcopy(nb)
 def setsrc(c, t):
