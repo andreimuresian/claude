@@ -68,10 +68,15 @@ class XtalkWindow(tk.Toplevel):
         sf = ScrollFrame(left, t)
         sf.pack(fill="both", expand=True)
         body = sf.inner
+        # labels whose text wraps to the sidebar's current width (a fixed
+        # wraplength cut the text when the sidebar was narrower than it)
+        self._wrapped = []
+        left.bind("<Configure>", self._rewrap, add="+")
 
         def muted(parent, text):
             lab = ttk.Label(parent, text=text, style="Muted.TLabel", wraplength=400, justify="left")
             lab.pack(fill="x", padx=4, pady=(2, 4))
+            self._wrapped.append(lab)
             return lab
 
         # ---- the line: fixed dataset -------------------------------------
@@ -82,14 +87,16 @@ class XtalkWindow(tk.Toplevel):
         muted(box.body, "Crosstalk is modelled for this line only, from its own CST crosstalk "
                         "simulations. The sidebar Touchstone file is not used.")
         ds = self.ds
-        tk.Label(box.body, bg=t["panel"], fg=t["fg"], justify="left", anchor="w",
+        info = tk.Label(box.body, bg=t["panel"], fg=t["fg"], justify="left", anchor="w",
                  font=("Consolas", 8), wraplength=400, text=(
                      f"{ds['name']}\n"
                      f"line   {ds['sources']['line']}\n"
                      f"split  {ds['sources']['split']}\n"
                      f"Ze/Zo - 1 = {ds['dz_lo']*100:.2f} .. {ds['dz_hi']*100:.2f} %\n"
                      f"data to {ds['data_top_GHz']:.0f} GHz; INTERCONNECT tables above it use the "
-                     f"single-line fit forms")).pack(fill="x", padx=4, pady=(0, 6))
+                     f"single-line fit forms"))
+        info.pack(fill="x", padx=4, pady=(0, 6))
+        self._wrapped.append(info)
         self._entry_row(box.body, app.vars["xt_L_mm"], P.BY_KEY["xt_L_mm"].display,
                         P.BY_KEY["xt_L_mm"].help)
 
@@ -99,6 +106,7 @@ class XtalkWindow(tk.Toplevel):
         self.dev_lbl = ttk.Label(box.body, text="", style="Muted.TLabel", wraplength=400,
                                  justify="left", font=("Consolas", 9))
         self.dev_lbl.pack(fill="x", padx=4, pady=(0, 6))
+        self._wrapped.append(self.dev_lbl)
 
         # ---- actions --------------------------------------------------------
         box = Collapsible(body, "Run", t)
@@ -117,9 +125,16 @@ class XtalkWindow(tk.Toplevel):
         # ---- numbers --------------------------------------------------------
         box = Collapsible(body, "At 10 / 30 / 60 GHz", t)
         box.pack(fill="x", padx=4)
-        self.num_txt = tk.Text(box.body, height=7, bg=t["card"], fg=t["fg"], relief="flat",
+        # the INTERCONNECT report is a wide table: keep its rows intact and
+        # scroll sideways instead of cutting them at the sidebar's edge
+        tf = ttk.Frame(box.body, style="Panel.TFrame")
+        tf.pack(fill="x", padx=4, pady=(0, 6))
+        self.num_txt = tk.Text(tf, height=12, bg=t["card"], fg=t["fg"], relief="flat",
                                font=("Consolas", 8), wrap="none")
-        self.num_txt.pack(fill="x", padx=4, pady=(0, 6))
+        xs = ttk.Scrollbar(tf, orient="horizontal", command=self.num_txt.xview)
+        self.num_txt.configure(xscrollcommand=xs.set)
+        self.num_txt.pack(fill="x")
+        xs.pack(fill="x")
 
         # ---- status + figure ------------------------------------------------
         st = tk.Frame(self, bg=t["bg"])
@@ -135,6 +150,14 @@ class XtalkWindow(tk.Toplevel):
         self.action_compute()
 
     # ------------------------------------------------------------------ widgets
+    def _rewrap(self, event):
+        wl = max(event.width - 40, 160)
+        for lab in self._wrapped:
+            try:
+                lab.configure(wraplength=wl)
+            except tk.TclError:
+                pass
+
     def _entry_row(self, parent, var, label, tip=""):
         row = ttk.Frame(parent, style="Panel.TFrame")
         row.pack(fill="x", pady=2)
