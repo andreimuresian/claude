@@ -11,3 +11,5 @@ RESULT {"design": "cordoba", "modes": 6, "T_nm": 100, "model": "scaled", "n_ald"
 DONE cordoba 0.1 scaled
 DONE jerez 0.04 sellmeier
 DONE jerez 0.04 scaled
+DONE jerez 0.1 sellmeier
+DONE jerez 0.1 scaled
