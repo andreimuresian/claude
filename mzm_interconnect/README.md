@@ -176,14 +176,16 @@ That holds for the S-matrix, for the voltage the light integrates
   in loss; the 14 mm crosstalk differs by 0.3 dB at most. Stored as the
   single-line extraction's fit forms (fitted 0.5-60 GHz), which also extend
   the INTERCONNECT tables above 60 GHz.
-* **Coupling**: from the 2-D port modes of the pair, n_even - n_odd from
-  `portmode_betas.txt` and Ze/Zo - 1 = 0.30-0.45 % (the figures draw the
-  band). The 3-D runs cannot resolve it (error floor).
+* **Coupling**: n_even - n_odd from the 2-D port modes of the pair
+  (`portmode_betas.txt`, PEC metal) scaled by `dn_scale` = 1.146 to the gold
+  eigenmode value (0.001731 at 28.9 GHz); Ze/Zo - 1 = 0.21-0.61 % from the
+  gold eigenmode (GSG three-mode to power-voltage definition; the figures
+  draw the band). The 3-D runs cannot resolve either (error floor).
 * **Compute**: NEXT and FEXT at 50 ohm (as a VNA), the voltage the light
   integrates on each line, the EO crosstalk (victim / aggressor modulation)
   and the victim's near- and far-end voltages, with the device's source and
   load (the victim's input ends in its own idle source).
-* **Export tables**: `coupled_even.txt`, `coupled_odd.txt` (Ze/Zo - 1 = 0.45 %)
+* **Export tables**: `coupled_even.txt`, `coupled_odd.txt` (Ze/Zo - 1 = 0.61 %)
   for the **Coupled TL** scripted element,
   `lumerical/coupled_element_setup.lsf` (by hand:
   `lumerical/create_coupled_element.lsf`). Ports A1, A2, B1, B2; outputs

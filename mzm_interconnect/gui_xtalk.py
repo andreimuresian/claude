@@ -14,8 +14,8 @@ How it works
   * "Compute" runs the Python twin (coupled_line.py): electrical NEXT and FEXT
     at 50 ohm (as a VNA would measure the pair), and, with the device's own
     source and termination, the voltage the light integrates on each line.
-    The band is the impedance split Ze/Zo - 1 = 0.30-0.45 %.
-  * "Export tables" writes coupled_even.txt / coupled_odd.txt (0.45 %) for the
+    The band is the impedance split Ze/Zo - 1 = 0.21-0.61 % (gold eigenmode).
+  * "Export tables" writes coupled_even.txt / coupled_odd.txt (0.61 %) for the
     "Coupled TL" scripted element.
   * "INTERCONNECT check" builds the element in INTERCONNECT and compares it,
     number by number, with the twin (xtalk_test.py).
@@ -128,7 +128,8 @@ class XtalkWindow(tk.Toplevel):
         muted(box.body, "The element: lumerical/coupled_element_setup.lsf (made by the check, or "
                         "by hand with lumerical/create_coupled_element.lsf). Ports A1, A2, B1, B2; "
                         "outputs 'modulation A/B', optionally 'far end A/B' and 'near end A/B'. "
-                        "Tables and INTERCONNECT use Ze/Zo - 1 = 0.45 % (the worse case).")
+                        f"Tables and INTERCONNECT use Ze/Zo - 1 = {ds['dz_hi']*100:.2f} % (the "
+                        f"worse case).")
 
         # ---- numbers --------------------------------------------------------
         box = Collapsible(body, "At 10 / 30 / 60 GHz", t)

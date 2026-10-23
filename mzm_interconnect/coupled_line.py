@@ -255,7 +255,9 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "xta
 def load_dataset(path: str = DATA_DIR) -> dict:
     """The only line the crosstalk model knows: 200 um pitch, uniform (non
     slow-wave) GSG line. Line from the 3-D crosstalk runs (even/odd average),
-    split from the 2-D port modes. The sidebar Touchstone file is NOT used."""
+    index split from the 2-D port modes scaled to the gold eigenmode value
+    (dn_scale), impedance split band from the gold eigenmode (dz_lo..dz_hi).
+    The sidebar Touchstone file is NOT used."""
     with open(os.path.join(path, "dataset.json"), encoding="utf-8") as fh:
         d = json.load(fh)
     d["betas_path"] = os.path.join(path, d["betas_table"])
@@ -285,7 +287,9 @@ def dataset_mode_tables(f_GHz, dz: float, ds: dict = None):
     ds = ds or load_dataset()
     f = np.asarray(f_GHz, float) * 1e9
     gamma, Z = dataset_line(f_GHz, ds)
-    db = dbeta_on_grid(f, ds["betas_path"])
+    # the 2-D port modes have PEC metal; dn_scale brings their split to the
+    # gold eigenmode value (gold raises dn by ~15-20 %)
+    db = dbeta_on_grid(f, ds["betas_path"]) * float(ds.get("dn_scale", 1.0))
     even, odd = hybrid_mode_tables(f, gamma, Z, db, float(dz))
     return even, odd, db * C0 / (2 * np.pi * f)
 

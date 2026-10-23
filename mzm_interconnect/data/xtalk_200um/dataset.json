@@ -3,8 +3,8 @@
   "pitch_um": 200,
   "line_table": "line_3d.txt",
   "betas_table": "portmode_betas.txt",
-  "dz_lo": 0.003,
-  "dz_hi": 0.0045,
+  "dz_lo": 0.0021,
+  "dz_hi": 0.0061,
   "data_top_GHz": 60.0,
   "fit": {
     "alpha_dB_cm": [
@@ -31,6 +31,7 @@
   },
   "sources": {
     "line": "3-D CST crosstalk runs LINEA0_1MM/5MM_200UM_PITCH.s4p, even/odd average (docs/cst/xtalk/line_from_s4p.py)",
-    "split": "2-D CST port modes 5/6 (even/odd): beta from portmode_betas.txt; Ze/Zo-1 from port_voltages_sweep.py"
-  }
+    "split": "2-D CST port modes 5/6 (even/odd, PEC metal): beta from portmode_betas.txt, scaled by dn_scale = 1.146 so that dn matches the gold eigenmode result (0.001731 at 28.9 GHz, docs/cst/xtalk/eigenmode_validation_plan.md); Ze/Zo-1 band 0.21-0.61 %: gold eigenmode, GSG three-mode definition (+0.21 %) to power-voltage definition (+0.61 %)"
+  },
+  "dn_scale": 1.1456
 }

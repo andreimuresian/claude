@@ -92,10 +92,10 @@ svg .s { font-size: 12px; } svg .xs { font-size: 10.5px; fill: var(--muted); } s
 <h2 id="tldr">1. Summary for the meeting</h2>
 <div class="box key">
 <ul>
-<li><b>The inputs come from both 3-D and 2-D CST runs, each used for what it does well.</b> Your coworker's 3-D time-domain runs of the 200 µm pair (1 mm and 5 mm) give the <i>average</i> line: loss, index and impedance. Our 2-D port-mode solve of the same cross-section gives the small <i>difference</i> between the even and odd pair modes: the index split \(\Delta n\) and the impedance split \(\delta=Z_e/Z_o-1\).</li>
+<li><b>The inputs come from 3-D, 2-D and eigenmode CST runs.</b> Your coworker's 3-D time-domain runs of the 200 µm pair (1 mm and 5 mm) give the <i>average</i> line: loss, index and impedance. The small <i>difference</i> between the even and odd modes comes from our 2-D port-mode solve (frequency dependence of \(\Delta n\)), corrected for gold with the eigenmode solver: the 2-D solve uses PEC metal, and gold raises \(\Delta n\) by about 15 %. The impedance split \(\delta=Z_e/Z_o-1\) is 0.21–0.61 %, depending on the impedance definition (§3.4).</li>
 <li><b>The model is exact for a uniform pair:</b> two identical coupled lines behave as two independent single lines, the even mode and the odd mode. Each one is our single-line travelling-wave element with its own table, and the two are recombined at the ports. No segmentation is involved, and every quantity, including the voltage integral the light sees, is closed-form.</li>
 <li><b>The length dependence comes from the physics, not from fitting.</b> \(L\) enters only through \(e^{-\gamma_{e,o}L}\). Far-end crosstalk grows roughly as \(\pi f L\,\Delta n/c\) (minus the line loss). Near-end crosstalk saturates at about \(\delta/2\) and has nulls every \(c/(2nL)\).</li>
-<li><b>The shaded band is not a probability.</b> It is the envelope between two runs of the model, with \(\delta=0.30\,\%\) and \(\delta=0.45\,\%\): the spread of the impedance split we got from the 2-D field data.</li>
+<li><b>The shaded band is not a probability.</b> It is the envelope between two runs of the model, with \(\delta=0.21\,\%\) and \(\delta=0.61\,\%\): the spread of the impedance split across the impedance definitions that fit a GSG launch, from the gold eigenmode run (§3.4).</li>
 <li><b>The twin and INTERCONNECT agree.</b> The element's code matches the twin to about \(10^{-15}\), and in INTERCONNECT the aggressor matches to ≤ 0.09 dB and ≤ 0.44°, with the crosstalk error 72–84 dB below the aggressor.</li>
 <li><b>The PAIR_* blocks are a test bench, not the product.</b> The product is the single scripted element "Coupled TL". Putting it into the full MZM cascade is the logical next step: it is mechanically easy, and it was paused only because we agreed not to touch the MZM code yet.</li>
 </ul>
@@ -106,7 +106,7 @@ svg .s { font-size: 12px; } svg .xs { font-size: 10.5px; fill: var(--muted); } s
 <p>Yes. I re-ran the offline checks today. Four independent comparisons:</p>
 <div class="tablewrap"><table>
 <tr><th>Comparison</th><th>What it shows</th><th>Result</th></tr>
-<tr><td>Twin vs the analysis model used against CST (<code>modal_vs_s4p_v3.py</code>)</td><td>The GUI uses the validated model, unchanged</td><td>NEXT, FEXT equal to \(10^{-15}\) at 1, 5, 14 mm</td></tr>
+<tr><td>Twin vs the analysis model used against CST (<code>modal_vs_s4p_v3.py</code>)</td><td>The GUI used the validated model, unchanged</td><td>NEXT, FEXT equal to \(10^{-15}\) at 1, 5, 14 mm (before the gold correction of §3.4, which deliberately changes the split)</td></tr>
 <tr><td>Twin vs a brute-force solution of the coupled telegrapher equations (4×4 matrix exponential, numerical \(V(z)\) integral)</td><td>The even/odd closed form is right, including the light's voltage integral</td><td>S to \(5\times10^{-13}\); modulation to \(10^{-7}\) (relative)</td></tr>
 <tr><td>The INTERCONNECT element's own LSF code, executed line by line in Python (<code>lsf_check</code>)</td><td>The scripted element computes exactly what the twin computes</td><td>S, modulation, far end, near end: \(\le 4.5\times10^{-14}\)</td></tr>
 <tr><td>INTERCONNECT run (14 mm, the "INTERCONNECT check" button)</td><td>The element behaves correctly inside the time-domain simulator</td><td>Aggressor ≤ 0.09 dB, ≤ 0.44°, same scale (2.00) and latency (341 ps) in all three rows; crosstalk error floor −72 to −84 dB re aggressor. Your screenshot's MOD row: 0.067 dB, 0.43°</td></tr>
@@ -137,9 +137,9 @@ svg .s { font-size: 12px; } svg .xs { font-size: 10.5px; fill: var(--muted); } s
 <text class="xs" x="334" y="120">line_3d.txt + dataset.json</text>
 <rect class="b" x="320" y="190" width="250" height="120" rx="10"/>
 <text class="t" x="334" y="214">Split from the modes</text>
-<text class="s" x="334" y="236">Δβ = β₅ − β₆  (Δn ≈ 0.00150–0.00157)</text>
+<text class="s" x="334" y="236">Δβ = β₅ − β₆ × 1.146 (gold): Δn ≈ 0.0017–0.0018</text>
 <text class="s" x="334" y="254">δ = Zₑ/Zₒ − 1 from exported fields</text>
-<text class="xs" x="334" y="274">δ = 0.30–0.45 % (the band)</text>
+<text class="xs" x="334" y="274">δ = 0.21–0.61 % (gold eigenmode, band)</text>
 <text class="xs" x="334" y="290">portmode_betas.txt</text>
 <rect class="bm" x="630" y="95" width="150" height="140" rx="10"/>
 <text class="t" x="644" y="120">Mode tables</text>
@@ -181,14 +181,29 @@ svg .s { font-size: 12px; } svg .xs { font-size: 10.5px; fill: var(--muted); } s
 \[ \mathbf v_{A} = (1,0) = \tfrac12(1,1) + \tfrac12(1,-1) = \tfrac12\,\mathbf v_{\rm even} + \tfrac12\,\mathbf v_{\rm odd}. \]
 <ul>
 <li><b>Index split</b> from the solver's β values: \(\Delta n = (\beta_5-\beta_6)\,c/(2\pi f) = 0.00150\) (6 GHz) to \(0.00157\) (60 GHz).</li>
-<li><b>Impedance split</b> from the exported fields of modes 5 and 6. Integrating \(E_y\) across the strips gives each strip's potential, so each line's voltage is \(V_A=V_{S_A}-\tfrac12(V_{G_{A,l}}+V_{G_{A,r}})\). With both modes at the same power, \(Z_e/Z_o=(V_{A,e}^2+V_{B,e}^2)/(V_{A,o}^2+V_{B,o}^2)\). This gives \(\delta=0.30\) to \(0.45\,\%\), depending on which grid row through the 2 µm metal is used. The field peaks sharply at the metal edges, and that spread is the uncertainty shown as the band.</li>
+<li><b>Impedance split</b> from the exported fields of modes 5 and 6. Integrating \(E_y\) across the strips gives each strip's potential, so each line's voltage is \(V_A=V_{S_A}-\tfrac12(V_{G_{A,l}}+V_{G_{A,r}})\). With both modes at the same power, \(Z_e/Z_o=(V_{A,e}^2+V_{B,e}^2)/(V_{A,o}^2+V_{B,o}^2)\). From that single run per frequency, this gives \(\delta=0.30\) to \(0.45\,\%\), depending on which grid row through the 2 µm metal is used: the field peaks sharply at the metal edges, so the post-processing is sensitive to where it's done. That was the first band; §3.4 replaces it.</li>
 </ul>
-<div class="box warn"><h4>Why the 2-D solve isn't used for the absolute line</h4>
-The port solver treats the lossy gold as PEC (perfect conductor), so its index is 1.888, against 1.95 from 3-D, and it has no loss. Both modes are affected equally, so the <i>difference</i> between them is still sound, while the absolute values aren't. Hence the hybrid: the 3-D average line plus the 2-D split.</div>
+<div class="box warn"><h4>Why the 2-D solve isn't used for the absolute line, and why its split needed correcting</h4>
+The port solver treats the lossy gold as PEC (perfect conductor), so its index is 1.888, against 1.95 from 3-D, and it has no loss. The first version of this report claimed both modes are affected equally, so the difference survives. That is only true to first order: the gold eigenmode run (§3.4) shows gold raises Δn by about 15–20 %, because the even and odd current distributions differ slightly and so does their internal inductance. The model now corrects for it.</div>
+
+<h3>3.4 Correction: gold instead of PEC, and the impedance definition</h3>
+<p>The eigenmode solver (one 10 µm cell of the pair, periodic boundaries, even and odd via a symmetry plane) was run with PEC and with gold on the same line, at about 29 GHz:</p>
+<div class="tablewrap"><table>
+<tr><th>Run</th><th>Δn</th><th>δ, power–voltage \(Z=|V|^2/2P\)</th><th>δ, voltage–current \(Z=V/I\)</th><th>δ, power–current \(Z=2P/|I|^2\)</th><th>δ, GSG from three modes</th></tr>
+<tr><td>2-D port modes (PEC)</td><td>0.00151</td><td>0.30–0.45 %</td><td>–</td><td>–</td><td>–</td></tr>
+<tr><td>Eigenmode, PEC</td><td>0.00145</td><td>+0.53 %</td><td>–</td><td>–</td><td>–</td></tr>
+<tr><td>Eigenmode, gold</td><td><b>0.00173</b></td><td><b>+0.61 %</b></td><td>−0.47 %</td><td>−1.53 %</td><td><b>+0.21 %</b></td></tr>
+</table></div>
+<ul>
+<li><b>Index split:</b> the PEC eigenmode run reproduces the 2-D value within 5 %, so the 2-D method is consistent. Gold raises it to 0.00173. The model keeps the 2-D frequency dependence and scales it by \(0.001731/0.001511=1.146\), so Δn ≈ 0.0017–0.0018 over the band. Far-end crosstalk rises by \(20\log_{10}1.146\approx1.2\) dB.</li>
+<li><b>Impedance split:</b> δ depends on how the line impedance is defined, because the even and odd modes' power, voltage and current don't scale identically. The power–voltage definition is the one the 2-D method used. The GSG definition reconstructs each line's signal-against-own-grounds impedance from three eigenmodes, which matches what a GSG launch excites. The power–current value is excluded: in this run the grounds carry 6–11 % more current than the signal, so a total-current definition mixes in the ground currents. <b>New band: δ = 0.21 % to 0.61 %.</b></li>
+<li>This band is wider than before (9.3 dB in near-end crosstalk instead of 3.5 dB), which is the honest uncertainty. Narrowing it needs either a 3-D check that discriminates between the definitions, or near-end crosstalk measured on hardware.</li>
+<li>Caveat: the gold run used the coarser eigenmode mesh (PEC changed by 1 % between coarse and refined), and a single frequency.</li>
+</ul>
 
 <!-- ===================================================================== -->
 <h2 id="model">4. The model: two lines = an even line + an odd line</h2>
-<p><b>Mode tables.</b> Starting from the 3-D line \((\gamma, Z)\) and the 2-D split \((\Delta\beta, \delta)\):</p>
+<p><b>Mode tables.</b> Starting from the 3-D line \((\gamma, Z)\) and the split \((\Delta\beta, \delta)\) (2-D shape, gold-corrected, §3.4):</p>
 \[ \gamma_{e,o} = \gamma \pm \tfrac{j}{2}\Delta\beta, \qquad Z_{e,o} = Z\left(1 \pm \tfrac{\delta}{2}\right). \]
 <p><b>Each mode is a single uniform line</b> of length \(L\) between \(z_0=50\ \Omega\) ports. With \(\Gamma=(Z-z_0)/(Z+z_0)\) and \(t=e^{-\gamma L}\), summing the multiple reflections gives the formulas of our single-line element:</p>
 \[ S_{11}=\frac{\Gamma\,(1-t^2)}{1-\Gamma^2t^2}, \qquad S_{21}=\frac{(1-\Gamma^2)\,t}{1-\Gamma^2t^2}. \]
@@ -198,7 +213,7 @@ The port solver treats the lossy gold as PEC (perfect conductor), so its index i
 <p><b>The line voltages</b> recombine the same way, because everything is linear in the voltage: \(V_A(z)=\tfrac12\left[V_e(z)+V_o(z)\right]\) and \(V_B(z)=\tfrac12\left[V_e(z)-V_o(z)\right]\). That's why the voltage the light integrates is also exact for both lines (§6).</p>
 
 <h3>4.1 How well does it match the 3-D runs?</h3>
-<figure>{{IMG_VALID}}<figcaption>Model (red band) vs the coworker's 3-D runs (black). At 1 mm, levels and trends agree within 1–5 dB, and 1 mm is the reliable run (floor −73 dB). At 5 mm, the FEXT envelope agrees. The 5 mm NEXT above 25 GHz is 6–10 dB higher in CST and shows none of the model's nulls; but those CST values sit on the 5 mm run's own error floor (−56 dB), so this comparison can't decide between them.</figcaption></figure>
+<figure>{{IMG_VALID}}<figcaption>Model (red band; this figure uses the earlier 2-D split, Δn 0.00151 and δ 0.30–0.45 %) vs the coworker's 3-D runs (black). At 1 mm, levels and trends agree within 1–5 dB, and 1 mm is the reliable run (floor −73 dB). At 5 mm, the FEXT envelope agrees. The 5 mm NEXT above 25 GHz is 6–10 dB higher in CST and shows none of the model's nulls; but those CST values sit on the 5 mm run's own error floor (−56 dB), so this comparison can't decide between them.</figcaption></figure>
 
 <!-- ===================================================================== -->
 <h2 id="length">5. Length dependence and the shaded band</h2>
@@ -208,34 +223,34 @@ The port solver treats the lossy gold as PEC (perfect conductor), so its index i
 <p>For matched ports (\(\Gamma\approx0\)):</p>
 \[ S_{B2A1}=\tfrac12\left(e^{-\gamma_eL}-e^{-\gamma_oL}\right) \;\Rightarrow\;
 |\text{FEXT}| = e^{-\alpha L}\left|\sin\frac{\Delta\beta\,L}{2}\right| \approx \frac{\pi f L\,\Delta n}{c}\,e^{-\alpha L}. \]
-<p>So FEXT grows in proportion to \(f\) and \(L\), reduced by the line loss. For example, at 30 GHz and 14 mm: \(\pi\cdot30\,\text{GHz}\cdot14\,\text{mm}\cdot0.00151/c = 6.6\times10^{-3}\) (−43.6 dB), minus 4.1 dB of loss, gives <b>−47.7 dB</b>. The full model gives −48.2 dB.</p>
+<p>So FEXT grows in proportion to \(f\) and \(L\), reduced by the line loss. For example, at 30 GHz and 14 mm: \(\pi\cdot30\,\text{GHz}\cdot14\,\text{mm}\cdot0.00173/c = 7.6\times10^{-3}\) (−42.4 dB), minus 4.1 dB of loss, gives <b>−46.5 dB</b>. The full model gives −47.0 dB.</p>
 
 <h3>5.2 Near-end crosstalk (NEXT): set by \(\delta\), saturates, has nulls</h3>
 <p>Write the impedances as \(Z_{e,o}=Z(1\pm\delta/2)\). To first order in \(\delta\), and with \(Z\) close to \(z_0\):</p>
 \[ \text{NEXT} \approx \frac{\delta}{2}\,Z\frac{\partial S_{11}}{\partial Z} \approx \frac{\delta}{4}\left(1-t^2\right),
-\qquad |\text{NEXT}|_{\max}\approx\frac{\delta}{2}\;(=0.225\,\%\Rightarrow -53\text{ dB}). \]
+\qquad |\text{NEXT}|_{\max}\approx\frac{\delta}{2}\;(0.11\text{–}0.31\,\%\Rightarrow -59\text{ to }-50\text{ dB}). \]
 <p>NEXT doesn't grow with length. It oscillates between 0 and about \(\delta/2\), and vanishes whenever \(t^2=1\) (for a low-loss line), i.e. \(\beta L=m\pi\):</p>
 \[ f_m = \frac{m\,c}{2\,n\,L}\qquad (14\text{ mm}: \approx 5.5\text{ GHz}\cdot m). \]
-<figure>{{IMG_NULLS}}<figcaption>14 mm. The NEXT nulls fall where predicted, and the two NEXT curves differ by \(20\log_{10}(0.45/0.30)=3.5\) dB, the δ uncertainty. FEXT barely depends on δ.</figcaption></figure>
+<figure>{{IMG_NULLS}}<figcaption>14 mm. The NEXT nulls fall where predicted, and the two NEXT curves differ by \(20\log_{10}(0.61/0.21)=9.3\) dB, the δ uncertainty. FEXT barely depends on δ.</figcaption></figure>
 
 <h3>5.3 Crosstalk against length</h3>
 <figure>{{IMG_LENGTH}}<figcaption>Left: FEXT follows \(\pi fL\Delta n\,e^{-\alpha L}/c\) (dotted), and eventually flattens and falls because of the loss. Middle: NEXT oscillates in length with period \(\lambda/2\), with a peak level fixed by δ. Right: the EO crosstalk ratio. Note the peak at 60 GHz around 14 mm (explained in §6.3).</figcaption></figure>
 
 <h3>5.4 The band, precisely</h3>
-<div class="box key">The model is run twice, with \(\delta=0.30\,\%\) and \(\delta=0.45\,\%\) (everything else equal), and the region between the two curves is shaded. It's a <b>deterministic uncertainty envelope</b>, not a statistical spread:
+<div class="box key">The model is run twice, with \(\delta=0.21\,\%\) and \(\delta=0.61\,\%\) (everything else equal), and the region between the two curves is shaded. It's a <b>deterministic uncertainty envelope</b>, not a statistical spread:
 <ul>
-<li>NEXT is proportional to δ, so its band is about 3.5 dB thick.</li>
+<li>NEXT is proportional to δ, so its band is about 9 dB thick.</li>
 <li>FEXT depends mostly on Δn, so its band is thin.</li>
 <li>The EO ratio is in between.</li>
 </ul>
-Δn is taken as computed. Its range in the GUI title (0.00150–0.00157) is its variation with frequency, not an uncertainty. INTERCONNECT and the exported tables use the worse case, δ = 0.45 %.</div>
+Δn is taken as computed (gold-corrected); its range in the GUI title is its variation with frequency, not an uncertainty. INTERCONNECT and the exported tables use the worse case, δ = 0.61 %.</div>
 
 <!-- ===================================================================== -->
 <h2 id="graphs">6. The four GUI graphs, one by one</h2>
 <figure>{{IMG_GUI4}}<figcaption>The same four panels as the GUI (14 mm, n<sub>g</sub> = 2.27, source 50 Ω, load 40 Ω), regenerated from the twin for this report.</figcaption></figure>
 
 <h3>6.1 Panel 1: electrical crosstalk with all ports at 50 Ω</h3>
-<p>\(|S_{B1A1}|\) (NEXT) and \(|S_{B2A1}|\) (FEXT) of the 4-port, from §4. This is what a VNA would measure on the pair, independent of the real driver and termination. At 14 mm: FEXT −55 / −48 / −44 dB and NEXT about −59 / −58 / −55 dB at 10 / 30 / 60 GHz.</p>
+<p>\(|S_{B1A1}|\) (NEXT) and \(|S_{B2A1}|\) (FEXT) of the 4-port, from §4. This is what a VNA would measure on the pair, independent of the real driver and termination. At 14 mm: FEXT −54 / −47 / −43 dB and NEXT −62…−56 / −60…−54 / −56…−52 dB at 10 / 30 / 60 GHz.</p>
 
 <h3>6.2 Panel 2: the voltage the light integrates</h3>
 <p><b>Circuit:</b> the aggressor A is driven by a 1 V EMF behind the device's source impedance \(Z_s\) at A1. The victim's input B1 ends in its own idle driver (also \(Z_s\)), and both far ends end in the device's termination \(R_t\). Each port's reflection is \(\Gamma_k=(Z_k-z_0)/(Z_k+z_0)\), and the incident waves solve</p>
@@ -246,7 +261,7 @@ The port solver treats the lossy gold as PEC (perfect conductor), so its index i
 
 <h3>6.3 Panel 3: EO crosstalk</h3>
 \[ \text{EO crosstalk}(f) = \left|\frac{H_B(f)}{H_A(f)}\right|. \]
-<p>This is the victim's phase modulation relative to the aggressor's, at each frequency, in the real circuit. It answers the question "how much of the aggressor's signal appears on the neighbouring modulator's optical output". At 14 mm it is −56 / −48 / −37 dB at 10 / 30 / 60 GHz.</p>
+<p>This is the victim's phase modulation relative to the aggressor's, at each frequency, in the real circuit. It answers the question "how much of the aggressor's signal appears on the neighbouring modulator's optical output". At 14 mm it is about −55 / −47 / −36 dB at 10 / 30 / 60 GHz (band ±1–2 dB).</p>
 <div class="box warn"><h4>Why it rises to −37 dB at 60 GHz</h4>
 It's mostly the <i>denominator</i>. The aggressor's own response has a walk-off null where \(f\,|n_g-n|\,L/c\approx1\): with \(n_g=2.27\) and \(n\approx1.93\), that's \(L\approx c/(60\,\text{GHz}\cdot0.34)\approx14.7\) mm. Panel 2 shows \(|H_A|\) falling by about 20 dB at 60 GHz. The victim's response, a difference of the even and odd terms, doesn't null at the same place, so the ratio peaks. In absolute terms (panel 2), the victim stays around −55 to −60 dB relative to the aggressor's low-frequency response.</div>
 
@@ -335,7 +350,7 @@ It's mostly the <i>denominator</i>. The aggressor's own response has a walk-off 
 <tr><th>Question</th><th>Answer</th></tr>
 <tr><td>How validated is it?</td><td>At 1 mm, within 1–5 dB of the 3-D runs, where they are reliable. At 5 mm, FEXT agrees in envelope, but the CST NEXT above 25 GHz is 6–10 dB higher and sits on CST's own error floor, so the comparison is open. A cleaner, finer-meshed 3-D run at 5 mm would settle it.</td></tr>
 <tr><td>What isn't in the model?</td><td>Coupling in the port and transition regions (pads, probes, curves). In the slow-wave (Istanbul) analysis, the 3-D FEXT was explained by exactly this model's line term <i>plus</i> a constant port term (about −43 dB at 30 GHz), which can dominate short lines. That analysis also suggested an extra near-end coupling path that grows with length. Both need checking for the uniform line too.</td></tr>
-<tr><td>Why a band, and why that width?</td><td>δ is computed from field integrals across thin metal, where the field peaks at the edges. Different grid rows give 0.30–0.45 %. That's an uncertainty range, not a distribution (§5.4).</td></tr>
+<tr><td>Why a band, and why that width?</td><td>δ is computed from field integrals across thin metal, where the field peaks at the edges. The 2-D field post-processing gave 0.30–0.45 % (grid-row dependence). The gold eigenmode run showed the definition matters more: 0.21 % (GSG) to 0.61 % (power–voltage). That's the band now: an uncertainty range, not a distribution (§3.4, §5.4).</td></tr>
 <tr><td>Frequency range?</td><td>The data go to 60 GHz. Above that, the tables use the single-line fit forms' extrapolation (as for the single-line model).</td></tr>
 <tr><td>Other pitches?</td><td>The model knows only the 200 µm uniform line. Another pitch needs its own 3-D pair runs (or reuse of the single-line runs) plus a 2-D port solve for the split.</td></tr>
 <tr><td>Slow-wave lines?</td><td>Same model (periodic loading behaves as a uniform line far below the Bragg frequency), but the split has to come from 3-D: the 2-D port can't see the Ts. That work is in progress.</td></tr>

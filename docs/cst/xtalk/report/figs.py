@@ -26,7 +26,7 @@ band(axs[1,1],rl["NE_B"]/rl["V"][0],ra["NE_B"]/ra["V"][0],B,"near end V_B(0)/V_A
 axs[1,1].set_title("(4) Victim terminal voltages (device source/load)");axs[1,1].set_ylabel("dB re aggressor input voltage")
 for ax in axs.flat: ax.legend(fontsize=8,loc="lower right")
 for ax in axs[1]: ax.set_xlabel("frequency (GHz)")
-fig.suptitle("Twin, 14 mm, n_g = 2.27, source 50 Ω, load 40 Ω; band = Ze/Zo−1 from 0.30 % to 0.45 %");fig.tight_layout();fig.savefig(out+"/gui4.png",dpi=110)
+fig.suptitle("Twin, 14 mm, n_g = 2.27, source 50 Ω, load 40 Ω; band = Ze/Zo−1 from 0.21 % to 0.61 % (gold eigenmode)");fig.tight_layout();fig.savefig(out+"/gui4.png",dpi=110)
 # --- NEXT nulls and band
 fig,ax=plt.subplots(figsize=(9,3.6))
 for dz,c,ls in ((ds["dz_lo"],B,"-"),(ds["dz_hi"],"#0b2e6b","--")):
@@ -48,7 +48,7 @@ for fq,c in zip(fg,(B,O,R)):
     approx=db(np.pi*fq*1e9*Ls*1e-3*dn/C0*np.exp(-a*Ls*1e-3))
     axs[0].plot(Ls,FE,c=c,lw=1.4,label=f"{fq:.0f} GHz");axs[0].plot(Ls,approx,c=c,ls=":",lw=1)
     axs[1].plot(Ls,NE,c=c,lw=1.4,label=f"{fq:.0f} GHz");axs[2].plot(Ls,EO,c=c,lw=1.4,label=f"{fq:.0f} GHz")
-axs[0].set_title("FEXT vs L (dotted: π f L Δn e^{−αL}/c)");axs[1].set_title("NEXT vs L (δ = 0.45 %)");axs[2].set_title("EO crosstalk |H_B/H_A| vs L")
+axs[0].set_title("FEXT vs L (dotted: π f L Δn e^{−αL}/c)");axs[1].set_title("NEXT vs L (δ = 0.61 %)");axs[2].set_title("EO crosstalk |H_B/H_A| vs L")
 for ax in axs: ax.set_xlabel("electrode length L (mm)");ax.set_ylabel("dB");ax.legend(fontsize=8)
 fig.tight_layout();fig.savefig(out+"/length.png",dpi=110)
 # table numbers
