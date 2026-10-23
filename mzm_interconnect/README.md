@@ -195,9 +195,20 @@ That holds for the S-matrix, for the voltage the light integrates
   `xtalk_check/xtalk_check_report.txt`). The victim gets the aggressor's
   phase-convention, latency and scale corrections, so its error is the
   coupling error alone.
+* **Full MZM cascade** (ENA + check, or eyes): two modulators, A and B, each
+  the single-line build's interferometer (laser, Y branches, bias, arm-2
+  loss, push-pull or single arm, from the sidebar), on one Coupled TL
+  electrode of the crosstalk length. In one Compound: SRC_A (Zs) -> A1,
+  LOAD_B1 (Zs, B's idle driver) -> B1, LOAD_A / LOAD_B (Rt) on A2 / B2;
+  `modulation A` / `modulation 2 A` drive A's arms, `modulation B` /
+  `modulation 2 B` drive B's. ENA input 1 reads PIN_A, input 2 PIN_B: their
+  ratio is the EO crosstalk in the receiver, checked against the twin
+  (`xtalk_cascade.py`, report `xtalk_cascade/xtalk_cascade_ena_report.txt`).
+  Eye mode: EYE_1 = A on the coupled line, EYE_2 = what reaches B's receiver
+  with its driver idle. Straight electrode only: bends are not modelled.
 
 Code: `coupled_line.py` (Python twin, reuses `scripted_line.tl_sparams`),
-`gui_xtalk.py`, `xtalk_test.py`. Checks: `docs/cst/xtalk/coupled_twin_check.py`.
+`gui_xtalk.py`, `xtalk_test.py`, `xtalk_cascade.py`. Checks: `docs/cst/xtalk/coupled_twin_check.py`.
 
 ## Adding a parameter
 

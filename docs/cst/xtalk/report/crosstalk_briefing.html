@@ -299,6 +299,7 @@ It's mostly the <i>denominator</i>. The aggressor's own response has a walk-off 
 
 <!-- ===================================================================== -->
 <h2 id="cascade">8. Should it go into the full MZM cascade?</h2>
+<div class="box ok"><h4>Update: now implemented (straight electrode)</h4>The Crosstalk window has two new buttons: "Full MZM cascade in INTERCONNECT: ENA + check" and "…: eyes". They build both modulators (the sidebar's optics, bias and drive) on one Coupled TL electrode. ENA input 1 reads modulator A's photodiode and input 2 modulator B's, and their ratio is checked against the twin. In eye mode, EYE_1 is A and EYE_2 is what reaches B with its driver idle. Code: <code>mzm_interconnect/xtalk_cascade.py</code>. The build logic was checked offline against a mock of INTERCONNECT; the first real run is still to be done on your machine.</div>
 <p><b>Yes. It's the natural form for presenting and using the model</b>, and it's mechanically straightforward, because the Coupled TL ports are ordinary electrical ports, like the single-line element's. In the cascade, only the section where the two electrodes run parallel is coupled. Everything else stays as it is today:</p>
 <div class="svgwrap"><svg viewBox="0 0 960 300" role="img" aria-label="Proposed full cascade with the coupled section">
 <text class="t" x="10" y="22">Modulator A (aggressor) and modulator B (neighbour), one Compound</text>

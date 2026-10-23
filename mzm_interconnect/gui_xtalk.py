@@ -117,6 +117,14 @@ class XtalkWindow(tk.Toplevel):
                    command=self.action_export).pack(fill="x", padx=4, pady=2)
         ttk.Button(box.body, text="INTERCONNECT check: element vs twin",
                    command=self.action_ic_check).pack(fill="x", padx=4, pady=2)
+        ttk.Button(box.body, text="Full MZM cascade in INTERCONNECT: ENA + check",
+                   command=lambda: self.action_cascade("ena")).pack(fill="x", padx=4, pady=2)
+        ttk.Button(box.body, text="Full MZM cascade in INTERCONNECT: eyes",
+                   command=lambda: self.action_cascade("eye")).pack(fill="x", padx=4, pady=2)
+        muted(box.body, "Full cascade: modulators A and B (the sidebar's optics, bias, drive "
+                        "and source/load) on one coupled electrode of this length. ENA input 1 "
+                        "= A's EO response, input 2 = B's; their ratio is checked against the "
+                        "twin. Eyes: EYE_1 = A, EYE_2 = what reaches B with its driver idle.")
         muted(box.body, "The element: lumerical/coupled_element_setup.lsf (made by the check, or "
                         "by hand with lumerical/create_coupled_element.lsf). Ports A1, A2, B1, B2; "
                         "outputs 'modulation A/B', optionally 'far end A/B' and 'near end A/B'. "
@@ -298,6 +306,28 @@ class XtalkWindow(tk.Toplevel):
                         "on the INTERCONNECT tab to close it automatically).")
             return rep
         self._run("INTERCONNECT check", work, lambda rep: (
+            self.num_txt.delete("1.0", "end"), self.num_txt.insert("1.0", rep)))
+
+    def action_cascade(self, mode: str):
+        p = self.app._get_params()
+        app = self.app
+
+        def work():
+            from .xtalk_cascade import run_xtalk_cascade
+            if app.ic_builder is not None:          # one INTERCONNECT session at a time
+                try:
+                    app.ic_builder.close()
+                except Exception:
+                    pass
+                app.ic_builder = None
+            out = os.path.join(self._out_dir(p), "xtalk_cascade")
+            app.log(f"Crosstalk full cascade ({mode}): files in {out}")
+            keep = bool(app.lum_keep.get()) or mode == "eye"
+            rep, b = run_xtalk_cascade(p, out_dir=out, mode=mode, log=lambda m: app.log(m),
+                                       keep_open=keep)
+            app.ic_builder = b
+            return rep
+        self._run(f"Full cascade ({mode})", work, lambda rep: (
             self.num_txt.delete("1.0", "end"), self.num_txt.insert("1.0", rep)))
 
     # ------------------------------------------------------------------ display
