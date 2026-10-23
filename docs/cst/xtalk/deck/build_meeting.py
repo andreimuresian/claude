@@ -202,6 +202,32 @@ card(s, 8.5, 4.9, 4.35, 1.05, "(3) EO crosstalk", [], size=12)
 eq(s, "eq_EO", 8.62, 5.3, h=0.55)
 card(s, 8.5, 6.1, 4.35, 0.8, "(4) Victim voltages at B's two ends", [], size=12)
 
+# 10b EO derivation 1
+s = new(); title(s, "EO response of lines A and B: derivation (1/2)", "Exact; this is what the twin and the INTERCONNECT element compute")
+text(s, 0.6, 1.55, 12.2, 0.75, ["**1. Modes decouple.** Both lines see the same terminations (Z_{s} at the input: A's driver, B's idle driver; R_{t} at the far end). The aggressor EMF E on A = E/2 even + E/2 odd, each on its own single line:"], size=14)
+eq(s, "eq_Vm", 0.9, 2.35, h=0.5)
+eq(s, "eq_Vplus", 0.9, 2.95, h=0.62)
+text(s, 0.6, 3.7, 12.2, 0.75, ["**2. What the light integrates.** The optical wave travels at c/n_{g}, so each mode's voltage is averaged in the frame of the light. Closed form, forward (V^{+}) and backward (V^{−}) parts:"], size=14)
+eq(s, "eq_Hm", 0.9, 4.45, h=0.62)
+text(s, 0.6, 5.25, 12.2, 0.45, ["**3. Back to the lines** (same recombination as for the S-parameters):"], size=14)
+eq(s, "eq_HAB", 0.9, 5.75, h=0.62)
+text(s, 0.6, 6.55, 12.2, 0.4, "V_{m}^{−} = Γ_{t,m} · exp(−2γ_{m}L) · V_{m}^{+};  β_{o} = 2πf n_{g}/c. Electrical S-parameters (NEXT, FEXT) use the same modal waves with z_{0} = 50 Ω terminations.", size=12, color=MUTED)
+
+# 10c EO derivation 2
+s = new(); title(s, "EO crosstalk vs NEXT and FEXT: derivation (2/2)", "First order in δ and Δβ, terminations matched to the line (Z_{s} = R_{t} = Z)")
+eq(s, "eq_ratio", 0.6, 1.6, h=0.75)
+card(s, 0.5, 2.6, 4.0, 2.75, "Launch term δ/4 (NEXT-like)", ["The impedance split launches unequal even and odd waves: Z_{m}/(Z_{m}+Z_{s}) differs by δ/4.",
+     "Result: a forward wave of relative size δ/4 starts on B at the input and travels with the light.", "Same δ/4 as in NEXT ≈ (δ/4)(1 − t^{2})."])
+card(s, 4.67, 2.6, 4.0, 2.75, "Accumulated term (FEXT-like)", ["Even and odd waves drift apart at Δβ; the light averages the growing voltage on B.",
+     "Velocity-matched, lossless line: average = half the far-end value."])
+eq(s, "eq_limit", 4.8, 5.45, h=0.6)
+card(s, 8.84, 2.6, 4.01, 2.75, "Backward waves (NEXT path)", ["Travel against the light: their integral is phase-mismatched and suppressed by"], hc=RED)
+eq(s, "eq_back", 9.0, 4.1, h=0.65)
+text(s, 8.95, 4.85, 3.8, 0.5, "−22 / −31 / −37 dB at 10 / 30 / 60 GHz (14 mm)", size=12, color=MUTED)
+table(s, 0.5, 6.15, 8.2, [["14 mm, δ = 0.61 %", "10 GHz", "30 GHz", "60 GHz"],
+    ["Exact twin (Z_{s} = R_{t} = Z)", "−53.7 dB", "−46.3 dB", "−36.3 dB"], ["Formula above", "−53.6 dB", "−46.2 dB", "−36.3 dB"]], [3.2, 1.6, 1.6, 1.6], size=12, row_h=0.32)
+text(s, 8.95, 6.15, 3.9, 0.95, "Below ~5 GHz, (β + β_{o})L is small and the backward terms add 1–3 dB.", size=12, color=MUTED)
+
 # 11 element
 s = new(); title(s, "INTERCONNECT: the \"Coupled TL\" scripted element", "The single-line TL element, computed twice (even, odd) and recombined")
 box(s, 0.5, 1.6, 3.6, 2.0, "TL line element (existing)", ["1 table: f, loss, n, Re Z, Im Z", "2 ports + modulation output", "exact V(z) integral, no slicing"])
@@ -222,9 +248,9 @@ for i, (h, b) in enumerate([("ENA", ["output → driver", "inputs 1, 2 ← two o
 card(s, 0.5, 3.25, 6.05, 3.65, "Why this form", ["LOAD_B1 = Z_{s}: victim's input on its own idle driver.",
      "Compound with scattering-data analysis on: only there are reflections exact (Step 0 result).",
      "Three rows: an analyser reads two outputs; MOD = modulation A/B, FE = far end, NE = near end."])
-card(s, 6.78, 3.25, 6.07, 3.65, "How it is compared", ["Scale, latency and phase convention measured on the aggressor (A).",
-     "The same corrections applied to the victim (B): its error is the coupling error alone.",
-     "Scale 2.00 = EMF vs incident-wave convention; 341 ps = FIR filter delay."])
+card(s, 6.78, 3.25, 6.07, 3.65, "What is compared", ["The element's outputs are electrical voltages: 'modulation A/B' = H_{A}, H_{B}, the voltages the light integrates (previous slides). The ENA reads them as complex transfer functions.",
+     "Scale (2.00: ENA source = half the EMF), FIR latency (341 ps) and phase convention are taken from A; the same corrections are applied to B.",
+     "Optical EO response (photodiode): checked for the single line (Step 1, 0.1 dB); for the pair it comes with the full cascade run."], size=12.5)
 
 # 13 full cascade
 s = new(); title(s, "Full MZM cascade in crosstalk mode", "Two modulators on one coupled electrode; built and dry-run, first INTERCONNECT run pending")

@@ -45,6 +45,13 @@ EQ = {
  "eq_nulls": r"$f_m=\frac{m\,c}{2nL}$",
  "eq_H": r"$H_k(f)=\frac{1}{L}\int_0^L V_k(z)\,e^{\,j\beta_o(z-L)}\,dz,\quad \beta_o=\frac{2\pi f n_g}{c}$",
  "eq_EO": r"$\mathrm{EO\ crosstalk}=\left|\frac{H_B(f)}{H_A(f)}\right|$",
+ "eq_Vm": r"$V_m(z)=V_m^{+}\left[e^{-\gamma_m z}+\Gamma_{t,m}\,e^{-2\gamma_m L}\,e^{+\gamma_m z}\right],\qquad m=e,o$",
+ "eq_Vplus": r"$V_m^{+}=\frac{E}{2}\,\frac{Z_m}{Z_m+Z_s}\,\frac{1}{1-\Gamma_{s,m}\Gamma_{t,m}e^{-2\gamma_m L}},\quad \Gamma_{s,m}=\frac{Z_s-Z_m}{Z_s+Z_m},\ \Gamma_{t,m}=\frac{R_t-Z_m}{R_t+Z_m}$",
+ "eq_Hm": r"$H_m=\frac{e^{-j\beta_o L}}{L}\left[V_m^{+}\,F(-\gamma_m+j\beta_o)+V_m^{-}\,F(+\gamma_m+j\beta_o)\right],\qquad F(q)=\int_0^L e^{qz}dz=\frac{e^{qL}-1}{q}$",
+ "eq_HAB": r"$H_A=\frac{1}{2}\left(H_e+H_o\right),\qquad H_B=\frac{1}{2}\left(H_e-H_o\right),\qquad \mathrm{EO\ crosstalk}=\left|\frac{H_B}{H_A}\right|$",
+ "eq_ratio": r"$\frac{H_B}{H_A}\approx\frac{\delta}{4}\;-\;\frac{j\Delta\beta}{2}\left[\frac{L\,e^{qL}}{e^{qL}-1}-\frac{1}{q}\right],\qquad q=-\gamma+j\beta_o$",
+ "eq_limit": r"$\frac{H_B}{H_A}\approx\frac{\delta}{4}-\frac{j\Delta\beta L}{4}=\frac{\delta}{4}+\frac{\mathrm{FEXT}}{2}$",
+ "eq_back": r"$\frac{|F(\gamma+j\beta_o)|}{L}\approx\frac{1}{(\beta+\beta_o)L}$",
  "eq_VAB": r"$V_{A,B}(z)=\frac{1}{2}\left[V_e(z)\pm V_o(z)\right]$",
 }
 for k, t in EQ.items():
