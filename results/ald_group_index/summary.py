@@ -1,12 +1,12 @@
 import json
 rows = []
-for f in ("results.txt", "jerez_light.txt", "cordoba_wg1.txt", "cordoba_buf.txt"):
+for f in ("results.txt", "jerez_light.txt", "cordoba_wg1.txt", "cordoba_buf.txt", "cordoba_buf_wg14.txt"):
     for l in open(f):
         if l.startswith("RESULT"):
             r = json.loads(l[7:])
             if r["design"] == "jerez" and not r.get("light"): continue
             if r["design"] == "cordoba" and r.get("wg_top") == 1.0: r["design"] = "cordoba_wg1.0"
-            if r["design"] == "cordoba_buf": r["design"] = "cordoba_wg1.0_buffer200"
+            if r["design"] == "cordoba_buf": r["design"] = "cordoba_wg%.1f_buffer200" % r["wg_top"]
             rows.append(r)
 with open("group_index_ALD.csv", "w") as f:
     f.write("design,wavelength_nm,T_ALD_nm,ALD_model,n_ALD,mesh,n_eff,ng_pm1nm,ng_pm2nm,IL_dB_per_cm,VpiL_Vcm\n")
