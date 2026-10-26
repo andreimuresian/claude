@@ -132,7 +132,7 @@ def _areal(g, tol=1e-10):
 # ============================================================
 # 3. MESH CONTROL
 # ============================================================
-MESH_FACTOR = 1.0
+MESH_FACTOR = 0.35     # converged setting (see results/rf_cordoba): 1.0 is ~2 % off in Z0
 COLLAR_W    = 4.0      # um, lateral reach of the fine air collar past the gap
 COLLAR_H    = 4.0      # um, height of the fine air collar above the electrodes
 CORNER_BOX  = 0.25     # um, half-size of the refinement box on each electrode corner
