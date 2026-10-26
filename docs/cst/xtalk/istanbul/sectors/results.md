@@ -54,3 +54,11 @@ Through path (S21): n_g = 2.06. With the extra wave at n_x:
 * echo 2: CPW out, wave x back (or the reverse): 2.06 + 2.38 = 4.44; measured 4.46-4.59.
 Two independent paths give the same n_x = 2.37-2.40, matching the field decomposition (2.39) and
 the earlier group-delay estimate (~2.4). The mixed path dominates NEXT at every length.
+
+## Three-path NEXT model, fitted on two lengths, predicting the third (`joint_paths.py`)
+Each path: smooth end amplitude c_k(f), port delay tau0_k, free length law L^p_k; paths 1-3 share
+two group indices. Fits on any two lengths reach -45..-70 dB re NEXT, but predictions fail:
+fit 3+5 -> 8.75: diverges (L^47 for one path); fit 3+8.75 -> 5: -5.5 dB rms re NEXT (worst 3.9 dB);
+fit 5+8.75 -> 3: +2.9 dB (worst 13.4 dB). The one-path control is no better. With a free length law
+per path the model is not identifiable from two lengths (overfitting). A version with conversion
+only at the ends (no free length law) is the next candidate; not run.
