@@ -34,3 +34,18 @@ mirror-even and the mirror-odd parts of the field, dominant outside the gaps and
 the gaps. Their amplitudes vary along z (fitted 'losses' of -30..+15 dB/cm), so they are not
 single clean modes over the plane; an exact count needs more work (end fields and radiation in
 the weak region between the lines).
+
+## All exported frequencies (gap_eo.py; gapV_<f>.npz), n_g 2.0 / 2.27 / 2.4, push-pull
+
+| f (GHz) | CST fields | single arm | B common / diff | s4p Ze = Zo | s4p exact |
+|---|---|---|---|---|---|
+| 10 | -59.3 / -58.5 / -58.2 | -58.1 | 0.10 | -56.9 | -72.3 |
+| 20 | -54.9 / -54.0 / -53.3 | -52.8 | 0.20 | -54.9 | -55.4 |
+| 30 | -57.8 / -56.3 / -55.0 | -51.0 | 0.21 | -52.3 | -33.2 |
+| 45 | -45.0 / -44.7 / -44.1 | -43.5 | 0.29 | -51.4 | -33.3 |
+| 60 | -38.1 / -38.0 / -37.5 | -40.5 | 0.46 | -42.5 | -35.9 |
+| 80 | -46.7 / -47.5 / -45.5 | -44.1 | 0.99 | -35.2 | -34.0 |
+
+(s4p columns at n_g 2.27.) Ze = Zo minus fields: +1.6, -0.9, +4.0, -6.7, -4.5, +12.3 dB.
+Caveat: one point per gap at mid-metal height (x = 1 um); at 80 GHz B's common gap field equals
+the differential one, so the one-point estimate of the gap voltage is least reliable there.
