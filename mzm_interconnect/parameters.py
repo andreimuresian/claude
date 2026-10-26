@@ -549,7 +549,7 @@ PARAMS: list[ParamSpec] = [
                    "overstates the EO crosstalk. Ze = Zo: same even/odd propagation, "
                    "mean impedance; FEXT kept, NEXT not. Against CST's fields (5 mm): "
                    "30 GHz -56 dB true, -52 Ze = Zo, -33 exact; 60 GHz -38 true, -42 "
-                   "Ze = Zo, -36 exact. Expect +-5 dB with Ze = Zo."),
+                   "Ze = Zo, -36 exact. Over 10-80 GHz Ze = Zo is off by -7..+12 dB."),
 ]
 
 BY_KEY: dict[str, ParamSpec] = {p.key: p for p in PARAMS}

@@ -258,7 +258,8 @@ Check against the EO crosstalk computed directly from CST's gap fields
 | 60 GHz | -37.5..-38 dB | -42 dB | -35..-37 dB |
 
 Neither equivalent line is accurate or conservative at every frequency; with
-Ze = Zo read the EO crosstalk as +-5 dB.
+Ze = Zo the EO crosstalk is off by -7..+12 dB over 10-80 GHz (table in
+`docs/cst/xtalk/istanbul/fields_30GHz/plane/results.md`): an estimate only.
 
 The electrical NEXT and FEXT panel always shows the file itself. The setting
 *Equivalent line for EO / INTERCONNECT* chooses what the tables and the full

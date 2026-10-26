@@ -92,8 +92,9 @@ class XtalkS4PWindow(XtalkWindow):
                         "physics into an impedance split that can overstate the EO crosstalk "
                         "by ~20 dB. 'Ze = Zo' (default) is closer, but not exact either: "
                         "against EO crosstalk computed from CST's own gap fields (Istanbul "
-                        "5 mm) it is 4 dB high at 30 GHz and 4.5 dB low at 60 GHz. Read the "
-                        "EO crosstalk as +-5 dB. The choice sets what the tables and "
+                        "5 mm) it is off by -7..+12 dB between 10 and 80 GHz (e.g. 4 dB high at "
+                        "30 GHz, 6.7 dB low at 45 GHz). Read it as an estimate only. The "
+                        "choice sets what the tables and "
                         "INTERCONNECT use.")
 
         # ---- circuit (from the sidebar) ------------------------------------

@@ -31,7 +31,7 @@ Two equivalent lines, both from the file
     (Istanbul 5 mm, 50 ohm ports, push-pull; docs/cst/xtalk/istanbul/
     fields_30GHz/plane): 30 GHz: fields -56 dB, Ze = Zo -52, exact -33;
     60 GHz: fields -38 dB, Ze = Zo -42, exact -36. Neither is accurate or
-    conservative everywhere; with Ze = Zo expect about +-5 dB.
+    conservative everywhere; over 10-80 GHz Ze = Zo is off by -7..+12 dB.
   * Either way, the length must be the length that was simulated: the tables
     are per metre of that length.
 
