@@ -87,11 +87,13 @@ class XtalkS4PWindow(XtalkWindow):
             if P.BY_KEY[key].help:
                 Tooltip(lab, P.BY_KEY[key].help, t)
                 Tooltip(cb, P.BY_KEY[key].help, t)
-        muted(box.body, "Both equivalent lines are plotted. 'Ze = Zo' (default) is the one "
-                        "consistent with CST's fields for the EO crosstalk; 'exact "
-                        "terminals' gives the file back exactly, NEXT included, but turns a "
-                        "NEXT that is not two-mode physics into an impedance split that "
-                        "overstates the EO crosstalk. The choice sets what the tables and "
+        muted(box.body, "Both equivalent lines are plotted. 'Exact terminals' gives the file "
+                        "back exactly, NEXT included, but turns a NEXT that is not two-mode "
+                        "physics into an impedance split that can overstate the EO crosstalk "
+                        "by ~20 dB. 'Ze = Zo' (default) is closer, but not exact either: "
+                        "against EO crosstalk computed from CST's own gap fields (Istanbul "
+                        "5 mm) it is 4 dB high at 30 GHz and 4.5 dB low at 60 GHz. Read the "
+                        "EO crosstalk as +-5 dB. The choice sets what the tables and "
                         "INTERCONNECT use.")
 
         # ---- circuit (from the sidebar) ------------------------------------

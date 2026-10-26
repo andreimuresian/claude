@@ -246,8 +246,19 @@ Two equivalent lines are computed and plotted:
   on B's forward wave, is overstated.
 * **Ze = Zo (forward waves)**, the default: the same gamma_e, gamma_o, with Z
   set to their mean. FEXT stays within 1.5-3.6 dB of the file, NEXT is not
-  reproduced (~20 dB low), and B's forward wave is the FEXT build-up, as in
-  the fields.
+  reproduced (~20 dB low), and B's forward wave is the FEXT build-up.
+
+Check against the EO crosstalk computed directly from CST's gap fields
+(Istanbul 5 mm, 50 ohm ports, push-pull, n_g 2.0-2.4;
+`docs/cst/xtalk/istanbul/fields_30GHz/plane`):
+
+| | CST fields | Ze = Zo | exact terminals |
+|---|---|---|---|
+| 30 GHz | -55..-58 dB | -52 dB | -33 dB |
+| 60 GHz | -37.5..-38 dB | -42 dB | -35..-37 dB |
+
+Neither equivalent line is accurate or conservative at every frequency; with
+Ze = Zo read the EO crosstalk as +-5 dB.
 
 The electrical NEXT and FEXT panel always shows the file itself. The setting
 *Equivalent line for EO / INTERCONNECT* chooses what the tables and the full

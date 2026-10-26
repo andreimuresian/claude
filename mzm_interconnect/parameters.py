@@ -547,8 +547,9 @@ PARAMS: list[ParamSpec] = [
               help="Exact terminals: reproduces the .s4p exactly (NEXT included), but a "
                    "NEXT that is not two-mode physics becomes an impedance split that "
                    "overstates the EO crosstalk. Ze = Zo: same even/odd propagation, "
-                   "mean impedance; FEXT kept, NEXT not, EO crosstalk from the forward "
-                   "waves as in the CST fields."),
+                   "mean impedance; FEXT kept, NEXT not. Against CST's fields (5 mm): "
+                   "30 GHz -56 dB true, -52 Ze = Zo, -33 exact; 60 GHz -38 true, -42 "
+                   "Ze = Zo, -36 exact. Expect +-5 dB with Ze = Zo."),
 ]
 
 BY_KEY: dict[str, ParamSpec] = {p.key: p for p in PARAMS}

@@ -26,7 +26,12 @@ Two equivalent lines, both from the file
   * 'Ze = Zo (forward waves)': the same gamma_e, gamma_o, Z set to their mean.
     FEXT stays within ~1.5-3.5 dB of the file (it is set by the gamma split),
     NEXT is not reproduced (~20 dB low), and B's forward wave is the FEXT
-    build-up, as in the fields. The default for the EO crosstalk.
+    build-up. The default for the EO crosstalk.
+  * Checked against the EO crosstalk computed from CST's own gap fields
+    (Istanbul 5 mm, 50 ohm ports, push-pull; docs/cst/xtalk/istanbul/
+    fields_30GHz/plane): 30 GHz: fields -56 dB, Ze = Zo -52, exact -33;
+    60 GHz: fields -38 dB, Ze = Zo -42, exact -36. Neither is accurate or
+    conservative everywhere; with Ze = Zo expect about +-5 dB.
   * Either way, the length must be the length that was simulated: the tables
     are per metre of that length.
 
