@@ -40,3 +40,12 @@ higher f and L (8.75 mm sits 4 dB under L^2).
 * Direct evidence of the n ~ 2.4 wave: E along z at y = 0 (midway between the lines), where the
   CPW modes are weak.
 * w = 2 mm run (lateral boundary).
+
+## Lateral boundary test (5 mm, model width w = 1 -> 2 mm)
+`TEST0_XTALK_SW_5mm - wider.s4p` vs `TEST0_XTALK_SW_5mm.s4p`; all other parameters equal.
+The open (PML) boundary moves from 148 um to 648 um beyond the outer grounds.
+* NEXT: within 0.1-0.5 dB and 0.2-1.6 deg from 10 to 60 GHz (e.g. 30 GHz: -37.1 vs -37.2 dB);
+  group delay 79.0 vs 78.9 ps.
+* FEXT: within 0.5 dB and 1.7 deg; S11 within 0.4 dB; S21 0.05-0.15 dB lower with w = 2 mm.
+* Conclusion: the lateral boundary does not produce the NEXT. The round trip found above
+  closes at the far end of the line (tee / port region), not at the side walls.
