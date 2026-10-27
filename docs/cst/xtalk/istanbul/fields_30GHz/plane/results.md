@@ -49,3 +49,13 @@ the weak region between the lines).
 (s4p columns at n_g 2.27.) Ze = Zo minus fields: +1.6, -0.9, +4.0, -6.7, -4.5, +12.3 dB.
 Caveat: one point per gap at mid-metal height (x = 1 um); at 80 GHz B's common gap field equals
 the differential one, so the one-point estimate of the gap voltage is least reliable there.
+
+## Check of the one-point gap estimate (gap_check_80GHz.py)
+80 GHz, line B, one full 200 um cell (z 2.4-2.6 mm), 0.25 um steps across both gaps, at x = 1 um
+and at mid-LN depth (x = -0.1375 um).
+* Centre point / gap integral (x = 1 um), cell-averaged: inner/outer = 0.972, -2.2 deg.
+* LN integral / x = 1 um integral: 0.896 (outer) vs 0.892 (inner): inner/outer 0.996.
+* LN centre / x = 1 um centre: 0.953 vs 0.947.
+* Effect on the push-pull voltage: (eps/2)|V_common/V_diff| with eps = 0.03 and |V_c/V_d| = 0.58 in
+  this cell (0.99 over the line): 0.9-1.5 %, i.e. 0.1 dB. The one-point, x = 1 um estimate of the
+  EO crosstalk B/A holds to about 0.1-0.2 dB at 80 GHz; the table above stands.
