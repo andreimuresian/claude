@@ -16,3 +16,8 @@ One E file and one H file per frequency, CST "3D Export in Volume", Use Subvolum
 and the port are read from the CST default name, e.g. `e-field (f=30.0000) [1].txt`.
 The 5 mm counterparts (full planes) are not stored in the repository (24 MB each); their gap
 columns are in `../fields_5mm`.
+
+## Contents
+* `e-field_3mm_port1_10-80GHz.zip`: `e-field (f=<f>) [1].txt`, f = 10, 20, 30, 45, 60, 80 GHz
+* `h-field_3mm_port1_10-80GHz.zip`: `h-field (f=<f>) [1].txt`, same frequencies
+Checked: 96761 rows each, x = 0.001, y -0.40..0.40 (161), z 0..3 (601).
