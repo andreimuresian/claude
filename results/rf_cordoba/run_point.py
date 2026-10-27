@@ -2,7 +2,7 @@
 import json, os, re, sys, time
 B, T = float(sys.argv[1]), float(sys.argv[2]); TAN = float(sys.argv[3]) if len(sys.argv) > 3 else 0.0
 nb = json.load(open(os.environ.get("NB", "/home/user/claude/VPI_RF_Cordoba_buffer_ALD.ipynb")))
-cells = [int(c) for c in os.environ.get("CELLS", "0,1,2,3,4,5,6").split(",")]
+cells = [int(c) for c in os.environ.get("CELLS", "0,1,2,3,4,5").split(",")]
 src = "import matplotlib; matplotlib.use('Agg')\nimport matplotlib.pyplot as plt\nplt.show=lambda *a,**k: plt.close('all')\n"
 src += "\n".join("".join(nb["cells"][i]["source"]) for i in cells)
 over = {"BUFFER_H": B, "T_ALD": T, "TAN_ALD": TAN}
@@ -14,7 +14,7 @@ t0 = time.time(); g = {}
 exec(compile(src, "nb", "exec"), g)
 r = dict(buffer_nm=B * 1e3, ald_nm=T * 1e3, tan_ald=TAN, lat_pad=g["lat_pad"], air_h=g["air_h"], mesh_factor=g["MESH_FACTOR"],
          tri=int(g["mesh"].nelements), t_s=round(time.time() - t0, 1))
-if 6 in cells:
+if 5 in cells:
     r.update(n_m=float(g["n_m_c"]), Z0=float(g["Z0_c"]), Z0_volt=float(g["Z_VP_c"]), alpha_dBcm=float(g["alpha_db_cm_c"]),
              alpha_d_dBcm=float(g["DB_PER_NEPER"] * g["alpha_d"] / 100), n_m_pec=float(g["n_m_pec"]), Z0_pec=float(g["Z0_pec"]),
              score=float(g["fundamental"]["score"]), div=float(g["fundamental"]["div"]), R_mqs=float(g["R_mqs"]),
