@@ -21,3 +21,9 @@ columns are in `../fields_5mm`.
 * `e-field_3mm_port1_10-80GHz.zip`: `e-field (f=<f>) [1].txt`, f = 10, 20, 30, 45, 60, 80 GHz
 * `h-field_3mm_port1_10-80GHz.zip`: `h-field (f=<f>) [1].txt`, same frequencies
 Checked: 96761 rows each, x = 0.001, y -0.40..0.40 (161), z 0..3 (601).
+
+## Gap columns for the field-based EO crosstalk
+`e-field_f<f>_1_<A|B>.txt` (f = 10, 20, 30, 45, 60, 80 GHz): cut from the planes, same format as
+`../fields_5mm` (x = 0.001, y = 0.305..0.320 / -0.320..-0.305, z 0..3). Use with
+`TEST0_XTALK_SW__3p00mm.s4p`, length 3 mm, in the Crosstalk-from-s4p window. Other ports by
+symmetry (verified on the 5 mm line of the same family; not on this one).
