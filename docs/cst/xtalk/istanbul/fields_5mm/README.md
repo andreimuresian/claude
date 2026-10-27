@@ -10,3 +10,8 @@ CST "3D Export in Volume", Use Subvolume, ASCII, E field, monitor `e-field (f=<f
 y = +-0.305 and +-0.320 are inside the signal-ground gaps; y = +-0.310, +-0.315 are inside the
 signal metal (zero field). The f = 10, 20, 30, 45, 60, 80 GHz, port 1 files were cut from the
 full-plane exports (y -0.40..0.40) and have the same grid and format.
+
+Present: port 1 at 10-80 GHz in 5 GHz steps (15 frequencies); port 2 at 30 GHz, which matches
+port 1 reversed in z to 1e-4 (ratio 1.0000, 0.00 deg), so every port follows from port 1 by
+symmetry. Used by mzm_interconnect/xtalk_fields.py (GUI: Crosstalk from s4p, 'Field monitor
+folder').

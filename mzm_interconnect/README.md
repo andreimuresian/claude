@@ -261,6 +261,15 @@ Neither equivalent line is accurate or conservative at every frequency; with
 Ze = Zo the EO crosstalk is off by -7..+12 dB over 10-80 GHz (table in
 `docs/cst/xtalk/istanbul/fields_30GHz/plane/results.md`): an estimate only.
 
+**EO crosstalk from the field monitors (exact).** With *Field monitor folder* set to the gap
+exports of the same run (`docs/cst/xtalk/istanbul/fields_5mm` for the Istanbul 5 mm line), the
+window also evaluates the EO crosstalk directly on CST's gap voltages: no line model, only the
+EO formula, with the device's source and termination applied by exact superposition of the
+port fields (`xtalk_fields.py`). The ports' incident waves come from the .s4p; every port's
+field follows from the port-1 monitor by symmetry. Points at the monitor frequencies only (the
+crosstalk has deep nulls between 5 GHz steps), exact for the simulated structure; what the
+real ends (pads, driver, termination network) do to the line-against-line wave is not in it.
+
 The electrical NEXT and FEXT panel always shows the file itself. The setting
 *Equivalent line for EO / INTERCONNECT* chooses what the tables and the full
 cascade use. Tables above the file's top frequency hold the last values; the

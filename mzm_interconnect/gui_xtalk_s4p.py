@@ -75,6 +75,15 @@ class XtalkS4PWindow(XtalkWindow):
         ttk.Button(row, text="Browse", command=self._browse).pack(side="left")
         self._entry_row(box.body, app.vars["xs_L_mm"], P.BY_KEY["xs_L_mm"].display,
                         P.BY_KEY["xs_L_mm"].help)
+        lab = ttk.Label(box.body, text=P.BY_KEY["xs_field_dir"].label, style="Muted.TLabel",
+                        anchor="w")
+        lab.pack(fill="x", padx=4, pady=(4, 0))
+        Tooltip(lab, P.BY_KEY["xs_field_dir"].help, t)
+        row = ttk.Frame(box.body, style="Panel.TFrame")
+        row.pack(fill="x", pady=2)
+        ttk.Entry(row, textvariable=app.vars["xs_field_dir"]).pack(side="left", fill="x",
+                                                                   expand=True, padx=(4, 4))
+        ttk.Button(row, text="Browse", command=self._browse_fields).pack(side="left")
         for key in ("xs_port_order", "xs_variant"):
             row = ttk.Frame(box.body, style="Panel.TFrame")
             row.pack(fill="x", pady=2)
@@ -157,6 +166,11 @@ class XtalkS4PWindow(XtalkWindow):
         if path:
             self.app.vars["xs_s4p_path"].set(path)
 
+    def _browse_fields(self):
+        path = filedialog.askdirectory(parent=self, title="Field monitor folder (gap exports)")
+        if path:
+            self.app.vars["xs_field_dir"].set(path)
+
     def _out_dir(self, p) -> str:
         out = str(p["out_dir"]).strip() or os.path.join(os.getcwd(), "crosstalk_s4p")
         os.makedirs(out, exist_ok=True)
@@ -178,7 +192,15 @@ class XtalkS4PWindow(XtalkWindow):
         def work():
             from .xtalk_s4p import device_crosstalk_s4p, pair_from_params
             pair = pair_from_params(p)
-            return dict(p=p, d=device_crosstalk_s4p(p, pair))
+            res = dict(p=p, d=device_crosstalk_s4p(p, pair), fields=None, fields_note="")
+            fdir = str(p.get("xs_field_dir", "")).strip()
+            if fdir:
+                from .xtalk_fields import eo_crosstalk_fields, load_field_dir
+                try:
+                    res["fields"] = eo_crosstalk_fields(p, load_field_dir(fdir), pair)
+                except Exception as exc:                     # shown, not fatal
+                    res["fields_note"] = f"field data not used: {exc}"
+            return res
         self._run("Compute", work, self._show_result)
 
     def action_export(self):
@@ -264,6 +286,10 @@ class XtalkS4PWindow(XtalkWindow):
                lw=lw(False), label="exact terminals")
         a.plot(f, _db(eq["resp"]["H_B"] / eq["resp"]["H_A"]), "--", color=VIC_C, lw=lw(True),
                label="Ze = Zo (forward waves)")
+        fr = res.get("fields")
+        if fr is not None:
+            a.plot(fr["f_GHz"], _db(fr["X"]), "o", color=self.theme["fg"], ms=5, mfc="none",
+                   mew=1.4, label="CST fields (exact, monitor frequencies only)")
         a.set_title("EO crosstalk: victim / aggressor modulation")
         a.set_ylabel("dB")
 
@@ -300,5 +326,17 @@ class XtalkS4PWindow(XtalkWindow):
                         f"{_db(full['resp']['H_B'][q] / full['resp']['H_A'][q]):14.1f}")
         rows += ["", "NEXT/FEXT: the file (4-port at its reference).",
                  "EO: with the device's source and load."]
+        if fr is not None:
+            rows += ["", "EO crosstalk from CST's fields (exact for the simulated structure,",
+                     "this source/termination; points only, the curve between them is unknown):",
+                     f"{'GHz':>4s} {'fields dB':>10s} {'Ze=Zo dB':>9s} {'exact dB':>9s}"]
+            for fg, x in zip(fr["f_GHz"], fr["X"]):
+                q = int(np.argmin(np.abs(f - fg)))
+                ok = abs(f[q] - fg) < 0.5
+                rows.append(f"{fg:4.0f} {_db(x):10.1f} "
+                            + (f"{_db(eq['resp']['H_B'][q] / eq['resp']['H_A'][q]):9.1f} "
+                               f"{_db(full['resp']['H_B'][q] / full['resp']['H_A'][q]):9.1f}" if ok else ""))
+        elif res.get("fields_note"):
+            rows += ["", res["fields_note"]]
         self.num_txt.delete("1.0", "end")
         self.num_txt.insert("1.0", "\n".join(rows))

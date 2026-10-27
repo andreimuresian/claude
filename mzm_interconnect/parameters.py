@@ -541,6 +541,12 @@ PARAMS: list[ParamSpec] = [
               "Crosstalk", kind="choice",
               choices=("1 A near, 2 A far, 3 B near, 4 B far",
                        "1 A near, 2 B near, 3 A far, 4 B far"), affects="lumerical"),
+    ParamSpec("xs_field_dir", "Field monitor folder", "", "Crosstalk", kind="dirpath",
+              affects="lumerical",
+              help="Optional. Folder with the E-field gap exports of the SAME run as the "
+                   ".s4p (e-field_f<f>_<p>_<A|B>.txt). The EO crosstalk is then also "
+                   "computed exactly from CST's fields, at the monitor frequencies, with "
+                   "the device's source and termination (xtalk_fields.py)."),
     ParamSpec("xs_variant", "Equivalent line for EO / INTERCONNECT",
               "Ze = Zo (forward waves)", "Crosstalk", kind="choice",
               choices=("Ze = Zo (forward waves)", "exact terminals"), affects="lumerical",
