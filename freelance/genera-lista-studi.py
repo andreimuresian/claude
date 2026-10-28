@@ -14,45 +14,93 @@ H1      = Font(name=ARIAL, size=15, bold=True, color="141C22")
 H2      = Font(name=ARIAL, size=11, bold=True, color="FFFFFF")
 LBL     = Font(name=ARIAL, size=11, bold=True)
 NOTE    = Font(name=ARIAL, size=10, color="4A565E", italic=True)
+LINK    = Font(name=ARIAL, size=10, color="0563C1", underline="single")
 HEADFIL = PatternFill("solid", fgColor="0E6E5E")
 THIN    = Border(bottom=Side(style="thin", color="D3D0C7"))
 WRAP    = Alignment(wrap_text=True, vertical="top")
 
-DATA_RICERCA = "28/10/2026"
-NON_VERIF    = "Non verificato online"
-NO_RISCONTRO = "Ricerca web del " + DATA_RICERCA + ": nessun riscontro"
+PRIVATO = "Non pubblici (ditta individuale / professionista)"
 
-# nome, tipo (stima dal nome), indirizzo, comune, sito, cosa fa, dati economici, fonte, priorità
+# nome, tipo, indirizzo, comune, telefono, sito, cosa fa, dati economici, priorità, note di verifica
 STUDI = [
-    ("Barci Engineering S.p.A.", "Società di ingegneria (S.p.A.)", "Via Tolstoj 86", "San Giuliano Milanese",
-     "www.barciengineering.it",
-     "Un elenco MePA (anno 2024) la dà con sede legale a Montalto Uffugo (CS), P.IVA 02444790782. "
-     "Attività esatta e ruolo della sede di San Giuliano da verificare.",
-     "Non trovati. Per le S.p.A. il bilancio si può chiedere al Registro Imprese (Telemaco, copia bilancio 2,50 €).",
-     "Elenco MePA (parziale); nessun dato su fatturato e dipendenti", 1),
-    ("Studiora", "Studio (da verificare)", "Via Emilia 24", "San Giuliano Milanese",
-     "", NON_VERIF, "Non trovati", NO_RISCONTRO, 1),
-    ("Ing. Lamanna Simone", "Professionista singolo (probabile)", "Via Molise 9", "San Giuliano Milanese",
-     "", NON_VERIF, "Non pubblici (professionista)",
-     "Ricerca non eseguita. Verifica sull'Albo dell'Ordine degli Ingegneri di Milano", 2),
-    ("Studio Ingegneria Lomanno", "Studio (da verificare)", "Via Triulziana 38", "San Donato Milanese",
-     "", NON_VERIF, "Non trovati", NO_RISCONTRO, 2),
-    ("Monticone Ing. Marcello", "Professionista singolo (probabile)", "Via Adda 18", "San Donato Milanese",
-     "", NON_VERIF, "Non pubblici (professionista)", NO_RISCONTRO, 2),
-    ("Studio Parodi", "Studio (da verificare)", "Via Libertà (n. civico da trovare)", "San Donato Milanese",
-     "", NON_VERIF, "Non trovati",
-     NO_RISCONTRO + ". Numero civico non trovato: guardare su Google Maps o sulla scheda Pagine Gialle", 2),
-    ("DEAL Progetti", "Società (da verificare)", "Via Mameli 2", "Milano",
-     "", NON_VERIF, "Non trovati", NO_RISCONTRO, 3),
-    ("Andrea Carlo Rota", "Professionista singolo (probabile)", "Via Astolfo 7", "Milano",
-     "", NON_VERIF, "Non pubblici (professionista)", NO_RISCONTRO, 3),
+    ("Studio di ingegneria Monticone Ing. Marcello", "Professionista singolo",
+     "Via Adda 18", "San Donato Milanese", "02 36736620 (da elenchi; altri numeri discordanti)", "monticone.eu",
+     "Progettazione e direzione lavori di impianti elettrici ed elettronici (rilevazione incendi, cablaggio strutturato), "
+     "sicurezza sul lavoro e valutazione dei rischi.",
+     PRIVATO, 1,
+     "Il più vicino al tuo profilo (impianti elettrici/elettronici) e a casa tua. Verifica sul sito."),
+    ("Barci Engineering S.p.A.", "Società di ingegneria",
+     "Via Tolstoj 86", "San Giuliano Milanese", "", "barci.it",
+     "Progettazione di impianti elettrici e meccanici, condotte (pipeline), telecontrollo, infrastrutture civili, "
+     "collaudi e perizie, protezioni elettriche, efficienza energetica. Qualifiche con Eni ed Enel Rete Gas.",
+     "Fatturato 2025 circa 18,1 M€, utile circa 2,9 M€ (ReportAziende); altra fonte: 14,4 M€ nel 2024. "
+     "Dipendenti stimati 100–249 (altre fonti fino a 500). P.IVA 02444790782.", 2,
+     "Sede legale a Montalto Uffugo (CS); un elenco la dà con sede a San Giuliano. Grande e strutturata: più "
+     "difficile da avvicinare, ma strategica (settore energia). Contatto via LinkedIn o centralino."),
+    ("DEAL Progetti S.r.l.", "Società di ingegneria (microimpresa)",
+     "Via Mameli 2", "Milano", "02 783664 (da elenchi)", "",
+     "Progettazione edile, di impianti e urbana; coordinamento della sicurezza e direzione lavori (ATECO 71.12.10). "
+     "Pagine Bianche la associa all'Ing. Antonio De Marco.",
+     "Fatturato 2024 circa 213.302 € con utile di 4.078 €; 1 dipendente. Le fonti divergono (2021: 144.543 €). "
+     "Costituita il 30/05/2019. P.IVA 10835040964.", 2,
+     "Società piccola; chiedi consigli all'ingegnere titolare."),
+    ("Studiora - Studio Ingegneria", "Studio di ingegneria",
+     "Via Emilia 24", "San Donato Milanese (negli elenchi; tu avevi indicato San Giuliano)", "393 0000868 (da elenco)", "",
+     "Non chiaro: gli elenchi lo classificano solo come studio di ingegneria. Compare anche nell'elenco di Opera.",
+     "Non trovati", 2,
+     "Verifica l'indirizzo e la specialità con una telefonata."),
+    ("Studio di ingegneria Lommano (indicato come 'Lomanno')", "Ditta individuale",
+     "Via Triulziana 38", "San Donato Milanese", "02 7000 2422 (da elenchi)", "",
+     "Ingegneria civile: prevenzione incendi, ingegneria della sicurezza antincendio, audit HSE. Titolare: Massimo Lommano, "
+     "libero professionista (tecnico antincendio). Attivo dal 2000. Cerca personale per la prevenzione incendi (LinkedIn).",
+     PRIVATO, 3, "Specialità lontana da elettronica/RF, ma utile come conoscenza del territorio."),
+    ("Studio Tecnico Parodi (Ing. Furio Parodi)", "Professionista singolo",
+     "Via/Viale della Libertà 68 (le fonti divergono sul nome della via)", "San Donato Milanese", "339 6439555 (da elenchi)",
+     "studio-parodi.it",
+     "Progettazione e direzione lavori per ristrutturazioni (CILA, SCIA, permessi), pratiche per i bonus fiscali, "
+     "prevenzione incendi, catasto, certificazioni energetiche, perizie. Attivo dal 2010.",
+     PRIVATO, 3, "Specialità edilizia residenziale: meno rilevante per te."),
+    ("Studio Lamanna Simone", "Probabile geometra (le fonti discordano: 'Ing.' o 'Geometra')",
+     "Via Molise 9 (coworking), Sesto Ulteriano", "San Giuliano Milanese", "", "geomlamannasimone.it",
+     "Libero professionista: pratiche comunali, certificazioni energetiche, pratiche catastali. Sede legale in un "
+     "coworking di Via Molise 9.",
+     PRIVATO, 3, "Il sito è intestato a 'Geometra Lamanna Simone': verifica il titolo sull'albo prima di contattarlo come ingegnere."),
+    ("Andrea Carlo Rota", "Da verificare",
+     "Via Astolfo 7", "Milano", "", "",
+     "Non trovato: nessun riscontro per questo nome. 'Carlo Rota' (CRC Engineering, zona Como) e Studio Rota Srl "
+     "(Bergamo) sono persone/società diverse.",
+     "Non trovati", 3, "Controlla sull'Albo dell'Ordine degli Ingegneri di Milano o su Pagine Gialle."),
 ]
 
+FONTI = {
+    "Studio di ingegneria Monticone Ing. Marcello": [
+        "https://aziende.virgilio.it/ingegneria/san-donato-milanese-mi/studio-ingegneria-monticone-ing-marcello",
+        "https://www.misterimprese.it/lombardia/milano/san-donato-milanese/ingegneri-studi/2576926.html"],
+    "Barci Engineering S.p.A.": [
+        "https://barci.it/", "https://barci.it/qualifiche/",
+        "https://www.reportaziende.it/barci_engineering_spa_cs_02444790782",
+        "https://www.aziende.it/barci-engineering-societa-a-responsabilita"],
+    "DEAL Progetti S.r.l.": [
+        "https://atoka.io/public/it/azienda/deal-progetti-srl/0eb9c851cbc5",
+        "https://www.fatturatoitalia.it/deal-progetti-srl-10835040964",
+        "https://www.paginebianche.it/scheda/milano/de-marco-ing-antonio-deal-progetti.362945"],
+    "Studiora - Studio Ingegneria": [
+        "https://www.reteimprese.it/ingegneri/san-donato-milanese", "https://www.reteimprese.it/ingegneri/opera"],
+    "Studio di ingegneria Lommano": [
+        "https://trova-aperto.it/san-donato-milanese/studio-di-ingegneria-lommano-2187902",
+        "https://it.linkedin.com/company/studio-di-ingegneria-lommano",
+        "https://firmania.it/san-donato-milanese/studio-di-ingegneria-lommano-4110959"],
+    "Studio Tecnico Parodi": [
+        "https://www.studio-parodi.it/", "https://www.studio-parodi.it/certificazione-energetica-ape-milano/"],
+    "Studio Lamanna Simone": [
+        "http://www.geomlamannasimone.it/contatti", "https://www.facebook.com/inglamanna/"],
+    "Andrea Carlo Rota": [],
+}
+
 COLS = [  # titolo, larghezza
-    ("N", 5), ("Nome", 30), ("Tipo (stima dal nome)", 26), ("Indirizzo (come indicato)", 30),
-    ("Comune", 22), ("Telefono", 16), ("Sito / contatto", 26), ("Cosa fa", 46),
-    ("Dati economici", 38), ("Fonte / stato verifica", 38), ("Priorità suggerita (1-3)", 14),
-    ("Contattato il", 14), ("Esito", 18), ("Note, consigli ricevuti, nomi suggeriti", 50),
+    ("N", 5), ("Nome", 32), ("Tipo", 24), ("Indirizzo", 30), ("Comune", 24), ("Telefono (da elenchi)", 24),
+    ("Sito", 20), ("Cosa fa", 52), ("Dati economici", 44), ("Priorità suggerita (1-3)", 14),
+    ("Note di verifica", 40), ("Contattato il", 14), ("Esito", 18), ("Note, consigli ricevuti, nomi suggeriti", 50),
 ]
 
 ESITI = ["Da contattare", "Contattato", "Appuntamento fissato", "Incontrato", "Nessuna risposta", "Non interessato"]
@@ -66,10 +114,10 @@ ws.title = "Studi"
 ws["A1"] = "Studi di ingegneria in zona — lista di contatto"
 ws["A1"].font = H1
 ws["A2"] = ("Obiettivo: parlare con colleghi della zona per capire quali aziende hanno problemi tecnici o "
-            "documentali e se possono servire collaboratori esterni. Le colonne in blu vanno compilate "
-            "a mano. 'Tipo' è una stima dal solo nome: va confermata. Una ricerca web non ha confermato "
-            "l'esistenza degli studi tranne parzialmente per Barci Engineering. Il fatturato degli studi "
-            "individuali non è pubblico.")
+            "documentali e se servono collaboratori esterni. Le colonne in blu vanno compilate a mano. "
+            "Dati raccolti da elenchi pubblici (28/10/2026): possono essere vecchi o discordanti, quindi "
+            "vanno confermati con una telefonata. Priorità = affinità con il tuo profilo (elettrico/elettronico, "
+            "industria), non qualità dello studio. Il fatturato degli studi individuali non è pubblico.")
 ws["A2"].font = NOTE
 ws["A2"].alignment = WRAP
 ws.merge_cells("A2:N2")
@@ -83,17 +131,17 @@ for c, (t, w) in enumerate(COLS, start=1):
     ws.column_dimensions[get_column_letter(c)].width = w
 ws.row_dimensions[HR].height = 32
 
-for i, (nome, tipo, ind, comune, sito, cosa, eco, fonte, prio) in enumerate(STUDI, start=1):
+for i, (nome, tipo, ind, comune, tel, sito, cosa, eco, prio, note) in enumerate(STUDI, start=1):
     r = HR + i
-    vals = [i, nome, tipo, ind, comune, "", sito, cosa, eco, fonte, prio, "", "Da contattare", ""]
+    vals = [i, nome, tipo, ind, comune, tel, sito, cosa, eco, prio, note, None, "Da contattare", None]
     for c, v in enumerate(vals, start=1):
         cell = ws.cell(row=r, column=c, value=v if v != "" else None)
         cell.alignment = WRAP
         cell.border = THIN
-        cell.font = BLUE if c in (6, 7, 11, 12, 13, 14) else BLACK
+        cell.font = BLUE if c in (12, 13, 14) else BLACK
     ws.cell(row=r, column=1).font = GREY
     ws.cell(row=r, column=12).number_format = "dd/mm/yyyy"
-    ws.row_dimensions[r].height = 78
+    ws.row_dimensions[r].height = 92
 
 LAST = HR + 40   # spazio per aggiungere altri studi
 dv = DataValidation(type="list", formula1='"' + ",".join(ESITI) + '"', allow_blank=True)
@@ -111,6 +159,25 @@ ws.page_setup.fitToHeight = 0
 ws.sheet_properties.pageSetUpPr.fitToPage = True
 ws.freeze_panes = ws.cell(row=HR + 1, column=3)
 ws.auto_filter.ref = "A{}:{}{}".format(HR, get_column_letter(len(COLS)), LAST)
+
+# ============================================================ FONTI
+wf = wb.create_sheet("Fonti")
+wf.column_dimensions["A"].width = 48
+wf.column_dimensions["B"].width = 110
+wf["A1"] = "Fonti consultate (28/10/2026)"
+wf["A1"].font = H1
+r = 3
+for nome, urls in FONTI.items():
+    wf.cell(row=r, column=1, value=nome).font = LBL
+    if not urls:
+        wf.cell(row=r, column=2, value="Nessuna fonte pertinente trovata").font = GREY
+        r += 1
+    for u in urls:
+        c = wf.cell(row=r, column=2, value=u)
+        c.hyperlink = u
+        c.font = LINK
+        r += 1
+    r += 1
 
 # ============================================================ DOMANDE
 wd = wb.create_sheet("Domande")
