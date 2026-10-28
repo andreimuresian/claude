@@ -43,3 +43,11 @@ Fit residual on B's CPW pattern 25-40 %; launch term 15-80 % of the growth over 
 | fields | -93.1 | -90.6 | -82.6 | -86.0 | -77.0 | -76.3 | -74.4 | -70.3 | -72.8 | -69.6 | -69.5 | -70.5 |
 | s4p Ze = Zo | -96.9 | -88.2 | -85.4 | -76.2 | -75.9 | -70.9 | -67.8 | -67.3 | -64.9 | -66.8 | -64.5 | -63.6 |
 | s4p exact terminals | -77.2 | -73.7 | -66.4 | -73.5 | -52.4 | -65.9 | -65.7 | -58.0 | -68.2 | -48.8 | -59.2 | -55.6 |
+
+## CPW two-mode model vs the EO crosstalk (`twomode_eo.py`, log `twomode_eo.log`)
+Port-1 fields (50 ohm ports = 50 ohm source and load), interior 0.31-7.69 mm, push-pull (CPW pattern), n_g 2.27.
+The two-mode fit leaves 25-40 % of B's CPW pattern unexplained, yet gives the same EO crosstalk to 0.0 dB at
+every frequency. This is built in: the light (n_g 2.27) is nearly velocity-matched to the forward CPW wave
+(n 2.23-2.30), so the EO integral is the projection of B onto that wave, and a least-squares fit containing
+that wave reproduces the projection exactly. A single line therefore cannot validate the model through the EO
+crosstalk; it can through the growth slope (dbeta/2 per unit length), which must equal the eigenmode split.
