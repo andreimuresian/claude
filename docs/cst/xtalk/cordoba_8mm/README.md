@@ -32,3 +32,12 @@ Wave analysis and exact EO crosstalk: `waves/results.md`.
 | 2 | 30.4555 | 2.2786 | 46.1 / 1034 | slot, field toward the symmetry plane |
 | 3 | 31.0607 | 2.2342 | 26.5 / 12988 | CPW |
 TD at 31 GHz: 2.2395 (fields), 2.240 (s4p equivalent line). Eigenmode CPW within -0.005 (-0.25 %).
+
+Pair-odd (electric y-symmetry), same mesh and settings:
+| mode | f (GHz) | n odd | n even | n_e - n_o |
+|---|---|---|---|---|
+| 1 (slot, wall side) | 27.3534 | 2.5370 | 2.6411 | +0.104 |
+| 2 (slot) | 30.4519 | 2.2789 | 2.2786 | -0.000265 |
+| 3 (CPW) | 31.0610 | 2.234196 | 2.234219 | +0.0000233 |
+CPW split from the eigenmode cell 2.3e-5 against 0.5-1.4e-4 from the TD victim growth (30-35 GHz) and 1.4e-4 from
+the s4p equivalent line: the slope test of the two-CPW-mode model fails by a factor 2-6 with the electric side wall.
