@@ -18,3 +18,8 @@ Field monitors: E and H volume, 0-60 GHz every 5 GHz.
 | A/B asymmetry, end asymmetry | 3e-6, 3e-4 | 8e-5, 3e-4 | 2e-4, 1e-6 |
 
 Through delay 59.4 ps = 8 mm at n_g 2.227: port 2 is at z = 8 mm (the 2.5 in the history's port record is stale).
+
+## Field monitors
+`e-field_f<f>_1_<A|B>.txt` (f = 5-60 GHz, port 1; A = y 0.2925-0.3325, B = y -0.3325 to -0.2925, x = 0.001,
+z 0-8, step 0.005 mm): loadable in the GUI's "Crosstalk from s4p" window (field monitor folder = this folder).
+Wave analysis and exact EO crosstalk: `waves/results.md`.

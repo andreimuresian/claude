@@ -1,0 +1,144 @@
+
+===== 5 GHz   2pi-resolution |dn| ~ lambda0/L = 8.12
+ sector +1: rms slot/CPW = 2.939e-03   SV: 1.0e+00 4.0e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02 1.0e-02
+   M=1 resid 6.8e-02: n +2.3000 a -0.72 dB/cm cpw 9.1e-01 slot 2.5e-03
+   M=2 resid 6.7e-02: n +2.2982 a -0.66 dB/cm cpw 9.2e-01 slot 2.5e-03; n -0.5852 a 384.70 dB/cm cpw 7.7e-02 slot 8.1e-04
+   M=3 resid 4.1e-02: n +2.2999 a -0.72 dB/cm cpw 9.1e-01 slot 2.5e-03; n -59.2576 a  0.29 dB/cm cpw 3.7e-02 slot 1.6e-04; n +63.8208 a -0.90 dB/cm cpw 3.5e-02 slot 1.5e-04
+   M=4 resid 4.0e-02: n +2.2997 a -0.73 dB/cm cpw 9.1e-01 slot 2.5e-03; n -59.2905 a -0.29 dB/cm cpw 3.6e-02 slot 1.5e-04; n +63.8382 a -1.39 dB/cm cpw 3.5e-02 slot 1.5e-04; n +162.8236 a 180.45 dB/cm cpw 2.8e-02 slot 2.3e-04
+ sector -1: rms slot/CPW = 2.706e-03   SV: 1.0e+00 4.0e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02 1.0e-02
+   M=1 resid 6.8e-02: n +2.3000 a -0.72 dB/cm cpw 9.1e-01 slot 2.3e-03
+   M=2 resid 6.7e-02: n +2.2982 a -0.66 dB/cm cpw 9.2e-01 slot 2.3e-03; n -0.5719 a 384.67 dB/cm cpw 7.8e-02 slot 6.4e-04
+   M=3 resid 4.1e-02: n +2.3000 a -0.72 dB/cm cpw 9.1e-01 slot 2.3e-03; n -59.2545 a  0.32 dB/cm cpw 3.7e-02 slot 1.5e-04; n +63.8229 a -0.88 dB/cm cpw 3.5e-02 slot 1.5e-04
+   M=4 resid 4.0e-02: n +2.2998 a -0.73 dB/cm cpw 9.1e-01 slot 2.3e-03; n -59.2875 a -0.27 dB/cm cpw 3.6e-02 slot 1.5e-04; n +63.8399 a -1.37 dB/cm cpw 3.5e-02 slot 1.5e-04; n +162.6361 a 180.32 dB/cm cpw 2.8e-02 slot 3.3e-04
+
+===== 10 GHz   2pi-resolution |dn| ~ lambda0/L = 4.06
+ sector +1: rms slot/CPW = 5.466e-03   SV: 1.0e+00 4.0e-02 3.7e-02 3.2e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.7e-02: n +2.3152 a  1.57 dB/cm cpw 1.0e+00 slot 1.4e-03
+   M=2 resid 7.4e-02: n +2.3191 a  1.60 dB/cm cpw 1.0e+00 slot 1.8e-03; n +1.2487 a 367.45 dB/cm cpw 1.2e-01 slot 8.1e-03
+   M=3 resid 5.8e-02: n +2.3169 a  1.58 dB/cm cpw 1.0e+00 slot 1.4e-03; n +32.2312 a 11.44 dB/cm cpw 4.9e-02 slot 2.5e-04; n -28.3747 a  4.14 dB/cm cpw 4.2e-02 slot 2.1e-04
+   M=4 resid 3.8e-02: n +2.2624 a  0.96 dB/cm cpw 9.7e-01 slot 1.9e-03; n -2.1890 a  1.74 dB/cm cpw 4.4e-02 slot 5.2e-03; n -28.4852 a  2.57 dB/cm cpw 4.1e-02 slot 9.9e-05; n +33.1097 a  2.73 dB/cm cpw 4.1e-02 slot 1.0e-04
+ sector -1: rms slot/CPW = 5.073e-03   SV: 1.0e+00 4.0e-02 3.7e-02 3.1e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.7e-02: n +2.3152 a  1.57 dB/cm cpw 1.0e+00 slot 1.4e-03
+   M=2 resid 7.4e-02: n +2.3189 a  1.60 dB/cm cpw 1.0e+00 slot 1.7e-03; n +1.1419 a 368.89 dB/cm cpw 1.1e-01 slot 6.7e-03
+   M=3 resid 5.7e-02: n +2.3169 a  1.58 dB/cm cpw 1.0e+00 slot 1.4e-03; n +32.2892 a 10.80 dB/cm cpw 4.8e-02 slot 2.1e-04; n -28.3854 a  4.00 dB/cm cpw 4.2e-02 slot 1.8e-04
+   M=4 resid 3.8e-02: n +2.2625 a  0.97 dB/cm cpw 9.7e-01 slot 1.8e-03; n -2.1880 a  1.48 dB/cm cpw 4.3e-02 slot 4.8e-03; n -28.4852 a  2.58 dB/cm cpw 4.1e-02 slot 1.0e-04; n +33.1091 a  2.76 dB/cm cpw 4.1e-02 slot 1.0e-04
+
+===== 15 GHz   2pi-resolution |dn| ~ lambda0/L = 2.71
+ sector +1: rms slot/CPW = 7.997e-03   SV: 1.0e+00 4.4e-02 4.0e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.0e-02: n +2.2478 a  1.40 dB/cm cpw 9.9e-01 slot 5.2e-03
+   M=2 resid 7.4e-02: n +2.2620 a  1.26 dB/cm cpw 9.9e-01 slot 4.4e-03; n -0.7150 a 24.59 dB/cm cpw 5.1e-02 slot 7.0e-03
+   M=3 resid 7.0e-02: n +2.2572 a  1.51 dB/cm cpw 1.0e+00 slot 4.0e-03; n -4.1283 a 276.10 dB/cm cpw 1.3e-01 slot 1.5e-02; n -2.4499 a 46.98 dB/cm cpw 1.1e-01 slot 1.6e-02
+   M=4 resid 3.7e-02: n +2.2529 a  1.28 dB/cm cpw 1.0e+00 slot 4.2e-03; n -2.2963 a -1.31 dB/cm cpw 3.9e-02 slot 5.7e-03; n +22.7595 a  2.55 dB/cm cpw 4.0e-02 slot 2.5e-04; n -18.2849 a  2.32 dB/cm cpw 4.0e-02 slot 2.6e-04
+ sector -1: rms slot/CPW = 7.428e-03   SV: 1.0e+00 4.3e-02 4.0e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.9e-02: n +2.2478 a  1.40 dB/cm cpw 9.9e-01 slot 4.9e-03
+   M=2 resid 7.5e-02: n +2.2642 a  1.28 dB/cm cpw 9.9e-01 slot 4.2e-03; n -0.4102 a 29.78 dB/cm cpw 5.1e-02 slot 5.2e-03
+   M=3 resid 7.1e-02: n +2.2574 a  1.53 dB/cm cpw 1.0e+00 slot 3.9e-03; n -4.2185 a 262.27 dB/cm cpw 1.4e-01 slot 1.5e-02; n -2.4480 a 56.23 dB/cm cpw 1.2e-01 slot 1.6e-02
+   M=4 resid 3.7e-02: n +2.2529 a  1.28 dB/cm cpw 1.0e+00 slot 3.9e-03; n -2.2905 a -1.56 dB/cm cpw 3.8e-02 slot 5.3e-03; n +22.7602 a  2.52 dB/cm cpw 4.0e-02 slot 2.4e-04; n -18.2845 a  2.32 dB/cm cpw 4.0e-02 slot 2.6e-04
+
+===== 20 GHz   2pi-resolution |dn| ~ lambda0/L = 2.03
+ sector +1: rms slot/CPW = 9.620e-03   SV: 1.0e+00 4.6e-02 4.0e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.0e-02: n +2.2458 a  1.47 dB/cm cpw 1.0e+00 slot 3.2e-03
+   M=2 resid 7.3e-02: n +2.2478 a  1.56 dB/cm cpw 1.0e+00 slot 3.1e-03; n -3.1341 a 14.47 dB/cm cpw 5.1e-02 slot 8.9e-03
+   M=3 resid 6.8e-02: n +2.2477 a  1.55 dB/cm cpw 1.0e+00 slot 4.4e-03; n +5.4031 a 336.29 dB/cm cpw 8.2e-02 slot 2.1e-02; n -2.7342 a 19.16 dB/cm cpw 7.0e-02 slot 1.4e-02
+   M=4 resid 3.7e-02: n +2.2469 a  1.53 dB/cm cpw 1.0e+00 slot 3.1e-03; n -2.2762 a -0.25 dB/cm cpw 4.2e-02 slot 8.1e-03; n -13.1688 a  2.64 dB/cm cpw 4.1e-02 slot 2.9e-04; n +17.6359 a  2.39 dB/cm cpw 4.0e-02 slot 2.1e-04
+ sector -1: rms slot/CPW = 8.967e-03   SV: 1.0e+00 4.6e-02 3.9e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.0e-02: n +2.2458 a  1.48 dB/cm cpw 1.0e+00 slot 3.3e-03
+   M=2 resid 7.4e-02: n +2.2477 a  1.57 dB/cm cpw 1.0e+00 slot 3.0e-03; n -3.2814 a 17.18 dB/cm cpw 4.9e-02 slot 7.6e-03
+   M=3 resid 6.9e-02: n +2.2477 a  1.56 dB/cm cpw 1.0e+00 slot 4.2e-03; n +5.9845 a 326.27 dB/cm cpw 8.2e-02 slot 2.0e-02; n -2.8366 a 21.50 dB/cm cpw 7.0e-02 slot 1.3e-02
+   M=4 resid 3.7e-02: n +2.2468 a  1.54 dB/cm cpw 1.0e+00 slot 3.1e-03; n -2.2710 a -0.53 dB/cm cpw 4.1e-02 slot 7.4e-03; n -13.1670 a  2.68 dB/cm cpw 4.1e-02 slot 3.1e-04; n +17.6372 a  2.44 dB/cm cpw 4.0e-02 slot 2.2e-04
+
+===== 25 GHz   2pi-resolution |dn| ~ lambda0/L = 1.62
+ sector +1: rms slot/CPW = 1.164e-02   SV: 1.0e+00 4.3e-02 3.9e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.8e-02: n +2.2499 a  1.71 dB/cm cpw 1.0e+00 slot 6.5e-03
+   M=2 resid 7.4e-02: n +2.2420 a  1.65 dB/cm cpw 1.0e+00 slot 7.0e-03; n -2.8639 a 52.65 dB/cm cpw 6.7e-02 slot 1.8e-02
+   M=3 resid 6.9e-02: n +2.2417 a  1.81 dB/cm cpw 1.0e+00 slot 6.9e-03; n +7.6705 a 310.69 dB/cm cpw 8.7e-02 slot 1.1e-02; n -2.7588 a 10.27 dB/cm cpw 4.7e-02 slot 1.2e-02
+   M=4 resid 3.7e-02: n +2.2419 a  1.74 dB/cm cpw 1.0e+00 slot 5.8e-03; n -2.2237 a -1.24 dB/cm cpw 3.8e-02 slot 8.8e-03; n -10.0887 a  2.69 dB/cm cpw 4.1e-02 slot 3.5e-04; n +14.5739 a  2.61 dB/cm cpw 4.0e-02 slot 3.3e-04
+ sector -1: rms slot/CPW = 1.112e-02   SV: 1.0e+00 4.3e-02 3.8e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.8e-02: n +2.2498 a  1.71 dB/cm cpw 1.0e+00 slot 6.4e-03
+   M=2 resid 7.5e-02: n +2.2427 a  1.65 dB/cm cpw 1.0e+00 slot 7.0e-03; n -2.9928 a 75.26 dB/cm cpw 6.8e-02 slot 1.6e-02
+   M=3 resid 7.2e-02: n +2.2420 a  1.79 dB/cm cpw 1.0e+00 slot 7.2e-03; n +9.5150 a 250.37 dB/cm cpw 8.3e-02 slot 1.1e-02; n -3.0891 a 14.80 dB/cm cpw 3.8e-02 slot 1.1e-02
+   M=4 resid 3.7e-02: n +2.2419 a  1.74 dB/cm cpw 1.0e+00 slot 5.7e-03; n -2.2109 a -1.52 dB/cm cpw 3.7e-02 slot 8.0e-03; n -10.0885 a  2.70 dB/cm cpw 4.1e-02 slot 3.5e-04; n +14.5744 a  2.64 dB/cm cpw 4.0e-02 slot 3.3e-04
+
+===== 30 GHz   2pi-resolution |dn| ~ lambda0/L = 1.35
+ sector +1: rms slot/CPW = 1.322e-02   SV: 1.0e+00 4.5e-02 3.8e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.0e-02: n +2.2368 a  2.19 dB/cm cpw 1.0e+00 slot 6.8e-03
+   M=2 resid 7.4e-02: n +2.2432 a  1.90 dB/cm cpw 1.0e+00 slot 6.2e-03; n -1.9804 a 56.67 dB/cm cpw 8.7e-02 slot 1.9e-02
+   M=3 resid 6.5e-02: n +2.2399 a  1.96 dB/cm cpw 1.0e+00 slot 6.3e-03; n -1.6347 a 349.05 dB/cm cpw 7.0e-02 slot 8.3e-03; n -2.2441 a -0.32 dB/cm cpw 4.0e-02 slot 1.1e-02
+   M=4 resid 3.7e-02: n +2.2394 a  1.92 dB/cm cpw 1.0e+00 slot 6.0e-03; n -2.2462 a -0.28 dB/cm cpw 4.0e-02 slot 1.0e-02; n +12.5156 a  3.44 dB/cm cpw 4.2e-02 slot 3.6e-04; n -8.0368 a  3.03 dB/cm cpw 4.1e-02 slot 5.6e-04
+ sector -1: rms slot/CPW = 1.314e-02   SV: 1.0e+00 4.4e-02 3.8e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.9e-02: n +2.2369 a  2.20 dB/cm cpw 1.0e+00 slot 7.4e-03
+   M=2 resid 7.4e-02: n +2.2435 a  1.93 dB/cm cpw 1.0e+00 slot 6.8e-03; n -1.9472 a 70.54 dB/cm cpw 8.9e-02 slot 1.6e-02
+   M=3 resid 6.5e-02: n +2.2397 a  1.97 dB/cm cpw 1.0e+00 slot 7.0e-03; n -1.2844 a 358.13 dB/cm cpw 7.1e-02 slot 8.8e-03; n -2.2353 a -0.73 dB/cm cpw 3.9e-02 slot 9.8e-03
+   M=4 resid 3.7e-02: n +2.2393 a  1.92 dB/cm cpw 1.0e+00 slot 6.7e-03; n -2.2347 a -0.42 dB/cm cpw 4.0e-02 slot 9.7e-03; n +12.5170 a  3.41 dB/cm cpw 4.2e-02 slot 4.2e-04; n -8.0357 a  3.08 dB/cm cpw 4.1e-02 slot 6.1e-04
+
+===== 35 GHz   2pi-resolution |dn| ~ lambda0/L = 1.16
+ sector +1: rms slot/CPW = 1.427e-02   SV: 1.0e+00 4.4e-02 4.0e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.9e-02: n +2.2357 a  2.10 dB/cm cpw 1.0e+00 slot 6.5e-03
+   M=2 resid 6.8e-02: n +2.2360 a  2.11 dB/cm cpw 1.0e+00 slot 6.3e-03; n -2.1114 a  5.22 dB/cm cpw 4.6e-02 slot 1.3e-02
+   M=3 resid 7.0e-02: n +2.2365 a  2.19 dB/cm cpw 1.0e+00 slot 7.4e-03; n -1.4085 a 258.75 dB/cm cpw 1.2e-01 slot 2.5e-02; n -2.5349 a 30.21 dB/cm cpw 7.9e-02 slot 2.4e-02
+   M=4 resid 3.8e-02: n +2.2359 a  2.12 dB/cm cpw 1.0e+00 slot 6.2e-03; n -2.2119 a -3.25 dB/cm cpw 3.5e-02 slot 9.8e-03; n -6.5536 a  3.48 dB/cm cpw 4.3e-02 slot 4.2e-04; n +11.0396 a  3.17 dB/cm cpw 4.1e-02 slot 4.1e-04
+ sector -1: rms slot/CPW = 1.510e-02   SV: 1.0e+00 4.4e-02 4.0e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 7.9e-02: n +2.2356 a  2.12 dB/cm cpw 1.0e+00 slot 7.2e-03
+   M=2 resid 6.8e-02: n +2.2359 a  2.13 dB/cm cpw 1.0e+00 slot 7.1e-03; n -2.0423 a  6.78 dB/cm cpw 4.7e-02 slot 1.2e-02
+   M=3 resid 7.1e-02: n +2.2364 a  2.22 dB/cm cpw 1.0e+00 slot 8.2e-03; n -1.3536 a 255.80 dB/cm cpw 1.2e-01 slot 2.5e-02; n -2.5521 a 32.43 dB/cm cpw 8.0e-02 slot 2.3e-02
+   M=4 resid 3.8e-02: n +2.2359 a  2.14 dB/cm cpw 1.0e+00 slot 6.9e-03; n -2.1962 a -3.46 dB/cm cpw 3.4e-02 slot 9.7e-03; n -6.5529 a  3.53 dB/cm cpw 4.3e-02 slot 4.5e-04; n +11.0409 a  3.29 dB/cm cpw 4.1e-02 slot 4.4e-04
+
+===== 40 GHz   2pi-resolution |dn| ~ lambda0/L = 1.02
+ sector +1: rms slot/CPW = 1.576e-02   SV: 1.0e+00 4.5e-02 3.9e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.0e-02: n +2.2355 a  2.20 dB/cm cpw 1.0e+00 slot 1.0e-02
+   M=2 resid 7.4e-02: n +2.2340 a  2.28 dB/cm cpw 1.0e+00 slot 9.7e-03; n -2.7222 a 15.00 dB/cm cpw 4.4e-02 slot 1.5e-02
+   M=3 resid 7.0e-02: n +2.2342 a  2.34 dB/cm cpw 1.0e+00 slot 9.2e-03; n +5.7977 a 291.82 dB/cm cpw 8.1e-02 slot 8.0e-03; n -2.6233 a  7.62 dB/cm cpw 4.2e-02 slot 1.4e-02
+   M=4 resid 3.7e-02: n +2.2343 a  2.26 dB/cm cpw 1.0e+00 slot 9.1e-03; n -2.2854 a -2.91 dB/cm cpw 3.6e-02 slot 1.0e-02; n -5.4601 a  3.66 dB/cm cpw 4.3e-02 slot 7.8e-04; n +9.9362 a  3.23 dB/cm cpw 4.2e-02 slot 4.1e-04
+ sector -1: rms slot/CPW = 1.798e-02   SV: 1.0e+00 4.6e-02 3.9e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.0e-02: n +2.2354 a  2.21 dB/cm cpw 1.0e+00 slot 1.2e-02
+   M=2 resid 7.4e-02: n +2.2340 a  2.29 dB/cm cpw 1.0e+00 slot 1.1e-02; n -2.6820 a 12.90 dB/cm cpw 4.4e-02 slot 1.5e-02
+   M=3 resid 7.0e-02: n +2.2343 a  2.35 dB/cm cpw 1.0e+00 slot 1.1e-02; n +5.1940 a 313.92 dB/cm cpw 8.0e-02 slot 7.7e-03; n -2.5765 a  7.46 dB/cm cpw 4.3e-02 slot 1.5e-02
+   M=4 resid 3.7e-02: n +2.2342 a  2.27 dB/cm cpw 1.0e+00 slot 1.1e-02; n -2.2742 a -3.20 dB/cm cpw 3.5e-02 slot 1.1e-02; n -5.4590 a  3.76 dB/cm cpw 4.3e-02 slot 9.3e-04; n +9.9365 a  3.31 dB/cm cpw 4.2e-02 slot 4.9e-04
+
+===== 45 GHz   2pi-resolution |dn| ~ lambda0/L = 0.90
+ sector +1: rms slot/CPW = 1.639e-02   SV: 1.0e+00 4.9e-02 3.9e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.2e-02: n +2.2329 a  2.69 dB/cm cpw 1.0e+00 slot 6.2e-03
+   M=2 resid 7.2e-02: n +2.2333 a  2.39 dB/cm cpw 1.0e+00 slot 6.3e-03; n -2.5287 a 12.77 dB/cm cpw 5.4e-02 slot 1.8e-02
+   M=3 resid 7.1e-02: n +2.2322 a  2.40 dB/cm cpw 1.0e+00 slot 6.4e-03; n +7.6212 a 164.65 dB/cm cpw 6.7e-02 slot 1.2e-02; n -2.5716 a -1.14 dB/cm cpw 3.2e-02 slot 1.1e-02
+   M=4 resid 3.8e-02: n +2.2324 a  2.43 dB/cm cpw 1.0e+00 slot 6.4e-03; n -2.2492 a -0.31 dB/cm cpw 4.2e-02 slot 1.3e-02; n -4.6134 a  4.21 dB/cm cpw 4.4e-02 slot 4.3e-04; n +9.0755 a  3.72 dB/cm cpw 4.2e-02 slot 4.3e-04
+ sector -1: rms slot/CPW = 2.036e-02   SV: 1.0e+00 5.0e-02 3.9e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.3e-02: n +2.2328 a  2.70 dB/cm cpw 1.0e+00 slot 8.5e-03
+   M=2 resid 7.1e-02: n +2.2330 a  2.40 dB/cm cpw 1.0e+00 slot 8.6e-03; n -2.4763 a  8.74 dB/cm cpw 5.2e-02 slot 2.0e-02
+   M=3 resid 6.9e-02: n +2.2318 a  2.42 dB/cm cpw 1.0e+00 slot 8.9e-03; n +6.9791 a 221.29 dB/cm cpw 7.2e-02 slot 1.8e-02; n -2.4894 a -1.27 dB/cm cpw 3.6e-02 slot 1.4e-02
+   M=4 resid 3.9e-02: n +2.2322 a  2.44 dB/cm cpw 1.0e+00 slot 8.6e-03; n -2.2439 a -0.26 dB/cm cpw 4.3e-02 slot 1.5e-02; n -4.6121 a  4.26 dB/cm cpw 4.4e-02 slot 4.4e-04; n +9.0755 a  3.82 dB/cm cpw 4.2e-02 slot 5.4e-04
+
+===== 50 GHz   2pi-resolution |dn| ~ lambda0/L = 0.81
+ sector +1: rms slot/CPW = 1.798e-02   SV: 1.0e+00 4.6e-02 4.0e-02 3.8e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.1e-02: n +2.2302 a  2.58 dB/cm cpw 1.0e+00 slot 1.1e-02
+   M=2 resid 7.3e-02: n +2.2324 a  2.61 dB/cm cpw 1.0e+00 slot 1.1e-02; n -2.0689 a 29.94 dB/cm cpw 7.2e-02 slot 1.9e-02
+   M=3 resid 6.5e-02: n +2.2321 a  2.62 dB/cm cpw 1.0e+00 slot 1.1e-02; n -2.6051 a 160.18 dB/cm cpw 7.6e-02 slot 1.6e-02; n -2.2269 a  0.65 dB/cm cpw 4.1e-02 slot 1.3e-02
+   M=4 resid 3.8e-02: n +2.2316 a  2.60 dB/cm cpw 1.0e+00 slot 1.1e-02; n -2.2264 a -2.70 dB/cm cpw 3.6e-02 slot 1.1e-02; n -3.9304 a  3.55 dB/cm cpw 4.4e-02 slot 1.4e-03; n +8.3917 a  3.80 dB/cm cpw 4.2e-02 slot 6.4e-04
+ sector -1: rms slot/CPW = 2.408e-02   SV: 1.0e+00 4.8e-02 4.0e-02 3.8e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.3e-02: n +2.2299 a  2.60 dB/cm cpw 1.0e+00 slot 1.5e-02
+   M=2 resid 7.0e-02: n +2.2320 a  2.62 dB/cm cpw 1.0e+00 slot 1.4e-02; n -2.1237 a 13.18 dB/cm cpw 6.2e-02 slot 2.2e-02
+   M=3 resid 6.5e-02: n +2.2319 a  2.64 dB/cm cpw 1.0e+00 slot 1.5e-02; n -2.5630 a 168.08 dB/cm cpw 7.6e-02 slot 1.9e-02; n -2.2252 a -0.47 dB/cm cpw 4.0e-02 slot 1.7e-02
+   M=4 resid 3.8e-02: n +2.2314 a  2.62 dB/cm cpw 1.0e+00 slot 1.4e-02; n -2.2271 a -2.24 dB/cm cpw 3.8e-02 slot 1.6e-02; n -3.9299 a  3.67 dB/cm cpw 4.4e-02 slot 1.6e-03; n +8.3917 a  3.93 dB/cm cpw 4.2e-02 slot 7.6e-04
+
+===== 55 GHz   2pi-resolution |dn| ~ lambda0/L = 0.74
+ sector +1: rms slot/CPW = 1.895e-02   SV: 1.0e+00 4.6e-02 3.9e-02 3.6e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.1e-02: n +2.2307 a  2.70 dB/cm cpw 1.0e+00 slot 9.3e-03
+   M=2 resid 7.6e-02: n +2.2308 a  2.72 dB/cm cpw 1.0e+00 slot 8.8e-03; n -2.6964 a 15.52 dB/cm cpw 4.0e-02 slot 1.5e-02
+   M=3 resid 7.5e-02: n +2.2305 a  2.75 dB/cm cpw 1.0e+00 slot 8.7e-03; n +6.6768 a 122.95 dB/cm cpw 6.2e-02 slot 8.0e-03; n -2.6850 a  8.12 dB/cm cpw 2.9e-02 slot 1.3e-02
+   M=4 resid 3.9e-02: n +2.2307 a  2.71 dB/cm cpw 1.0e+00 slot 9.1e-03; n -3.3625 a  4.44 dB/cm cpw 4.6e-02 slot 6.7e-04; n -2.2565 a -3.25 dB/cm cpw 3.3e-02 slot 1.2e-02; n +7.8305 a  4.00 dB/cm cpw 4.2e-02 slot 4.9e-04
+ sector -1: rms slot/CPW = 2.710e-02   SV: 1.0e+00 4.9e-02 3.9e-02 3.7e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.3e-02: n +2.2305 a  2.71 dB/cm cpw 1.0e+00 slot 1.3e-02
+   M=2 resid 7.5e-02: n +2.2306 a  2.73 dB/cm cpw 1.0e+00 slot 1.2e-02; n -2.5547 a  8.39 dB/cm cpw 4.1e-02 slot 2.2e-02
+   M=3 resid 7.2e-02: n +2.2303 a  2.77 dB/cm cpw 1.0e+00 slot 1.3e-02; n +5.2857 a 244.82 dB/cm cpw 7.1e-02 slot 2.4e-02; n -2.5250 a  6.81 dB/cm cpw 4.1e-02 slot 2.3e-02
+   M=4 resid 3.9e-02: n +2.2306 a  2.72 dB/cm cpw 1.0e+00 slot 1.3e-02; n -2.2583 a -2.64 dB/cm cpw 3.5e-02 slot 1.8e-02; n -3.3603 a  4.46 dB/cm cpw 4.6e-02 slot 7.8e-04; n +7.8297 a  4.09 dB/cm cpw 4.3e-02 slot 7.4e-04
+
+===== 60 GHz   2pi-resolution |dn| ~ lambda0/L = 0.68
+ sector +1: rms slot/CPW = 2.043e-02   SV: 1.0e+00 4.9e-02 3.8e-02 2.8e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.1e-02: n +2.2302 a  2.96 dB/cm cpw 1.1e+00 slot 9.0e-03
+   M=2 resid 7.4e-02: n +2.2300 a  2.86 dB/cm cpw 1.1e+00 slot 9.1e-03; n -2.5504 a -1.28 dB/cm cpw 2.8e-02 slot 1.3e-02
+   M=3 resid 6.1e-02: n +2.2297 a  2.88 dB/cm cpw 1.1e+00 slot 9.0e-03; n +7.3440 a  5.31 dB/cm cpw 4.3e-02 slot 7.8e-04; n -2.6160 a -9.73 dB/cm cpw 2.1e-02 slot 7.5e-03
+   M=4 resid 4.0e-02: n +2.2296 a  2.89 dB/cm cpw 1.1e+00 slot 9.0e-03; n -2.9043 a 10.92 dB/cm cpw 6.6e-02 slot 6.9e-04; n -2.3568 a  0.76 dB/cm cpw 4.0e-02 slot 1.6e-02; n +7.3620 a  4.54 dB/cm cpw 4.4e-02 slot 6.9e-04
+ sector -1: rms slot/CPW = 3.048e-02   SV: 1.0e+00 5.2e-02 3.8e-02 2.9e-02 1.9e-02 1.9e-02 1.1e-02
+   M=1 resid 8.4e-02: n +2.2300 a  2.96 dB/cm cpw 1.1e+00 slot 1.4e-02
+   M=2 resid 7.4e-02: n +2.2296 a  2.87 dB/cm cpw 1.1e+00 slot 1.4e-02; n -2.5128 a -4.21 dB/cm cpw 2.6e-02 slot 1.8e-02
+   M=3 resid 6.4e-02: n +2.2294 a  2.88 dB/cm cpw 1.1e+00 slot 1.4e-02; n +7.3339 a  5.93 dB/cm cpw 4.4e-02 slot 1.2e-03; n -2.5479 a -8.59 dB/cm cpw 2.2e-02 slot 1.3e-02
+   M=4 resid 4.1e-02: n +2.2293 a  2.89 dB/cm cpw 1.1e+00 slot 1.4e-02; n -2.3437 a  1.09 dB/cm cpw 4.2e-02 slot 2.5e-02; n -2.8947 a  9.87 dB/cm cpw 6.4e-02 slot 2.1e-03; n +7.3615 a  4.63 dB/cm cpw 4.4e-02 slot 9.2e-04
