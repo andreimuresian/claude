@@ -25,20 +25,13 @@ stat(s, 6.6, 3.5, 2.9, 1.3, "−1 to −2.5 %", "Vπ·L, cap height 1.4 → 0.5 
 stat(s, 9.8, 3.5, 2.9, 1.3, "< 0.4 %", "IL change with cap height", ORANGE)
 text(s, 6.6, 5.1, 6.1, 1.3, [("Cap width sets both Vπ·L and IL; cap height only lowers Vπ·L, at no loss cost.", {"size": 14, "bold": True, "color": NAVY})])
 
-s = new("Cap sweep: Vπ·L and IL maps", "Each cell is one simulation; rib 1.0 µm (top) and 1.4 µm (bottom)")
-image(s, H + "cap_sweep_maps.png", 2.6, 1.6, h=5.75)
+s = new("Cap sweep: Vπ·L and IL maps", "One colour scale per quantity: rib 1.0 µm (top) and 1.4 µm (bottom) directly comparable")
+image(s, H + "cap_sweep_maps_shared_scale.png", 2.6, 1.6, h=5.75)
 
-s = new("Cap width: trading loss for Vπ·L", "Cuts at the tallest (1.4 µm) and lowest (0.5 µm) cap")
-xy_chart(s, 0.6, 1.75, 6.0, 4.0, [("rib 1.0, cap h 1.4", ser("1.0", "1.4", "VpiL_Vcm"), BLUE, 6, 2.0, False),
-    ("rib 1.0, cap h 0.5", ser("1.0", "0.5", "VpiL_Vcm"), LBLUE, 6, 2.0, True),
-    ("rib 1.4, cap h 1.4", ser("1.4", "1.4", "VpiL_Vcm"), ORANGE, 6, 2.0, False),
-    ("rib 1.4, cap h 0.5", ser("1.4", "0.5", "VpiL_Vcm"), LORANGE, 6, 2.0, True)],
-    (2.0, 2.9), (2.0, 2.3), "Cap width (µm)", "Vπ·L (V·cm)", legend=True, xmaj=0.1, ymaj=0.05, lsize=9)
-xy_chart(s, 6.8, 1.75, 6.0, 4.0, [("rib 1.0, cap h 1.4", ser("1.0", "1.4", "IL_dB_per_cm"), BLUE, 6, 2.0, False),
-    ("rib 1.4, cap h 1.4", ser("1.4", "1.4", "IL_dB_per_cm"), ORANGE, 6, 2.0, False)],
-    (2.0, 2.9), (0.025, 0.035), "Cap width (µm)", "Insertion loss (dB/cm)", legend=True, xmaj=0.1, ymaj=0.002, lsize=9)
+s = new("Cap width: trading loss for Vπ·L", "Both rib widths on one scale; colour = cap height, solid = rib 1.0 µm, dashed = rib 1.4 µm")
+image(s, H + "cap_sweep_merged_lines.png", 0.9, 1.65, h=4.25)
 text(s, 0.6, 5.95, 12.2, 1.0, [("≈ 1 % of Vπ·L costs ≈ 4 % of IL; even the widest cap stays below 0.035 dB/cm, > 10× below unbuffered Cordoba. "
-     "A lower cap gives up to 2.5 % extra Vπ·L for free.", {"size": 13, "bold": True, "color": NAVY})])
+     "The 1.4 µm rib: ≈ 0.1 V·cm lower Vπ·L, ≈ 7–9 % higher IL, independent of the cap.", {"size": 13, "bold": True, "color": NAVY})])
 
 L = prs.slides._sldIdLst; ids = list(L); new_ids = ids[n0:]; concl = ids[n0 - 1]
 for sid in new_ids: L.remove(sid)
