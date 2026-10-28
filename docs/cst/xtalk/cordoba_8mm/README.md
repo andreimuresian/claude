@@ -23,3 +23,12 @@ Through delay 59.4 ps = 8 mm at n_g 2.227: port 2 is at z = 8 mm (the 2.5 in the
 `e-field_f<f>_1_<A|B>.txt` (f = 5-60 GHz, port 1; A = y 0.2925-0.3325, B = y -0.3325 to -0.2925, x = 0.001,
 z 0-8, step 0.005 mm): loadable in the GUI's "Crosstalk from s4p" window (field monitor folder = this folder).
 Wave analysis and exact EO crosstalk: `waves/results.md`.
+
+## Eigenmode cell (one 180 um period, 15 deg, pair-even = magnetic y-symmetry, Ymax electric at 21 um
+## beyond the outer ground, Xmin/Xmax open, Au lossy, 2nd order, 1 um tets in the gaps, General (Lossy))
+| mode | f (GHz) | n = 69.40 GHz / f | Q total / radiated | gap pattern |
+|---|---|---|---|---|
+| 1 | 26.2755 | 2.6411 | 15.3 / 18.9 | slot (same direction in both gaps), field toward the side wall |
+| 2 | 30.4555 | 2.2786 | 46.1 / 1034 | slot, field toward the symmetry plane |
+| 3 | 31.0607 | 2.2342 | 26.5 / 12988 | CPW |
+TD at 31 GHz: 2.2395 (fields), 2.240 (s4p equivalent line). Eigenmode CPW within -0.005 (-0.25 %).
