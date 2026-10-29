@@ -41,3 +41,13 @@ Pair-odd (electric y-symmetry), same mesh and settings:
 | 3 (CPW) | 31.0610 | 2.234196 | 2.234219 | +0.0000233 |
 CPW split from the eigenmode cell 2.3e-5 against 0.5-1.4e-4 from the TD victim growth (30-35 GHz) and 1.4e-4 from
 the s4p equivalent line: the slope test of the two-CPW-mode model fails by a factor 2-6 with the electric side wall.
+
+Magnetic Ymax (same cell, mesh and settings):
+| mode | f even / odd (GHz) | n even | n odd | n_e - n_o |
+|---|---|---|---|---|
+| whole-line (odd only) | - / 22.5502 | - | 3.0774 (Q 8.3) | - |
+| slot | 28.6627 / 28.8801 | 2.4211 | 2.4029 | +0.0182 |
+| CPW | 31.00808 / 31.00907 | 2.238011 | 2.237939 | +7.2e-5 |
+CPW common index: electric 2.2342, magnetic 2.2380, TD 2.2395 (wall shift 0.17 %).
+CPW split: electric 2.3e-5, magnetic 7.2e-5; TD victim growth at 30 GHz 0.5-1.0e-4 (full window 0.7e-4):
+consistent with the magnetic wall, not with the electric one. Slot modes are wall-controlled (2.28 vs 2.42).
