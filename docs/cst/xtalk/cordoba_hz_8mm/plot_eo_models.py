@@ -1,7 +1,7 @@
 """CORDOBA HZ, 8 mm: FEXT |S41| (s4p), EO crosstalk B/A from the gap fields (12 monitor points, exact for
 the TD model) and EO crosstalk from the two-CPW-mode equivalent line extracted from the same s4p
-(pair-even/pair-odd lines, the GUI's "Crosstalk from s4p" model; variants "Ze = Zo (forward waves)" and
-"exact terminals"). All at 50 ohm source and load, push-pull, optical n_g 2.27."""
+(pair-even/pair-odd lines, the GUI's "Crosstalk from s4p" model, variant "Ze = Zo": indices from the s4p,
+one common impedance; the "exact terminals" variant is not plotted, see results). All at 50 ohm source and load, push-pull, optical n_g 2.27."""
 import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../..")))
 import numpy as np, skrf, matplotlib
@@ -26,8 +26,7 @@ xeq = dev["eq"]["resp"]["H_B"] / dev["eq"]["resp"]["H_A"]
 xfu = dev["full"]["resp"]["H_B"] / dev["full"]["resp"]["H_A"]
 fig, a = plt.subplots(figsize=(10, 5.5))
 a.plot(net.f / 1e9, d(net.s[:, 3, 0]), color=C_FEXT, lw=2, label="FEXT |S41| (s4p)")
-a.plot(fm, d(xeq), color=C_EQ, lw=2, label="EO, two-CPW-mode line from the s4p: Ze = Zo (forward waves)")
-a.plot(fm, d(xfu), color=C_FULL, lw=2, label="EO, two-CPW-mode line from the s4p: exact terminals")
+a.plot(fm, d(xeq), color=C_EQ, lw=2, label="EO, two-CPW-mode line from the s4p (one impedance for both modes)")
 a.plot(fld["f_GHz"], d(fld["X"]), "o", color=C_FIELD, ms=8, mec=SURF, mew=2, label="EO from the CST gap fields (exact, monitor points)")
 a.set_xlim(0, 60); a.set_ylim(-85, -20)
 a.set_xlabel("Frequency (GHz)"); a.set_ylabel("dB (amplitude ratio)")
