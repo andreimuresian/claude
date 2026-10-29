@@ -74,3 +74,10 @@ open-side split ~3.1e-5 +- 0.3e-5 at 31 GHz; the narrow magnetic 7.2e-5 was a wa
 with width (slot even 2.4211 -> 2.4208, odd 2.4029 -> 2.4040, A vs B 3.077 -> 3.096).
 TD victim growth needs 0.5-1.0e-4 at 30 GHz, 1.6-3.2x the converged CPW split: the CPW pair alone does not
 explain it.
+
+2 mm cell (Ymax ~620 um beyond the outer ground), electric Ymax:
+| mode | f even / odd (GHz) | n even | n odd | n_e - n_o |
+|---|---|---|---|---|
+| strips vs wall (even, fictitious) / A vs B (odd) | 20.8768 / 23.5256 | 3.3241 (Q 1.95) | 2.9498 (Q 7.8) | - |
+| slot | 28.7485 / 28.9254 | 2.41392 | 2.39915 | +0.0148 |
+| CPW | 31.01962 / 31.02002 | 2.237178 | 2.237149 | +2.9e-5 |
