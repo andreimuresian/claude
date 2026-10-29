@@ -24,3 +24,10 @@ Slot modes put only 0.4-0.5 % CPW pattern in the gaps (eigen exports), so they c
 2.5 dB/cm -> B' CPW residual 0.18, B' 0.14, A 0.04-0.06. Eigenmode A vs B with open-like sides:
 3.08 +- 0.03, 14 dB/cm (Q 4.6). Narrow cell with the electric wall where the TD model's open
 boundary sits (21 um beyond the outer ground): 2.537, Q 34 (about 2.0 dB/cm at 30 GHz).
+
+## Hypothesis-1 check: A-vs-B pattern of the narrow cell with the electric wall (`narrow_avsb.py`)
+Narrow electric A vs B (27.3534 GHz, n 2.537, 1.87 dB/cm at 30 GHz) has CPW/slot = 0.050 in the gaps
+(1.2 mm magnetic A vs B: 0.187). Victim CPW-pattern residual: own n and loss 0.489; free n and loss
+0.422 (n 2.425, 2 dB/cm). With the 1.2 mm magnetic pattern and free n and loss: 0.177 (n 2.475,
+3 dB/cm). Index and loss of the narrow-wall mode match the extra wave; its gap pattern does not
+(too little CPW content).
