@@ -51,3 +51,10 @@ Magnetic Ymax (same cell, mesh and settings):
 CPW common index: electric 2.2342, magnetic 2.2380, TD 2.2395 (wall shift 0.17 %).
 CPW split: electric 2.3e-5, magnetic 7.2e-5; TD victim growth at 30 GHz 0.5-1.0e-4 (full window 0.7e-4):
 consistent with the magnetic wall, not with the electric one. Slot modes are wall-controlled (2.28 vs 2.42).
+
+Wide cell (DEV_W 1.210 mm, Ymax 220 um beyond the outer ground), electric Ymax:
+| mode | f even / odd (GHz) | n even | n odd | n_e - n_o |
+|---|---|---|---|---|
+| strips vs wall (even, fictitious) / A vs B (odd) | 22.6460 / 24.6465 | 3.0644 (Q 4.8) | 2.8156 (Q 16.3) | - |
+| slot | 28.8896 / 29.0344 | 2.40212 | 2.39014 | +0.0120 |
+| CPW | 31.03040 / 31.03079 | 2.236400 | 2.236372 | +2.8e-5 |
