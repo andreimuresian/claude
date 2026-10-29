@@ -56,18 +56,133 @@ SEGMENTI = [
     ("Telecomunicazioni e reti", "1,5–2%", "600–800"),
 ]
 
-# candidate iniziali: nicchia, cliente, tipo segnale, fonte, prezzo annuo stimato
+# lista lunga: nicchia, cliente tipo, tipo di segnale, fonte del segnale, note (stato di verifica, date)
+V  = "Segnale verificato in ricerca (stampa di settore)."
+IP = "Solo ipotesi nostra: domanda non verificata."
+DV = "Segnale da verificare: non cercato."
 CANDIDATE = [
-    ("A. Strumenti per la filiera della fibra (report di collaudo, documentazione)",
-     "Imprese di posa fibra e installatori", "Incentivi / fondi",
-     "Piano Italia 1 Giga in ritardo (Domani, Segugio)", None),
-    ("B. Preparazione alla NIS2 per PMI fornitrici di soggetti critici",
-     "PMI in filiere critiche; consulenti e MSP come canale", "Obbligo di legge",
-     "Scadenze ACN 2026 (Noze, Agenda Digitale)", None),
-    ("C. Strumenti di pianificazione e monitoraggio per piccoli operatori FWA",
-     "Piccoli provider wireless", "Altro",
-     "FWA >2,7 M di linee (AGCOM via Segugio)", None),
+    # ---- obblighi di legge con scadenza
+    ("NIS2: preparazione alla conformità per PMI fornitrici di soggetti critici",
+     "PMI in filiere critiche; consulenti e MSP come canale", "Obbligo di legge", "Noze; Agenda Digitale",
+     V + " Notifica incidenti operativa dal 15/01/2026; misure di base con scadenze da ottobre 2026 per chi ha ricevuto la comunicazione ad aprile 2025. Mercato affollato di consulenti. Numero di imprese coinvolte non trovato."),
+    ("NIS2 per MSP e consulenti: piattaforma multi-cliente per gestire la conformità di più aziende",
+     "MSP, studi di consulenza IT", "Obbligo di legge", "Noze; Agenda Digitale",
+     V + " Variante della precedente: vendi al canale, non alla PMI finale. Da confrontare con piattaforme esistenti."),
+    ("Cyber Resilience Act: gestione segnalazione vulnerabilità e fascicolo tecnico per produttori",
+     "Produttori di prodotti con elementi digitali (elettronica, IoT, macchine con software)", "Obbligo di legge",
+     "Agenda Digitale; IPSOA",
+     V + " Obbligo di segnalazione dall'11/09/2026 (preallarme in 24 ore); piena applicazione 11/12/2027; sanzioni fino a 15 M€ (stampa). Vantaggio tuo: medio-alto."),
+    ("Direttiva RED (cybersicurezza): assistente alla conformità EN 18031 per produttori di apparecchi radio/IoT",
+     "Produttori e importatori di apparecchi radio e dispositivi connessi", "Obbligo di legge", "TÜV SÜD; Yarix",
+     V + " Applicabile dal 01/08/2025. Stato di armonizzazione degli standard discordante tra le fonti. Vantaggio tuo: alto (RF)."),
+    ("Regolamento Macchine 2023/1230: generatore di fascicolo tecnico e dichiarazione UE",
+     "Costruttori di macchine (Lombardia è un polo)", "Obbligo di legge", "Certifico; UCIMU",
+     V + " Applicazione dal 20/01/2027; UCIMU chiede una proroga condizionata. Dettagli sulla documentazione tecnica non verificati."),
+    ("AI Act: inventario dei sistemi di IA e conformità agli obblighi di trasparenza (art. 50)",
+     "PMI che usano o forniscono sistemi di IA", "Obbligo di legge", "Agenda Digitale; Noze",
+     V + " Trasparenza dal 02/08/2026; alto rischio rinviato a dicembre 2027 / agosto 2028 (accordo provvisorio del 07/05/2026, da verificare in Gazzetta UE). Domanda specifica debole."),
+    ("Trasparenza retributiva: annunci e report sul divario di genere",
+     "Aziende con 100+ dipendenti, uffici HR", "Obbligo di legge", "QuiFinanza; PartitaIVA.it",
+     V + " Stato del decreto di recepimento discordante tra le fonti (D.Lgs. 96/2026?). Report annuale dal 07/06/2027 per 250+ dipendenti. Il target è piccolo: poche aziende con 100+ dipendenti."),
+    ("PPWR imballaggi: gestione dati e dichiarazioni di conformità",
+     "Produttori e utilizzatori di imballaggi (Lombardia ha molti)", "Obbligo di legge", "Assolombarda",
+     V + " Applicabile dal 12/08/2026; date di etichettatura discordanti (2026, 2027, 2028). Assolombarda ha attivato un desk dedicato."),
+    ("Passaporto digitale di prodotto: raccolta dati per batterie e tessile",
+     "Produttori di batterie e tessile", "Obbligo di legge", "Bluestone PIM; PMI.it",
+     V + " Batterie dal 18/02/2027; tessile non ancora definito. Dominato da grandi fornitori e dagli atti delegati."),
+    ("Accessibilità digitale (EAA): audit e correzione per e-commerce",
+     "E-commerce italiani", "Obbligo di legge", "Agenda Digitale; Iubenda",
+     V + " Obbligo dal 28/06/2025; piattaforma di segnalazione AgID dal 11/03/2026; sanzioni da verificare (nessun procedimento pubblico trovato a giugno 2026). Molti fornitori."),
+    # ---- incentivi / fondi
+    ("Iperammortamento 2026: pratica per perizia asseverata, certificazione e comunicazioni al GSE",
+     "Studi di ingegneria che firmano perizie; imprese manifatturiere", "Incentivi / fondi",
+     "Agenda Digitale; Pasquale Pillitteri",
+     V + " Piattaforma GSE dal 12/06/2026; comunicazione di completamento entro 15/11/2028. La perizia è di un ingegnere iscritto all'albo: collegato agli studi che stai contattando. Regole (soglie, SaaS) discordanti tra le fonti."),
+    ("Fibra ottica: report di collaudo e documentazione per imprese di posa",
+     "Imprese di posa fibra e installatori", "Incentivi / fondi", "Domani",
+     V + " Piano Italia 1 Giga in ritardo: 250–700 mila civici potrebbero uscire dal Piano. Committenti con portali propri; strumenti degli OTDR con report già inclusi."),
+    ("Comunità energetiche: piattaforma di gestione per CER, condomini e comuni",
+     "Promotori di CER, amministratori di condominio, comuni", "Incentivi / fondi", "InfoBuild Energia",
+     V + " Obiettivo di 15.000 CER a giugno 2026 probabilmente mancato; regole ancora instabili."),
+    ("Diagnosi energetica obbligatoria: strumento per redigere e gestire le diagnosi",
+     "Studi di ingegneria, ESCO, grandi imprese ed energivori", "Incentivi / fondi", "da cercare",
+     DV + " Obbligo ricorrente (ogni 4 anni per le imprese soggette). Da verificare sulle norme e sul mercato."),
+    # ---- telecom / reti
+    ("FWA: pianificazione e monitoraggio per piccoli operatori wireless",
+     "Piccoli provider FWA/WISP", "Altro", "Segugio (dati AGCOM)",
+     V + " Oltre 2,7 milioni di linee FWA, +13% in un anno; frequenze 26 GHz in assegnazione. Nessun dato recente sul numero di piccoli provider."),
+    ("Audit e ottimizzazione dei costi telecom per PMI",
+     "PMI con molte linee e contratti", "Altro", "da cercare",
+     IP + " Vantaggio tuo alto; modello a risparmio condiviso. Da verificare quanto si risparmia davvero."),
+    # ---- verticali acquisite dai grandi gruppi
+    ("Pianificazione turni e presenze per magazzini, logistica e conto terzi",
+     "Logistica, confezionamento conto terzi, magazzini", "Acquisizioni di verticali", "Aventis Advisors (Zucchetti)",
+     "Zucchetti ha acquisito la maggioranza di AWMS (personale per fabbriche e logistica): segnale che il verticale vale. In zona: 6 imprese di conto terzi nell'elenco. Software di turni già presenti."),
+    ("Gestione commesse e avanzamento lavori per piccole imprese edili e impiantisti",
+     "Imprese edili, impiantisti", "Acquisizioni di verticali", "Aventis Advisors (TeamSystem)",
+     "TeamSystem ha fatto 7 acquisizioni nel comparto industria/costruzioni/real estate: segnale di valore del verticale. Mercato presidiato da gruppi grandi."),
+    ("Scadenzario obblighi di sicurezza sul lavoro (formazione, visite, DPI) per PMI",
+     "PMI manifatturiere e di servizi", "Acquisizioni di verticali", "Aventis Advisors (TeamSystem: legal, compliance, sicurezza)",
+     "5 acquisizioni TeamSystem in legal/compliance/sicurezza. Prodotti già esistenti; da mappare i concorrenti."),
+    # ---- idee nostre, domanda da verificare
+    ("Report di collaudo automatici da dati di misura per laboratori e officine",
+     "Laboratori di prova, officine di precisione, assemblatori", "Altro", "idea precedente",
+     IP + " Gli strumenti hanno già software di report. Vantaggio tuo: alto."),
+    ("Scadenzario tarature degli strumenti di misura (ISO 9001)",
+     "Officine, laboratori, PMI certificate", "Altro", "idea precedente", IP),
+    ("Preventivatore con codici articolo per distributori tecnici",
+     "Distributori di bulloneria, acciai, plastiche, macchine utensili", "Altro", "idea precedente",
+     IP + " Probabile presenza di gestionali; da verificare."),
+    ("Estrazione dati da ordini, DDT e preventivi in PDF per il back-office",
+     "PMI con ufficio ordini", "Annunci di lavoro", "da cercare",
+     DV + " Da cercare tra gli annunci per ruoli ripetitivi (ufficio ordini, data entry)."),
+    ("Assistente a documentazione tecnica per l'assistenza post-vendita dei costruttori di macchine",
+     "Costruttori di macchine", "Altro", "idea Gemini", IP),
+    ("Automazione di relazioni, perizie e pratiche per studi tecnici",
+     "Studi di ingegneria e professionisti", "Altro", "studi contattati",
+     IP + " Gli studi (DEAL, Parodi, Lommano) fanno pratiche antincendio, certificazioni energetiche, perizie."),
+    ("Gestione dei file di misura RF e ottici per R&D e produzione",
+     "Laboratori R&D e produzione elettronica", "Altro", "tuo campo", IP + " Vantaggio tuo: alto."),
+    ("Schede di sicurezza e conformità CLP/REACH per chimica e gomma-plastica",
+     "Aziende chimiche e della gomma-plastica", "Altro", "segmenti B2B (non verificati)", DV),
+    ("Documentazione elettronica di lotto (batch record) per piccole aziende farmaceutiche/CDMO",
+     "Piccole aziende farmaceutiche e CDMO", "Altro", "segmenti B2B (non verificati)",
+     DV + " Barriera regolatoria alta (GMP)."),
+    ("Formazione e simulazioni di phishing per PMI (obblighi di formazione NIS2)",
+     "PMI", "Obbligo di legge", "Noze; Agenda Digitale", V + " Mercato affollato e a basso prezzo."),
+    ("Manutenzione predittiva a basso costo per macchine di PMI manifatturiere",
+     "PMI manifatturiere", "Altro", "idea nostra", IP + " Concorrenza forte (grandi fornitori)."),
+    ("Gestione documentale per sicurezza prodotti (GPSR) di importatori e venditori online",
+     "Importatori e e-commerce di prodotti per consumatori", "Obbligo di legge", "da cercare", DV),
 ]
+
+FONTI_URL = {
+    "NIS2": ["https://www.noze.it/insights/nis2-pmi-cyberagent/",
+             "https://www.agendadigitale.eu/sicurezza/nis2-scadenze-2026-la-guida-per-le-piccole-imprese/"],
+    "AI Act": ["https://www.agendadigitale.eu/industry-4-0/digital-omnibus-e-ai-act-cosa-puo-slittare-e-cosa-va-fatto-prima-di-agosto-2026/",
+               "https://www.noze.it/insights/ai-act-digital-omnibus-2026/"],
+    "Cyber Resilience Act": ["https://www.agendadigitale.eu/sicurezza/cyber-resilience-act-la-scadenza-chiave-arriva-l11-settembre-2026/",
+                             "https://www.ipsoa.it/documents/quotidiano/2026/09/02/cyber-resilience-act-11-settembre-2026-scatta-obbligo-segnalare-vulnerabilita-incidenti-gravi"],
+    "Direttiva RED": ["https://www.tuvsud.com/en-us/services/product-certification/red-cybersecurity-requirements",
+                      "https://www.yarix.com/Advisory-and-Consulting-Services/RED-Compliance"],
+    "Regolamento Macchine": ["https://certifico.com/macchine/regolamento-ue-2023-1230",
+                             "https://www.ilsussidiario.net/news/regolamento-macchine-ue-rosa-ucimu-mancano-criteri-comuni-e-chiari-serve-una-proroga/2986256/amp/"],
+    "Trasparenza retributiva": ["https://quifinanza.it/lavoro/trasparenza-salariale-7-giugno-2026/960990/",
+                                "https://www.partitaiva.it/trasparenza-salariale/"],
+    "PPWR": ["https://www.assolombarda.it/servizi/ambiente/informazioni/ppwr-dal-12-agosto-in-applicazione-il-nuovo-regolamento-ue-sugli-imballaggi"],
+    "Passaporto digitale di prodotto": ["https://www.bluestonepim.com/blog/digital-product-passport-for-batteries",
+                                        "https://www.pmi.it/tecnologia/prodotti-e-servizi-ict/492107/passaporto-digitale-prodotto.html"],
+    "Accessibilità (EAA)": ["https://www.agendadigitale.eu/mercati-digitali/ecommerce/siti-ecommerce-accessibili-guida-in-5-step-per-evitare-sanzioni/",
+                            "https://www.iubenda.com/it/help/178476-accessibilita-101/"],
+    "Iperammortamento 2026": ["https://www.agendadigitale.eu/industry-4-0/iperammortamento-2026-la-guida-cose-e-come-fare-le-comunicazioni-al-gse/",
+                              "https://pasqualepillitteri.it/perizia-iperammortamento"],
+    "Acquisizioni TeamSystem / Zucchetti": ["https://aventis-advisors.com/teamsystem-acquisitions/"],
+    "Piano Italia 1 Giga": ["https://www.editorialedomani.it/economia/banda-ultralarga-cantieri-obiettivi-pnrr-ritardi-regioni-oqbs3i02",
+                            "https://tariffe.segugio.it/news-tariffe/italia-1-giga-nuovi-ritardi-per-la-banda-ultra-larga-cosa-sta-succedendo-00043657.aspx"],
+    "FWA e frequenze 26 GHz": ["https://tariffe.segugio.it/news-tariffe/internet-senza-fibra-la-fwa-supera-2-7-milioni-di-linee-00047779.aspx",
+                               "https://www.smartworld.it/news/frequenze-5g-26-ghz-gara-italia-agosto-2026.html"],
+    "Comunità energetiche (CER)": ["https://www.infobuildenergia.it/approfondimenti/cer-comunita-energetiche-in-italia/"],
+}
 
 wb = Workbook()
 
@@ -106,9 +221,10 @@ wc.cell(row=LASTC + 1, column=3, value="=SUM(C5:C{})".format(LASTC)).font = BOLD
 wl = wb.create_sheet("Lista lunga")
 wl["A1"] = "Lista lunga delle nicchie"
 wl["A1"].font = H1
-wl["A2"] = ("Una riga per nicchia. In blu le celle da compilare: stima di aziende target e di prezzo (con fonte), "
-            "punteggi 1-5. 'Clienti per 1 M€' e 'Punteggio' si calcolano da soli. Le candidate A-C sono ipotesi "
-            "iniziali, non ancora valutate: dati di mercato non verificati.")
+wl["A2"] = ("Una riga per nicchia (lista lunga, Fase 1). Il segnale è solo il punto di partenza: la colonna Note dice "
+            "se è stato verificato in ricerca (stampa di settore, non fonti ufficiali) o se è solo un'ipotesi. In blu le celle da "
+            "compilare nelle fasi 2-3: stima di aziende target e di prezzo (con fonte) e punteggi 1-5. "
+            "'Clienti per 1 M€' e 'Punteggio' si calcolano da soli.")
 wl["A2"].font = NOTE
 wl["A2"].alignment = WRAP
 wl.merge_cells("A2:V2")
@@ -136,7 +252,7 @@ wl.row_dimensions[HR].height = 48
 SA = get_column_letter(SC0)
 SZ = get_column_letter(SC0 + len(CRITERI) - 1)
 TOT = SC0 + len(CRITERI)
-NROWS = 60
+NROWS = 70
 dv_tipo = DataValidation(type="list", formula1='"' + ",".join(TIPI_SEGNALE) + '"', allow_blank=True)
 dv_stato = DataValidation(type="list", formula1='"' + ",".join(STATI) + '"', allow_blank=True)
 dv_pt = DataValidation(type="whole", operator="between", formula1="1", formula2="5", allow_blank=True)
@@ -148,7 +264,7 @@ for i in range(1, NROWS + 1):
     cand = CANDIDATE[i - 1] if i <= len(CANDIDATE) else None
     vals = {1: i}
     if cand:
-        vals.update({2: cand[0], 3: cand[1], 4: cand[2], 5: cand[3]})
+        vals.update({2: cand[0], 3: cand[1], 4: cand[2], 5: cand[3], TOT + 2: cand[4]})
     for c in range(1, len(HEAD) + 1):
         cell = wl.cell(row=r, column=c, value=vals.get(c))
         cell.border = THIN
@@ -163,7 +279,7 @@ for i in range(1, NROWS + 1):
     wl.cell(row=r, column=8).number_format = "#,##0"
     wl.cell(row=r, column=9).number_format = "#,##0"
     if cand:
-        wl.row_dimensions[r].height = 46
+        wl.row_dimensions[r].height = 92
 dv_tipo.add("D{}:D{}".format(HR + 1, HR + NROWS))
 dv_stato.add("{}{}:{}{}".format(get_column_letter(TOT + 1), HR + 1, get_column_letter(TOT + 1), HR + NROWS))
 dv_pt.add("{}{}:{}{}".format(SA, HR + 1, SZ, HR + NROWS))
@@ -207,6 +323,24 @@ for i, t in enumerate(ALTRE, start=1):
     c.font, c.alignment = BLACK, WRAP
     wsg.merge_cells(start_row=r0 + i, start_column=1, end_row=r0 + i, end_column=5)
     wsg.row_dimensions[r0 + i].height = 32
+
+wf = wb.create_sheet("Fonti")
+wf.column_dimensions["A"].width = 38
+wf.column_dimensions["B"].width = 120
+wf["A1"] = "Fonti dei segnali (consultate il 03/11/2026)"
+wf["A1"].font = H1
+wf["A2"] = "Quasi tutte sono stampa di settore e blog di consulenza, non testi ufficiali: le date vanno confermate sulla fonte primaria."
+wf["A2"].font = NOTE
+fr = 4
+LINK = Font(name=ARIAL, size=10, color="0563C1", underline="single")
+for nome, urls in FONTI_URL.items():
+    wf.cell(row=fr, column=1, value=nome).font = BOLD
+    for u in urls:
+        c = wf.cell(row=fr, column=2, value=u)
+        c.hyperlink = u
+        c.font = LINK
+        fr += 1
+    fr += 1
 
 wb.save(OUT)
 print("salvato:", OUT)
