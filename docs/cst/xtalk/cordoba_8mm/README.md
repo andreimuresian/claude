@@ -61,3 +61,16 @@ Wide cell (DEV_W 1.210 mm, Ymax 220 um beyond the outer ground), electric Ymax:
 Trend narrow electric -> wide electric (fraction of the way to narrow magnetic): CPW common index 58 %, slot even 87 %,
 slot odd 90 %, A vs B 52 %, CPW split 2.3e-5 -> 2.8e-5 (11 %). The CPW split does not follow the common indices;
 the wide magnetic pair decides whether the open-side split is ~3e-5 (then below the TD victim growth 0.5-1.0e-4).
+
+Wide cell, magnetic Ymax:
+| mode | f even / odd (GHz) | n even | n odd | n_e - n_o |
+|---|---|---|---|---|
+| A vs B (odd) | - / 22.4143 | - | 3.0961 (Q 4.6) | - |
+| slot | 28.6662 / 28.8667 | 2.42085 | 2.40403 | +0.0168 |
+| CPW | 31.02981 / 31.03028 | 2.236443 | 2.236409 | +3.36e-5 |
+Wide cell, electric vs magnetic: CPW common 2.23640 / 2.23644 and CPW split 2.81e-5 / 3.36e-5 (converged:
+open-side split ~3.1e-5 +- 0.3e-5 at 31 GHz; the narrow magnetic 7.2e-5 was a wall effect). Slot (2.402 / 2.421,
+2.390 / 2.404; split 0.012 / 0.017) and A vs B (2.82 / 3.10) not converged; the magnetic values barely change
+with width (slot even 2.4211 -> 2.4208, odd 2.4029 -> 2.4040, A vs B 3.077 -> 3.096).
+TD victim growth needs 0.5-1.0e-4 at 30 GHz, 1.6-3.2x the converged CPW split: the CPW pair alone does not
+explain it.
