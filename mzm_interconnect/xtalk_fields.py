@@ -18,7 +18,9 @@ terminations the ports see incident waves a_j, and by linearity
     V(z) = sum_j a_j F_j(z),
 
 with a_j from the pair's S-matrix (the .s4p of the same run) and the
-termination reflections: exact, the s4p is used only at the ports.
+termination reflections: exact, the s4p is used only at the ports. With source
+and load equal to the port impedance of the run (50 ohm) a = (a_src, 0, 0, 0):
+the s4p is not needed (pair=None).
 F_j for every port comes from the port-1 monitor by symmetry (A <-> B mirror,
 end-to-end reversal), unless a monitor of that port is present (it is then
 used as is). On the Istanbul 5 mm run the reversal reproduces the port-2
@@ -90,26 +92,33 @@ def port_fields(fd: dict, f: float, order: str) -> list:
     return [d[cst[j]] if cst[j] in d and set(d[cst[j]]) == {"A", "B"} else built[j] for j in range(4)]
 
 
-def eo_crosstalk_fields(p: dict, fd: dict, pair: dict) -> dict:
+def eo_crosstalk_fields(p: dict, fd: dict, pair: dict = None, port_z0: float = 50.0) -> dict:
     """Field-based EO crosstalk at the monitor frequencies, with the sidebar's
     source, termination, optics and drive. *pair*: xtalk_s4p.load_pair of the
-    same run (only its S-matrix at the ports is used)."""
+    same run (only its S-matrix at the ports is used). Without *pair* the source
+    and load must equal the port impedance of the run (*port_z0*): the exported
+    port-1 field is then already the device case and the S-matrix drops out."""
     from .xtalk_cascade import arm_weights
     z = fd["z"]; L = z[-1] - z[0]
-    if abs(L - pair["L"]) > 1e-6:
+    if pair is not None and abs(L - pair["L"]) > 1e-6:
         raise ValueError(f"field data span {L*1e3:.3f} mm, the pair is {pair['L']*1e3:.3f} mm")
     c1, c2, ng1, ng2, pp = arm_weights(p)
     fs = fd["f_GHz"]
     fH = fs * 1e9
-    R0 = pair["z0"]
+    R0 = pair["z0"] if pair is not None else float(port_z0)
     Zs = rlc_z(fH, float(p["Zs_R"]), float(p["Zs_L_pH"]) * 1e-12, float(p["Zs_C_fF"]) * 1e-15)
     Zt = rlc_z(fH, float(p["Rt_R"]), float(p["Rt_L_pH"]) * 1e-12, float(p["Rt_C_fF"]) * 1e-15)
     Gs, Gt = (Zs - R0) / (Zs + R0), (Zt - R0) / (Zt + R0)
-    S = np.empty((len(fs), 4, 4), complex)
-    for i in range(4):
-        for j in range(4):
-            sij = pair["s"][:, i, j]
-            S[:, i, j] = np.interp(fH, pair["f_Hz"], sij.real) + 1j * np.interp(fH, pair["f_Hz"], sij.imag)
+    S = np.zeros((len(fs), 4, 4), complex)
+    if pair is None:
+        if max(np.max(abs(Gs)), np.max(abs(Gt))) > 1e-9:
+            raise ValueError(f"without the run's s4p the source and load must be {R0:g} ohm "
+                             "(the port impedance of the field run)")
+    else:
+        for i in range(4):
+            for j in range(4):
+                sij = pair["s"][:, i, j]
+                S[:, i, j] = np.interp(fH, pair["f_Hz"], sij.real) + 1j * np.interp(fH, pair["f_Hz"], sij.imag)
     out = dict(f_GHz=fs, I_A=np.zeros(len(fs), complex), I_B=np.zeros(len(fs), complex),
                V={}, z=z, pushpull=pp)
     for n, f in enumerate(fs):
