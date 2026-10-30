@@ -15,11 +15,11 @@ fd = XF.load_field_dir(os.path.join(X, "cordoba_8mm")); z = fd["z"]; F = fd["por
 # V+ ~ Ey(+ side), V- ~ -Ey(- side); CPW pattern drives push-pull: (V+ + V-)/2
 VA = (F["A"][0] - F["A"][1]) / 2; VB = (F["B"][0] - F["B"][1]) / 2
 ref = np.max(abs(VA))
-# Fig 2: voltage along the line, A and B
+# Fig 2: push-pull gap field (E_y at the sample point) along the line, A and B
 fig, a = plt.subplots(figsize=(8, 3.6))
 a.plot(z * 1e3, 20 * np.log10(abs(VA) / ref), color=B1, lw=1.2, label="line A (driven)")
 a.plot(z * 1e3, 20 * np.log10(abs(VB) / ref + 1e-12), color=B2, lw=1.2, label="line B (victim)")
-a.set_xlabel("z along the line (mm)"); a.set_ylabel("|V| (dB re max of A)"); a.set_xlim(0, 8); a.set_ylim(-110, 5)
+a.set_xlabel("z along the line (mm)"); a.set_ylabel("|E+ + E-| at sample point\n(dB re max of A)"); a.set_xlim(0, 8); a.set_ylim(-110, 5)
 a.legend(frameon=False, loc="lower left"); fig.tight_layout(); fig.savefig(os.path.join(HERE, "f2_voltage.png"), dpi=150)
 # Fig 3: running EO integral, synthetic forward / backward / mismatched waves (8 mm, 30 GHz)
 L = 8e-3; zz = np.linspace(0, L, 2000); k0 = 2 * np.pi * 30e9 / C0; bo = k0 * 2.27
@@ -30,7 +30,7 @@ fig, a = plt.subplots(figsize=(8, 3.6))
 for lab, v, c in cases:
     run = np.concatenate([[0], np.cumsum((v[1:] * np.exp(1j * bo * zz[1:]) + v[:-1] * np.exp(1j * bo * zz[:-1])) / 2 * np.diff(zz))]) / L
     a.plot(zz * 1e3, abs(run), color=c, lw=2, label=lab)
-a.set_xlabel("distance travelled by the light (mm)"); a.set_ylabel("accumulated modulation\n(1 = full voltage, whole line)")
+a.set_xlabel("distance travelled by the light (mm)"); a.set_ylabel("accumulated modulation\n(1 = full field, whole line)")
 a.set_xlim(0, 8); a.set_ylim(0, 1.05); a.legend(frameon=False, loc="upper left", fontsize=9)
 fig.tight_layout(); fig.savefig(os.path.join(HERE, "f3_matching.png"), dpi=150)
 # Fig 4: EO crosstalk vs f, both CORDOBA runs
