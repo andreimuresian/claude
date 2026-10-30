@@ -14,6 +14,7 @@ BOLD    = Font(name=ARIAL, size=11, bold=True)
 H1      = Font(name=ARIAL, size=15, bold=True, color="141C22")
 H2      = Font(name=ARIAL, size=11, bold=True, color="FFFFFF")
 NOTE    = Font(name=ARIAL, size=10, color="4A565E", italic=True)
+LINK    = Font(name=ARIAL, size=10, color="0563C1", underline="single")
 HEADFIL = PatternFill("solid", fgColor="0E6E5E")
 WARNFIL = PatternFill("solid", fgColor="FFF2CC")
 THIN    = Border(bottom=Side(style="thin", color="D3D0C7"))
@@ -272,6 +273,16 @@ DUR = {"NIS2 per PMI": 3, "NIS2 per MSP e consulenti": 3, "Cyber Resilience Act"
        "Preventivatore per distributori tecnici": 5, "Assistenza post-vendita (macchine)": 5,
        "Turni per logistica e magazzini": 5, "Estrazione dati da ordini e DDT": 5}
 
+# punteggi provvisori dopo la Fase 3 (mio giudizio): urgente, permanente, budget, ricorrenti, scalabilità,
+# canale, concorrenza (5 = poca), vantaggio, testabile
+PUNTEGGI = {
+    "Assistente a documentazione": [3, 5, 4, 4, 4, 4, 3, 4, 5],
+    "Incassi e solleciti":         [4, 5, 3, 5, 4, 3, 1, 2, 4],
+    "Preventivatore":              [3, 5, 3, 4, 2, 3, 3, 3, 3],
+    "Regolamento Macchine":        [5, 3, 4, 3, 4, 4, 2, 4, 4],
+}
+
+
 wb = Workbook()
 
 # ============================================================ CRITERI
@@ -368,6 +379,11 @@ for i in range(1, NROWS + 1):
     wl.cell(row=r, column=TOT,
             value='=IF(COUNT({a}{r}:{z}{r})=0,"",ROUND(SUMPRODUCT({a}{r}:{z}{r},{a}${w}:{z}${w})/SUM({a}${w}:{z}${w}),2))'
             .format(a=SA, z=SZ, r=r, w=WR)).font = BOLD
+    if cand:
+        for key, pts in PUNTEGGI.items():
+            if cand[0].startswith(key):
+                for k, v in enumerate(pts):
+                    wl.cell(row=r, column=SC0 + k, value=v).font = BLUE
     wl.cell(row=r, column=TOT + 1, value="Da studiare" if cand else None).font = BLUE
     wl.cell(row=r, column=6).number_format = "#,##0"
     wl.cell(row=r, column=8).number_format = "#,##0"
@@ -538,6 +554,110 @@ for i, cod in enumerate(CODICI, start=1):
         if c >= 3:
             cell.number_format = "#,##0"
 wi.freeze_panes = "C5"
+
+
+# ============================================================ FASE 3
+COMP = [
+    # finalista, concorrente, tipo, cosa offre, prezzo trovato, fonte
+    ("Assistenza post-vendita (macchine)", "SYS Suite (Sygest)", "Software italiano",
+     "Cataloghi ricambi interattivi 2D/3D, portale web per manuali e offerte, app offline, integrazione ERP/PLM",
+     "Non trovato", "https://www.itismagazine.it/featured/cataloghi-3d-e-interattivi-sys-suite-e-la-soluzione"),
+    ("Assistenza post-vendita (macchine)", "Certifico Macchine 4 (CEM4)", "Software italiano",
+     "Fascicolo tecnico, archivio norme, check list e valutazione dei rischi per il Regolamento 2023/1230",
+     "Non trovato", "https://www.certifico.com/certifico-macchine-4/manuale-d-uso-ufficiale-di-certifico-macchine-4-cem4"),
+    ("Assistenza post-vendita (macchine)", "Quanos (cataloghi ricambi)", "Software internazionale",
+     "Creazione e pubblicazione di cataloghi ricambi", "Non trovato", "https://quanos.com/en/knowhow/spare-parts-catalog/create-and-publish-spare-parts-catalogs/"),
+    ("Assistenza post-vendita (macchine)", "Salesforce Field Service", "Software per assistenza sul campo",
+     "Gestione interventi e tecnici", "175 €/utente/mese (230 € versione avanzata), contratto annuale",
+     "https://www.salesforce.com/it/service/field-service-management/pricing/"),
+    ("Assistenza post-vendita (macchine)", "Dynamics 365 Field Service", "Software per assistenza sul campo",
+     "Gestione interventi e tecnici", "128,90 $/utente/mese (rivenditore)", "https://gestisoft.com/en/dynamics-365/field-service"),
+    ("Assistenza post-vendita (macchine)", "Altri software di field service", "Mercato",
+     "Panoramica prezzi", "Mediana circa 168 $/utente/mese (intervallo 39-650 $)", "https://www.costbench.com/software/field-service-management/"),
+    ("Assistenza post-vendita (macchine)", "Chatbot (RAG) su manuali: nessuna startup italiana trovata", "Lacuna / rischio",
+     "Esistono tesi (IMESA, Padova) e casi internazionali (14.000 tecnici); consulenze su misura possibili",
+     "Non applicabile", "https://thesis.unipd.it/handle/20.500.12608/95455"),
+    ("Assistenza post-vendita (macchine)", "Servizi di manualistica tecnica", "Servizi",
+     "Creazione di manuali e cataloghi ricambi come servizio esterno", "Non trovato", "https://www.reteimprese.it/sers_A105664B100067"),
+    ("Incassi e solleciti", "Fatture in Cloud (TeamSystem)", "Gestionale/fatturazione",
+     "Solleciti automatici di pagamento, anche per importi sopra una soglia", "Da circa 48-60 € + IVA l'anno (fonti discordanti)",
+     "https://www.fattureincloud.it/software-fatturazione/solleciti-pagamento/"),
+    ("Incassi e solleciti", "Agicap Italia", "Fintech / tesoreria",
+     "Previsione di cassa che raccoglie dati da banche e gestionali; oltre 1.000 clienti in Italia dopo due anni",
+     "Non trovato", "https://www.economyup.it/fintech/fintech-e-pmi-come-agicap-italia-automatizza-la-gestione-dei-flussi-di-cassa/"),
+    ("Incassi e solleciti", "Previxio", "Fintech / tesoreria",
+     "Tesoreria, fatturazione elettronica e previsioni a 12 mesi (da listing non verificato)", "Non trovato",
+     "https://www.getapp.com/finance-accounting-software/treasury/f/cash-management/?page=3"),
+    ("Incassi e solleciti", "bexio", "Gestionale (Svizzera)", "Solleciti automatici", "Non trovato",
+     "https://www.bexio.com/it-CH/software-fatturazione"),
+    ("Preventivatore per distributori tecnici", "Salesforce Revenue Cloud (CPQ)", "Enterprise",
+     "Configurazione, prezzi e preventivi", "200 €/utente/mese (fascia Advanced, contratto annuale)", "https://www.salesforce.com/it/products/cpq/"),
+    ("Preventivatore per distributori tecnici", "ConvertCalculator, iQuoteXpress, Camos CPQ", "CPQ per PMI / prodotti complessi",
+     "Preventivi configurabili; Camos per prodotti multi-variante", "Non trovato (i costi di implementazione spesso superano il canone)",
+     "https://www.capterra.it/directory/30904/cpq/software"),
+]
+
+CANALI = [
+    ("Assistenza post-vendita (macchine)", "UCIMU: oltre 200 associate (più del 70% del settore, circa 8 miliardi di fatturato); parte di Federmacchine (13 associazioni, tra cui UCIMA)",
+     "https://www.ucimu.it/en/association/"),
+    ("Assistenza post-vendita (macchine)", "Fiere organizzate da Fieramilano: BI-MU, LAMIERA, EMO Milano (date non verificate)",
+     "https://www.ucimu.it/en/association/ucimu-group/participations/"),
+]
+
+SINTESI = [
+    "Assistenza post-vendita (macchine): concorrenza frammentata. Software di cataloghi ricambi e di fascicolo tecnico (italiani), field service generico "
+    "a 130-230 €/utente/mese, nessuna startup italiana trovata sul tema 'assistente AI sui manuali'. Il rischio principale: i costruttori possono costruirsi un RAG "
+    "da soli con strumenti generici. Il valore deve stare nel flusso di lavoro (ticket, ricambi, multilingue, storico), non nella sola chat.",
+    "Incassi e solleciti: mercato molto presidiato; gli strumenti di fatturazione includono già i solleciti a 50-60 € l'anno e le piattaforme di tesoreria (Agicap, Previxio) "
+    "coprono la previsione di cassa. Differenziarsi è difficile e il prezzo di riferimento è basso.",
+    "Preventivatore: i CPQ per aziende grandi costano 200 €/utente/mese; per le PMI non ho trovato listini. Il rischio è di diventare consulenza (ogni cliente richiede "
+    "configurazione). Un prodotto con importazione automatica di listini potrebbe evitarlo.",
+    "Conclusione provvisoria: l'assistenza post-vendita per costruttori di macchine è la candidata principale. Resta da verificare con interviste che il responsabile assistenza "
+    "abbia il problema e un budget.",
+]
+
+w3 = wb.create_sheet("Fase 3", 4)
+w3["A1"] = "Fase 3 — concorrenti, prezzi e canali delle tre finaliste"
+w3["A1"].font = H1
+w3["A2"] = ("Informazioni da siti dei fornitori e stampa, quasi mai da listini ufficiali: i prezzi mancanti sono un risultato, non una dimenticanza. "
+            "I punteggi nella Lista lunga sono un mio giudizio provvisorio.")
+w3["A2"].font = NOTE
+w3["A2"].alignment = WRAP
+w3.merge_cells("A2:G2")
+w3.row_dimensions[2].height = 34
+hd = ["Finalista", "Concorrente / segnale", "Tipo", "Cosa offre", "Prezzo trovato", "Fonte"]
+for c, (t, w) in enumerate(zip(hd, [34, 40, 26, 60, 40, 70]), start=1):
+    cell = w3.cell(row=4, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+    w3.column_dimensions[get_column_letter(c)].width = w
+for i, (fin, nome, tipo, off, prezzo, url) in enumerate(COMP, start=1):
+    r = 4 + i
+    for c, v in enumerate([fin, nome, tipo, off, prezzo, url], start=1):
+        cell = w3.cell(row=r, column=c, value=v)
+        cell.alignment = WRAP
+        cell.border = THIN
+        cell.font = BOLD if c == 2 else BLACK
+    w3.cell(row=r, column=6).hyperlink = url
+    w3.cell(row=r, column=6).font = LINK
+    w3.row_dimensions[r].height = 46
+r = 4 + len(COMP) + 2
+w3.cell(row=r, column=1, value="Canali di vendita trovati").font = BOLD
+for k, (fin, txt, url) in enumerate(CANALI, start=1):
+    w3.cell(row=r + k, column=1, value=fin).font = BLACK
+    c = w3.cell(row=r + k, column=2, value=txt)
+    c.font, c.alignment = BLACK, WRAP
+    w3.merge_cells(start_row=r + k, start_column=2, end_row=r + k, end_column=5)
+    w3.cell(row=r + k, column=6, value=url).hyperlink = url
+    w3.cell(row=r + k, column=6).font = LINK
+    w3.row_dimensions[r + k].height = 34
+r2 = r + len(CANALI) + 2
+w3.cell(row=r2, column=1, value="Sintesi").font = BOLD
+for k, t in enumerate(SINTESI, start=1):
+    c = w3.cell(row=r2 + k, column=1, value=t)
+    c.font, c.alignment = BLACK, WRAP
+    w3.merge_cells(start_row=r2 + k, start_column=1, end_row=r2 + k, end_column=6)
+    w3.row_dimensions[r2 + k].height = 48
 
 
 wf = wb.create_sheet("Fonti")
