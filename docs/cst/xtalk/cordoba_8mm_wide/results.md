@@ -47,3 +47,19 @@ So the wave is not bound to line B: it fills the substrate and the air above acr
 of the chip, mostly travelling toward the near end. NEXT group delay = 2.09 x the through delay
 (both runs) = forward on A (n_g 2.227) plus a return at n_g = 2.43: consistent with a wave created
 at A's far end and travelling back across the chip.
+
+## Does it enter the EO crosstalk? (`eo_decomp.py`)
+30 GHz, B's push-pull pattern, kept samples of the interior: contributions to H (relative to H[data]):
+CPW pair forward 3.09 at -55 deg, extra wave forward 2.96 at +95 deg, CPW pair backward 0.60,
+extra wave backward 0.79, slot pairs 0.17 / 0.003; sum 0.996 (residual 0.005). The forward CPW pair
+(n 2.237) and the forward extra wave (n 2.475) differ by 1.1 rad over 7.4 mm: the fit cannot separate
+them, their EO contributions are each three times the total and cancel. The wave's share of the EO
+crosstalk is therefore not determined by this fit; it is not shown to be small.
+
+## Where it is born (`s31_time.py`)
+Band-limited impulse response of NEXT (S31): rms 0.009 / 0.007 in 0-50 / 50-100 ps, 0.564 in
+100-140 ps, peak at 128 ps. Td = 59.5 ps, so the near-end crosstalk is a return from A's far end:
+128 - 59.5 = 68.7 ps over 8 mm -> n_g = 2.57, the |n| of the backward chip-wide wave in the planes.
+A distributed coupled-line NEXT (spread over 0-119 ps) is absent. The far-end region of the model
+holds the discrete port 2 on its PEC bridge, the end of the electrodes and the end of the substrate
+(40 um beyond the line, then the open boundary); this run does not tell which of them launches it.

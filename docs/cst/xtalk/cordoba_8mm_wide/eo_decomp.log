@@ -1,0 +1,12 @@
+B CPW pattern, 30 GHz, wide run. |H| relative to |H[data]| (phase vs data):
+  data           1.000
+  model (sum)    0.996  (  +0.2 deg)
+  residual       0.005
+  CPW pair forward (e+o)         |H| 3.086 ( -55.2 deg) | share of B's CPW-pattern rms 0.48
+  CPW pair backward              |H| 0.604 (+122.6 deg) | share of B's CPW-pattern rms 1.14
+  slot pair forward              |H| 0.170 (-129.2 deg) | share of B's CPW-pattern rms 0.03
+  slot pair backward             |H| 0.003 (+155.7 deg) | share of B's CPW-pattern rms 0.05
+  extra wave forward (n 2.475)   |H| 2.959 ( +94.9 deg) | share of B's CPW-pattern rms 0.48
+  extra wave backward (n 2.475)  |H| 0.794 ( -95.7 deg) | share of B's CPW-pattern rms 1.35
+
+ends: |H| over 0-8 mm / over the interior 0.31-7.69 mm (same normalisation): 1.162
