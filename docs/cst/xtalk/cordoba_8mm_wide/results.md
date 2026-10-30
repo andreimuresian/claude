@@ -32,3 +32,18 @@ that boundary.
 
 So the 21 um boundary did perturb the victim (about 20 %, +1-3 dB of EO crosstalk), but it was not
 the source of the n = 2.475 wave. The widened run is the better reference from now on.
+
+## Where the |n| ~ 2.5 field lives: 30 GHz planes (`planes_pencil.py`, `planes_pencil.log`)
+Matrix pencil along z, row by row (4 waves, field components as channels):
+* Midway between the lines (V1, y = 0), at every depth from 100 um above the surface to the bottom of
+  the Si (-527 um), and laterally from y = -1.0 to -0.15 mm (B side, beyond B too): the leading wave is
+  **backward, |n| = 2.55-2.65, 0-6 dB/cm**; a forward |n| 2.52-2.55 wave comes second (0.5-0.7).
+  rms |E| at y = 0 is 2.7-2.9e2 V/m near the surface (A gap field 1.3e6, B gap field 2.8e3 V/m:
+  -73 dB and -20 dB relative).
+* Under line B's centre (V2, y = -0.3125), all depths: leading wave backward, |n| 2.5-2.9.
+* Close to A (y = +0.15 ... +0.45): A's own forward wave (n 2.26-2.39) dominates; beyond A
+  (y = +0.6 ... +1.0) forward 2.54-2.62 and backward 2.55-2.58 with similar amplitudes.
+So the wave is not bound to line B: it fills the substrate and the air above across the whole width
+of the chip, mostly travelling toward the near end. NEXT group delay = 2.09 x the through delay
+(both runs) = forward on A (n_g 2.227) plus a return at n_g = 2.43: consistent with a wave created
+at A's far end and travelling back across the chip.
