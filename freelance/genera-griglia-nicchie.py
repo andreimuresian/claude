@@ -23,6 +23,8 @@ WRAP    = Alignment(wrap_text=True, vertical="top")
 CRITERI = [
     ("Bisogno urgente / obbligo", "C'è una scadenza di legge o un costo evidente che spinge ad agire ora?",
      20, "1 = nice-to-have; 5 = obbligo di legge o costo alto e documentato"),
+    ("Bisogno permanente", "Il bisogno esiste anche se non cambia nessuna legge e non c'è nessuna scadenza?",
+     20, "1 = nasce da una scadenza o da un'ondata normativa; 5 = problema operativo o di cassa che esiste sempre"),
     ("Budget del cliente", "I clienti tipo hanno ricavi >1 M€ e capacità di spesa?",
      20, "1 = micro-imprese; 5 = PMI con >1 M€ di ricavi e abitudine a pagare software"),
     ("Ricavi ricorrenti", "Il cliente paga ogni anno o ogni mese?",
@@ -40,7 +42,8 @@ CRITERI = [
 ]
 
 TIPI_SEGNALE = ["Obbligo di legge", "Incentivi / fondi", "Annunci di lavoro", "Recensioni negative",
-                "Acquisizioni di verticali", "Forum / community", "Altro"]
+                "Acquisizioni di verticali", "Forum / community", "Ritardi di pagamento",
+                "Carenza di manodopera", "Dolore operativo permanente", "Altro"]
 STATI = ["Da studiare", "In studio", "Da intervistare", "Intervistata", "Scartata", "Scelta"]
 
 # segmenti B2B: nome, quota stimata (dall'altro chatbot), n. indicativo
@@ -152,6 +155,21 @@ CANDIDATE = [
      "PMI", "Obbligo di legge", "Noze; Agenda Digitale", V + " Mercato affollato e a basso prezzo."),
     ("Manutenzione predittiva a basso costo per macchine di PMI manifatturiere",
      "PMI manifatturiere", "Altro", "idea nostra", IP + " Concorrenza forte (grandi fornitori)."),
+    ("Incassi e solleciti: gestione automatica del credito e previsione di cassa per PMI B2B",
+     "PMI B2B (ingrosso, manifattura) con molte fatture", "Ritardi di pagamento", "Cribis; Cerved; Intrum",
+     V + " Cribis giugno 2026: solo il 42% delle imprese paga puntuale (piccole 41,8%, medie 35,7%, grandi 21,1%). Intrum 2024: ~81 giorni di incasso medi in Italia contro ~50 in Europa. Bisogno di cassa permanente. Concorrenza alta (gestionali, fintech)."),
+    ("TMS leggero per piccole imprese di autotrasporto (DDT/CMR, scadenze, pianificazione)",
+     "Autotrasportatori conto terzi", "Dolore operativo permanente", "Uomini e Trasporti; Istat",
+     V + " 67.349 imprese attive nel 2025 (-22% dal 2015), le ditte individuali -41%: il settore si concentra, i clienti diminuiscono. Il cugino della tua ragazza ha una ditta di trasporti: possibile primo contatto."),
+    ("Spedizionieri e magazzini: documenti, tracciamento e dogane",
+     "Spedizionieri, operatori logistici", "Dolore operativo permanente", "Istat",
+     "Mercato medio (ATECO 52.29 e 52.10). " + DV),
+    ("Gestione commesse e tracciabilità per officine e subfornitura meccanica",
+     "Officine meccaniche e carpenterie con 10+ addetti", "Dolore operativo permanente", "Istat",
+     IP + " Richiede conoscenza del mestiere; presenti ERP e MES."),
+    ("Export: documentazione per PMI esportatrici (origine, dogana)",
+     "PMI esportatrici", "Dolore operativo permanente", "Istat-ICE 2025",
+     DV + " 120.170 imprese esportatrici attive nel 2023; nessun dato su costo della documentazione."),
     ("Gestione documentale per sicurezza prodotti (GPSR) di importatori e venditori online",
      "Importatori e e-commerce di prodotti per consumatori", "Obbligo di legge", "da cercare", DV),
 ]
@@ -221,7 +239,38 @@ FASE2 = [
     ("Report di collaudo", "Report di collaudo", 1000, 2000, 3900,
      "Istat 2024: ATECO 71.20 = 9.362 unità locali, 1.041 con 10+; 71.20.1 prodotti = 3.867. Accredia: 1.448 laboratori di prova", "Media",
      600, 1200, 3000, "Mercato di nicchia; gli strumenti di misura hanno già report inclusi."),
+    ("Incassi e solleciti", "Incassi e solleciti (cassa)", 5800, 20000, 45700,
+     "Istat 2024: unità locali con 10+ addetti in ingrosso (46: 20.256), metallo (25: 16.356), macchinari (28: 9.059); basso = 50+ (5.804). Cribis 2026: solo 42% paga puntuale", "Media",
+     600, 1200, 3000, "Bisogno permanente e documentato; concorrenza alta (gestionali e fintech): serve un canale."),
+    ("TMS leggero", "TMS per autotrasporto", 900, 9000, 22700,
+     "Istat 2024: ATECO 49.41 = 63.633 unità locali, 9.037 con 10+, 915 con 50+; alto = 10+ più 25% delle micro (mia ipotesi). Imprese attive in calo del 22% dal 2015", "Media-bassa",
+     500, 1200, 3000, "Bisogno permanente, ma il settore si concentra e i clienti diminuiscono."),
+    ("Spedizionieri e magazzini", "Spedizionieri e magazzini", 850, 4100, 6600,
+     "Istat 2024: ATECO 52.29 e 52.10 con 10+ = 4.123; 50+ = 849; alto = 52.2 con 10+ (6.583)", "Media",
+     1000, 2400, 6000, "Mercato medio con documenti ripetitivi; concorrenza di software di settore."),
+    ("Gestione commesse", "Commesse e tracciabilità (officine)", 5000, 16400, 25400,
+     "Istat 2024: ATECO 25 con 10+ = 16.356 (25.62 meccanica generale: 4.975); alto = + 28 con 10+", "Media",
+     1000, 2400, 5000, "Quota necessaria bassa, ma serve conoscere il mestiere e ci sono già ERP e MES."),
+    ("Preventivatore", "Preventivatore per distributori tecnici", 2700, 8000, 13000,
+     "Istat 2024: ingrosso di macchinari (466) e prodotti specializzati (467) con 10+ = 8.028; alto = + 25.62 (4.975)", "Media",
+     800, 1800, 4000, "Legato ai ricavi del cliente; probabili gestionali già presenti, quindi come aggiunta."),
+    ("Assistente a documentazione", "Assistenza post-vendita (macchine)", 2200, 9000, 22700,
+     "Istat 2024: ATECO 28: 9.059 con 10+, 2.179 con 50+, 22.720 totali", "Media",
+     1500, 3000, 6000, "Stesso mercato delle macchine, ma bisogno permanente: ogni macchina venduta richiede manuali, ricambi e assistenza per anni."),
+    ("Pianificazione turni", "Turni per logistica e magazzini", 850, 4100, 7200,
+     "Istat 2024: magazzinaggio e supporto ai trasporti (52) con 10+ = 7.223; 52.10 e 52.29 con 10+ = 4.123", "Media",
+     1500, 3000, 6000, "Software di turni già diffusi; conta quanto sono complesse le regole del cliente."),
+    ("Estrazione dati", "Estrazione dati da ordini e DDT", 5800, 20000, 45700,
+     "Istat 2024: come per gli incassi (ingrosso, metallo e macchinari con 10+)", "Media",
+     800, 1800, 4000, "Utile in tutti i settori ma generico: va scelto un solo tipo di documento."),
 ]
+
+DUR = {"NIS2 per PMI": 3, "NIS2 per MSP e consulenti": 3, "Cyber Resilience Act": 3, "Direttiva RED (radio/IoT)": 3,
+       "Regolamento Macchine": 3, "Iperammortamento 2026 (perizie)": 1, "Fibra ottica (posa)": 2,
+       "FWA (piccoli operatori)": 4, "Report di collaudo": 5, "Incassi e solleciti (cassa)": 5,
+       "TMS per autotrasporto": 4, "Spedizionieri e magazzini": 4, "Commesse e tracciabilità (officine)": 5,
+       "Preventivatore per distributori tecnici": 5, "Assistenza post-vendita (macchine)": 5,
+       "Turni per logistica e magazzini": 5, "Estrazione dati da ordini e DDT": 5}
 
 wb = Workbook()
 
@@ -376,10 +425,10 @@ w2["A1"] = "Fase 2 — dimensione dei mercati e quota necessaria per 1 M€ di r
 w2["A1"].font = H1
 w2["A2"] = ("Numero di aziende: da fonti dove esistono, altrimenti ipotesi mie, con affidabilità indicata. "
             "I PREZZI SONO IPOTESI da validare nelle interviste. Le celle in blu si possono cambiare. "
-            "'Quota necessaria' = clienti per 1 M€ diviso aziende target: sopra circa il 10% il mercato italiano è troppo piccolo.")
+            "'Quota necessaria' = clienti per 1 M€ diviso aziende target: sopra circa il 10% il mercato italiano è troppo piccolo. 'Bisogno permanente' = 1 se nasce da una scadenza di legge, 5 se è un problema che esiste sempre.")
 w2["A2"].font = NOTE
 w2["A2"].alignment = WRAP
-w2.merge_cells("A2:N2")
+w2.merge_cells("A2:O2")
 w2.row_dimensions[2].height = 44
 
 w2["A4"] = "Margine operativo ipotizzato"
@@ -402,8 +451,8 @@ for c in ("B6", "B7", "B8"):
 
 h2 = ["Nicchia", "Aziende target (bassa)", "Aziende target (base)", "Aziende target (alta)", "Fonte della stima",
       "Affidabilità", "Prezzo annuo (bassa) €", "Prezzo annuo (base) €", "Prezzo annuo (alta) €",
-      "Clienti per 1 M€ (base)", "Quota necessaria (base)", "Quota (caso favorevole)", "Quota (caso sfavorevole)", "Lettura"]
-w2_widths = [34, 12, 12, 12, 52, 12, 12, 12, 12, 12, 12, 12, 12, 60]
+      "Clienti per 1 M€ (base)", "Quota necessaria (base)", "Quota (caso favorevole)", "Quota (caso sfavorevole)", "Lettura", "Bisogno permanente (1-5, mio giudizio)"]
+w2_widths = [34, 12, 12, 12, 52, 12, 12, 12, 12, 12, 12, 12, 12, 60, 14]
 HR2 = 10
 for c, (t, w) in enumerate(zip(h2, w2_widths), start=1):
     cell = w2.cell(row=HR2, column=c, value=t)
@@ -415,12 +464,12 @@ for i, (key, lab, lo, ba, hi, src, conf, plo, pba, phi, lett) in enumerate(FASE2
     r = HR2 + i
     vals = [lab, lo, ba, hi, src, conf, plo, pba, phi,
             "=ROUND(1000000/H{0},0)".format(r), "=J{0}/C{0}".format(r),
-            "=(1000000/I{0})/D{0}".format(r), "=(1000000/G{0})/B{0}".format(r), lett]
+            "=(1000000/I{0})/D{0}".format(r), "=(1000000/G{0})/B{0}".format(r), lett, DUR.get(lab)]
     for c, v in enumerate(vals, start=1):
         cell = w2.cell(row=r, column=c, value=v)
         cell.alignment = WRAP
         cell.border = THIN
-        cell.font = BLUE if c in (2, 3, 4, 7, 8, 9) else (BOLD if c in (1, 11) else BLACK)
+        cell.font = BLUE if c in (2, 3, 4, 7, 8, 9, 15) else (BOLD if c in (1, 11) else BLACK)
     for c in (2, 3, 4, 7, 8, 9, 10):
         w2.cell(row=r, column=c).number_format = "#,##0"
     for c in (11, 12, 13):
@@ -436,7 +485,7 @@ for k, t in enumerate([
 ], start=1):
     c = w2.cell(row=r + k, column=1, value=t)
     c.font, c.alignment = BLACK, WRAP
-    w2.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=14)
+    w2.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=15)
     w2.row_dimensions[r + k].height = 30
 
 # ============================================================ ISTAT 2024
