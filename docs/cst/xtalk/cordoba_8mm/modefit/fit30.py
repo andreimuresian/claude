@@ -47,7 +47,7 @@ def gamma(f_GHz, Q, ng, n_override=None):
     alpha = 2 * np.pi * f_GHz * 1e9 / (2 * Q * C0 / ng)
     return alpha + 1j * beta, beta * C0 / (2 * np.pi * F), alpha * 8.686 / 100
 
-fd = load_field_dir(os.path.join(HERE, ".."))
+fd = load_field_dir(os.environ.get("FIELDS") or os.path.join(HERE, ".."))   # FIELDS: another run's gap fields
 Fp = fd["ports"][30.0][1]
 z = fd["z"]
 A = np.stack([Fp["A"][0], Fp["A"][1]])                           # (+, -) on A

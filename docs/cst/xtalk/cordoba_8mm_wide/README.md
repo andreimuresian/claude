@@ -9,6 +9,12 @@ Purpose: test hypothesis 1. Is the extra wave seen on the victim in the narrow r
 2.5-3 dB/cm, A-vs-B-like pattern; `../cordoba_8mm/modefit/results.md`) an artefact of the
 lateral open boundary 21 um from the outer grounds? If it is, it disappears here.
 
+## Received (2026-10-30)
+`LINEA_8MM_625UM_PITCH_CORDOBA_OAD_1port.s4p` (columns 2-4 are zero: only port 1 was driven, which is
+expected) and the 24 gap-field files, renamed to `e-field_f<f>_1_<A|B>.txt`. History: the LN, SiO2 and Si
+side faces offset by 0.625 mm (`offset selected faces`), port 1 stimulated only, -27 dB. Results:
+`results.md`.
+
 ## Files to place here
 1. `LINEA_8MM_625UM_PITCH_CORDOBA_WIDE.s4p` (any name ending in .s4p): the Touchstone export
    of the run. Only column 1 (S11, S21, S31, S41) is meaningful; it is used for the S-parameter

@@ -1,0 +1,31 @@
+e_slot  f  28.6662 GHz  phase/cell +15.00 deg  n(30 GHz) 2.42085  alpha  2.17 dB/cm
+e_cpw   f  31.0298 GHz  phase/cell +15.00 deg  n(30 GHz) 2.23677  alpha  2.40 dB/cm
+o_AvsB  f  22.4143 GHz  phase/cell +15.00 deg  n(30 GHz) 3.09607  alpha 13.72 dB/cm
+o_slot  f  28.8667 GHz  phase/cell +15.00 deg  n(30 GHz) 2.40403  alpha  1.89 dB/cm
+o_cpw   f  31.0303 GHz  phase/cell +15.00 deg  n(30 GHz) 2.23673  alpha  2.40 dB/cm
+CPW split at 30 GHz from the eigen runs: 3.46e-05
+
+model                     | resid A | A CPW | B' all | B' CPW | B' slot
+CPW pair only             | 0.229   | 0.229 | 0.802  | 0.559  | 0.878
+CPW + slot                | 0.084   | 0.014 | 0.315  | 0.568  | 0.113
+all five                  | 0.072   | 0.014 | 0.292  | 0.517  | 0.120
+
+CPW split as a free check (all five modes), residual on B' CPW pattern:
+  dn 0.0e+00: B' CPW resid 0.522, B' all 0.295, A 0.071
+  dn 3.1e-05: B' CPW resid 0.517, B' all 0.292, A 0.071
+  dn 5.0e-05: B' CPW resid 0.514, B' all 0.291, A 0.072
+  dn 7.0e-05: B' CPW resid 0.512, B' all 0.289, A 0.072
+  dn 1.0e-04: B' CPW resid 0.509, B' all 0.287, A 0.073
+  dn 1.5e-04: B' CPW resid 0.504, B' all 0.285, A 0.075
+
+amplitudes (all five, eigen split), |a| relative to e_cpw+:
+  e_cpw+    1.000e+00
+  e_cpw-    4.375e-02
+  e_slot+   8.898e-02
+  e_slot-   3.815e-02
+  o_cpw+    9.994e-01
+  o_cpw-    4.304e-02
+  o_slot+   8.958e-02
+  o_slot-   4.063e-02
+  o_AvsB+   8.724e-03
+  o_AvsB-   2.066e-02

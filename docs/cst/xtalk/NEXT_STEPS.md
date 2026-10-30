@@ -1,6 +1,6 @@
 # Next steps (recorded 2026-10-30)
 
-1. **Now:** widened CORDOBA standard run (substrate 625 um beyond each outer ground). Does the
+1. **Done 2026-10-30 (`cordoba_8mm_wide/results.md`): wave still present, hypothesis 1 rejected.** Widened CORDOBA standard run (substrate 625 um beyond each outer ground). Does the
    extra victim wave (n ~ 2.45-2.50) disappear? Exports and folder: `cordoba_8mm_wide/README.md`.
    Analyses: field EO, S-parameters vs the narrow run, five-mode fit, free-index scan, remainder.
 2. CORDOBA high impedance (`cordoba_hz_8mm`): same -27 dB energy level but much higher

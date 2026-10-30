@@ -1,0 +1,18 @@
+amplitude / e_cpw+ (o_AvsB = free wave n 2.475, 3 dB/cm) | narrow | wide
+  e_cpw+   | 1.000e+00    -0.0 deg | 1.000e+00    -0.0 deg
+  e_cpw-   | 4.217e-02   +73.5 deg | 4.262e-02   +73.6 deg
+  e_slot+  | 3.558e-02  -116.3 deg | 2.844e-02  -115.9 deg
+  e_slot-  | 7.829e-02   +92.5 deg | 7.301e-02   +82.1 deg
+  o_cpw+   | 9.994e-01    +0.0 deg | 9.996e-01    +0.0 deg
+  o_cpw-   | 4.379e-02   +75.3 deg | 4.443e-02   +75.5 deg
+  o_slot+  | 4.372e-02  -109.7 deg | 4.168e-02  -108.1 deg
+  o_slot-  | 3.992e-02   +93.3 deg | 3.208e-02   +77.9 deg
+  o_AvsB+  | 7.812e-02  +122.0 deg | 1.104e-01  +108.8 deg
+  o_AvsB-  | 2.888e-01  +104.2 deg | 3.079e-01   +98.7 deg
+
+ z (mm): |wide - narrow| / rms(narrow), B CPW pattern: 0.5:0.19 1.5:0.21 2.5:0.23 3.5:0.21 4.5:0.16 5.5:0.16 6.5:0.15 7.5:0.15
+pencil of the difference, SV: 1.00e+00 2.60e-01 1.47e-01 6.75e-02 1.48e-02 1.17e-02 1.04e-02 6.83e-03
+ M=2 resid 0.23: n -2.394 a    8.1 dB/cm amp 0.70; n +2.238 a  -40.3 dB/cm amp 0.02
+ M=3 resid 0.16: n -2.438 a    9.2 dB/cm amp 0.74; n -0.369 a   27.3 dB/cm amp 0.20; n +2.292 a  -41.2 dB/cm amp 0.02
+ M=4 resid 0.04: n -2.708 a   18.1 dB/cm amp 0.92; n -1.874 a   39.5 dB/cm amp 0.92; n +1.441 a   43.6 dB/cm amp 0.27; n +2.441 a  -33.2 dB/cm amp 0.03
+ M=5 resid 0.04: n -2.708 a   16.5 dB/cm amp 0.84; n -1.798 a   36.0 dB/cm amp 0.78; n +1.475 a   45.9 dB/cm amp 0.28; n +5.127 a  169.8 dB/cm amp 0.07; n +2.427 a  -32.9 dB/cm amp 0.03
