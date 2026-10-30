@@ -181,8 +181,46 @@ FONTI_URL = {
                             "https://tariffe.segugio.it/news-tariffe/italia-1-giga-nuovi-ritardi-per-la-banda-ultra-larga-cosa-sta-succedendo-00043657.aspx"],
     "FWA e frequenze 26 GHz": ["https://tariffe.segugio.it/news-tariffe/internet-senza-fibra-la-fwa-supera-2-7-milioni-di-linee-00047779.aspx",
                                "https://www.smartworld.it/news/frequenze-5g-26-ghz-gara-italia-agosto-2026.html"],
+    "Fase 2 — numeri di mercato": [
+        "https://accredia.it/wp-content/uploads/2024/07/Cartella-stampa-breve-dati-al-31-12-2025_ITA-1.pdf",
+        "https://assomac.it/media/documents/rapporto_federmacchine_2020.pdf",
+        "https://anie.it/federazione/chi-siamo/rapporto-annuale-2025_def",
+        "https://www.cni.it/images/eventi/2021/01_Lelaborazione_delle_perizie_13lug2021.pdf",
+        "https://www.fibertelecom.com/wt/2022/PDF/02-puglia/FTWWT2022-puglia-03.pdf"],
     "Comunità energetiche (CER)": ["https://www.infobuildenergia.it/approfondimenti/cer-comunita-energetiche-in-italia/"],
 }
+
+# ---- Fase 2: stime di mercato (Italia). nicchia (inizio del nome in Lista lunga), etichetta breve,
+# aziende bassa/base/alta, fonte, affidabilità, prezzo annuo bassa/base/alta (ipotesi), lettura
+FASE2 = [
+    ("NIS2: preparazione", "NIS2 per PMI", 10000, 20000, 50000,
+     "Stampa di settore: 20.000–50.000 enti potenzialmente coinvolti (non registrati)", "Media",
+     600, 1500, 4000, "Base ampia, ma mercato affollato di consulenti: serve un canale forte."),
+    ("NIS2 per MSP", "NIS2 per MSP e consulenti", 2000, 5000, 10000,
+     "Mia ipotesi: numero di MSP e studi di consulenza IT rilevanti (nessun dato trovato)", "Bassa",
+     1200, 2400, 6000, "Vendi al canale: meno clienti ma con più aziende ciascuno. Da confrontare con le piattaforme esistenti."),
+    ("Cyber Resilience Act", "Cyber Resilience Act", 1100, 3000, 8000,
+     "ANIE: ~1.100 aziende associate (altre fonti: 1.600); più costruttori con software. Perimetro CRA non trovato", "Bassa",
+     1500, 3000, 6000, "Norma europea: il mercato vero è più grande dell'Italia, ma va servito in inglese e con concorrenti internazionali."),
+    ("Direttiva RED", "Direttiva RED (radio/IoT)", 300, 800, 2000,
+     "Mia ipotesi: produttori e importatori di apparecchi radio in Italia (nessun dato trovato)", "Bassa",
+     2000, 4000, 8000, "Troppo piccolo come solo mercato italiano; ha senso solo come prodotto europeo."),
+    ("Regolamento Macchine", "Regolamento Macchine", 3000, 5000, 8000,
+     "Federmacchine 2020: 5.050 imprese (dato vecchio)", "Media-bassa",
+     1500, 2500, 5000, "Mercato ben definito e vicino a te; la scadenza (20/01/2027) può slittare."),
+    ("Iperammortamento 2026", "Iperammortamento 2026 (perizie)", 5000, 12000, 20000,
+     "CNI 2020: 4,5%–9% degli ingegneri ha firmato perizie, in media 10 ciascuno (+ ordine di grandezza mio)", "Bassa",
+     300, 600, 1500, "Tanti utenti ma prezzo basso: serve come aggiunta a un prodotto più grande."),
+    ("Fibra ottica", "Fibra ottica (posa)", 300, 1000, 3000,
+     "Mia ipotesi: nessun dato trovato sul numero di imprese di posa", "Bassa",
+     1000, 2000, 4000, "Mercato piccolo e dipendente da pochi committenti."),
+    ("FWA: pianificazione", "FWA (piccoli operatori)", 200, 400, 1000,
+     "Consulente 2022: 'centinaia' di WISP in Italia", "Bassa",
+     800, 1500, 3000, "Troppo piccolo come mercato solo italiano."),
+    ("Report di collaudo", "Report di collaudo", 1700, 3000, 10000,
+     "Accredia (31/12/2025): 1.448 laboratori di prova e 228 di taratura/altro; più laboratori interni non contati", "Media",
+     600, 1200, 3000, "Mercato di nicchia; gli strumenti di misura hanno già report inclusi."),
+]
 
 wb = Workbook()
 
@@ -270,6 +308,12 @@ for i in range(1, NROWS + 1):
         cell.border = THIN
         cell.alignment = WRAP
         cell.font = GREY if c == 1 else BLUE
+    if cand:
+        for key, _lab, lo, ba, hi, src, conf, plo, pba, phi, _l in FASE2:
+            if cand[0].startswith(key):
+                wl.cell(row=r, column=6, value=ba).font = BLUE
+                wl.cell(row=r, column=7, value=src + " (affidabilità: " + conf + ")").font = BLUE
+                wl.cell(row=r, column=8, value=pba).font = BLUE
     wl.cell(row=r, column=9, value='=IF(H{0}>0,ROUND(1000000/H{0},0),"")'.format(r)).font = BLACK
     wl.cell(row=r, column=TOT,
             value='=IF(COUNT({a}{r}:{z}{r})=0,"",ROUND(SUMPRODUCT({a}{r}:{z}{r},{a}${w}:{z}${w})/SUM({a}${w}:{z}${w}),2))'
@@ -324,10 +368,80 @@ for i, t in enumerate(ALTRE, start=1):
     wsg.merge_cells(start_row=r0 + i, start_column=1, end_row=r0 + i, end_column=5)
     wsg.row_dimensions[r0 + i].height = 32
 
+
+# ============================================================ FASE 2
+w2 = wb.create_sheet("Fase 2", 2)
+w2["A1"] = "Fase 2 — dimensione dei mercati e quota necessaria per 1 M€ di ricavi (solo Italia)"
+w2["A1"].font = H1
+w2["A2"] = ("Numero di aziende: da fonti dove esistono, altrimenti ipotesi mie, con affidabilità indicata. "
+            "I PREZZI SONO IPOTESI da validare nelle interviste. Le celle in blu si possono cambiare. "
+            "'Quota necessaria' = clienti per 1 M€ diviso aziende target: sopra circa il 10% il mercato italiano è troppo piccolo.")
+w2["A2"].font = NOTE
+w2["A2"].alignment = WRAP
+w2.merge_cells("A2:N2")
+w2.row_dimensions[2].height = 44
+
+w2["A4"] = "Margine operativo ipotizzato"
+w2["B4"] = 0.70
+w2["A5"] = "Tassazione combinata (società + dividendi)"
+w2["B5"] = 0.465
+w2["A6"] = "Obiettivo netto mensile (€)"
+w2["B6"] = 30000
+w2["A7"] = "Netto mensile con 1 M€ di ricavi (€)"
+w2["B7"] = "=ROUND(1000000*B4*(1-B5)/12,0)"
+w2["A8"] = "Ricavi annui necessari per l'obiettivo (€)"
+w2["B8"] = "=ROUND(B6*12/(B4*(1-B5)),0)"
+for r in range(4, 9):
+    w2.cell(row=r, column=1).font = BOLD
+    w2.cell(row=r, column=2).font = BLUE if r < 7 else BOLD
+w2["B4"].number_format = "0%"
+w2["B5"].number_format = "0.0%"
+for c in ("B6", "B7", "B8"):
+    w2[c].number_format = "#,##0"
+
+h2 = ["Nicchia", "Aziende target (bassa)", "Aziende target (base)", "Aziende target (alta)", "Fonte della stima",
+      "Affidabilità", "Prezzo annuo (bassa) €", "Prezzo annuo (base) €", "Prezzo annuo (alta) €",
+      "Clienti per 1 M€ (base)", "Quota necessaria (base)", "Quota (caso favorevole)", "Quota (caso sfavorevole)", "Lettura"]
+w2_widths = [34, 12, 12, 12, 52, 12, 12, 12, 12, 12, 12, 12, 12, 60]
+HR2 = 10
+for c, (t, w) in enumerate(zip(h2, w2_widths), start=1):
+    cell = w2.cell(row=HR2, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+    w2.column_dimensions[get_column_letter(c)].width = w
+w2.row_dimensions[HR2].height = 48
+for i, (key, lab, lo, ba, hi, src, conf, plo, pba, phi, lett) in enumerate(FASE2, start=1):
+    r = HR2 + i
+    vals = [lab, lo, ba, hi, src, conf, plo, pba, phi,
+            "=ROUND(1000000/H{0},0)".format(r), "=J{0}/C{0}".format(r),
+            "=(1000000/I{0})/D{0}".format(r), "=(1000000/G{0})/B{0}".format(r), lett]
+    for c, v in enumerate(vals, start=1):
+        cell = w2.cell(row=r, column=c, value=v)
+        cell.alignment = WRAP
+        cell.border = THIN
+        cell.font = BLUE if c in (2, 3, 4, 7, 8, 9) else (BOLD if c in (1, 11) else BLACK)
+    for c in (2, 3, 4, 7, 8, 9, 10):
+        w2.cell(row=r, column=c).number_format = "#,##0"
+    for c in (11, 12, 13):
+        w2.cell(row=r, column=c).number_format = "0.0%"
+    w2.row_dimensions[r].height = 58
+w2.freeze_panes = w2.cell(row=HR2 + 1, column=2)
+r = HR2 + len(FASE2) + 2
+w2.cell(row=r, column=1, value="Come leggerla").font = BOLD
+for k, t in enumerate([
+    "Le norme europee (CRA, RED, Macchine) si applicano in tutta l'UE: il mercato reale può essere molte volte quello italiano, ma richiede un prodotto in inglese e concorrenti internazionali.",
+    "Per numeri precisi sulle aziende per codice ATECO e classe di addetti servono le tavole Istat (ASIA) su IstatData: scaricale e le analizzo. Dal mio ambiente non sono raggiungibili.",
+    "Nessun numero di questo foglio è un dato di mercato verificato per il tuo prodotto: sono ordini di grandezza per scartare le nicchie troppo piccole.",
+], start=1):
+    c = w2.cell(row=r + k, column=1, value=t)
+    c.font, c.alignment = BLACK, WRAP
+    w2.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=14)
+    w2.row_dimensions[r + k].height = 30
+
 wf = wb.create_sheet("Fonti")
 wf.column_dimensions["A"].width = 38
 wf.column_dimensions["B"].width = 120
-wf["A1"] = "Fonti dei segnali (consultate il 03/11/2026)"
+wf["A1"] = "Fonti dei segnali (consultate fino al 30/10/2026)"
 wf["A1"].font = H1
 wf["A2"] = "Quasi tutte sono stampa di settore e blog di consulenza, non testi ufficiali: le date vanno confermate sulla fonte primaria."
 wf["A2"].font = NOTE
