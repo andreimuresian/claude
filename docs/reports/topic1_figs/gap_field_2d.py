@@ -45,6 +45,9 @@ ex = np.ones_like(XC); ey = np.ones_like(XC)
 ln = (XC < 0) & (XC > X_LN); ex[ln], ey[ln] = 43.0, 28.0
 ox = (XC < X_LN) & (XC > X_OX); ex[ox] = ey[ox] = 3.9
 si = (XC < X_OX) & (XC > X_SI); ex[si] = ey[si] = 11.9
+RIB = os.environ.get("RIB") == "1"            # LN rib 1 um x 0.2 um, centred in the gap
+if RIB:
+    rb = (XC > 0) & (XC < 0.2) & (abs(YC - (Y_SIG + G / 2)) < 0.5); ex[rb], ey[rb] = 43.0, 28.0
 # node classes
 X, Y = np.meshgrid(x, y, indexing="ij")
 metal = (X >= 0) & (X <= T)
@@ -107,6 +110,9 @@ print("E_y / (V/g) across the gap at x = 1 um (distance from the signal edge):")
 for d in (0.05, 0.25, 0.5, 1.0, 2.075, 3.15, 3.65, 3.9, 4.1):
     print(f"   {d:5.3f} um : {Ey_at(1.0, Y_SIG + d) / E0:.3f}")
 print(f"E_y(x=0.1)/E_y(x=1) at the gap centre: {Ey_at(0.1, ycen) / Ey_at(1.0, ycen):.4f}")
+if RIB:
+    rr = (x > 0) & (x < 0.2); cc = (yc > Y_SIG + G / 2 - 0.5) & (yc < Y_SIG + G / 2 + 0.5)
+    print(f"rib: mean E_y inside the rib / (V/g) = {Ey[np.ix_(rr, cc)].mean() / E0:.3f}")
 print(f"E_y(x=1, centre) * g = {Ey_at(1.0, ycen) * G * 1e-6:.4f} V  (true V = 1)")
 
 import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
@@ -124,4 +130,4 @@ for xv, c, lab in ((1.0, "#2a78d6", "x = 1 um (sample height)"), (0.1, "#eb6834"
 ax[1].axhline(1, color="0.5", ls="--", lw=1, label="uniform field V/g")
 ax[1].set_xlabel("distance from the signal edge (um)"); ax[1].set_ylabel("E_y / (V/g)")
 ax[1].set_ylim(0, 2.5); ax[1].legend(frameon=False, fontsize=8); ax[1].grid(alpha=0.3)
-fig.tight_layout(); fig.savefig(os.path.join(HERE, "f5_gapfield.png"), dpi=150)
+fig.tight_layout(); fig.savefig(os.path.join(HERE, "f5_gapfield_rib.png" if RIB else "f5_gapfield.png"), dpi=150)
