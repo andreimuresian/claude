@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field-Extracted EO Crosstalk</title>
+<script>window.MathJax = { tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] } };</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+<style>
+:root { --bg:#fcfcfb; --ink:#1f1f1e; --muted:#5f5e58; --rule:#e4e3de; --card:#f4f3ef; --accent:#2a78d6; --warm:#eb6834; --good:#1baf7a; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1a1a19; --ink:#f0efec; --muted:#b5b4aa; --rule:#3a3a37; --card:#242422; --accent:#3987e5; --warm:#d95926; --good:#199e70; } }
+:root[data-theme="dark"] { --bg:#1a1a19; --ink:#f0efec; --muted:#b5b4aa; --rule:#3a3a37; --card:#242422; --accent:#3987e5; --warm:#d95926; --good:#199e70; }
+html { background: var(--bg); }
+body { background: var(--bg); color: var(--ink); font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.7em; margin: 0.2em 0 0.1em; }
+h2 { font-size: 1.25em; margin-top: 2em; border-bottom: 1px solid var(--rule); padding-bottom: 4px; }
+.sub { color: var(--muted); margin-top: 0; }
+.card { background: var(--card); border-left: 4px solid var(--accent); padding: 10px 16px; margin: 16px 0; border-radius: 4px; }
+.card.warm { border-left-color: var(--warm); }
+.card.good { border-left-color: var(--good); }
+.card b:first-child { display: block; margin-bottom: 4px; }
+figure { margin: 20px 0; }
+figure img, figure svg { width: 100%; height: auto; border-radius: 4px; }
+figcaption { color: var(--muted); font-size: 0.9em; margin-top: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: 0.92em; margin: 12px 0; }
+th, td { border-bottom: 1px solid var(--rule); padding: 6px 8px; text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+.mjx { overflow-x: auto; }
+mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; }
+code { background: var(--card); padding: 1px 4px; border-radius: 3px; font-size: 0.92em; }
+.step { display: inline-block; background: var(--accent); color: #fff; border-radius: 12px; padding: 0 10px; font-size: 0.85em; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<h1>How the EO crosstalk is extracted from the CST fields</h1>
+<p class="sub">Topic 1 of 4 &middot; from an electric field in two gaps to one number: how much modulator B moves when only A is driven</p>
+
+<div class="card"><b>The idea in three sentences</b>
+CST gives us the electric field along both lines. From it we read the voltage across every gap, at every position along the line. Then we "fly" the light of each modulator through those voltages, exactly as the real light would, and compare what modulator B picks up with what modulator A picks up. No circuit model and no fitting is involved: only physics that holds for this geometry.</div>
+
+<h2>0. The question</h2>
+<p>Two Mach&ndash;Zehnder modulators (MZMs) sit side by side, 625&nbsp;&micro;m apart. Each one has its own electrode line, a coplanar waveguide (CPW): a central signal strip between two ground strips, with a 4.15&nbsp;&micro;m gap on each side. The two optical arms of each MZM run under its two gaps. We drive line&nbsp;A only. Some of its field leaks onto line&nbsp;B, so modulator&nbsp;B modulates a little too, although nobody drives it. The <b>EO crosstalk</b> is</p>
+\[ X_{EO}(f) \;=\; \frac{\text{optical modulation produced in MZM B}}{\text{optical modulation produced in MZM A}} \qquad (\text{reported as } 20\log_{10}|X_{EO}| \text{ dB}). \]
+<p>Both modulations are small signals at frequency \(f\), so \(X_{EO}\) is a ratio of two complex amplitudes. The rest of this report builds the numerator and the denominator in four steps.</p>
+
+<figure>
+<svg viewBox="0 0 820 230" xmlns="http://www.w3.org/2000/svg" font-family="system-ui, sans-serif" font-size="13">
+  <rect x="0" y="0" width="820" height="230" fill="none"/>
+  <rect x="20" y="150" width="780" height="14" fill="#9aa7b8" opacity="0.5"/><text x="26" y="184" fill="currentColor" opacity="0.7">LN slab (200 nm) on SiO&#8322; on Si</text>
+  <g transform="translate(60,0)">
+    <rect x="0" y="120" width="70" height="30" fill="#d9b13b"/><rect x="88" y="120" width="60" height="30" fill="#d9b13b"/><rect x="166" y="120" width="70" height="30" fill="#d9b13b"/>
+    <text x="10" y="112" fill="currentColor">ground</text><text x="96" y="112" fill="currentColor">signal</text><text x="176" y="112" fill="currentColor">ground</text>
+    <circle cx="79" cy="157" r="6" fill="#eb6834"/><circle cx="157" cy="157" r="6" fill="#eb6834"/>
+    <circle cx="79" cy="135" r="3.5" fill="#2a78d6"/><circle cx="157" cy="135" r="3.5" fill="#2a78d6"/>
+    <path d="M86 135 L73 135" stroke="#2a78d6" stroke-width="2" marker-end="url(#a)"/><path d="M150 135 L163 135" stroke="#2a78d6" stroke-width="2" marker-end="url(#a)"/>
+    <text x="40" y="40" fill="currentColor" font-weight="600">Line A (driven)</text>
+    <text x="20" y="62" fill="currentColor" opacity="0.75">V&#8331; (&minus; side gap)</text><text x="130" y="62" fill="currentColor" opacity="0.75">V&#8330; (+ side gap)</text>
+    <path d="M60 68 L77 125" stroke="currentColor" opacity="0.4"/><path d="M160 68 L158 125" stroke="currentColor" opacity="0.4"/>
+  </g>
+  <g transform="translate(520,0)">
+    <rect x="0" y="120" width="70" height="30" fill="#d9b13b"/><rect x="88" y="120" width="60" height="30" fill="#d9b13b"/><rect x="166" y="120" width="70" height="30" fill="#d9b13b"/>
+    <circle cx="79" cy="157" r="6" fill="#eb6834"/><circle cx="157" cy="157" r="6" fill="#eb6834"/>
+    <circle cx="79" cy="135" r="3.5" fill="#2a78d6"/><circle cx="157" cy="135" r="3.5" fill="#2a78d6"/>
+    <text x="40" y="40" fill="currentColor" font-weight="600">Line B (victim, not driven)</text>
+  </g>
+  <text x="330" y="140" fill="currentColor" opacity="0.7">&larr; 625 &micro;m pitch &rarr;</text>
+  <circle cx="40" cy="212" r="4" fill="#2a78d6"/><text x="50" y="216" fill="currentColor">field sample point (x = 1 &micro;m, inside each gap)</text>
+  <circle cx="390" cy="212" r="6" fill="#eb6834"/><text x="402" y="216" fill="currentColor">optical arm in the LN, under each gap</text>
+  <defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2a78d6"/></marker></defs>
+</svg>
+<figcaption>Fig. 1 &ndash; Cross-section (not to scale). Each line has two gaps: one per optical arm. When a CPW is driven normally, the field points away from the signal in both gaps, so in \(y\) it points in opposite directions (blue arrows). The blue dots are where the field is exported along \(z\), for the whole 8&nbsp;mm.</figcaption>
+</figure>
+
+<h2><span class="step">Step 1</span>From the field to the gap voltage</h2>
+<p>The voltage across a gap is the line integral of the electric field from the signal edge to the ground edge:</p>
+\[ V(z) = \int_{\text{signal edge}}^{\text{ground edge}} E_y(x_0, y, z)\, dy . \]
+<p>Integrating across every gap at every \(z\) would be costly. We sample \(E_y\) at a single point per gap instead. That's legitimate because of one physical fact.</p>
+<div class="card"><b>The quasi-static fact</b>
+The gap is 4.15&nbsp;&micro;m wide. At 30&nbsp;GHz the wavelength on the line is \(\lambda = c/(f\,n) \approx 10\,\text{mm}/2.24 \approx 4.5\) mm, about 1000 times larger. Across such a tiny distance the field has no time to vary. In every cross-section it has the shape of a <i>static</i> field between two electrodes, simply scaled by the local voltage. So at any fixed point inside the gap,
+\[ E_y(x_0,y_0,z) = k\,V(z), \]
+where \(k\) depends only on the local geometry, not on frequency or on which wave carries the voltage.</div>
+<p><b>Analogy:</b> a parallel-plate capacitor. Doubling the voltage doubles the field everywhere inside, and the field pattern never changes. So a thermometer at one spot tells you the "temperature" of the whole gap.</p>
+<p><b>Why \(k\) drops out of the final result:</b> lines A and B are identical (mirror images), so they have the same \(k\) at corresponding points. Every voltage in the numerator and in the denominator of \(X_{EO}\) carries the same factor \(k\), and it cancels. That's why we never need to know \(k\). The T&nbsp;slots change \(k\) periodically along \(z\) (the dips every 180&nbsp;&micro;m in Fig.&nbsp;2), but identically on A and B, so it still cancels.</p>
+<p><i>Check:</i> on the Istanbul line we compared point sampling with the full integral across the gap, up to 80&nbsp;GHz. The crosstalk changed by 0.1&ndash;0.2&nbsp;dB.</p>
+
+<figure><img src="{{F2}}" alt="Gap voltage along the line, A and B, 30 GHz">
+<figcaption>Fig. 2 &ndash; CORDOBA 8&nbsp;mm at 30&nbsp;GHz: the CPW-pattern voltage along line A (driven) and line B (victim), from the CST field. The victim's largest voltage is 52&nbsp;dB below A's. The regular dips are the T&nbsp;slots, every 180&nbsp;&micro;m.</figcaption></figure>
+
+<h2><span class="step">Step 2</span>From the voltage to the optical phase: the light rides the wave</h2>
+<p><b>Pockels effect.</b> In lithium niobate an electric field changes the refractive index in proportion to the field: \(\Delta n_{opt} \propto E \propto V\). A short piece \(dz\) of optical arm therefore adds a phase</p>
+\[ d\varphi = \kappa\, V(z,t)\, dz , \]
+<p>where \(\kappa\) collects the material constant, the optical wavelength and the overlap between optical mode and electric field. Like \(k\), it's identical for both modulators, so it cancels in the end.</p>
+<p><b>The light is moving.</b> A slice of light that enters at time \(t_0\) reaches position \(z\) at time \(t_0 + z/v_o\), with \(v_o = c/n_g\) the optical group velocity. (It's the group index, because a modulation travels with the envelope of the light, not with its phase fronts.) Summing all pieces along the arm of length \(L\):</p>
+\[ \varphi(t_0) = \kappa \int_0^L V\!\left(z,\, t_0 + \tfrac{z}{v_o}\right) dz . \]
+<p><b>Phasors.</b> The drive is a sinusoid at angular frequency \(\omega = 2\pi f\), so the voltage is \(V(z,t) = \mathrm{Re}\{\tilde V(z)\, e^{j\omega t}\}\). Here \(\tilde V(z)\) is a complex amplitude, which is exactly what CST exports. Substituting:</p>
+\[ \varphi(t_0) = \kappa\, \mathrm{Re}\Big\{ e^{j\omega t_0} \int_0^L \tilde V(z)\, e^{j\omega z / v_o}\, dz \Big\} . \]
+<p>The phase oscillates at \(\omega\), with a complex amplitude given by the integral. Defining \(\beta_o = \omega/v_o = \omega n_g/c\), and normalising by \(L\) so that a uniform voltage \(V_0\) gives \(H = V_0\):</p>
+\[ \boxed{\,H[\tilde V] = \frac{1}{L}\int_0^L \tilde V(z)\, e^{j\beta_o (z - L)}\, dz\,} \]
+<p>The extra factor \(e^{-j\beta_o L}\) only shifts the time reference, identically for A and B, so it has no effect on \(|X_{EO}|\). \(H\) is the <b>effective voltage the light experiences</b>.</p>
+
+<div class="card good"><b>Metaphor: the surfer</b>
+A wave travelling forward along the electrode is \(\tilde V = V_0 e^{-j\beta z}\). In the integral it multiplies \(e^{+j\beta_o z}\). If the wave moves as fast as the light (\(\beta = \beta_o\)), the two phases cancel: the light surfs the same crest all the way and collects the full voltage at every step (blue line in Fig.&nbsp;3). If the wave is slower, the surfer slowly slides off the crest, and what it collects stops growing (green). A wave travelling <i>backward</i> meets the light head-on. The light crosses crest, trough, crest, trough, and the contributions cancel. It's like walking against a crowd: you brush past many people, but none stays with you (orange). For our lines, a backward wave contributes only \(\approx 2/\big((\beta_o+\beta)L\big) = 0.09\) (&minus;21&nbsp;dB) of what a matched forward wave of equal size gives.</div>
+
+<figure><img src="{{F3}}" alt="Accumulated modulation for forward matched, forward mismatched and backward waves">
+<figcaption>Fig. 3 &ndash; What the light accumulates while crossing 8&nbsp;mm at 30&nbsp;GHz, for a voltage wave of unit amplitude (optical \(n_g = 2.27\)). Only waves that keep pace with the light build up modulation.</figcaption></figure>
+
+<h2><span class="step">Step 3</span>Two arms, push-pull: the modulator reads only one pattern</h2>
+<p>An MZM splits the light into two arms and recombines it. Biased at quadrature, its output intensity changes in proportion to the <i>difference</i> of the two arm phases:</p>
+\[ \Delta P_{out} \propto \varphi_1 - \varphi_2 . \]
+<p>Arm 1 sits under the + side gap, arm 2 under the &minus; side gap. Define \(V_+\) and \(V_-\) as the two gap voltages, each measured from the signal to its ground. When both are positive, the field points in opposite \(y\) directions in the two gaps (Fig.&nbsp;1). The crystal axis is the same for both arms, so the two arms get opposite phase shifts: \(\varphi_1 = +\kappa H[V_+]\) and \(\varphi_2 = -\kappa H[V_-]\). Then</p>
+\[ \Delta P_{out} \propto \kappa\,\big(H[V_+] + H[V_-]\big) = \kappa\, H[V_+ + V_-] . \]
+<p>Every voltage pattern on a line can be split into two parts:</p>
+<table>
+<tr><th>Pattern</th><th>Gap voltages</th><th>Field in the two gaps</th><th>Effect on the push-pull MZM</th></tr>
+<tr><td><b>CPW</b> (normal drive)</td><td>\(V_+ = V_-\)</td><td>opposite directions</td><td>adds up: full modulation</td></tr>
+<tr><td><b>Slot</b> (grounds at opposite potentials)</td><td>\(V_+ = -V_-\)</td><td>same direction</td><td>cancels: no modulation</td></tr>
+</table>
+<p><b>Analogy:</b> a seesaw. Pushing one end down and lifting the other (CPW) tilts it. Lifting both ends together (slot) moves it up but doesn't tilt it, and the MZM only measures tilt.</p>
+
+<h2><span class="step">Step 4</span>The ratio</h2>
+<p>Applying Steps 1&ndash;3 to each modulator, every constant (\(k\), \(\kappa\), bias, optical power) is the same for A and B, so the ratio keeps only the voltages:</p>
+\[ \boxed{\,X_{EO}(f) = \frac{H\big[V_{B+} + V_{B-}\big]}{H\big[V_{A+} + V_{A-}\big]}\,} \]
+<p>Each \(V\) is \(E_y\) at the sample point divided by the common \(k\), read along the full 8&nbsp;mm from CST. The integrals are evaluated on the export grid, every 5&nbsp;&micro;m (36 points per 180&nbsp;&micro;m cell), with the trapezoidal rule. (The code also allows unequal arms, a push-pull imbalance; with identical arms it reduces to this formula.)</p>
+<p>At 30&nbsp;GHz on CORDOBA, the victim's largest voltage is &minus;52&nbsp;dB relative to A, yet \(X_{EO} = -76\) dB. The difference is Step&nbsp;2 at work: much of the victim's voltage isn't phase-matched to the light (backward waves, waves at other speeds), so the light averages it away.</p>
+
+<h2>Where \(\tilde V(z)\) comes from, and the conditions behind it</h2>
+<p>CST excites port 1 (line A, near end) with all four ports terminated in 50&nbsp;&Omega;, and records the field. If the real source and load are also 50&nbsp;&Omega;, that field <i>is</i> the device case, and nothing else is needed. For other terminations we use <b>linearity</b>: the field in any situation is a sum of the four single-port fields, each weighted by the wave entering that port, \(\tilde V = \sum_j a_j F_j(z)\). The weights \(a_j\) follow from the S-matrix and the reflection of each termination. The fields of ports 2&ndash;4 follow from port 1 by symmetry (mirror A&harr;B, reversal near&harr;far end).</p>
+<table>
+<tr><th>Assumption</th><th>Why it holds</th><th>What would break it</th></tr>
+<tr><td>One point per gap measures the gap voltage (common factor \(k\))</td><td>Gap is about 1000&times; smaller than the wavelength, so the field is quasi-static in each cross-section; A and B are mirror images</td><td>Very high frequencies, or a sample point in a region that differs between A and B</td></tr>
+<tr><td>Linear Pockels effect, small signal, MZM at quadrature</td><td>Drive voltages are far below the level where the response bends</td><td>Large-signal operation (then \(X_{EO}\) depends on amplitude)</td></tr>
+<tr><td>Same optical \(n_g\) and constants in both modulators</td><td>Identical waveguides</td><td>Fabrication differences between channels</td></tr>
+<tr><td>Ports 2&ndash;4 by symmetry (non-50&nbsp;&Omega; case only)</td><td>The layout is mirror- and end-symmetric; verified to \(10^{-4}\) on Istanbul</td><td>An asymmetric layout (then export those ports' fields too)</td></tr>
+<tr><td>The CST field is accurate</td><td>The time-domain solution of Maxwell's equations on the meshed model; no approximation is added afterwards</td><td>The time-domain run stops at a finite energy level (&minus;27&nbsp;dB). For a victim 50&ndash;60&nbsp;dB below A this hasn't been checked yet</td></tr>
+</table>
+
+<figure><img src="{{F4}}" alt="EO crosstalk versus frequency for the standard and HZ CORDOBA runs">
+<figcaption>Fig. 4 &ndash; The result: EO crosstalk at the 12 monitor frequencies, 50&nbsp;&Omega; source and load, push-pull. The dotted lines only join the points; between monitor frequencies the fields give nothing.</figcaption></figure>
+
+<h2>What this number is, and what it is not</h2>
+<div class="card good"><b>It is</b> the exact EO crosstalk of the <i>simulated structure</i>, at the monitor frequencies. Exact here means no circuit model and no fitted parameter, only the physics above.</div>
+<div class="card warm"><b>It is not</b> (1) a curve: we only have points every 5&nbsp;GHz; (2) the chip itself: the simulation has an open bottom instead of the conductive backside, and its lateral boundary sits 21&nbsp;&micro;m from the structure, suspected of producing the extra n&nbsp;&asymp;&nbsp;2.5 wave (the widened 625&nbsp;&micro;m run tests this); (3) transferable to another length. Filling the gaps between frequencies and changing the length is the job of a mode model (topics&nbsp;3 and&nbsp;4), and this report's numbers are what such a model must reproduce.</div>
+
+</body>
+</html>
