@@ -182,6 +182,7 @@ FONTI_URL = {
     "FWA e frequenze 26 GHz": ["https://tariffe.segugio.it/news-tariffe/internet-senza-fibra-la-fwa-supera-2-7-milioni-di-linee-00047779.aspx",
                                "https://www.smartworld.it/news/frequenze-5g-26-ghz-gara-italia-agosto-2026.html"],
     "Fase 2 — numeri di mercato": [
+        "https://esploradati.istat.it (dataset: Classe di addetti, settori economici (Ateco 5 cifre) - Italia, anno 2024)",
         "https://accredia.it/wp-content/uploads/2024/07/Cartella-stampa-breve-dati-al-31-12-2025_ITA-1.pdf",
         "https://assomac.it/media/documents/rapporto_federmacchine_2020.pdf",
         "https://anie.it/federazione/chi-siamo/rapporto-annuale-2025_def",
@@ -193,32 +194,32 @@ FONTI_URL = {
 # ---- Fase 2: stime di mercato (Italia). nicchia (inizio del nome in Lista lunga), etichetta breve,
 # aziende bassa/base/alta, fonte, affidabilità, prezzo annuo bassa/base/alta (ipotesi), lettura
 FASE2 = [
-    ("NIS2: preparazione", "NIS2 per PMI", 10000, 20000, 50000,
-     "Stampa di settore: 20.000–50.000 enti potenzialmente coinvolti (non registrati)", "Media",
+    ("NIS2: preparazione", "NIS2 per PMI", 7000, 13500, 30000,
+     "Istat ASIA 2024: 13.574 unità locali con 50+ addetti nei settori NIS2 (perimetro mio, approssimato). Stampa: 20.000-50.000 enti. Sono unità locali: limite superiore", "Media",
      600, 1500, 4000, "Base ampia, ma mercato affollato di consulenti: serve un canale forte."),
-    ("NIS2 per MSP", "NIS2 per MSP e consulenti", 2000, 5000, 10000,
-     "Mia ipotesi: numero di MSP e studi di consulenza IT rilevanti (nessun dato trovato)", "Bassa",
+    ("NIS2 per MSP", "NIS2 per MSP e consulenti", 2700, 4400, 8000,
+     "Istat 2024: ATECO 62.02/62.03/62.09 e 63.11 con 10+ addetti (unità locali); alto = tutto 62 e 63.1 con 10+", "Media",
      1200, 2400, 6000, "Vendi al canale: meno clienti ma con più aziende ciascuno. Da confrontare con le piattaforme esistenti."),
-    ("Cyber Resilience Act", "Cyber Resilience Act", 1100, 3000, 8000,
-     "ANIE: ~1.100 aziende associate (altre fonti: 1.600); più costruttori con software. Perimetro CRA non trovato", "Bassa",
+    ("Cyber Resilience Act", "Cyber Resilience Act", 1700, 4400, 17000,
+     "Istat 2024: ATECO 26 (1.692), 26+27 (4.396), + 28 e software 62.01 con 10+ (17.011); solo una parte produce prodotti con elementi digitali", "Media-bassa",
      1500, 3000, 6000, "Norma europea: il mercato vero è più grande dell'Italia, ma va servito in inglese e con concorrenti internazionali."),
-    ("Direttiva RED", "Direttiva RED (radio/IoT)", 300, 800, 2000,
-     "Mia ipotesi: produttori e importatori di apparecchi radio in Italia (nessun dato trovato)", "Bassa",
+    ("Direttiva RED", "Direttiva RED (radio/IoT)", 250, 780, 1700,
+     "Istat 2024: ATECO 26.3 (781 unità locali, 254 con 10+); alto = ATECO 26 con 10+ (1.692). Gli importatori non sono inclusi", "Media-bassa",
      2000, 4000, 8000, "Troppo piccolo come solo mercato italiano; ha senso solo come prodotto europeo."),
-    ("Regolamento Macchine", "Regolamento Macchine", 3000, 5000, 8000,
-     "Federmacchine 2020: 5.050 imprese (dato vecchio)", "Media-bassa",
+    ("Regolamento Macchine", "Regolamento Macchine", 2200, 9000, 22700,
+     "Istat 2024: ATECO 28 = 22.720 unità locali, 9.059 con 10+, 2.179 con 50+. Controllo: Federmacchine 2020, 5.050 imprese associate", "Media",
      1500, 2500, 5000, "Mercato ben definito e vicino a te; la scadenza (20/01/2027) può slittare."),
     ("Iperammortamento 2026", "Iperammortamento 2026 (perizie)", 5000, 12000, 20000,
-     "CNI 2020: 4,5%–9% degli ingegneri ha firmato perizie, in media 10 ciascuno (+ ordine di grandezza mio)", "Bassa",
+     "CNI 2020: 4,5%-9% degli ingegneri ha firmato perizie, in media 10 ciascuno (+ ordine di grandezza mio)", "Bassa",
      300, 600, 1500, "Tanti utenti ma prezzo basso: serve come aggiunta a un prodotto più grande."),
-    ("Fibra ottica", "Fibra ottica (posa)", 300, 1000, 3000,
-     "Mia ipotesi: nessun dato trovato sul numero di imprese di posa", "Bassa",
+    ("Fibra ottica", "Fibra ottica (posa)", 400, 800, 6600,
+     "Istat 2024: ATECO 42.22 = 805 unità locali (401 con 10+); alto = + 43.21 con 10+ (5.781). La posa è distribuita su più codici", "Media-bassa",
      1000, 2000, 4000, "Mercato piccolo e dipendente da pochi committenti."),
-    ("FWA: pianificazione", "FWA (piccoli operatori)", 200, 400, 1000,
-     "Consulente 2022: 'centinaia' di WISP in Italia", "Bassa",
+    ("FWA: pianificazione", "FWA (piccoli operatori)", 230, 600, 1300,
+     "Istat 2024: ATECO 61.10 = 1.315 e 61.20 = 226 unità locali. I WISP non sono isolabili; base = mio giudizio", "Bassa",
      800, 1500, 3000, "Troppo piccolo come mercato solo italiano."),
-    ("Report di collaudo", "Report di collaudo", 1700, 3000, 10000,
-     "Accredia (31/12/2025): 1.448 laboratori di prova e 228 di taratura/altro; più laboratori interni non contati", "Media",
+    ("Report di collaudo", "Report di collaudo", 1000, 2000, 3900,
+     "Istat 2024: ATECO 71.20 = 9.362 unità locali, 1.041 con 10+; 71.20.1 prodotti = 3.867. Accredia: 1.448 laboratori di prova", "Media",
      600, 1200, 3000, "Mercato di nicchia; gli strumenti di misura hanno già report inclusi."),
 ]
 
@@ -429,14 +430,66 @@ w2.freeze_panes = w2.cell(row=HR2 + 1, column=2)
 r = HR2 + len(FASE2) + 2
 w2.cell(row=r, column=1, value="Come leggerla").font = BOLD
 for k, t in enumerate([
-    "Le norme europee (CRA, RED, Macchine) si applicano in tutta l'UE: il mercato reale può essere molte volte quello italiano, ma richiede un prodotto in inglese e concorrenti internazionali.",
-    "Per numeri precisi sulle aziende per codice ATECO e classe di addetti servono le tavole Istat (ASIA) su IstatData: scaricale e le analizzo. Dal mio ambiente non sono raggiungibili.",
+    "Il numero di aziende viene da Istat 2024 (unità locali, quindi limiti superiori) dove è indicato; le ipotesi residue sono segnate nella colonna Affidabilità. Le norme europee (CRA, RED, Macchine) si applicano in tutta l'UE: il mercato reale può essere molte volte quello italiano, ma richiede un prodotto in inglese e concorrenti internazionali.",
+    "Prossimo passo di precisione: il perimetro NIS2 e le quote di prodotti con elementi digitali sono mie approssimazioni, da affinare nelle interviste.",
     "Nessun numero di questo foglio è un dato di mercato verificato per il tuo prodotto: sono ordini di grandezza per scartare le nicchie troppo piccole.",
 ], start=1):
     c = w2.cell(row=r + k, column=1, value=t)
     c.font, c.alignment = BLACK, WRAP
     w2.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=14)
     w2.row_dimensions[r + k].height = 30
+
+# ============================================================ ISTAT 2024
+from openpyxl import load_workbook as _lw
+import re as _re
+_src = "/home/user/claude/freelance/dati/istat-asia-ateco5-classi-addetti-2024.xlsx"
+_wb = _lw(_src, read_only=True, data_only=True)
+_rows = {}
+for _i, _r in enumerate(_wb.active.iter_rows(values_only=True)):
+    if _i < 8 or _r[0] is None:
+        continue
+    _m = _re.match(r"\s*\[(\w+)\]\s*(.*)", str(_r[0]))
+    if not _m:
+        continue
+    def _n(x):
+        try:
+            return float(x)
+        except (TypeError, ValueError):
+            return 0
+    _rows[_m.group(1)] = (_m.group(2).strip(), [_n(x) for x in _r[1:11]])
+wi = wb.create_sheet("Istat 2024", 3)
+wi["A1"] = "Istat ASIA 2024 — unità locali delle imprese attive per classe di addetti (estratto)"
+wi["A1"].font = H1
+wi["A2"] = ("Fonte: Istat, 'Classe di addetti, settori economici (Ateco 5 cifre) - Italia', anno 2024. "
+            "ATTENZIONE: sono UNITÀ LOCALI, non imprese: una società con più sedi conta più volte, quindi sono limiti superiori. "
+            "File completo in freelance/dati/.")
+wi["A2"].font = NOTE
+wi["A2"].alignment = WRAP
+wi.merge_cells("A2:L2")
+wi.row_dimensions[2].height = 40
+hh = ["Codice", "Attività", "UL 0-9", "UL 10-49", "UL 50-249", "UL 250+", "UL totale", "UL con 10+", "UL con 50+",
+      "Addetti totali (medi annui)"]
+for c, (t, w) in enumerate(zip(hh, [10, 60, 11, 11, 11, 11, 12, 12, 12, 18]), start=1):
+    cell = wi.cell(row=4, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+    wi.column_dimensions[get_column_letter(c)].width = w
+CODICI = ["26", "263", "265", "27", "271", "273", "279", "28", "281", "282", "283", "284", "289",
+          "4222", "4321", "6110", "6120", "6190", "6201", "6202", "6203", "6209", "6311", "71201", "71202", "7112"]
+for i, cod in enumerate(CODICI, start=1):
+    if cod not in _rows:
+        continue
+    nm, v = _rows[cod]
+    r = 4 + i
+    vals = [cod, nm, v[0], v[2], v[4], v[6], v[8], v[2] + v[4] + v[6], v[4] + v[6], v[9]]
+    for c, x in enumerate(vals, start=1):
+        cell = wi.cell(row=r, column=c, value=x)
+        cell.font = BLACK
+        cell.border = THIN
+        if c >= 3:
+            cell.number_format = "#,##0"
+wi.freeze_panes = "C5"
+
 
 wf = wb.create_sheet("Fonti")
 wf.column_dimensions["A"].width = 38
