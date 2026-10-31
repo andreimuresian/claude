@@ -72,22 +72,28 @@ for i, (h, w) in enumerate(heads, start=1):
 ws.row_dimensions[3].height = 30
 ws.freeze_panes = "A4"
 
-# riga 4: esempio da cancellare — riga 5: prima settimana reale (20/09/2026, quella già compilata)
+# riga 4: esempio da cancellare — righe 5..: settimane reali (dal 20/09/2026)
 ESEMPIO = (date(2026, 8, 30), 2190, 0, 0, 0, 2190, "ESEMPIO — stipendio di agosto (cancella questa riga)")
-REALE_20_09 = (date(2026, 9, 20), 74, 470, 350, 81, 0, "Rinnovo caldaia (140 € — vedi foglio Spese)")
+REALI = [
+    (date(2026, 9, 20), 74, 470, 350, 81, 0, "Rinnovo caldaia (140 € — vedi foglio Spese)"),
+    (date(2026, 9, 27), 120, 470, 350, 36, 300, "Soldi Tati (250) + Zio Laurea (50)"),
+    (date(2026, 10, 5), 445, 1020, 300, 0, 2197, "Arrivato stipendio (pagato affitto, assicurazione auto, iscrizione lotta)"),
+    (date(2026, 10, 12), 40, 1020, 300, 198, 198, "Arrivati buoni pasto: 198 € messi in Entrate (nel tuo foglio mancavano, lo speso risultava 207 invece di 405)"),
+    (date(2026, 11, 2), 2081, 1020, 150, 0, 2230.5, "PROVVISORIO (dati del 31/10): stipendio 2.230 € del 29/10 + cashback 0,50. Contanti: 100 € spesi perché la carta era a zero + 50 € per un lavoro."),
+]
 
 for r in range(4, NR + 1):
     if r == 4:
         d, cc, rp, ct, bp, en, nt = ESEMPIO
         font = ITAL
-    elif r == 5:
-        d, cc, rp, ct, bp, en, nt = REALE_20_09
+    elif 5 <= r < 5 + len(REALI):
+        d, cc, rp, ct, bp, en, nt = REALI[r - 5]
         font = BLACK
     else:
         d = cc = rp = ct = bp = en = nt = None
         font = BLUE
 
-    if r <= 5:
+    if r < 5 + len(REALI):
         ws.cell(row=r, column=1, value=d).font = font
         for col, val in ((2, cc), (3, rp), (4, ct), (5, bp), (6, en)):
             ws.cell(row=r, column=col, value=val).font = font
@@ -134,7 +140,7 @@ sp.freeze_panes = "A4"
 
 SPESE_RIGHE = [
     (date(2026, 9, 20), "Revisione caldaia + controllo fumi (100 € contanti + 40 € carta)", 140, BLACK),
-    (date(2026, 10, 3), "Assicurazione auto — rinnovo Prima/Triglav, pagamento unico", 467.76, BLACK),
+    (date(2026, 10, 3), "Assicurazione auto — rinnovo Prima/Triglav, pagamento unico", 467.77, BLACK),
     (date(2026, 10, 5), "Lotta Club Seggiano — quota iscrizione + primo mese, MENSILE non semestrale (corretto): dal secondo mese 25 €/mese ricorrenti, va nel budget fisso non più qui. 2 allenamenti/settimana per ora.", 50, BLACK),
 ]
 for i, (d, voce, imp, font) in enumerate(SPESE_RIGHE):
@@ -174,8 +180,10 @@ en_sh.freeze_panes = "A4"
 
 ENTRATE_RIGHE = [
     (date(2026, 9, 29), "Stipendio di settembre — accreditato, confermato", 2197, BLACK),
-    (date(2026, 10, 1), "Bonifico da papà (previsto)", 250, GREENIT),
-    (date(2026, 10, 1), "Ricarica buoni pasto — 22 giorni lavorativi × 9 € (previsto)", 198, GREENIT),
+    (date(2026, 9, 22), "Bonifico da papà — contributo affitto, ultimo mese (arrivato; non ce ne saranno altri)", 250, BLACK),
+    (date(2026, 9, 24), "Regalo laurea dallo zio (contanti)", 50, BLACK),
+    (date(2026, 10, 9), "Ricarica buoni pasto EdenRed di ottobre", 198, BLACK),
+    (date(2026, 10, 29), "Stipendio di ottobre — accreditato, confermato", 2230, BLACK),
     (date(2026, 11, 15), "Rimborso 730 — accredito su carta (atteso nov/dic, importo confermato dal 730-3)", 1481, GREENIT),
     (date(2026, 12, 1), "Tredicesima 2026 — 5/12 da assunzione 03/08/2026, netto stimato dal cedolino di agosto (previsto)", 800, GREENIT),
 ]
@@ -249,9 +257,77 @@ MOVIMENTI = [
     (date(2026, 9, 16), "PostePay — POS Esselunga Monza", 1.73, SPESA, "Cibo"),
     (date(2026, 9, 16), "EdenRed — Esselunga (buono pasto)", 9.00, SPESA, "Cibo"),
     (date(2026, 9, 17), "PostePay — bonifico SEPA, residuo estinzione conto BCC Caravaggio", 0.01, ACCR, "Trasferimento"),
-    (date(2026, 9, 16), "Anthropic — abbonamento Claude", 21.96, SPESA, "Abbonamenti"),
+    (date(2026, 9, 11), "PostePay — Anthropic, abbonamento Claude", 21.96, SPESA, "Abbonamenti"),
     (date(2026, 9, 19), "EdenRed — Tigros (3 buoni pasto)", 27.00, SPESA, "Cibo"),
-    (date(2026, 9, 19), "EdenRed — 2 movimenti non dettagliati (4 buoni pasto)", 36.00, SPESA, "Cibo"),
+    (date(2026, 9, 19), "EdenRed — Boss Carne (36 €, non era tracciato nel foglio Settimane)", 36.00, SPESA, "Cibo"),
+    (date(2026, 9, 18), "PostePay — POS 3C SRL Milano, revisione caldaia (quota carta; altri 100 € in contanti)", 40.00, SPESA, "Revisione caldaia"),
+    (date(2026, 9, 19), "PostePay — Vueling, volo Mila", 32.99, SPESA, "Volo Mila"),
+    (date(2026, 9, 19), "PostePay — POS Tigros San Giuliano", 7.48, SPESA, "Cibo"),
+    (date(2026, 9, 21), "PostePay — POS Market San Donato", 1.51, SPESA, "Cibo"),
+    (date(2026, 9, 21), "EdenRed — Carrefour", 18.00, SPESA, "Cibo"),
+    (date(2026, 9, 22), "PostePay — bonifico da Muresian Horia (contributo affitto, ultimo)", 250.00, ACCR, "Entrata"),
+    (date(2026, 9, 22), "PostePay — POS Market San Giuliano", 7.65, SPESA, "Cibo"),
+    (date(2026, 9, 22), "EdenRed — Carrefour", 9.00, SPESA, "Cibo"),
+    (date(2026, 9, 24), "PostePay — POS ATM Milano, biglietto", 4.40, SPESA, "Trasporti"),
+    (date(2026, 9, 25), "PostePay — POS Armagni Panetteria, Milano", 12.00, SPESA, "Altro"),
+    (date(2026, 9, 25), "PostePay — POS ATM Milano, biglietto", 4.40, SPESA, "Trasporti"),
+    (date(2026, 9, 26), "PostePay — POS Società Agricola Zuff, Melegnano (cascina)", 104.17, SPESA, "Cibo"),
+    (date(2026, 9, 26), "PostePay — POS Market San Donato", 7.90, SPESA, "Cibo"),
+    (date(2026, 9, 26), "EdenRed — Carrefour", 18.00, SPESA, "Cibo"),
+    (date(2026, 9, 27), "PostePay — POS Market San Donato", 2.88, SPESA, "Cibo"),
+    (date(2026, 9, 27), "PostePay — POS Trattoria Ticino, Bereguardo", 2.60, SPESA, "Altro"),
+    (date(2026, 9, 27), "PostePay — POS distributore 7896, Casorate Primo (benzina)", 28.11, SPESA, "Benzina"),
+    (date(2026, 9, 29), "PostePay — bonifico stipendio AFR, settembre", 2197.00, ACCR, "Stipendio"),
+    (date(2026, 9, 29), "PostePay — commissioni bonifico affitto", 1.00, SPESA, "Affitto"),
+    (date(2026, 9, 29), "PostePay — bonifico istantaneo affitto ottobre", 700.00, SPESA, "Affitto"),
+    (date(2026, 9, 29), "PostePay — versamento sul Salvadanaio", 550.00, SPESA, "Trasferimento"),
+    (date(2026, 9, 30), "PostePay — POS Market San Donato", 1.64, SPESA, "Cibo"),
+    (date(2026, 9, 30), "EdenRed — Carrefour", 9.00, SPESA, "Cibo"),
+    (date(2026, 10, 1), "PostePay — POS Famila San Giuliano", 7.71, SPESA, "Cibo"),
+    (date(2026, 10, 1), "EdenRed — Famila", 9.00, SPESA, "Cibo"),
+    (date(2026, 10, 1), "PostePay — POS Pittarosso, scarpe Mila", 99.90, SPESA, "Altro"),
+    (date(2026, 10, 1), "PostePay — canone annuale carta", 13.00, SPESA, "Commissioni"),
+    (date(2026, 10, 2), "PostePay — POS Esselunga San Donato", 26.52, SPESA, "Cibo"),
+    (date(2026, 10, 2), "EdenRed — Esselunga (buoni finiti)", 18.00, SPESA, "Cibo"),
+    (date(2026, 10, 3), "PostePay — Prima Assicurazioni, assicurazione auto", 467.77, SPESA, "Assicurazione auto"),
+    (date(2026, 10, 4), "PostePay — POS ENI 12160, Peschiera Borromeo (benzina)", 33.59, SPESA, "Benzina"),
+    (date(2026, 10, 4), "PostePay — POS Market San Donato", 3.54, SPESA, "Cibo"),
+    (date(2026, 10, 4), "PostePay — POS Market San Donato", 29.07, SPESA, "Cibo"),
+    (date(2026, 10, 4), "PostePay — POS Pasticceria Gino", 3.60, SPESA, "Cibo"),
+    (date(2026, 10, 5), "PostePay — POS Farmacia Comunale Pioltello, antidolorifico", 13.90, SPESA, "Altro"),
+    (date(2026, 10, 5), "PostePay — POS Tigros San Giuliano", 28.95, SPESA, "Cibo"),
+    (date(2026, 10, 6), "PostePay — POS Pinoy Saver's Mart, mais per Mila", 6.89, SPESA, "Cibo"),
+    (date(2026, 10, 6), "PostePay — TIM ricarica", 15.00, SPESA, "Tim"),
+    (date(2026, 10, 8), "PostePay — POS Commercialunione, caffè per Amir", 1.20, SPESA, "Altro"),
+    (date(2026, 10, 8), "PostePay — POS Barber, parrucchiere", 20.00, SPESA, "Altro"),
+    (date(2026, 10, 8), "PostePay — POS Market San Donato", 16.37, SPESA, "Cibo"),
+    (date(2026, 10, 9), "PostePay — Foorban", 4.30, SPESA, "Cibo"),
+    (date(2026, 10, 9), "EdenRed — ricarica buoni pasto di ottobre", 198.00, ACCR, "Entrata"),
+    (date(2026, 10, 10), "PostePay — POS Ipercoop Peschiera Borromeo", 29.31, SPESA, "Cibo"),
+    (date(2026, 10, 10), "PostePay — POS Phone Lab Peschiera, auricolari nuovi", 19.00, SPESA, "Altro"),
+    (date(2026, 10, 10), "PostePay — POS Market San Donato", 7.36, SPESA, "Cibo"),
+    (date(2026, 10, 11), "PostePay — commissioni bonifico benzina", 1.00, SPESA, "Benzina"),
+    (date(2026, 10, 11), "PostePay — bonifico istantaneo a Milagros Yakelin Borda Condorchoa (benzina)", 20.00, SPESA, "Benzina"),
+    (date(2026, 10, 11), "PostePay — POS Esselunga Monza", 43.02, SPESA, "Cibo"),
+    (date(2026, 10, 11), "PostePay — POS Sushiland San Giuliano, sushi con Sasha", 28.40, SPESA, "Altro"),
+    (date(2026, 10, 11), "PostePay — POS S.B. Enterprise Milano, mais e altro per Mila", 26.80, SPESA, "Altro"),
+    (date(2026, 10, 11), "PostePay — Anthropic, abbonamento Claude", 21.96, SPESA, "Abbonamenti"),
+    (date(2026, 10, 12), "PostePay — POS Turkish, kebab io e Mila", 23.00, SPESA, "Altro"),
+    (date(2026, 10, 13), "PostePay — cashback ScontiPoste su acquisto ENI del 04/10", 0.50, ACCR, "Rimborso"),
+    (date(2026, 10, 16), "PostePay — POS La Sfinge, Pioltello", 8.50, SPESA, "Cibo (uscita)"),
+    (date(2026, 10, 16), "PostePay — POS Market San Donato", 2.78, SPESA, "Cibo"),
+    (date(2026, 10, 17), "PostePay — POS Market San Donato", 1.82, SPESA, "Cibo"),
+    (date(2026, 10, 17), "PostePay — POS Le Delizie di Via Zucchi, Monza, focaccia", 3.50, SPESA, "Altro"),
+    (date(2026, 10, 17), "PostePay — POS Monza Mobilità (non ricordo)", 2.80, SPESA, "Altro"),
+    (date(2026, 10, 18), "PostePay — POS Market San Giuliano", 1.49, SPESA, "Cibo"),
+    (date(2026, 10, 18), "PostePay — POS Tigros San Giuliano", 3.08, SPESA, "Cibo"),
+    (date(2026, 10, 21), "PostePay — POS Market San Donato", 3.49, SPESA, "Cibo"),
+    (date(2026, 10, 23), "PostePay — POS Market San Donato", 5.32, SPESA, "Cibo"),
+    (date(2026, 10, 23), "PostePay — POS Market San Donato", 2.99, SPESA, "Cibo"),
+    (date(2026, 10, 23), "PostePay — Foorban", 3.50, SPESA, "Cibo"),
+    (date(2026, 10, 25), "PostePay — POS autolavaggio NYX Paullese, lavaggio auto", 5.00, SPESA, "Altro"),
+    (date(2026, 10, 29), "PostePay — Foorban", 1.60, SPESA, "Cibo"),
+    (date(2026, 10, 29), "PostePay — bonifico stipendio AFR, ottobre", 2230.00, ACCR, "Stipendio"),
 ]
 MOVIMENTI.sort(key=lambda x: x[0])
 
@@ -276,13 +352,15 @@ for r in range(hr + 1 + len(MOVIMENTI), MR + 1):
 
 rnote = hr + 2 + len(MOVIMENTI)
 mv.cell(row=rnote, column=1, value="Note").font = LBL
-note_txt = ("«Trasferimento» = spostamenti fra tuoi conti/chiusura BCC Caravaggio: non sono spesa reale, "
-            "tienile fuori dai tuoi conteggi di spesa. Le 4 ricariche buoni pasto del 19/09 non erano "
-            "nello screenshot: importo dedotto da 21 caricati − 9 rimasti − gli 8 già visti = 4.")
+note_txt = ("«Trasferimento» = spostamenti fra tuoi conti (salvadanaio, chiusura BCC Caravaggio): non sono spesa "
+            "reale, tienile fuori dai conteggi. Dati PostePay fino al 29/10: mancano i movimenti del 30-31/10. "
+            "Categorie corrette rispetto al tuo elenco: ENI 12160 → Benzina (era Cibo), canone carta → Commissioni "
+            "(era Cibo). EdenRed: saldo a 0 dal 02/10, ricarica di 198 € il 09/10; le spese fatte con quei 198 € "
+            "non sono ancora state incollate.")
 mv.cell(row=rnote, column=2, value=note_txt).font = NOTE
 mv.cell(row=rnote, column=2).alignment = Alignment(wrap_text=True, vertical="top")
 mv.merge_cells(start_row=rnote, start_column=2, end_row=rnote, end_column=5)
-mv.row_dimensions[rnote].height = 50
+mv.row_dimensions[rnote].height = 78
 
 # ============================================================ PIANO
 pl = wb.create_sheet("Piano")
@@ -308,7 +386,7 @@ for i, (lab, val, fmt, nota) in enumerate(par):
 
 pl.cell(row=7, column=1, value="Impegni noti, pagati dal conto corrente (non dal fondo)").font = LBL
 impegni = [
-    "Assicurazione auto: 467,76 € a inizio ottobre (confermato, vedi foglio Spese).",
+    "Assicurazione auto: 467,77 € pagati il 03/10 (confermato, vedi foglio Spese).",
     "Lotta Club Seggiano: 50 € a ottobre (iscrizione + primo mese), poi 25 €/mese ricorrenti — è "
     "mensile, non semestrale (corretto). Da novembre è un costo fisso ricorrente, non più una spesa "
     "una tantum del buffer.",
@@ -337,18 +415,18 @@ for i, (d, v) in enumerate(PIANO):
 
 pl.cell(row=P1 + 2, column=1, value="Da novembre in poi").font = LBL
 pl.cell(row=P1 + 2, column=3,
-        value="Non ancora stimato: manca la conferma se il tuo stipendio netto \"a regime\" e i 250 € "
-              "di tuo padre sono ricorrenti o solo di ottobre, e quando arriva davvero il rimborso 730. "
-              "Appena hai il primo dato reale di novembre (foglio Settimane), aggiungo il punto qui "
+        value="Non ancora stimato. Noto: i 250 € di tuo padre sono finiti (l'ultimo è del 22/09), lo "
+              "stipendio di ottobre è 2.230 €. Manca ancora il rimborso 730 (data) e il costo reale di "
+              "bollette e auto a novembre. Appena hai il dato reale di novembre aggiungo il punto qui "
               "invece di indovinarlo adesso.").font = NOTE
 pl.cell(row=P1 + 2, column=3).alignment = Alignment(wrap_text=True, vertical="top")
 pl.row_dimensions[P1 + 2].height = 50
 
 pl.cell(row=P1 + 4, column=1, value="Fonte dei numeri").font = LBL
 pl.cell(row=P1 + 4, column=3,
-        value="Piano concordato il 13/09/2026. Curva rifatta il 20/09/2026 dopo un errore: la versione "
-              "precedente non era stata ricalcolata con i costi reali di caldaia, assicurazione e lotta, "
-              "e contava la lotta come rata mensile mentre è un pagamento semestrale unico.").font = NOTE
+        value="Piano concordato il 13/09/2026. Curva rifatta il 20/09/2026 con i costi reali di caldaia e "
+              "assicurazione. La lotta è mensile (50 € il primo mese, poi 25 €/mese): costo fisso, non "
+              "una tantum del buffer.").font = NOTE
 pl.cell(row=P1 + 4, column=3).alignment = Alignment(wrap_text=True, vertical="top")
 pl.row_dimensions[P1 + 4].height = 40
 
