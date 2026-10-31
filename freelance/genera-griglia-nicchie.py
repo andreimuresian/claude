@@ -202,7 +202,7 @@ FONTI_URL = {
                                "https://www.smartworld.it/news/frequenze-5g-26-ghz-gara-italia-agosto-2026.html"],
     "Fase 2 — numeri di mercato": [
         "https://esploradati.istat.it (dataset: Classe di addetti, settori economici (Ateco 5 cifre) - Italia, anno 2024)",
-        "https://esploradati.istat.it (dataset: Classe di addetti, settori economici (Ateco 3 cifre) - prov., anno 2024; Lombardia e 8 province)",
+        "https://esploradati.istat.it (dataset: Classe di addetti, settori economici (Ateco 3 cifre) - prov., anno 2024; Lombardia e le 12 province, in due file)",
         "https://accredia.it/wp-content/uploads/2024/07/Cartella-stampa-breve-dati-al-31-12-2025_ITA-1.pdf",
         "https://assomac.it/media/documents/rapporto_federmacchine_2020.pdf",
         "https://anie.it/federazione/chi-siamo/rapporto-annuale-2025_def",
@@ -465,6 +465,7 @@ def _carica(path, skip, due_colonne):
     return out
 NAZ = {c: (n, v) for c, n, v in _carica("/home/user/claude/freelance/dati/istat-asia-ateco5-classi-addetti-2024.xlsx", 8, False)}
 LOM = {(t, c): (n, v) for t, c, n, v in _carica("/home/user/claude/freelance/dati/istat-asia-ateco3-prov-lombardia-2024.xlsx", 7, True)}
+LOM.update({(t, c): (n, v) for t, c, n, v in _carica("/home/user/claude/freelance/dati/istat-asia-ateco3-prov-lombardia-2024-b.xlsx", 7, True)})
 _z = [0] * 10
 def _LV(c, t="ITC4"): return LOM.get((t, c), ("", _z))[1]
 def _NV(c): return NAZ.get(c, ("", _z))[1]
@@ -737,7 +738,8 @@ wL["A2"].alignment = WRAP
 wL.merge_cells("A2:I2")
 wL.row_dimensions[2].height = 44
 PROV = [("ITC45", "Milano"), ("ITC47", "Brescia"), ("ITC46", "Bergamo"), ("IT108", "Monza e Brianza"), ("ITC41", "Varese"),
-        ("ITC48", "Pavia"), ("ITC4A", "Cremona"), ("ITC49", "Lodi")]
+        ("ITC48", "Pavia"), ("ITC4A", "Cremona"), ("ITC49", "Lodi"), ("ITC42", "Como"), ("ITC43", "Lecco"),
+        ("ITC4B", "Mantova"), ("ITC44", "Sondrio")]
 hL = ["Codice", "Settore", "UL totali", "UL con 10+", "UL con 50+", "Addetti nelle UL con 10+", "Quota Lombardia su Italia (UL 10+)",
       "Provincia con più UL 10+", "UL 10+ in quella provincia"]
 for c, (t, w) in enumerate(zip(hL, [9, 62, 12, 12, 12, 16, 16, 20, 14]), start=1):
