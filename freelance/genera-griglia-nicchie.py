@@ -202,6 +202,7 @@ FONTI_URL = {
                                "https://www.smartworld.it/news/frequenze-5g-26-ghz-gara-italia-agosto-2026.html"],
     "Fase 2 — numeri di mercato": [
         "https://esploradati.istat.it (dataset: Classe di addetti, settori economici (Ateco 5 cifre) - Italia, anno 2024)",
+        "https://esploradati.istat.it (dataset: Classe di addetti, settori economici (Ateco 3 cifre) - prov., anno 2024; Lombardia e 8 province)",
         "https://accredia.it/wp-content/uploads/2024/07/Cartella-stampa-breve-dati-al-31-12-2025_ITA-1.pdf",
         "https://assomac.it/media/documents/rapporto_federmacchine_2020.pdf",
         "https://anie.it/federazione/chi-siamo/rapporto-annuale-2025_def",
@@ -435,16 +436,71 @@ for i, t in enumerate(ALTRE, start=1):
     wsg.row_dimensions[r0 + i].height = 32
 
 
+# ============================================================ DATI ISTAT (nazionale e Lombardia)
+from openpyxl import load_workbook as _load
+import re as _re2
+def _num(x):
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return 0.0
+def _carica(path, skip, due_colonne):
+    """Righe: (territorio, codice, nome, valori[10]) oppure (codice, nome, valori[10]) per il file nazionale."""
+    out = []
+    ws0 = _load(path, read_only=True, data_only=True).active
+    for i, r in enumerate(ws0.iter_rows(values_only=True)):
+        if i < skip or r[0] is None:
+            continue
+        if due_colonne:
+            if r[1] is None:
+                continue
+            t = _re2.match(r"\s*\[(\w+)\]\s*(.*)", str(r[0]))
+            a = _re2.match(r"\s*\[(\w+)\]\s*(.*)", str(r[1]))
+            if t and a:
+                out.append((t.group(1), a.group(1), a.group(2).strip(), [_num(x) for x in r[2:12]]))
+        else:
+            a = _re2.match(r"\s*\[(\w+)\]\s*(.*)", str(r[0]))
+            if a:
+                out.append((a.group(1), a.group(2).strip(), [_num(x) for x in r[1:11]]))
+    return out
+NAZ = {c: (n, v) for c, n, v in _carica("/home/user/claude/freelance/dati/istat-asia-ateco5-classi-addetti-2024.xlsx", 8, False)}
+LOM = {(t, c): (n, v) for t, c, n, v in _carica("/home/user/claude/freelance/dati/istat-asia-ateco3-prov-lombardia-2024.xlsx", 7, True)}
+_z = [0] * 10
+def _LV(c, t="ITC4"): return LOM.get((t, c), ("", _z))[1]
+def _NV(c): return NAZ.get(c, ("", _z))[1]
+def _d10(v): return v[2] + v[4] + v[6]          # unità locali con 10+ addetti
+def _d50(v): return v[4] + v[6]                 # con 50+
+def _dtot(v): return v[8]                       # totali
+NIS2_COD = ["35", "06", "19", "49", "50", "51", "52", "53", "64", "65", "66", "86", "21", "325", "36", "37", "38",
+            "61", "62", "631", "20", "26", "27", "28", "29", "30", "72"]
+# nicchia (etichetta in FASE2) -> codici ATECO e classe dimensionale con cui misurare la quota lombarda
+LOMB_MAP = {
+    "NIS2 per PMI": (NIS2_COD, _d50), "NIS2 per MSP e consulenti": (["620", "631"], _d10),
+    "Cyber Resilience Act": (["26", "27"], _d10), "Direttiva RED (radio/IoT)": (["263"], _dtot),
+    "Regolamento Macchine": (["28"], _d10), "Iperammortamento 2026 (perizie)": (["711"], _dtot),
+    "Fibra ottica (posa)": (["422"], _dtot), "FWA (piccoli operatori)": (["611"], _dtot),
+    "Report di collaudo": (["712"], _d10), "Incassi e solleciti (cassa)": (["46", "25", "28"], _d10),
+    "TMS per autotrasporto": (["494"], _d10), "Spedizionieri e magazzini": (["521", "522"], _d10),
+    "Commesse e tracciabilità (officine)": (["25"], _d10), "Preventivatore per distributori tecnici": (["466", "467"], _d10),
+    "Assistenza post-vendita (macchine)": (["28"], _d10), "Turni per logistica e magazzini": (["52"], _d10),
+    "Estrazione dati da ordini e DDT": (["46", "25", "28"], _d10),
+}
+def quota_lombarda(lab):
+    codici, cls = LOMB_MAP[lab]
+    l = sum(cls(_LV(c)) for c in codici)
+    n = sum(cls(_NV(c)) for c in codici)
+    return (l / n) if n else 0.0
+
 # ============================================================ FASE 2
 w2 = wb.create_sheet("Fase 2", 2)
-w2["A1"] = "Fase 2 — dimensione dei mercati e quota necessaria per 1 M€ di ricavi (solo Italia)"
+w2["A1"] = "Fase 2 — dimensione dei mercati (Italia e Lombardia) e quota necessaria per 1 M€ di ricavi"
 w2["A1"].font = H1
 w2["A2"] = ("Numero di aziende: da fonti dove esistono, altrimenti ipotesi mie, con affidabilità indicata. "
             "I PREZZI SONO IPOTESI da validare nelle interviste. Le celle in blu si possono cambiare. "
             "'Quota necessaria' = clienti per 1 M€ diviso aziende target: sopra circa il 10% il mercato italiano è troppo piccolo. 'Bisogno permanente' = 1 se nasce da una scadenza di legge, 5 se è un problema che esiste sempre.")
 w2["A2"].font = NOTE
 w2["A2"].alignment = WRAP
-w2.merge_cells("A2:O2")
+w2.merge_cells("A2:S2")
 w2.row_dimensions[2].height = 44
 
 w2["A4"] = "Margine operativo ipotizzato"
@@ -457,9 +513,12 @@ w2["A7"] = "Netto mensile con 1 M€ di ricavi (€)"
 w2["B7"] = "=ROUND(1000000*B4*(1-B5)/12,0)"
 w2["A8"] = "Ricavi annui necessari per l'obiettivo (€)"
 w2["B8"] = "=ROUND(B6*12/(B4*(1-B5)),0)"
-for r in range(4, 9):
+w2["A9"] = "Quota di mercato realistica (ipotesi)"
+w2["B9"] = 0.05
+w2["B9"].number_format = "0%"
+for r in range(4, 10):
     w2.cell(row=r, column=1).font = BOLD
-    w2.cell(row=r, column=2).font = BLUE if r < 7 else BOLD
+    w2.cell(row=r, column=2).font = BLUE if (r < 7 or r == 9) else BOLD
 w2["B4"].number_format = "0%"
 w2["B5"].number_format = "0.0%"
 for c in ("B6", "B7", "B8"):
@@ -467,8 +526,10 @@ for c in ("B6", "B7", "B8"):
 
 h2 = ["Nicchia", "Aziende target (bassa)", "Aziende target (base)", "Aziende target (alta)", "Fonte della stima",
       "Affidabilità", "Prezzo annuo (bassa) €", "Prezzo annuo (base) €", "Prezzo annuo (alta) €",
-      "Clienti per 1 M€ (base)", "Quota necessaria (base)", "Quota (caso favorevole)", "Quota (caso sfavorevole)", "Lettura", "Bisogno permanente (1-5, mio giudizio)"]
-w2_widths = [34, 12, 12, 12, 52, 12, 12, 12, 12, 12, 12, 12, 12, 60, 14]
+      "Clienti per 1 M€ (base)", "Quota necessaria (base)", "Quota (caso favorevole)", "Quota (caso sfavorevole)", "Lettura", "Bisogno permanente (1-5, mio giudizio)",
+      "Quota della Lombardia sul totale italiano (Istat 2024)", "Aziende target Lombardia (base)",
+      "Quota necessaria solo in Lombardia", "Ricavi annui potenziali in Lombardia alla quota realistica (€)"]
+w2_widths = [34, 12, 12, 12, 52, 12, 12, 12, 12, 12, 12, 12, 12, 60, 14, 16, 14, 14, 18]
 HR2 = 10
 for c, (t, w) in enumerate(zip(h2, w2_widths), start=1):
     cell = w2.cell(row=HR2, column=c, value=t)
@@ -480,16 +541,19 @@ for i, (key, lab, lo, ba, hi, src, conf, plo, pba, phi, lett) in enumerate(FASE2
     r = HR2 + i
     vals = [lab, lo, ba, hi, src, conf, plo, pba, phi,
             "=ROUND(1000000/H{0},0)".format(r), "=J{0}/C{0}".format(r),
-            "=(1000000/I{0})/D{0}".format(r), "=(1000000/G{0})/B{0}".format(r), lett, DUR.get(lab)]
+            "=(1000000/I{0})/D{0}".format(r), "=(1000000/G{0})/B{0}".format(r), lett, DUR.get(lab),
+            round(quota_lombarda(lab), 4), "=ROUND(C{0}*P{0},0)".format(r), "=J{0}/Q{0}".format(r),
+            "=ROUND($B$9*Q{0}*H{0},0)".format(r)]
     for c, v in enumerate(vals, start=1):
         cell = w2.cell(row=r, column=c, value=v)
         cell.alignment = WRAP
         cell.border = THIN
         cell.font = BLUE if c in (2, 3, 4, 7, 8, 9, 15) else (BOLD if c in (1, 11) else BLACK)
-    for c in (2, 3, 4, 7, 8, 9, 10):
+    for c in (2, 3, 4, 7, 8, 9, 10, 17, 19):
         w2.cell(row=r, column=c).number_format = "#,##0"
-    for c in (11, 12, 13):
+    for c in (11, 12, 13, 16, 18):
         w2.cell(row=r, column=c).number_format = "0.0%"
+    w2.cell(row=r, column=18).font = BOLD
     w2.row_dimensions[r].height = 58
 w2.freeze_panes = w2.cell(row=HR2 + 1, column=2)
 r = HR2 + len(FASE2) + 2
@@ -497,11 +561,12 @@ w2.cell(row=r, column=1, value="Come leggerla").font = BOLD
 for k, t in enumerate([
     "Il numero di aziende viene da Istat 2024 (unità locali, quindi limiti superiori) dove è indicato; le ipotesi residue sono segnate nella colonna Affidabilità. Le norme europee (CRA, RED, Macchine) si applicano in tutta l'UE: il mercato reale può essere molte volte quello italiano, ma richiede un prodotto in inglese e concorrenti internazionali.",
     "Prossimo passo di precisione: il perimetro NIS2 e le quote di prodotti con elementi digitali sono mie approssimazioni, da affinare nelle interviste.",
+    "Colonne Lombardia: il numero di aziende lombarde è il numero italiano per la quota della Lombardia calcolata sui codici ATECO della nicchia (Istat 2024, provinciale). La regione ha circa il 17-32% delle aziende italiane di questi settori.",
     "Nessun numero di questo foglio è un dato di mercato verificato per il tuo prodotto: sono ordini di grandezza per scartare le nicchie troppo piccole.",
 ], start=1):
     c = w2.cell(row=r + k, column=1, value=t)
     c.font, c.alignment = BLACK, WRAP
-    w2.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=15)
+    w2.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=19)
     w2.row_dimensions[r + k].height = 30
 
 # ============================================================ ISTAT 2024
@@ -658,6 +723,55 @@ for k, t in enumerate(SINTESI, start=1):
     c.font, c.alignment = BLACK, WRAP
     w3.merge_cells(start_row=r2 + k, start_column=1, end_row=r2 + k, end_column=6)
     w3.row_dimensions[r2 + k].height = 48
+
+
+# ============================================================ LOMBARDIA
+wL = wb.create_sheet("Lombardia", 4)
+wL["A1"] = "Lombardia — settori per numero di unità locali con 10+ addetti (Istat 2024)"
+wL["A1"].font = H1
+wL["A2"] = ("Unità locali delle imprese attive in Lombardia, classificate per settore. 'Provincia con più unità' è calcolata solo tra le 8 province scaricate "
+            "(Varese, Milano, Bergamo, Brescia, Pavia, Cremona, Lodi, Monza e Brianza): mancano Como, Lecco, Mantova e Sondrio, ma il totale regionale le include. "
+            "Sono unità locali, non imprese.")
+wL["A2"].font = NOTE
+wL["A2"].alignment = WRAP
+wL.merge_cells("A2:I2")
+wL.row_dimensions[2].height = 44
+PROV = [("ITC45", "Milano"), ("ITC47", "Brescia"), ("ITC46", "Bergamo"), ("IT108", "Monza e Brianza"), ("ITC41", "Varese"),
+        ("ITC48", "Pavia"), ("ITC4A", "Cremona"), ("ITC49", "Lodi")]
+hL = ["Codice", "Settore", "UL totali", "UL con 10+", "UL con 50+", "Addetti nelle UL con 10+", "Quota Lombardia su Italia (UL 10+)",
+      "Provincia con più UL 10+", "UL 10+ in quella provincia"]
+for c, (t, w) in enumerate(zip(hL, [9, 62, 12, 12, 12, 16, 16, 20, 14]), start=1):
+    cell = wL.cell(row=4, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+    wL.column_dimensions[get_column_letter(c)].width = w
+wL.row_dimensions[4].height = 44
+
+def _blocco(lunghezza, titolo, riga0, quanti):
+    voci = []
+    for (t, c), (nm, v) in LOM.items():
+        if t == "ITC4" and len(c) == lunghezza and c[0].isdigit() and c != "0010":
+            n10 = _d10(_NV(c))
+            voci.append((_d10(v), c, nm, v, n10))
+    voci.sort(reverse=True)
+    wL.cell(row=riga0, column=1, value=titolo).font = BOLD
+    r = riga0 + 1
+    for d10, c, nm, v, n10 in voci[:quanti]:
+        pr = max(PROV, key=lambda p: _d10(_LV(c, p[0])))
+        vals = [c, nm, v[8], d10, _d50(v), v[3] + v[5] + v[7], (d10 / n10 if n10 else None), pr[1], _d10(_LV(c, pr[0]))]
+        for k, x in enumerate(vals, start=1):
+            cell = wL.cell(row=r, column=k, value=x)
+            cell.font, cell.border = BLACK, THIN
+            if k in (3, 4, 5, 6, 9):
+                cell.number_format = "#,##0"
+            if k == 7:
+                cell.number_format = "0%"
+        r += 1
+    return r
+
+_r = _blocco(2, "Divisioni (2 cifre): i 35 settori con più unità locali con 10+ addetti", 5, 35)
+_blocco(3, "Gruppi (3 cifre): i 50 gruppi con più unità locali con 10+ addetti", _r + 2, 50)
+wL.freeze_panes = "C5"
 
 
 wf = wb.create_sheet("Fonti")
