@@ -776,6 +776,92 @@ _blocco(3, "Gruppi (3 cifre): i 50 gruppi con più unità locali con 10+ addetti
 wL.freeze_panes = "C5"
 
 
+# ============================================================ MATRICE E CANDIDATE (iterazione 1)
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from matrice_dati import FUNZIONI, SETTORI, SEGNALI, CANDIDATE1
+
+wm = wb.create_sheet("Matrice", 5)
+wm["A1"] = "Iterazione 1 — matrice settore × funzione aziendale (Lombardia)"
+wm["A1"].font = H1
+wm["A2"] = ("Ogni cella è un POSSIBILE problema (ipotesi mia, non verificata) di quel settore in quella funzione. Le unità locali (UL) vengono da Istat 2024, Lombardia. "
+            "La matrice serve a generare candidate: il filtro è nel foglio 'Candidate 1'.")
+wm["A2"].font = NOTE
+wm["A2"].alignment = WRAP
+wm.merge_cells("A2:M2")
+wm.row_dimensions[2].height = 34
+hm = ["Settore", "UL con 10+ (Lombardia)", "UL con 50+"] + FUNZIONI
+for c, t in enumerate(hm, start=1):
+    cell = wm.cell(row=4, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+    wm.column_dimensions[get_column_letter(c)].width = 30 if c == 1 else (10 if c <= 3 else 26)
+wm.row_dimensions[4].height = 44
+_dim = {}
+for i, (lab, codici, celle) in enumerate(SETTORI, start=1):
+    r = 4 + i
+    n10 = sum(_d10(_LV(c)) for c in codici)
+    n50 = sum(_d50(_LV(c)) for c in codici)
+    _dim[lab] = n10
+    for c, v in enumerate([lab, n10, n50] + celle, start=1):
+        cell = wm.cell(row=r, column=c, value=v if v != "" else None)
+        cell.alignment = WRAP
+        cell.border = THIN
+        cell.font = BOLD if c == 1 else (BLACK if c > 3 else BLACK)
+        if c in (2, 3):
+            cell.number_format = "#,##0"
+    wm.row_dimensions[r].height = 62
+r = 4 + len(SETTORI) + 2
+wm.cell(row=r, column=1, value="Segnali che valgono per tutti i settori").font = BOLD
+for k, t in enumerate(SEGNALI, start=1):
+    c = wm.cell(row=r + k, column=1, value=t)
+    c.font, c.alignment = BLACK, WRAP
+    wm.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=13)
+    wm.row_dimensions[r + k].height = 30
+wm.freeze_panes = "D5"
+
+_dim["Trasversale"] = sum(_d10(_LV(c)) for c in ["25", "28", "27", "22", "46"])
+wc1 = wb.create_sheet("Candidate 1", 6)
+wc1["A1"] = "Iterazione 1 — candidate dalla matrice e filtro di pre-screening"
+wc1["A1"].font = H1
+wc1["A2"] = ("Punteggio di pre-screening = permanenza × 2 + punti dimensione (UL 10+ in Lombardia: 5 se ≥4.000, 4 se ≥2.000, 3 se ≥1.000, 2 se ≥500) "
+             "+ punti concorrenza (1 alta, 2 media, 3 bassa) + punti segnale (2 se verificato in ricerca). La concorrenza è un mio giudizio da verificare in Fase 3. "
+             "Le prime 12 non ancora valutate passano alla Fase 2 e 3. Le celle in blu si possono cambiare.")
+wc1["A2"].font = NOTE
+wc1["A2"].alignment = WRAP
+wc1.merge_cells("A2:P2")
+wc1.row_dimensions[2].height = 46
+hc = ["ID", "Settore", "Funzione", "Idea di prodotto", "Aziende target Lombardia (UL 10+)", "Permanenza (1-5)",
+      "Segnale (V verificato, I ipotesi)", "Concorrenza (mio giudizio)", "Già valutata?", "Punti dimensione",
+      "Punti concorrenza", "Punti segnale", "Punteggio pre-screening", "Posizione", "Passa alla Fase 2?", "Note"]
+for c, (t, w) in enumerate(zip(hc, [6, 28, 22, 62, 14, 11, 12, 12, 10, 10, 10, 10, 12, 10, 12, 52]), start=1):
+    cell = wc1.cell(row=4, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+    wc1.column_dimensions[get_column_letter(c)].width = w
+wc1.row_dimensions[4].height = 48
+_n1 = len(CANDIDATE1)
+_f, _l = 5, 4 + _n1
+for i, (cid, sett, fi, idea, perm, sig, conc, gia, nota) in enumerate(CANDIDATE1, start=1):
+    r = 4 + i
+    vals = [cid, sett, FUNZIONI[fi], idea, _dim.get(sett, 0), perm, sig, conc, gia,
+            "=IF(E{0}>=4000,5,IF(E{0}>=2000,4,IF(E{0}>=1000,3,IF(E{0}>=500,2,1))))".format(r),
+            '=IF(H{0}="Alta",1,IF(H{0}="Media",2,3))'.format(r),
+            '=IF(G{0}="V",2,1)'.format(r),
+            "=F{0}*2+J{0}+K{0}+L{0}".format(r),
+            '=IF(I{0}="Sì","–",COUNTIFS($I${1}:$I${2},"No",$M${1}:$M${2},">"&M{0})+1)'.format(r, _f, _l),
+            '=IF(AND(I{0}="No",ISNUMBER(N{0})),IF(N{0}<=12,"Sì",""),"")'.format(r), nota]
+    for c, v in enumerate(vals, start=1):
+        cell = wc1.cell(row=r, column=c, value=v if v != "" else None)
+        cell.alignment = WRAP
+        cell.border = THIN
+        cell.font = BLUE if c in (5, 6, 7, 8, 9) else (BOLD if c in (1, 13, 15) else BLACK)
+    wc1.cell(row=r, column=5).number_format = "#,##0"
+    wc1.row_dimensions[r].height = 34
+wc1.freeze_panes = "E5"
+wc1.auto_filter.ref = "A4:P{}".format(_l)
+
+
 wf = wb.create_sheet("Fonti")
 wf.column_dimensions["A"].width = 38
 wf.column_dimensions["B"].width = 120
