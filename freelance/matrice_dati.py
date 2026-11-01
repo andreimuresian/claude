@@ -154,3 +154,123 @@ CANDIDATE1 = [
     ("M39", "Studi legali e contabili (69)", 1, "Acquisizione di documenti e fatture per studi contabili", 5, "I", "Alta", "No", ""),
     ("M40", "Trasversale", 7, "Ufficio tecnico e back-office: automazione di report, conversioni e verifiche", 5, "V", "Media", "No", "Segnale: carenza di personale tecnico in Lombardia; vale per molti settori."),
 ]
+
+
+# ---------------------------------------------------------------- Fase 2 e 3 delle 13 candidate
+# id, chiave (inizio del testo dell'idea in CANDIDATE1), etichetta Fase 2, codici ATECO, prezzi annui (bassa, base, alta; IPOTESI),
+# lettura, permanenza, tipo di segnale
+FASE23 = [
+    ("M40", "Ufficio tecnico e back-office", "Ufficio tecnico e back-office (automazione)", ["25", "28", "27", "22", "46"],
+     (1200, 3000, 8000), "Motore comune ai documenti tecnici; la domanda nasce dalla carenza di tecnici.", 5, "Carenza di manodopera"),
+    ("M01", "Preventivo automatico da disegno", "Preventivo da disegno (officine)", ["25"], (600, 1800, 4000),
+     "Un'offerta italiana che prezzi da DXF/STEP non è stata trovata (Almacam Webquote è la più vicina). Da verificare con le officine.", 5, "Dolore operativo permanente"),
+    ("M02", "Certificati di collaudo 3.1", "Certificati 3.1 e tracciabilità (officine)", ["25"], (600, 1500, 3000),
+     "Nessun software specifico trovato; probabilmente coperto da ERP e MES.", 5, "Dolore operativo permanente"),
+    ("M07", "Ufficio tecnico: automazione di distinte", "Distinte base da disegni 2D (macchine)", ["28"], (1500, 3500, 8000),
+     "Nessun prodotto italiano trovato per l'estrazione da disegni 2D; la ricerca accademica indica oltre il 95% di rilevamento.", 5, "Carenza di manodopera"),
+    ("M21", "Ordini da PDF/email", "Ordini da PDF/email (grossisti)", ["46"], (800, 2000, 5000),
+     "Strumenti globali presenti (Parseur, Esker, OpusCapita); poco pensato per PMI italiane.", 5, "Dolore operativo permanente"),
+    ("M03", "Pianificazione commesse e macchine", "Pianificazione commesse (officine)", ["25"], (1000, 2400, 5000),
+     "Mercato di MES e job shop già popolato (TeamSystem, Epoptia da 1.200 €, Hexagon Workplan).", 5, "Dolore operativo permanente"),
+    ("M05", "Offerte tecniche configurabili", "Offerte configurabili (macchine)", ["28"], (1500, 3500, 8000),
+     "Esistono CPQ per prodotti complessi (Camos, Salesforce a 200 €/utente/mese); poco per PMI italiane.", 5, "Dolore operativo permanente"),
+    ("M22", "Confronto prezzi dei fornitori", "Confronto prezzi fornitori (grossisti)", ["46"], (600, 1500, 4000),
+     "Concorrenza non ancora cercata.", 5, "Dolore operativo permanente"),
+    ("M23", "Turni con regole di rotazione", "Turni per negozi", ["47"], (300, 900, 2400),
+     "Molto presidiato e a prezzi bassi (Skello, Factorial, Deputy).", 5, "Carenza di manodopera"),
+    ("M31", "Turni, presenze e controllo", "Turni per pulizie e servizi", ["81"], (600, 1800, 4000),
+     "Stessi strumenti dei negozi; il controllo dei cantieri potrebbe differenziare.", 5, "Carenza di manodopera"),
+    ("M33", "Turni e costo del lavoro", "Turni per ristoranti", ["56"], (300, 900, 2400),
+     "Molto presidiato e a prezzi bassi.", 5, "Carenza di manodopera"),
+    ("M34", "Food cost e ordini", "Food cost per ristoranti", ["56"], (200, 600, 1500),
+     "Strumenti da 25-30 € (Microrecipes, fogli di calcolo): bassa disponibilità a pagare.", 5, "Dolore operativo permanente"),
+    ("M27", "Tempi di guida, tachigrafo", "Tachigrafo e tempi di guida", ["494"], (400, 1000, 2400),
+     "Mercato servito (Geotab, Descartes SmartAnalysis a pagamento per file, app Qdriver): serve un prezzo molto basso.", 5, "Obbligo di legge"),
+]
+
+# punteggi provvisori (mio giudizio) dopo la Fase 3: urgente, permanente, budget, ricorrenti, scalabilità, canale, concorrenza (5 = poca), vantaggio, testabile
+PUNTEGGI2 = {
+    "Ufficio tecnico: automazione di distinte": [4, 5, 4, 4, 3, 3, 4, 5, 3],
+    "Ufficio tecnico e back-office": [4, 5, 4, 4, 4, 3, 2, 4, 4],
+    "Preventivo automatico da disegno": [3, 5, 4, 4, 3, 3, 4, 4, 5],
+    "Offerte tecniche configurabili": [3, 5, 4, 4, 3, 4, 3, 4, 3],
+    "Certificati di collaudo 3.1": [3, 5, 3, 3, 4, 3, 3, 4, 4],
+    "Ordini da PDF/email": [3, 5, 3, 4, 4, 3, 2, 3, 4],
+    "Turni, presenze e controllo": [3, 5, 3, 5, 4, 3, 1, 2, 3],
+    "Turni con regole di rotazione": [3, 5, 2, 5, 4, 3, 1, 3, 4],
+    "Turni e costo del lavoro": [3, 5, 2, 5, 4, 3, 1, 3, 4],
+    "Tempi di guida, tachigrafo": [4, 5, 2, 4, 3, 3, 2, 2, 3],
+    "Food cost e ordini": [3, 5, 2, 4, 4, 3, 1, 1, 4],
+    "Pianificazione commesse e macchine": [3, 5, 3, 4, 2, 3, 1, 2, 3],
+}
+
+# finalista (etichetta Fase 2), concorrente / segnale, tipo, cosa offre, prezzo trovato, fonte
+COMP2 = [
+    ("Preventivo da disegno (officine)", "Almacam (Alma Italia, Torino)", "Software CAD/CAM per lamiera",
+     "Assembly2cam riconosce le parti di un assieme CAD per preventivi e produzione; Webquote è un servizio di preventivazione online",
+     "Non trovato", "https://it.almacam.com/wp-content/uploads/2025/05/IT-2025-Almacam-Pass-brochure-web-2.pdf"),
+    ("Preventivo da disegno (officine)", "RAS (piegatrici), Sophia (247tailorsteel), app Autodesk Inventor", "Programmazione ed esportazione",
+     "Importano STEP/DXF per programmare macchine o esportare i pezzi; non fanno il preventivo", "Non applicabile",
+     "https://www.ras-online.de/en/products/software/updowncenter-2-software/"),
+    ("Certificati 3.1 e tracciabilità (officine)", "Nessun software specifico trovato", "Lacuna o incertezza",
+     "Il certificato 3.1 va collegato a colata, lotti e pezzi lavorati; non ho trovato prodotti dedicati", "Non applicabile",
+     "https://blog.projectmaterials.com/quick-answers/epc/en-10204-certificate-types/"),
+    ("Distinte base da disegni 2D (macchine)", "Ricerca accademica (Univ. di Tampere)", "Ricerca",
+     "Estrazione di distinte da disegni con AI, oltre il 95% di rilevamento; non è un prodotto", "Non applicabile",
+     "https://trepo.tuni.fi/handle/10024/232922"),
+    ("Distinte base da disegni 2D (macchine)", "Funzioni BOM di ERP e PLM (es. ECI)", "ERP/PLM",
+     "Generazione di distinte dentro i sistemi di progettazione; l'estrazione da disegni 2D è poco coperta", "Non trovato",
+     "https://ecisolutions.com/blog/manufacturing/the-importance-of-ai-and-innovation-for-erps-unleashing-the-power-of-ai-bom-builder"),
+    ("Ordini da PDF/email (grossisti)", "Parseur", "Email parser con IA e OCR", "Estrae dati da email e PDF, anche scansionati",
+     "Non trovato", "https://parseur.com/it/estrazione-dati/automazione-elaborazione-ordini-ecommerce"),
+    ("Ordini da PDF/email (grossisti)", "Esker, OpusCapita, Fellowmind", "Piattaforme B2B", "Acquisizione ordini da email e PDF verso l'ERP",
+     "Non trovato", "https://www.esker.com/it/risorse/ebook/om-ordini-multicanale-b2b/"),
+    ("Pianificazione commesse (officine)", "TeamSystem MES, Epoptia MES, Hexagon Workplan, Fusion Operations", "MES e job shop",
+     "Pianificazione, tracciabilità e commesse per officine", "Epoptia: da 1.200 € (Capterra)",
+     "https://www.capterra.it/directory/30855/job-shop/software"),
+    ("Offerte configurabili (macchine)", "Camos CPQ; Salesforce Revenue Cloud", "CPQ",
+     "Configurazione di prodotti complessi e preventivi", "Salesforce: 200 €/utente/mese", "https://www.capterra.it/directory/30904/cpq/software"),
+    ("Turni per negozi, pulizie e ristoranti", "Skello", "Software di turni", "Turni, presenze e gestione del personale",
+     "Circa 5-6 €/dipendente/mese oppure 49-79 €/sede/mese (fonti discordanti)",
+     "https://www.skello.io/it/blog/software-rilevazione-presenze-migliori-strumenti-prezzi"),
+    ("Turni per negozi, pulizie e ristoranti", "Factorial, Deputy, Planday", "Software di turni", "Turni e presenze",
+     "Factorial da 5 €/dipendente/mese; Deputy da 6,50 $ (Capterra)", "https://www.capterra.it/software/147589/deputy"),
+    ("Tachigrafo e tempi di guida", "Geotab, Descartes SmartAnalysis, Qdriver", "Telematica e analisi",
+     "Scarico remoto e analisi dei tempi di guida e riposo", "SmartAnalysis: pagamento per file; prezzi italiani non trovati",
+     "https://smartcompliance.descartes.com/solutions/what-is-tachograph-analysis-software/"),
+    ("Food cost per ristoranti", "Microrecipes, RatioChef, KitchenNmbrs", "Food cost",
+     "Ricette, costi e import delle fatture dei fornitori", "Microrecipes da 30 €; foglio di calcolo 24,90 €",
+     "https://www.capterra.it/software/204894/microrecipes"),
+]
+
+SINTESI2 = [
+    "Fase 3 sulle 13 candidate: dove ho trovato un vuoto e dove no. Un'offerta italiana che prezzi un pezzo direttamente da un disegno DXF/STEP non è emersa (Almacam Webquote è la più vicina); "
+    "non ho trovato prodotti italiani che estraggano distinte base da disegni 2D; per i certificati 3.1 non ho trovato software dedicato. Sono i tre punti dove la concorrenza sembra più debole.",
+    "Presidiati e a prezzi bassi: turni (circa 5-6 €/dipendente/mese), food cost (25-30 €), tachigrafo (servizi a pagamento per file), MES per officine, estrazione di ordini da PDF (strumenti globali).",
+    "Un vuoto di ricerca non è un vuoto di mercato: va verificato con le interviste. Le 'prime' candidate dopo la Fase 3 sono le distinte da disegni 2D, il motore comune per l'ufficio tecnico, il preventivo da disegno e le offerte configurabili.",
+]
+
+# ---------------------------------------------------------------- Perù (domanda del 01/11/2026)
+PERU = [
+    ("Costituire un'impresa", "Guide del 2026: 15-30 giorni lavorativi e 500-1.500 soles. La Camera di Commercio di Lima (dati Doing Business) stima circa 26 giorni e 8 procedure contro 4 giorni e 6 procedure in Cile. Da dicembre 2024 la riserva del nome è solo online (SID-SUNARP); 225.666 imprese registrate così a ottobre 2025.",
+     "https://laley.pe/como-crear-tu-empresa-en-peru/", "Non ho trovato il punteggio B-READY del Perù; le cifre variano molto tra le fonti."),
+    ("Informalità", "Circa il 70% degli occupati è informale (INEI, 2025); l'88,6% dei lavoratori informali è in imprese da 1 a 10 persone; circa 5,5 milioni di attività informali (ENAHO 2023); secondo paese più informale del Sud America.",
+     "https://infomercado.pe/informalidad-laboral-en-peru-llega-al-70-segun-el-inei/", "Significa anche concorrenza informale sui prezzi."),
+    ("Crescita e inflazione", "Crescita 2025: 3,4%. FMI: 2,8% nel 2026, inflazione 2,5%. Banca Mondiale: 2,7% nel 2026.",
+     "https://elperuano.pe/noticia/293519-fmi-eleva-a-28-su-prevision-de-crecimiento-de-peru-en-el-2026-con-una-inflacion-de-25", "Macro stabile."),
+    ("Reddito per abitante", "PIL nominale pro capite previsto per il 2027: circa 11.800 dollari (Cile: circa 20.400).",
+     "https://www.peru-retail.com/economia-peruana-podria-superar-a-la-chilena-en-2027-despues-de-38-anos-segun-el-fmi/",
+     "Potere d'acquisto molto inferiore a quello lombardo (per l'Italia non ho cercato il dato)."),
+    ("Stabilità politica", "Nono presidente in 15 anni; S&P avverte di un possibile declassamento nei prossimi due anni; il rischio paese percepito è alto, ma l'investimento privato è cresciuto.",
+     "https://www.larepublica.co/globoeconomia/los-retos-economicos-que-tendra-el-noveno-presidente-de-peru-en-15-anos-4409383", "Esito delle elezioni 2026 non verificato."),
+    ("Digitalizzazione delle PMI", "Nel 2023 solo il 24,7% delle PMI teneva registri contabili e il 3,3% usava sistemi di gestione completi. Esistono fornitori locali di ERP (Defontana, Kame, Ramo).",
+     "https://portalerp.com/latam/noticia/del-excel-al-erp-el-paso-que-puede-marcar-la-diferencia-en-las-pymes-peruanas", "Grande bisogno non servito, ma anche bassa propensione a pagare."),
+    ("Miniere (ingegneria)", "Portafoglio di 66 progetti per oltre 64 miliardi di dollari, circa il 70% di rame; 44 progetti (44,9 miliardi) senza data di avvio; esecuzione prevista 2026-2029: 10,7 miliardi.",
+     "https://energiminas.com/2026/06/09/cartera-de-proyectos-de-inversion-minera-2026-contempla-66-proyectos-por-un-valor-superior-a-us-64075-millones/",
+     "Domanda di ingegneria concreta ma legata a grandi committenti e al calendario."),
+]
+PERU_LETTURA = [
+    "La sua tesi ha una parte vera: la digitalizzazione delle PMI è molto indietro, quindi c'è un bisogno non servito, e la concorrenza di prodotti software strutturati è probabilmente meno aggressiva.",
+    "La tua obiezione regge su altri punti: facilità di aprire un'impresa non è facilità di crescere; il potere d'acquisto è molto più basso; l'informalità alimenta la concorrenza sui prezzi; l'instabilità politica pesa sul rischio; da qui non conosci il mercato né hai una rete.",
+    "Proposta: non usare il Perù come mercato di partenza, ma come ipotesi di espansione da testare a basso costo con la tua ragazza (5 interviste a titolari di PMI peruviane sugli stessi problemi).",
+]

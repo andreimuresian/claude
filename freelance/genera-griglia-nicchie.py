@@ -492,6 +492,19 @@ def quota_lombarda(lab):
     n = sum(cls(_NV(c)) for c in codici)
     return (l / n) if n else 0.0
 
+# ---- Fase 2 anche per le 13 candidate dell'iterazione 1 (base = UL 10+ italiane; bassa = UL 50+; alta = base × 1,3: ipotesi)
+import sys as _sys0, os as _os0
+_sys0.path.insert(0, _os0.path.dirname(_os0.path.abspath(__file__)))
+from matrice_dati import FASE23, PUNTEGGI2, COMP2, SINTESI2, PERU, PERU_LETTURA
+for (_id, _key, _lab, _cod, _pr, _lett, _dur, _sig) in FASE23:
+    _ba = sum(_d10(_NV(c)) for c in _cod)
+    _lo = sum(_d50(_NV(c)) for c in _cod)
+    FASE2.append((_id + " " + _lab, _id + " " + _lab, _lo, _ba, round(_ba * 1.3),
+                  "Istat ASIA 2024, ATECO " + ", ".join(_cod) + ": unità locali 10+ (base), 50+ (bassa); alta = base × 1,3 (ipotesi). Sono limiti superiori.",
+                  "Media-bassa", _pr[0], _pr[1], _pr[2], _lett))
+    DUR[_id + " " + _lab] = _dur
+    LOMB_MAP[_id + " " + _lab] = (_cod, _d10)
+
 # ============================================================ FASE 2
 w2 = wb.create_sheet("Fase 2", 2)
 w2["A1"] = "Fase 2 — dimensione dei mercati (Italia e Lombardia) e quota necessaria per 1 M€ di ricavi"
@@ -861,6 +874,86 @@ for i, (cid, sett, fi, idea, perm, sig, conc, gia, nota) in enumerate(CANDIDATE1
 wc1.freeze_panes = "E5"
 wc1.auto_filter.ref = "A4:P{}".format(_l)
 
+
+
+# ============================================================ FASE 3 (13 candidate) e PERU'
+LINK2 = Font(name=ARIAL, size=10, color="0563C1", underline="single")
+w4 = wb.create_sheet("Fase 3 bis")
+w4["A1"] = "Fase 3 — concorrenti e punteggi provvisori delle 13 candidate dell'iterazione 1"
+w4["A1"].font = H1
+w4["A2"] = ("Informazioni da siti dei fornitori e cataloghi, non da listini ufficiali. Un vuoto nella mia ricerca non prova un vuoto di mercato. "
+            "I punteggi 1-5 sono un mio giudizio provvisorio; il totale usa i pesi del foglio Criteri.")
+w4["A2"].font = NOTE
+w4["A2"].alignment = WRAP
+w4.merge_cells("A2:L2")
+w4.row_dimensions[2].height = 34
+hd = ["Candidata", "Concorrente / segnale", "Tipo", "Cosa offre", "Prezzo trovato", "Fonte"]
+for c, (t, w) in enumerate(zip(hd, [34, 40, 26, 60, 40, 70]), start=1):
+    cell = w4.cell(row=4, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+    w4.column_dimensions[get_column_letter(c)].width = w
+for i, row in enumerate(COMP2, start=1):
+    r = 4 + i
+    for c, v in enumerate(row, start=1):
+        cell = w4.cell(row=r, column=c, value=v)
+        cell.alignment = WRAP
+        cell.border = THIN
+        cell.font = BOLD if c == 2 else BLACK
+    w4.cell(row=r, column=6).hyperlink = row[5]
+    w4.cell(row=r, column=6).font = LINK2
+    w4.row_dimensions[r].height = 46
+r = 4 + len(COMP2) + 2
+w4.cell(row=r, column=1, value="Punteggi provvisori (1-5) e totale pesato").font = BOLD
+hp = ["Idea (Candidate 1)"] + [x[0] for x in CRITERI] + ["Totale (1-5)"]
+for c, t in enumerate(hp, start=1):
+    cell = w4.cell(row=r + 1, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    cell.alignment = Alignment(wrap_text=True, vertical="center")
+w4.row_dimensions[r + 1].height = 48
+for k, (nome, pts) in enumerate(PUNTEGGI2.items(), start=1):
+    rr = r + 1 + k
+    w4.cell(row=rr, column=1, value=nome).font = BOLD
+    for c, v in enumerate(pts, start=2):
+        cell = w4.cell(row=rr, column=c, value=v)
+        cell.font, cell.border = BLUE, THIN
+    cl = [get_column_letter(c) for c in range(2, 11)]
+    num = "+".join("{0}{1}*Criteri!$C${2}".format(cl[j], rr, 5 + j) for j in range(9))
+    t = w4.cell(row=rr, column=11, value="=ROUND(({0})/SUM(Criteri!$C$5:$C$13),2)".format(num))
+    t.font, t.border = BOLD, THIN
+r3 = r + len(PUNTEGGI2) + 4
+w4.cell(row=r3, column=1, value="Sintesi").font = BOLD
+for k, t in enumerate(SINTESI2, start=1):
+    c = w4.cell(row=r3 + k, column=1, value=t)
+    c.font, c.alignment = BLACK, WRAP
+    w4.merge_cells(start_row=r3 + k, start_column=1, end_row=r3 + k, end_column=6)
+    w4.row_dimensions[r3 + k].height = 48
+
+wp = wb.create_sheet("Perù")
+wp["A1"] = "Perù — la domanda del 01/11/2026: è davvero più facile fare impresa?"
+wp["A1"].font = H1
+wp["A2"] = "Dati da ricerca web (fonti locali e stampa economica, non verificati alla fonte primaria). Le cifre variano molto da una fonte all'altra."
+wp["A2"].font = NOTE
+for c, (t, w) in enumerate(zip(["Tema", "Cosa ho trovato", "Fonte", "Limite / lettura"], [26, 90, 70, 50]), start=1):
+    cell = wp.cell(row=4, column=c, value=t)
+    cell.font, cell.fill = H2, HEADFIL
+    wp.column_dimensions[get_column_letter(c)].width = w
+for i, (tema, testo, url, lim) in enumerate(PERU, start=1):
+    r = 4 + i
+    for c, v in enumerate([tema, testo, url, lim], start=1):
+        cell = wp.cell(row=r, column=c, value=v)
+        cell.alignment, cell.border = WRAP, THIN
+        cell.font = BOLD if c == 1 else BLACK
+    wp.cell(row=r, column=3).hyperlink = url
+    wp.cell(row=r, column=3).font = LINK2
+    wp.row_dimensions[r].height = 62
+r = 4 + len(PERU) + 2
+wp.cell(row=r, column=1, value="Lettura").font = BOLD
+for k, t in enumerate(PERU_LETTURA, start=1):
+    c = wp.cell(row=r + k, column=1, value=t)
+    c.font, c.alignment = BLACK, WRAP
+    wp.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=4)
+    wp.row_dimensions[r + k].height = 40
 
 wf = wb.create_sheet("Fonti")
 wf.column_dimensions["A"].width = 38
