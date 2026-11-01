@@ -21,45 +21,66 @@ wb = Workbook()
 
 # ---------------- Contatti
 ws = wb.active; ws.title = "Contatti"
-ws["A1"] = "Fase 4 — lista di 15 contatti da intervistare (Lombardia, 10-49 addetti)"; ws["A1"].font = H1
-ws["A2"] = ("Obiettivo: 15 conversazioni da 20-25 minuti, non vendite. Mix: 6 costruttori di macchine (ATECO 28), 6 officine/carpenterie (ATECO 25), "
-            "3 grossisti tecnici (ATECO 46). Le prime righe sono PISTE trovate in ricerca web: non ho verificato dimensione e attività di nessuna, "
-            "quindi vanno controllate (sito, bilancio) prima di contattarle. Le altre righe si riempiono con le fonti indicate sotto.")
-ws["A2"].font, ws["A2"].alignment = NOTE, W; ws.merge_cells("A2:L2"); ws.row_dimensions[2].height = 48
-cols = ["#", "Segmento", "Azienda", "Comune / provincia", "Perché è una buona candidata", "Verificato? (dimensione, attività)",
-        "Chi contattare (ruolo)", "Canale", "Data contatto", "Esito", "Data intervista", "Note"]
-head(ws, 4, cols, [4, 22, 30, 20, 40, 20, 24, 14, 12, 14, 12, 40])
+ws["A1"] = "Fase 4 — contatti entro 20 km da San Donato Milanese (elenco da verificare)"; ws["A1"].font = H1
+ws["A2"] = ("Obiettivo: 15 conversazioni da 20-25 minuti, per telefono o videochiamata (in pausa pranzo o dopo le 18). Qui ci sono 28 candidate: se rispondono 1 su 2, bastano per le 15. "
+            "Fonte: elenchi per comune e categoria di reteimprese.it (nome, indirizzo, categoria). L'elenco NON dice quanti addetti hanno né se hanno il problema: "
+            "molti sono piccolissimi o sono solo rivenditori. Prima di chiamare, apri la scheda e cerca il sito aziendale; scarta chi ha meno di circa 8-10 persone o fa riparazioni auto. "
+            "Ordina per ordine di interesse: carpenterie e officine con più linee di lavoro, poi costruttori di macchine e impianti, poi grossisti.")
+ws["A2"].font, ws["A2"].alignment = NOTE, W; ws.merge_cells("A2:L2"); ws.row_dimensions[2].height = 64
+cols = ["#", "Segmento", "Azienda", "Comune", "Perché è nella lista (dall'elenco, non verificato)", "Scheda", "Verificato? (addetti, sito)",
+        "Chi contattare (ruolo)", "Data contatto", "Esito", "Data intervista", "Note"]
+head(ws, 4, cols, [4, 22, 34, 18, 44, 30, 18, 24, 12, 14, 12, 36])
+R = "https://www.reteimprese.it/"
 seed = [
-    ("Costruttore di macchine", "Imcar SpA", "area Monza", "Si descrive come costruttore di macchine per lamiera e impianti di saldatura e curvatura da oltre 60 anni"),
-    ("Costruttore di macchine", "Arienti Costruzioni Meccaniche", "Albiate (MB)", "Elencata come produttrice di macchine per la lavorazione della lamiera"),
-    ("Costruttore di macchine", "Laserevo", "Rovato (BS)", "Compare tra le aziende ATECO 28.49.09 di Brescia; l'attività va verificata"),
-    ("Costruttore di macchine", "Co.ma.fer. Macchine", "Collebeato (BS)", "Compare tra le aziende ATECO 28.49.09 di Brescia; l'attività va verificata"),
-    ("Costruttore di macchine", "Mcdue Automazioni", "Flero (BS)", "Compare tra le aziende ATECO 28.49.09 di Brescia; l'attività va verificata"),
-    ("Costruttore di macchine", "Tonolini", "Nuvolera (BS)", "Compare tra le aziende ATECO 28.49.09 di Brescia; l'attività va verificata"),
+ # officine e carpenterie
+ ("Officina / carpenteria", "Carpenteria Ambrosiana Srl", "Opera", "Carpenteria, zona industriale di Opera", ""),
+ ("Officina / carpenteria", "Med Srl Carpenteria Metallica", "Opera", "Carpenteria metallica", R + "carpenterie-metalliche/opera/azienda/109710"),
+ ("Officina / carpenteria", "SCM Società Costruzioni Meccaniche Srl", "Opera", "Costruzioni meccaniche", R + "costruzioni-meccaniche/opera/azienda/69633"),
+ ("Officina / carpenteria", "Ossitaglio Sas", "Opera", "Lavorazione lamiere (taglio)", R + "lamiere-lavorazione/opera/azienda/387731"),
+ ("Officina / carpenteria", "Fratelli Tassalini Officina Meccanica SpA", "Peschiera Borromeo", "Officina meccanica con forma SpA: probabilmente strutturata", R + "officine-meccaniche/peschiera-borromeo/azienda/291815"),
+ ("Officina / carpenteria", "Tornital Industrial Srl", "Peschiera Borromeo", "Officina meccanica", R + "officine-meccaniche/peschiera-borromeo/azienda/2103712"),
+ ("Officina / carpenteria", "A.R. Carpenteria di Taccardi & C. Sas", "Peschiera Borromeo", "Carpenteria in ferro", R + "carpenterie-ferro/peschiera-borromeo/azienda/1947853"),
+ ("Officina / carpenteria", "S.C. Officine Meccaniche Srl", "Mediglia", "Officina meccanica di precisione", R + "officine-meccaniche-precisione/mediglia/azienda/86760"),
+ ("Officina / carpenteria", "Calzati Giuseppe costruzioni industriali meccaniche", "Mediglia", "Costruzioni industriali meccaniche", R + "costruzioni-meccaniche/mediglia/azienda/1892669"),
+ ("Officina / carpenteria", "B.S.A. Srl", "San Giuliano Milanese", "Officina meccanica di precisione", R + "officine-meccaniche-precisione/san-giuliano-milanese/azienda/1097058"),
+ ("Officina / carpenteria", "Elast Srl", "San Giuliano Milanese", "Tranciatura metalli", R + "tranciatura-metalli/san-giuliano-milanese/azienda/1519595"),
+ ("Officina / carpenteria", "Metaldisco Srl", "Segrate", "Lavorazione lamiere e macchine", R + "lamiere-lavorazione-macchine/segrate/azienda/1475874"),
+ ("Officina / carpenteria", "Inferro Srl", "Segrate", "Carpenteria metallica", R + "carpenterie-metalliche/segrate/azienda/2748353"),
+ ("Officina / carpenteria", "V.P. Srl", "Pioltello", "Costruzioni meccaniche", R + "costruzioni-meccaniche/pioltello/azienda/1833186"),
+ ("Officina / carpenteria", "Gi.fe. Srl", "Pioltello", "Tranciatura metalli", R + "tranciatura-metalli/pioltello/azienda/1488796"),
+ ("Officina / carpenteria", "F.g.z. Carp. Mecc. di Granata Roberto & C. Snc", "Paullo", "Carpenteria meccanica e lamiere", R + "lamiere-commercio/paullo/azienda/33210"),
+ ("Officina / carpenteria", "STM Special Tools Manufacturing Srl", "Melegnano", "Attrezzature speciali (verificare cosa produce)", ""),
+ # costruttori di macchine e impianti
+ ("Costruttore macchine / impianti", "Co.Re.Ma.", "San Giuliano Milanese", "Macchine per lavorazione alluminio", R + "alluminio-macchine-lavorazione/san-giuliano-milanese/azienda/1592176"),
+ ("Costruttore macchine / impianti", "Ri.me.mu. di Cinquini Nevio & C. Sas", "San Donato Milanese", "Produzione macchine utensili", R + "macchine-utensili-produzione/san-donato-milanese/azienda/2593272"),
+ ("Costruttore macchine / impianti", "Attrezzature Galvaniche Snc di Rando Dante & C.", "San Giuliano Milanese", "Macchine e impianti per galvanotecnica", R + "galvanotecnica-macchine-impianti-forniture/san-giuliano-milanese/azienda/181371"),
+ ("Costruttore macchine / impianti", "Soluzioni Tecnologiche Avanzate Srl", "Mediglia", "Cilindri pneumatici e oleodinamici", R + "cilindri-pneumatici-oleodinamici-idraulici/mediglia/azienda/1840768"),
+ ("Costruttore macchine / impianti", "Comasmo Tek", "Segrate", "Compare tra le aziende meccaniche di Segrate (verificare cosa produce)", ""),
+ ("Costruttore macchine / impianti", "Oleodinamica Dell'Avo Srl", "Rozzano", "Oleodinamica (componenti e impianti)", ""),
+ # grossisti tecnici
+ ("Grossista tecnico", "Fasaf", "Peschiera Borromeo", "Macchine utensili, attrezzature e accessori", R + "macchine-utensili-attrezzature-accessori/peschiera-borromeo/azienda/177346"),
+ ("Grossista tecnico", "Rimex Srl", "San Giuliano Milanese", "Commercio di macchine utensili", R + "macchine-utensili-commercio/san-giuliano-milanese/azienda/1961615"),
+ ("Grossista tecnico", "Eure Inox", "Peschiera Borromeo", "Commercio di acciai inossidabili", R + "acciai-inossidabili-commercio/peschiera-borromeo/azienda/139430"),
+ ("Grossista tecnico", "Profilati e Metalli Srl", "Segrate", "Profilati in ferro e acciaio", R + "profilati-ferro-acciaio/segrate/azienda/220727"),
+ ("Grossista tecnico", "Cofermetal Srl", "San Donato Milanese", "Metalli non ferrosi e leghe", R + "metalli-non-ferrosi-leghe/san-donato-milanese/azienda/1420301"),
 ]
-quota = [("Officina / carpenteria", 6), ("Grossista tecnico", 3)]
 r = 5
-for i, (seg, az, com, perche) in enumerate(seed, start=1):
-    for c, v in enumerate([i, seg, az, com, perche, "No"], start=1):
-        x = ws.cell(row=r, column=c, value=v); x.font = BL if c == 6 else N; x.alignment, x.border = W, TH
-    ws.cell(row=r, column=7, value="Responsabile ufficio tecnico / titolare").font = N
+for i, (seg, az, com, perche, link) in enumerate(seed, start=1):
+    for c, v in enumerate([i, seg, az, com, perche, link or "cerca sul sito reteimprese.it", "No"], start=1):
+        x = ws.cell(row=r, column=c, value=v); x.font = BL if c == 7 else N; x.alignment, x.border = W, TH
+    if link: ws.cell(row=r, column=6).hyperlink = link
+    ws.cell(row=r, column=8, value="Responsabile ufficio tecnico / titolare").font = N
+    for c in range(9, 13): ws.cell(row=r, column=c).border = TH
+    ws.row_dimensions[r].height = 34
     r += 1
-n = len(seed)
-for seg, k in quota:
-    for _ in range(k):
-        n += 1
-        for c, v in enumerate([n, seg] + [None] * 10, start=1):
-            x = ws.cell(row=r, column=c, value=v); x.font = N; x.alignment, x.border = W, TH
-        r += 1
-for rr in range(5, r): ws.row_dimensions[rr].height = 34
 r += 1
-ws.cell(row=r, column=1, value="Dove trovare le altre aziende").font = B
+ws.cell(row=r, column=1, value="Come usarla").font = B
 for k, t in enumerate([
-    "Elenchi soci di associazioni di categoria: UCIMU-Sistemi per produrre e Federmacchine (costruttori), Confindustria Lecco e Sondrio, Bergamo, Brescia, Monza e Brianza (officine e carpenterie).",
-    "Camere di commercio / Registro Imprese per ATECO 28.xx, 25.xx, 46.6x, filtrando per provincia e per addetti (10-49). Gli elenchi gratuiti hanno limiti: usali per i nomi, poi controlla il sito.",
-    "LinkedIn: cerca il ruolo (responsabile ufficio tecnico, responsabile commerciale, titolare) nell'azienda scelta e invia il messaggio del foglio Copione.",
-    "Tieni fuori: aziende dove hai conoscenti stretti (preferisci estranei), grandi gruppi oltre 250 addetti, rivenditori senza produzione propria se la candidata è di officina.",
-    "Rispetta la privacy: contatta solo ruoli aziendali (B2B), dichiara chi sei e perché scrivi, e se ti dicono di non scrivere più, annotalo e fermati.",
+    "Le 28 righe sono 'da verificare': l'elenco dà nome, indirizzo e categoria. Ho scelto quelle con attività plausibile (carpenteria, officina, macchine, ricambi) e scartato riparazioni auto e piccole botteghe evidenti, ma la dimensione resta sconosciuta.",
+    "Prima di chiamare: 5 minuti sul sito aziendale o su Google. Se trovi un ufficio tecnico, un catalogo o più macchine di produzione, sono segnali di azienda adatta.",
+    "Non servono viaggi: telefono in pausa pranzo (12:30-14:00) o dopo le 17:30, oppure una videochiamata. Se vogliono vederti, scegli un orario serale o il sabato mattina.",
+    "Entro 20 km da San Donato: Mediglia, Peschiera Borromeo, San Giuliano, Melegnano, Opera, Rozzano, Segrate, Pioltello, Paullo. Per ampliare, usa le stesse categorie su reteimprese.it per altri comuni.",
+    "Privacy: contatta solo ruoli aziendali (B2B), dì chi sei e perché scrivi, e se ti dicono di non scrivere più, annotalo e fermati.",
 ], start=1):
     c = ws.cell(row=r + k, column=1, value=t); c.font, c.alignment = N, W
     ws.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=12); ws.row_dimensions[r + k].height = 30
@@ -75,9 +96,9 @@ head(wc, 4, ["#", "Blocco", "Domanda / testo", ], [4, 22, 110])
 wc.column_dimensions["D"].width = 50
 wc.cell(row=4, column=4, value="Perché la chiedo").font, wc.cell(row=4, column=4).fill = H2, HF
 copione = [
-    ("Messaggio di invito (LinkedIn / email)",
+    ("Messaggio di invito (LinkedIn, email o telefono)",
      "Buongiorno [Nome], sono Andrei, ingegnere (Politecnico di Milano). Sto studiando come le PMI meccaniche lombarde gestiscono preventivi, distinte e documentazione tecnica. "
-     "Non vendo nulla: cerco 20 minuti per capire come lavorate voi, e ricambio con quello che sto imparando dagli altri. Le va una telefonata questa settimana?",
+     "Non vendo nulla: cerco 20 minuti per capire come lavorate voi, e ricambio con quello che sto imparando dagli altri. Le va una telefonata di 20 minuti questa settimana, quando preferisce?",
      "Chiarisce che non è una vendita e riduce l'imbarazzo che hai indicato."),
     ("Apertura", "Grazie del tempo. Sono qui per imparare, non per vendere. Posso prendere appunti? Mi racconta in breve cosa fate e quante persone siete?",
      "Dimensione e prodotto reale."),
