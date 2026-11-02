@@ -24,10 +24,10 @@ ws = wb.active; ws.title = "Contatti"
 ws["A1"] = "Fase 4 — contatti entro 20 km da San Donato Milanese (verificati su aggregatori di dati camerali)"; ws["A1"].font = H1
 ws["A2"] = ("Verifica del 02/11/2026 su ufficiocamerale.it, aziende.it, reportaziende.it, registroaziende.it, atoka.io e informazione-aziende.it. "
             "Sono aggregatori commerciali, non il Registro Imprese: le cifre variano da una fonte all'altra, quindi sono ordini di grandezza. "
-            "Prima parte: aziende ATTIVE con circa 10 o più addetti (da chiamare). Seconda: scartate dopo la verifica. Terza: NON verificate (non trovate o non controllate). "
-            "Con soli 6 contatti verificati la lista è corta: serve allargare l'area o cercare altre aziende.")
+            "A: aziende ATTIVE con circa 10 o più addetti. B: piccole attive (2-7 addetti): le chiami per capire il lavoro, di solito risponde il titolare. C: scartate (liquidazione o cessate). D: NON verificate. "
+            "Con 6 + 6 contatti verificati la lista è ancora corta: serve cercare altre aziende.")
 ws["A2"].font, ws["A2"].alignment = NOTE, W; ws.merge_cells("A2:K2"); ws.row_dimensions[2].height = 64
-cols = ["#", "Segmento", "Azienda", "Comune", "Cosa fa (da dati camerali)", "Stato", "Addetti (stima)", "Fatturato 2024", "Esito", "Fonte", "Note chiamata"]
+cols = ["#", "Segmento", "Azienda", "Comune", "Cosa fa (da dati camerali)", "Stato", "Addetti (stima)", "Fatturato 2024", "Esito", "Fonte", "Chi ha risposto / chi decide?"]
 head(ws, 4, cols, [4, 24, 34, 18, 40, 14, 12, 14, 16, 44, 36])
 U = "https://www.ufficiocamerale.it/"
 A = "https://www.aziende.it/"
@@ -42,12 +42,12 @@ verificate = [
 scartate = [
  ("Officina / carpenteria", "Carpenteria Ambrosiana Srl", "Opera", "In liquidazione (segnalato da te)", "In liquidazione", "-", "-", "Scartata", "https://www.ufficiocamerale.it/1824/carpenteria-ambrosiana-srl-in-liquidazione"),
  ("Officina / carpenteria", "Inferro Srl", "Segrate", "Fonti discordanti: una la dà cessata", "Dubbio", "6", "0,7 M€ (2025)", "Scartata", U + "5106/inferro-srl"),
- ("Officina / carpenteria", "Elast Srl", "San Giuliano Milanese", "Tranciatura, fatturato basso", "Attiva", "non indicato", "0,3-0,6 M€", "Scartata", "https://www.informazione-aziende.it/Azienda_ELAST-SRL"),
- ("Costruttore macchine", "Co.Re.Ma. Snc", "San Giuliano Milanese", "Meccanica generale, microimpresa", "n.d.", "4", "n.d.", "Scartata", "https://atoka.io/public/it/azienda/corema-snc-di-gesmundo-marianna-c/fd346796dce0"),
- ("Officina / carpenteria", "Ossitaglio Sas", "Opera", "Formatura metalli, 2 addetti", "n.d.", "2", "n.d.", "Scartata", U + "9024/ossitaglio-sas-di-alongi-calogero-e-c"),
- ("Officina", "S.T.M. Srl (Special Tools Manufacturing)", "Melegnano", "Utensili, piccola", "Attiva", "6", "0,8 M€ (2023)", "Scartata", U + "4948/stm-srl"),
- ("Costruttore macchine", "Oleodinamica Dell'Avo Srl", "Rozzano", "Macchine di impiego generale, microimpresa", "n.d.", "4", "0,5 M€", "Scartata", U + "8867/oleodinamica-dellavo-srl"),
- ("Costruttore macchine", "Attrezzature Galvaniche Snc", "San Giuliano Milanese", "Telai per galvanica, microimpresa", "Attiva", "4-7", "n.d.", "Scartata", "https://atoka.io/public/it/azienda/attrezzature-galvaniche-snc-di-rando-dante-c/90998b12899f"),
+ ("Officina / carpenteria", "Elast Srl", "San Giuliano Milanese", "Tranciatura, fatturato basso", "Attiva", "non indicato", "0,3-0,6 M€", "Piccola", "https://www.informazione-aziende.it/Azienda_ELAST-SRL"),
+ ("Costruttore macchine", "Co.Re.Ma. Snc", "San Giuliano Milanese", "Meccanica generale, microimpresa", "n.d.", "4", "n.d.", "Piccola", "https://atoka.io/public/it/azienda/corema-snc-di-gesmundo-marianna-c/fd346796dce0"),
+ ("Officina / carpenteria", "Ossitaglio Sas", "Opera", "Formatura metalli, 2 addetti", "n.d.", "2", "n.d.", "Piccola", U + "9024/ossitaglio-sas-di-alongi-calogero-e-c"),
+ ("Officina", "S.T.M. Srl (Special Tools Manufacturing)", "Melegnano", "Utensili, piccola", "Attiva", "6", "0,8 M€ (2023)", "Piccola", U + "4948/stm-srl"),
+ ("Costruttore macchine", "Oleodinamica Dell'Avo Srl", "Rozzano", "Macchine di impiego generale, microimpresa", "n.d.", "4", "0,5 M€", "Piccola", U + "8867/oleodinamica-dellavo-srl"),
+ ("Costruttore macchine", "Attrezzature Galvaniche Snc", "San Giuliano Milanese", "Telai per galvanica, microimpresa", "Attiva", "4-7", "n.d.", "Piccola", "https://atoka.io/public/it/azienda/attrezzature-galvaniche-snc-di-rando-dante-c/90998b12899f"),
 ]
 nonver = [
  ("Officina / carpenteria", "Med Srl Carpenteria Metallica", "Opera", "Non trovata nei database con quell'indirizzo"),
@@ -80,11 +80,15 @@ titolo("A. Verificate: attive, circa 10+ addetti — da chiamare")
 for k, v in enumerate(verificate, start=1):
     riga([k, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], None])
     ws.cell(row=r - 1, column=10).hyperlink = v[8]
-r += 1; titolo("B. Scartate dopo la verifica")
-for k, v in enumerate(scartate, start=1):
+r += 1; titolo("B. Piccole (circa 2-7 addetti), attive: da chiamare per imparare; spesso risponde il titolare")
+for k, v in enumerate([x for x in scartate if x[7] == "Piccola"], start=1):
     riga([k, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], None])
     ws.cell(row=r - 1, column=10).hyperlink = v[8]
-r += 1; titolo("C. Non verificate — controlla su Google o ufficiocamerale.it prima di chiamare")
+r += 1; titolo("C. Scartate dopo la verifica (in liquidazione o cessate)")
+for k, v in enumerate([x for x in scartate if x[7] == "Scartata"], start=1):
+    riga([k, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], None])
+    ws.cell(row=r - 1, column=10).hyperlink = v[8]
+r += 1; titolo("D. Non verificate — controlla su Google o ufficiocamerale.it prima di chiamare")
 for k, v in enumerate(nonver, start=1):
     riga([k, v[0], v[1], v[2], v[3], "n.d.", "n.d.", "n.d.", "Da verificare", None, None])
 r += 1
