@@ -18,3 +18,11 @@ Strips vs bottom: index -2.4 %, Q / 4.5, gap pattern CPW/slot 6.2 -> 0.70: not c
 2 mm cell (616 um) matches the lateral extent of the widened TD model (625 um). Cross-sections exported
 only to y = 0.6 mm. Mode 4: substrate (TM0) wave between the cell walls is the likely origin; half-wave
 estimate 62.0 GHz against 57.7 found (the odd 1.2 mm quarter-wave estimate matched to 0.1 %): not confirmed.
+
+Mode 4 even (exported): 89 % of the energy in the Si (63 % deeper than 100 um), 9 % in the air above, 57 %
+beyond the outer ground within the exported 0.6 mm; |E|^2 nearly constant from 2.6 to 97 um above the
+surface (decay length in air 1/(k0 sqrt(n^2-1)) = 1.2 mm at n 1.20); gap pattern CPW/slot 0.17, CPW per
+unit energy 2.1e-3 (CPW mode 0.30). A substrate wave of the Si on the bottom conductor, partly in the air.
+30 GHz test (`../../cordoba_8mm_wide_ebottom/scan_low_index.py`): adding it with its own pattern and any
+n 1.0-2.3 lowers B's CPW residual only 0.168 -> 0.160, with no preferred index: not detectable in the
+30 GHz gap fields. Not tested yet at 45-60 GHz, where the TM0 index reaches the CPW index.
