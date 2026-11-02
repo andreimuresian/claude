@@ -12,5 +12,5 @@ victim field and the EO crosstalk change? One variable changed, so every differe
 3. The three 30 GHz planes, same settings as the open-bottom run (zipped is fine):
    V1: x -0.53..0.103, y = 0, z 0-8, step 0.005; V2: same at y = -0.3125; H: x = 0.001, y -1.03..1.03,
    z 0-8, step 0.01.
-4. If the dense subvolume monitors were added: their gap columns (same x, y, z, step as item 2), in a
-   subfolder `dense/`.
+
+(No dense monitors in this run: the 12 monitor frequencies only.)
