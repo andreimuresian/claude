@@ -1,0 +1,3 @@
+six modes: A all 0.087, A CPW 0.014, B' all 0.123, B' CPW 0.168, B' slot 0.094
+A CPW pattern, |remainder| / rms(data) along z: 0.5:0.02 1.5:0.01 2.5:0.01 3.5:0.01 4.5:0.01 5.5:0.01 6.5:0.02 7.5:0.02
+B' CPW pattern, |remainder| / rms(data) along z: 0.5:0.21 1.5:0.21 2.5:0.10 3.5:0.17 4.5:0.09 5.5:0.14 6.5:0.04 7.5:0.40
