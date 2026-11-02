@@ -26,3 +26,18 @@ unit energy 2.1e-3 (CPW mode 0.30). A substrate wave of the Si on the bottom con
 30 GHz test (`../../cordoba_8mm_wide_ebottom/scan_low_index.py`): adding it with its own pattern and any
 n 1.0-2.3 lowers B's CPW residual only 0.168 -> 0.160, with no preferred index: not detectable in the
 30 GHz gap fields. Not tested yet at 45-60 GHz, where the TM0 index reaches the CPW index.
+
+## Odd run (XZ electric), 15 deg, 5 modes in 15-60 GHz
+| mode | f (GHz) | n | Q | 1.2 mm cell |
+|---|---|---|---|---|
+| 1 A vs B | 23.8568 | 2.9089 | 13.6 | 2.9824, Q 9.5 |
+| 2 slot | 28.9257 | 2.3991 | 34.2 | 2.4032, Q 33.9 |
+| 3 CPW | 31.0445 | 2.2354 | 26.3 | 2.2360, Q 26.3 |
+| 4 substrate wave, quarter wave across the cell | 49.4865 | 1.4023 | 5.2 | 56.74 GHz, n 1.223 |
+| 5 substrate wave (outer region) | 58.6331 | 1.1836 | 5.3 | - |
+CPW split 2.33e-5 (1.2 mm: 2.5e-5); slot split 0.0149 (1.2 mm: 0.0164).
+Mode 4: predicted 48.3 GHz (n 1.44) from the TM0 wave of the Si on the bottom conductor with a quarter wave
+between the electric symmetry plane and the magnetic wall at 1.0 mm; found 49.5 GHz (n 1.40): identification
+confirmed (1.2 mm: 56.8 predicted, 56.74 found). Modes 4, 5 (odd) and 4 (even): 89-94 % of the energy in the
+Si; their count grows with the cell width because more lateral standing-wave patterns fit below 60 GHz.
+Cross-sections again only to y = 0.6 mm.

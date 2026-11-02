@@ -53,3 +53,14 @@ EO weight on B (|H| relative to the data): CPW pair forward 2.07 (-21 deg), CPW 
 slot pairs 0.42, strips vs bottom forward 0.44 (+118 deg), backward 0.03, A vs B 0.08; model 0.979,
 residual 0.026. The CPW pair and the strips-vs-bottom wave differ by 0.96 in index (4.5 rad over the
 fitted length), so here the split is well conditioned, unlike CPW vs n 2.475 (1.1 rad).
+
+## Fit with the 2 mm electric-bottom eigenmodes (`fit30_ebottom_2mm.py`)
+| model (2 mm modes) | A CPW | B' all | B' CPW | B' slot |
+|---|---|---|---|---|
+| CPW pair | 0.242 | 0.767 | 0.565 | 0.847 |
+| + slot pairs | 0.014 | 0.346 | 0.577 | 0.129 |
+| + A vs B | 0.015 | 0.246 | 0.347 | 0.179 |
+| + strips vs bottom (all six) | 0.015 | 0.117 | **0.143** | 0.101 |
+1.2 mm modes: 0.168 on B' CPW. Free extra wave on top: 0.103, flat in n. B' CPW remainder along z:
+0.13-0.18 at 0.5-3.5 mm, 0.04 at 4.5 and 6.5 mm, 0.30 at 7.5 mm (1.2 mm modes: 0.40). Spurious slot field
+on A unchanged (0.083 of A's CPW pattern; data 0.004), so it is not caused by the slot split of the cell.
