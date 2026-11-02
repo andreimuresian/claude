@@ -1,0 +1,35 @@
+
+V1: y = 0.0 mm
+  x   101.55 um | rms |E| 3.03e+02 V/m | resid 0.08: n -2.684 a  -1.6 amp 1.00; n -1.831 a  15.9 amp 0.68; n +2.522 a  -7.0 amp 0.68; n +1.508 a  10.0 amp 0.27
+  x     1.55 um | rms |E| 3.29e+02 V/m | resid 0.06: n -2.193 a   8.0 amp 1.00; n -2.817 a   3.3 amp 1.00; n +2.601 a  -7.6 amp 0.61; n +1.388 a  31.4 amp 0.23
+  x    -3.45 um | rms |E| 2.94e+02 V/m | resid 0.04: n -2.526 a   7.5 amp 1.00; n -2.680 a  26.4 amp 0.80; n +2.580 a  -7.5 amp 0.20; n +0.649 a  43.2 amp 0.08
+  x   -48.45 um | rms |E| 2.92e+02 V/m | resid 0.06: n -2.665 a   2.6 amp 1.00; n -2.100 a  25.3 amp 0.76; n +2.577 a  -7.2 amp 0.38; n +1.865 a   5.2 amp 0.10
+  x  -198.45 um | rms |E| 2.25e+02 V/m | resid 0.08: n -2.770 a   0.0 amp 1.00; n -2.060 a  15.5 amp 0.85; n +2.787 a  -4.9 amp 0.47; n +2.159 a  -9.1 amp 0.29
+  x  -298.45 um | rms |E| 1.82e+02 V/m | resid 0.09: n -2.827 a  -3.6 amp 1.00; n -1.989 a  13.3 amp 0.92; n +2.855 a  -5.7 amp 0.67; n +2.100 a  -8.8 amp 0.37
+  x  -398.45 um | rms |E| 1.55e+02 V/m | resid 0.07: n -1.833 a  14.4 amp 1.00; n -2.859 a  -8.0 amp 0.98; n +2.941 a -10.0 amp 0.74; n +2.201 a -20.7 amp 0.28
+  x  -528.45 um | rms |E| 1.44e+02 V/m | resid 0.05: n -1.678 a  20.9 amp 1.00; n -2.860 a  -9.6 amp 0.89; n +2.631 a -18.4 amp 0.85; n +3.197 a -53.9 amp 0.02
+
+V2: y = -0.3125 mm
+  x   101.55 um | rms |E| 4.50e+02 V/m | resid 0.05: n -2.780 a  -1.8 amp 1.00; n -1.677 a   9.7 amp 0.56; n +1.955 a -10.3 amp 0.20; n +2.926 a -34.8 amp 0.03
+  x     1.55 um | inside the metal
+  x    -3.45 um | rms |E| 2.88e+03 V/m | resid 0.05: n -2.842 a  -0.8 amp 1.00; n -1.943 a  10.0 amp 0.87; n +2.761 a -35.4 amp 0.05; n +1.433 a -31.1 amp 0.03
+  x   -48.45 um | rms |E| 7.35e+02 V/m | resid 0.04: n -2.863 a  -0.1 amp 1.00; n -1.964 a  10.6 amp 0.83; n +2.859 a -35.5 amp 0.04; n +1.594 a -28.6 amp 0.03
+  x  -198.45 um | rms |E| 3.13e+02 V/m | resid 0.05: n -2.893 a   0.8 amp 1.00; n -2.008 a  11.1 amp 0.86; n +3.028 a -25.9 amp 0.07; n +1.659 a -22.7 amp 0.05
+  x  -298.45 um | rms |E| 2.30e+02 V/m | resid 0.06: n -2.936 a   0.8 amp 1.00; n -2.034 a   9.5 amp 0.90; n +3.058 a -21.0 amp 0.12; n +1.451 a -23.6 amp 0.04
+  x  -398.45 um | rms |E| 1.93e+02 V/m | resid 0.06: n -2.989 a  -0.3 amp 1.00; n -2.044 a   6.4 amp 0.94; n +3.061 a -17.9 amp 0.17; n +1.139 a -24.2 amp 0.03
+  x  -528.45 um | rms |E| 1.79e+02 V/m | resid 0.03: n -3.037 a  -2.5 amp 1.00; n -2.048 a   3.0 amp 0.99; n +3.063 a -17.5 amp 0.22; n +0.678 a -35.2 amp 0.02
+
+H: x = 1 um (Ex excluded: it jumps at the LN surface)
+  y -1.000 mm | rms |Ey| 6.24e+01 V/m | resid 0.17: n -3.024 a -10.1 amp 1.00; n -1.888 a -16.0 amp 0.40; n +1.644 a  11.2 amp 0.33; n +2.436 a -31.9 amp 0.19
+  y -0.800 mm | rms |Ey| 1.25e+02 V/m | resid 0.09: n -2.970 a  -5.7 amp 1.00; n -2.027 a  -4.8 amp 0.73; n +2.057 a  -1.5 amp 0.40; n +2.661 a -27.2 amp 0.17
+  y -0.600 mm | rms |Ey| 2.89e+02 V/m | resid 0.06: n -2.908 a  -2.0 amp 1.00; n -1.991 a   4.8 amp 0.83; n +1.887 a -13.8 amp 0.14; n +2.896 a -30.1 amp 0.07
+  y -0.450 mm | rms |Ey| 8.10e+02 V/m | resid 0.04: n -2.874 a  -1.1 amp 1.00; n -1.969 a  10.1 amp 0.82; n +1.784 a -22.4 amp 0.06; n +2.976 a -35.3 amp 0.04
+  y -0.400 mm | rms |Ey| 3.46e+03 V/m | resid 0.04: n -2.865 a  -1.4 amp 1.00; n -1.951 a  11.7 amp 0.79; n +1.742 a -24.0 amp 0.05; n +2.960 a -37.3 amp 0.03
+  y -0.150 mm | rms |Ey| 7.68e+02 V/m | resid 0.04: n -2.841 a   0.8 amp 1.00; n -1.991 a   8.2 amp 0.81; n +2.535 a -23.5 amp 0.15; n +0.625 a -25.1 amp 0.02
+  y +0.000 mm | rms |Ey| 4.97e+02 V/m | resid 0.04: n -2.516 a   4.1 amp 1.00; n -2.850 a  37.2 amp 0.68; n +2.575 a  -7.3 amp 0.29; n +0.345 a  48.0 amp 0.15
+  y +0.150 mm | rms |Ey| 1.23e+03 V/m | resid 0.03: n +2.287 a   7.7 amp 1.00; n -2.571 a  -4.3 amp 0.42; n -1.625 a  56.4 amp 0.24; n +2.854 a  -3.1 amp 0.14
+  y +0.400 mm | rms |Ey| 3.10e+04 V/m | resid 0.01: n +2.252 a   4.1 amp 1.00; n -2.723 a   3.6 amp 0.07; n -0.161 a  43.9 amp 0.04; n +57.727 a   3.4 amp 0.01
+  y +0.450 mm | rms |Ey| 2.09e+03 V/m | resid 0.04: n +2.325 a  10.5 amp 1.00; n +1.231 a  46.1 amp 0.17; n -2.619 a  -4.9 amp 0.17; n -52.939 a   7.9 amp 0.02
+  y +0.600 mm | rms |Ey| 3.31e+02 V/m | resid 0.06: n +2.636 a   2.5 amp 1.00; n -2.577 a  -7.8 amp 0.55; n -0.558 a  15.2 amp 0.13; n +2.228 a -14.4 amp 0.13
+  y +0.800 mm | rms |Ey| 1.34e+02 V/m | resid 0.08: n +2.786 a  -2.7 amp 1.00; n -2.608 a  -9.6 amp 0.94; n +2.306 a -10.4 amp 0.70; n -0.623 a  -3.2 amp 0.11
+  y +1.000 mm | rms |Ey| 6.88e+01 V/m | resid 0.12: n +2.364 a  12.1 amp 1.00; n +2.642 a  -7.2 amp 0.94; n -2.741 a -10.2 amp 0.51; n -1.329 a -15.2 amp 0.07
