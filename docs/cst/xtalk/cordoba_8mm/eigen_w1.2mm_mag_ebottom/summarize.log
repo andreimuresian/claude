@@ -1,0 +1,9 @@
+mode 1 (stripsvsbottom): f 21.7364 GHz, n 3.1926, Q 172.8
+   energy shares: Si 0.90, oxide/LN 0.07, air above 0.03, under the line (|y-0.3125|<0.072) 0.40, between the lines (y<0.24) 0.31, outside (y>0.385) 0.27, Si deeper than 100 um 0.62
+   gaps: CPW pattern 2.072e+10, slot pattern 3.354e+09 (CPW/slot 6.18); CPW pattern / sqrt(cross-section energy) 4.153e-03
+mode 2 (slot): f 28.6810 GHz, n 2.4196, Q 29.86
+   energy shares: Si 0.57, oxide/LN 0.29, air above 0.14, under the line (|y-0.3125|<0.072) 0.81, between the lines (y<0.24) 0.10, outside (y>0.385) 0.06, Si deeper than 100 um 0.04
+   gaps: CPW pattern 3.166e+09, slot pattern 9.217e+11 (CPW/slot 0.00); CPW pattern / sqrt(cross-section energy) 7.402e-04
+mode 3 (cpw): f 31.0361 GHz, n 2.2360, Q 26.27
+   energy shares: Si 0.34, oxide/LN 0.47, air above 0.19, under the line (|y-0.3125|<0.072) 0.98, between the lines (y<0.24) 0.01, outside (y>0.385) 0.00, Si deeper than 100 um 0.00
+   gaps: CPW pattern 1.265e+12, slot pattern 4.003e+09 (CPW/slot 315.95); CPW pattern / sqrt(cross-section energy) 2.977e-01
