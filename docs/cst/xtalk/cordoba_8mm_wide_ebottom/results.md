@@ -64,3 +64,13 @@ fitted length), so here the split is well conditioned, unlike CPW vs n 2.475 (1.
 1.2 mm modes: 0.168 on B' CPW. Free extra wave on top: 0.103, flat in n. B' CPW remainder along z:
 0.13-0.18 at 0.5-3.5 mm, 0.04 at 4.5 and 6.5 mm, 0.30 at 7.5 mm (1.2 mm modes: 0.40). Spurious slot field
 on A unchanged (0.083 of A's CPW pattern; data 0.004), so it is not caused by the slot split of the cell.
+
+## Fit weighting (`fit_weighting.py`, `fit_weighting_scan.log`)
+The spurious slot field on A comes from the weighting, not from the modes. With one weight per line, the fit
+uses large, nearly equal even and odd slot amplitudes (0.11 of the forward CPW) whose difference builds B's
+slot pattern; their sum lands on A's slot pattern, which is tiny (0.4 % of A's CPW) and cheap to miss.
+Raising the weight of A's slot pattern by 10 forces the slot amplitudes down to 0.001-0.003 and A's slot
+pattern to 1.5x the data, with A CPW 0.017 and **B' CPW 0.142 (unchanged)**; only B's slot pattern
+(not read by push-pull) worsens, 0.101 -> 0.218. Weighting every pattern by its own rms (or using absolute
+fields) gives worse fits overall (A CPW 0.41, or B' CPW 0.61). Changing the CPW and slot splits does not
+help. Conclusion: the six-mode fit of B's push-pull pattern (0.14) does not rely on the slot artefact.

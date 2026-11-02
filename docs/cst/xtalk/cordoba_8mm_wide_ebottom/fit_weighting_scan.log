@@ -1,0 +1,8 @@
+line weighting, A slot weight multiplied by lam (lam = 1: as before; lam ~ 250: A slot as heavy as B)
+  lam   | A CPW | A slot (model/data) | B' CPW | B' slot | slot amplitudes e/o vs e_cpw+
+      1 | 0.015 |  21.54              | 0.143  | 0.101   | e+ 0.109 o+ 0.110
+      3 | 0.016 |   5.52              | 0.141  | 0.190   | e+ 0.025 o+ 0.028
+     10 | 0.017 |   1.48              | 0.142  | 0.218   | e+ 0.001 o+ 0.003
+     30 | 0.022 |   1.40              | 0.140  | 0.222   | e+ 0.003 o+ 0.001
+    100 | 0.101 |   1.32              | 0.181  | 0.228   | e+ 0.004 o+ 0.001
+    250 | 0.394 |   1.13              | 0.339  | 0.233   | e+ 0.006 o+ 0.002

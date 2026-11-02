@@ -1,0 +1,18 @@
+data: A slot / A CPW 0.0039  B' rms / A rms 2.64e-03
+
+CPW + slot pairs:  weighting | A CPW | A slot | B' CPW | B' slot | model A slot / A CPW
+   line               | 0.014 |  28.50 | 0.577  | 0.129   | 0.1105
+   pattern            | 0.429 |   0.57 | 0.564  | 0.631   | 0.0041
+   absolute           | 0.014 |   0.88 | 0.564  | 0.664   | 0.0049
+
+all six:  weighting | A CPW | A slot | B' CPW | B' slot | model A slot / A CPW
+   line               | 0.015 |  21.67 | 0.143  | 0.101   | 0.0835
+   pattern            | 0.412 |   0.56 | 0.246  | 0.227   | 0.0045
+   absolute           | 0.013 |   0.89 | 0.609  | 1.850   | 0.0052
+
+eigen splits: CPW 2.41e-05, slot 0.0149. Pattern weighting, all six, splits changed by (dCPW, dslot):
+   dCPW +1e-04 dslot -0.008: A CPW 0.410 A slot 0.56 B' CPW 0.240 B' slot 0.228
+   dCPW +1e-04 dslot -0.004: A CPW 0.410 A slot 0.56 B' CPW 0.240 B' slot 0.229
+   dCPW +8e-05 dslot -0.008: A CPW 0.411 A slot 0.56 B' CPW 0.241 B' slot 0.228
+   dCPW +1e-04 dslot +0.000: A CPW 0.410 A slot 0.56 B' CPW 0.241 B' slot 0.229
+   dCPW +8e-05 dslot -0.004: A CPW 0.411 A slot 0.56 B' CPW 0.242 B' slot 0.228
