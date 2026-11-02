@@ -1,0 +1,18 @@
+e_sb    f  21.7364 GHz  n(30 GHz) 3.19263  alpha  0.37 dB/cm
+e_slot  f  28.6810 GHz  n(30 GHz) 2.41959  alpha  2.12 dB/cm
+e_cpw   f  31.0361 GHz  n(30 GHz) 2.23623  alpha  2.40 dB/cm
+o_AvsB  f  23.2683 GHz  n(30 GHz) 2.98244  alpha  6.67 dB/cm
+o_slot  f  28.8767 GHz  n(30 GHz) 2.40320  alpha  1.87 dB/cm
+o_cpw   f  31.0365 GHz  n(30 GHz) 2.23620  alpha  2.40 dB/cm
+
+model                                   | A CPW | B' all | B' CPW | B' slot
+CPW pair                                | 0.225 | 0.771  | 0.565  | 0.853
+CPW + slot pairs                        | 0.014 | 0.343  | 0.573  | 0.127
++ A vs B                                | 0.014 | 0.286  | 0.441  | 0.165
++ strips vs bottom (all six)            | 0.014 | 0.123  | 0.168  | 0.094
+amplitudes / e_cpw+ (six modes): e_cpw+ 1.00e+00, e_cpw- 4.14e-02, e_slot+ 1.03e-01, e_slot- 5.99e-02, e_sb+ 3.82e-02, e_sb- 1.24e-01, o_cpw+ 9.99e-01, o_cpw- 4.03e-02, o_slot+ 1.03e-01, o_slot- 6.21e-02, o_AvsB+ 5.90e-03, o_AvsB- 2.00e-02
+
+six modes + free wave: best n 2.500 a 3 -> B' CPW 0.098 | n 2.475 a 3 -> B' CPW 0.098 | n 2.400 a 2 -> B' CPW 0.098
+  best residual vs n: 2.30:0.14 2.33:0.14 2.35:0.13 2.38:0.13 2.40:0.10 2.42:0.10 2.45:0.10 2.48:0.10 2.50:0.10 2.52:0.10 2.55:0.10 2.58:0.11 2.60:0.11 2.62:0.11 2.65:0.11 2.67:0.12 2.70:0.12 2.73:0.12 2.75:0.12 2.77:0.12 2.80:0.13 2.83:0.13 2.85:0.13 2.88:0.13 2.90:0.13 2.92:0.13 2.95:0.12 2.98:0.12 3.00:0.11 3.02:0.11 3.05:0.11 3.08:0.11 3.10:0.11 3.12:0.11 3.15:0.12 3.17:0.12 3.20:0.12 3.23:0.12 3.25:0.12 3.27:0.12 3.30:0.12 3.33:0.13 3.35:0.13 3.38:0.13 3.40:0.13
+  at the best: A CPW 0.014, B' all 0.069, B' slot 0.049
+  amplitudes / e_cpw+: e_cpw+ 1.00e+00, e_cpw- 4.26e-02, e_slot+ 1.38e-02, e_slot- 1.66e-02, e_sb+ 5.69e-02, e_sb- 9.97e-02, o_cpw+ 1.00e+00, o_cpw- 4.26e-02, o_slot+ 3.94e-02, o_slot- 1.72e-02, o_AvsB+ 2.20e-02, o_AvsB- 2.64e-02, x_free+ 2.18e-01, x_free- 1.73e-01

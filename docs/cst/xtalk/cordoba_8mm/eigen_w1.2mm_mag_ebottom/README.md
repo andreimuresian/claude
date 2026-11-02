@@ -12,3 +12,15 @@ Open bottom, same cell: slot 2.4209 (Q 29.1), CPW 2.2364 (Q 26.3). `*_xsec.txt`:
 patterns. Mode 1: 90 % of the energy in the Si (62 % deeper than 100 um), 40 % under the line, 31 % between
 the lines, 27 % beyond the outer ground (so the 221 um wall may still shift it); gap pattern CPW-like
 (CPW/slot 6.2) but weak per unit energy (4.2e-3 vs 0.30 for the CPW mode, -37 dB).
+
+Odd run (XZ electric), same model and mesh, 15-60 GHz, 4 found:
+
+| mode | f (GHz) | n | Q | file |
+|---|---|---|---|---|
+| 1 A vs B | 23.2683 | 2.9824 | 9.48 | eig_odd_mode1_AvsB.txt |
+| 2 slot | 28.8767 | 2.4032 | 33.86 | eig_odd_mode2_slot.txt |
+| 3 CPW | 31.0365 | 2.2360 | 26.27 | eig_odd_mode3_cpw.txt |
+| 4 not exported | 56.7381 | 1.2231 | 9.99 | - |
+
+Open bottom: A vs B 3.096 (Q 4.6), slot odd 2.4040, CPW split 3.4e-5; electric bottom: CPW split 2.5e-5.
+A vs B: 78 % of the energy in the Si, gap pattern slot-dominated (CPW/slot 0.23).

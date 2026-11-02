@@ -34,3 +34,22 @@ forward wave with n_g 2.82 appears in FEXT. An index near 2.9 is what a quasi-TE
 whole electrode set and the bottom conductor (microstrip-like, mostly in Si, eps 11.9 with fringing in
 oxide and air) would have; such a wave is bound (above the grounded-slab TM0 index, 1.10 at 30 GHz),
 so an eigenmode cell with an electric bottom should find it. Not yet confirmed.
+
+## Fit with the electric-bottom eigenmodes (`fit30_ebottom_modes.py`, `eo_decomp_ebottom.py`)
+Six modes (even cpw, slot, strips vs bottom; odd cpw, slot, A vs B; same model and mesh), 30 GHz:
+
+| model | A CPW | B' all | B' CPW | B' slot |
+|---|---|---|---|---|
+| CPW pair | 0.225 | 0.771 | 0.565 | 0.853 |
+| + slot pairs | 0.014 | 0.343 | 0.573 | 0.127 |
+| + A vs B | 0.014 | 0.286 | 0.441 | 0.165 |
+| + strips vs bottom (all six) | 0.014 | 0.123 | **0.168** | 0.094 |
+
+The strips-vs-bottom mode (n 3.19, CPW-like gap pattern) carries most of what B's CPW pattern lacked:
+0.44 -> 0.17. A free extra wave on top only reaches 0.098, with a flat minimum over n 2.40-2.55 (and
+3.0-3.1): no sharply defined extra wave is needed in the gaps any more. (Open bottom, open-bottom
+modes: 0.52, and 0.18 only with the free n = 2.475 wave.)
+EO weight on B (|H| relative to the data): CPW pair forward 2.07 (-21 deg), CPW pair backward 0.39,
+slot pairs 0.42, strips vs bottom forward 0.44 (+118 deg), backward 0.03, A vs B 0.08; model 0.979,
+residual 0.026. The CPW pair and the strips-vs-bottom wave differ by 0.96 in index (4.5 rad over the
+fitted length), so here the split is well conditioned, unlike CPW vs n 2.475 (1.1 rad).

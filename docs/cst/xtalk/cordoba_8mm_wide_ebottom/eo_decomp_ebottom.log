@@ -1,0 +1,7 @@
+|H| / |H[data]|: model 0.979 (+0.8 deg), residual 0.026
+  CPW pair forward           |H| 2.068 ( -21.3 deg)
+  CPW pair backward          |H| 0.394 (+157.8 deg)
+  slot pairs                 |H| 0.419 (+160.0 deg)
+  strips vs bottom forward   |H| 0.436 (+117.6 deg)
+  strips vs bottom backward  |H| 0.031 ( +24.1 deg)
+  A vs B                     |H| 0.076 (+102.4 deg)
