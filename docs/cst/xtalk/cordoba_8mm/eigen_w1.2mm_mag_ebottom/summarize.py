@@ -5,13 +5,13 @@ import os, numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 RUNS = {"even": ({1: 21.7364055801, 2: 28.6810118013, 3: 31.0361181988}, {1: 172.8, 2: 29.86, 3: 26.27},
                  {1: "stripsvsbottom", 2: "slot", 3: "cpw"}),
-        "odd": ({1: 23.2683293641, 2: 28.8766572463, 3: 31.0364638690}, {1: 9.477, 2: 33.86, 3: 26.27},
-                {1: "AvsB", 2: "slot", 3: "cpw"})}
+        "odd": ({1: 23.2683293641, 2: 28.8766572463, 3: 31.0364638690, 4: 56.7381060859},
+                {1: 9.477, 2: 33.86, 3: 26.27, 4: 9.986}, {1: "AvsB", 2: "slot", 3: "cpw", 4: "unknown"})}
 def load(fn):
     a = np.loadtxt(os.path.join(HERE, fn), skiprows=2); return a
 for run, (F_GHZ, Q, NAME) in RUNS.items():
- for m in (1, 2, 3):
-     n = 69.396 / F_GHZ[m]
+ for m in sorted(F_GHZ):
+     n = 69.396 / F_GHZ[m]   # 15 deg over 0.18 mm
      x = load(f"eig_{run}_mode{m}_xsec.txt"); X, Y = x[:, 0], x[:, 1]
      E2 = np.sum(np.abs(x[:, 3::2] + 1j * x[:, 4::2]) ** 2, axis=1)
      eps = np.where(X < -0.0049, 11.9, np.where(X < 0, 3.9, 1.0))
@@ -19,7 +19,7 @@ for run, (F_GHZ, Q, NAME) in RUNS.items():
      reg = {"Si": X < -0.0049, "oxide/LN": (X >= -0.0049) & (X < 0), "air above": X >= 0.002,
             "under the line (|y-0.3125|<0.072)": (abs(Y - 0.3125) < 0.072),
             "between the lines (y<0.24)": Y < 0.2405, "outside (y>0.385)": Y > 0.385,
-            "Si deeper than 100 um": X < -0.1}
+            "Si deeper than 100 um": X < -0.1, "air above, within 50 um": (X >= 0.002) & (X < 0.052)}
      g = load(f"eig_{run}_mode{m}_{NAME[m]}.txt")
      p = g[np.isclose(g[:, 1], 0.3325), 5] + 1j * g[np.isclose(g[:, 1], 0.3325), 6]
      q = g[np.isclose(g[:, 1], 0.2925), 5] + 1j * g[np.isclose(g[:, 1], 0.2925), 6]
