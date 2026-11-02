@@ -17,6 +17,8 @@ import os, sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../..")))
 import numpy as np
 from mzm_interconnect.xtalk_fields import load_field_dir
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from fieldio import load_field_table
 C0 = 2.99792458e8; LAM = 0.18e-3; PHI = np.deg2rad(15.0); F = 30e9; L = 8e-3
 HERE = os.path.dirname(os.path.abspath(__file__)); EIG = os.path.join(HERE, "../eigen_w1.2mm_mag")
 MODES = {  # name: (file, f_GHz, Q_total, n_g or None); 1.2 mm cell, magnetic side wall
@@ -28,7 +30,7 @@ MODES = {  # name: (file, f_GHz, Q_total, n_g or None); 1.2 mm cell, magnetic si
 }
 
 def pattern(fn):
-    a = np.loadtxt(os.path.join(EIG, fn), skiprows=2)
+    a = load_field_table(os.path.join(EIG, fn))
     ey = a[:, 5] + 1j * a[:, 6]
     zp = np.round(a[np.isclose(a[:, 1], 0.3325), 2], 4)
     p, m = ey[np.isclose(a[:, 1], 0.3325)], ey[np.isclose(a[:, 1], 0.2925)]
