@@ -21,69 +21,82 @@ wb = Workbook()
 
 # ---------------- Contatti
 ws = wb.active; ws.title = "Contatti"
-ws["A1"] = "Fase 4 — contatti entro 20 km da San Donato Milanese (elenco da verificare)"; ws["A1"].font = H1
-ws["A2"] = ("Obiettivo: 15 conversazioni da 20-25 minuti, per telefono o videochiamata (in pausa pranzo o dopo le 18). Qui ci sono 28 candidate: se rispondono 1 su 2, bastano per le 15. "
-            "Fonte: elenchi per comune e categoria di reteimprese.it (nome, indirizzo, categoria). L'elenco NON dice quanti addetti hanno né se hanno il problema: "
-            "molti sono piccolissimi o sono solo rivenditori. Prima di chiamare, apri la scheda e cerca il sito aziendale; scarta chi ha meno di circa 8-10 persone o fa riparazioni auto. "
-            "Ordina per ordine di interesse: carpenterie e officine con più linee di lavoro, poi costruttori di macchine e impianti, poi grossisti.")
-ws["A2"].font, ws["A2"].alignment = NOTE, W; ws.merge_cells("A2:L2"); ws.row_dimensions[2].height = 64
-cols = ["#", "Segmento", "Azienda", "Comune", "Perché è nella lista (dall'elenco, non verificato)", "Scheda", "Verificato? (addetti, sito)",
-        "Chi contattare (ruolo)", "Data contatto", "Esito", "Data intervista", "Note"]
-head(ws, 4, cols, [4, 22, 34, 18, 44, 30, 18, 24, 12, 14, 12, 36])
-R = "https://www.reteimprese.it/"
-seed = [
- # officine e carpenterie
- ("Officina / carpenteria", "Carpenteria Ambrosiana Srl", "Opera", "Carpenteria, zona industriale di Opera", ""),
- ("Officina / carpenteria", "Med Srl Carpenteria Metallica", "Opera", "Carpenteria metallica", R + "carpenterie-metalliche/opera/azienda/109710"),
- ("Officina / carpenteria", "SCM Società Costruzioni Meccaniche Srl", "Opera", "Costruzioni meccaniche", R + "costruzioni-meccaniche/opera/azienda/69633"),
- ("Officina / carpenteria", "Ossitaglio Sas", "Opera", "Lavorazione lamiere (taglio)", R + "lamiere-lavorazione/opera/azienda/387731"),
- ("Officina / carpenteria", "Fratelli Tassalini Officina Meccanica SpA", "Peschiera Borromeo", "Officina meccanica con forma SpA: probabilmente strutturata", R + "officine-meccaniche/peschiera-borromeo/azienda/291815"),
- ("Officina / carpenteria", "Tornital Industrial Srl", "Peschiera Borromeo", "Officina meccanica", R + "officine-meccaniche/peschiera-borromeo/azienda/2103712"),
- ("Officina / carpenteria", "A.R. Carpenteria di Taccardi & C. Sas", "Peschiera Borromeo", "Carpenteria in ferro", R + "carpenterie-ferro/peschiera-borromeo/azienda/1947853"),
- ("Officina / carpenteria", "S.C. Officine Meccaniche Srl", "Mediglia", "Officina meccanica di precisione", R + "officine-meccaniche-precisione/mediglia/azienda/86760"),
- ("Officina / carpenteria", "Calzati Giuseppe costruzioni industriali meccaniche", "Mediglia", "Costruzioni industriali meccaniche", R + "costruzioni-meccaniche/mediglia/azienda/1892669"),
- ("Officina / carpenteria", "B.S.A. Srl", "San Giuliano Milanese", "Officina meccanica di precisione", R + "officine-meccaniche-precisione/san-giuliano-milanese/azienda/1097058"),
- ("Officina / carpenteria", "Elast Srl", "San Giuliano Milanese", "Tranciatura metalli", R + "tranciatura-metalli/san-giuliano-milanese/azienda/1519595"),
- ("Officina / carpenteria", "Metaldisco Srl", "Segrate", "Lavorazione lamiere e macchine", R + "lamiere-lavorazione-macchine/segrate/azienda/1475874"),
- ("Officina / carpenteria", "Inferro Srl", "Segrate", "Carpenteria metallica", R + "carpenterie-metalliche/segrate/azienda/2748353"),
- ("Officina / carpenteria", "V.P. Srl", "Pioltello", "Costruzioni meccaniche", R + "costruzioni-meccaniche/pioltello/azienda/1833186"),
- ("Officina / carpenteria", "Gi.fe. Srl", "Pioltello", "Tranciatura metalli", R + "tranciatura-metalli/pioltello/azienda/1488796"),
- ("Officina / carpenteria", "F.g.z. Carp. Mecc. di Granata Roberto & C. Snc", "Paullo", "Carpenteria meccanica e lamiere", R + "lamiere-commercio/paullo/azienda/33210"),
- ("Officina / carpenteria", "STM Special Tools Manufacturing Srl", "Melegnano", "Attrezzature speciali (verificare cosa produce)", ""),
- # costruttori di macchine e impianti
- ("Costruttore macchine / impianti", "Co.Re.Ma.", "San Giuliano Milanese", "Macchine per lavorazione alluminio", R + "alluminio-macchine-lavorazione/san-giuliano-milanese/azienda/1592176"),
- ("Costruttore macchine / impianti", "Ri.me.mu. di Cinquini Nevio & C. Sas", "San Donato Milanese", "Produzione macchine utensili", R + "macchine-utensili-produzione/san-donato-milanese/azienda/2593272"),
- ("Costruttore macchine / impianti", "Attrezzature Galvaniche Snc di Rando Dante & C.", "San Giuliano Milanese", "Macchine e impianti per galvanotecnica", R + "galvanotecnica-macchine-impianti-forniture/san-giuliano-milanese/azienda/181371"),
- ("Costruttore macchine / impianti", "Soluzioni Tecnologiche Avanzate Srl", "Mediglia", "Cilindri pneumatici e oleodinamici", R + "cilindri-pneumatici-oleodinamici-idraulici/mediglia/azienda/1840768"),
- ("Costruttore macchine / impianti", "Comasmo Tek", "Segrate", "Compare tra le aziende meccaniche di Segrate (verificare cosa produce)", ""),
- ("Costruttore macchine / impianti", "Oleodinamica Dell'Avo Srl", "Rozzano", "Oleodinamica (componenti e impianti)", ""),
- # grossisti tecnici
- ("Grossista tecnico", "Fasaf", "Peschiera Borromeo", "Macchine utensili, attrezzature e accessori", R + "macchine-utensili-attrezzature-accessori/peschiera-borromeo/azienda/177346"),
- ("Grossista tecnico", "Rimex Srl", "San Giuliano Milanese", "Commercio di macchine utensili", R + "macchine-utensili-commercio/san-giuliano-milanese/azienda/1961615"),
- ("Grossista tecnico", "Eure Inox", "Peschiera Borromeo", "Commercio di acciai inossidabili", R + "acciai-inossidabili-commercio/peschiera-borromeo/azienda/139430"),
- ("Grossista tecnico", "Profilati e Metalli Srl", "Segrate", "Profilati in ferro e acciaio", R + "profilati-ferro-acciaio/segrate/azienda/220727"),
- ("Grossista tecnico", "Cofermetal Srl", "San Donato Milanese", "Metalli non ferrosi e leghe", R + "metalli-non-ferrosi-leghe/san-donato-milanese/azienda/1420301"),
+ws["A1"] = "Fase 4 — contatti entro 20 km da San Donato Milanese (verificati su aggregatori di dati camerali)"; ws["A1"].font = H1
+ws["A2"] = ("Verifica del 02/11/2026 su ufficiocamerale.it, aziende.it, reportaziende.it, registroaziende.it, atoka.io e informazione-aziende.it. "
+            "Sono aggregatori commerciali, non il Registro Imprese: le cifre variano da una fonte all'altra, quindi sono ordini di grandezza. "
+            "Prima parte: aziende ATTIVE con circa 10 o più addetti (da chiamare). Seconda: scartate dopo la verifica. Terza: NON verificate (non trovate o non controllate). "
+            "Con soli 6 contatti verificati la lista è corta: serve allargare l'area o cercare altre aziende.")
+ws["A2"].font, ws["A2"].alignment = NOTE, W; ws.merge_cells("A2:K2"); ws.row_dimensions[2].height = 64
+cols = ["#", "Segmento", "Azienda", "Comune", "Cosa fa (da dati camerali)", "Stato", "Addetti (stima)", "Fatturato 2024", "Esito", "Fonte", "Note chiamata"]
+head(ws, 4, cols, [4, 24, 34, 18, 40, 14, 12, 14, 16, 44, 36])
+U = "https://www.ufficiocamerale.it/"
+A = "https://www.aziende.it/"
+verificate = [
+ ("Costruttore (valvole)", "Tassalini SpA (Fratelli Tassalini)", "Peschiera Borromeo", "Fabbricazione di rubinetti e valvole (ATECO 28.14): produce un prodotto, quindi ha un ufficio tecnico", "Attiva", "circa 51", "11,7 M€", "Da chiamare", U + "2399/tassalini-spa"),
+ ("Grossista / trasformatore", "Cofermetal Srl", "San Donato Milanese", "Metalli non ferrosi (ATECO 24.45), sito cofermetal.com", "Attiva", "50-99 (circa 65)", "28,7 M€", "Da chiamare", U + "4531/cofermetal-srl"),
+ ("Officina / carpenteria", "Soluzioni Tecnologiche Avanzate Srl (S.T.A.)", "Mediglia", "Meccanica generale dei metalli (ATECO 25.53)", "Attiva", "14-16", "7,6 M€", "Da chiamare", U + "4679/soluzioni-tecnologiche-avanzate-srl-in-breve-sta-srl"),
+ ("Officina / carpenteria", "Tornital Industrial Srl", "Peschiera Borromeo", "Meccanica generale (ATECO 25.53 / 25.62)", "Attiva", "circa 16", "4,4 M€", "Da chiamare", U + "6683/tornital-industrial-srl"),
+ ("Officina / carpenteria", "S.C. Officine Meccaniche Srl", "Mediglia", "Meccanica generale dei metalli", "Attiva", "circa 13", "1,8 M€ (in calo)", "Da chiamare", U + "2653/sc-officine-meccaniche-srl"),
+ ("Officina / stampaggio", "Metaldisco Srl", "Segrate", "Fucinatura e formatura dei metalli (ATECO 25.4)", "Non esplicito", "circa 13", "1,8 M€", "Da chiamare (verificare stato)", U + "1622/metaldisco-srl"),
+]
+scartate = [
+ ("Officina / carpenteria", "Carpenteria Ambrosiana Srl", "Opera", "In liquidazione (segnalato da te)", "In liquidazione", "-", "-", "Scartata", "https://www.ufficiocamerale.it/1824/carpenteria-ambrosiana-srl-in-liquidazione"),
+ ("Officina / carpenteria", "Inferro Srl", "Segrate", "Fonti discordanti: una la dà cessata", "Dubbio", "6", "0,7 M€ (2025)", "Scartata", U + "5106/inferro-srl"),
+ ("Officina / carpenteria", "Elast Srl", "San Giuliano Milanese", "Tranciatura, fatturato basso", "Attiva", "non indicato", "0,3-0,6 M€", "Scartata", "https://www.informazione-aziende.it/Azienda_ELAST-SRL"),
+ ("Costruttore macchine", "Co.Re.Ma. Snc", "San Giuliano Milanese", "Meccanica generale, microimpresa", "n.d.", "4", "n.d.", "Scartata", "https://atoka.io/public/it/azienda/corema-snc-di-gesmundo-marianna-c/fd346796dce0"),
+ ("Officina / carpenteria", "Ossitaglio Sas", "Opera", "Formatura metalli, 2 addetti", "n.d.", "2", "n.d.", "Scartata", U + "9024/ossitaglio-sas-di-alongi-calogero-e-c"),
+ ("Officina", "S.T.M. Srl (Special Tools Manufacturing)", "Melegnano", "Utensili, piccola", "Attiva", "6", "0,8 M€ (2023)", "Scartata", U + "4948/stm-srl"),
+ ("Costruttore macchine", "Oleodinamica Dell'Avo Srl", "Rozzano", "Macchine di impiego generale, microimpresa", "n.d.", "4", "0,5 M€", "Scartata", U + "8867/oleodinamica-dellavo-srl"),
+ ("Costruttore macchine", "Attrezzature Galvaniche Snc", "San Giuliano Milanese", "Telai per galvanica, microimpresa", "Attiva", "4-7", "n.d.", "Scartata", "https://atoka.io/public/it/azienda/attrezzature-galvaniche-snc-di-rando-dante-c/90998b12899f"),
+]
+nonver = [
+ ("Officina / carpenteria", "Med Srl Carpenteria Metallica", "Opera", "Non trovata nei database con quell'indirizzo"),
+ ("Officina / carpenteria", "SCM Società Costruzioni Meccaniche Srl", "Opera", "Non trovata (esistono omonime in altre regioni)"),
+ ("Officina / carpenteria", "B.S.A. Srl", "San Giuliano Milanese", "Non trovata a quell'indirizzo; una B.S.A. di Milano (cuscinetti, 45 addetti) potrebbe essere un'altra"),
+ ("Grossista tecnico", "Fasaf", "Peschiera Borromeo", "Non trovata a Peschiera; una Fasaf di Como ha 3 addetti"),
+ ("Grossista tecnico", "Rimex Srl", "San Giuliano Milanese", "Non trovata a San Giuliano"),
+ ("Grossista tecnico", "Profilati e Metalli Srl", "Segrate", "Non trovata"),
+ ("Officina / carpenteria", "A.R. Carpenteria di Taccardi & C. Sas", "Peschiera Borromeo", "Non controllata"),
+ ("Officina / carpenteria", "Calzati Giuseppe costruzioni industriali meccaniche", "Mediglia", "Non controllata"),
+ ("Officina / carpenteria", "V.P. Srl", "Pioltello", "Non controllata"),
+ ("Officina / carpenteria", "Gi.fe. Srl", "Pioltello", "Non controllata"),
+ ("Officina / carpenteria", "F.g.z. Carp. Mecc. di Granata Roberto & C. Snc", "Paullo", "Non controllata"),
+ ("Costruttore macchine", "Ri.me.mu. di Cinquini Nevio & C. Sas", "San Donato Milanese", "Non controllata"),
+ ("Costruttore macchine", "Comasmo Tek", "Segrate", "Non controllata"),
+ ("Grossista tecnico", "Eure Inox", "Peschiera Borromeo", "Non controllata"),
 ]
 r = 5
-for i, (seg, az, com, perche, link) in enumerate(seed, start=1):
-    for c, v in enumerate([i, seg, az, com, perche, link or "cerca sul sito reteimprese.it", "No"], start=1):
-        x = ws.cell(row=r, column=c, value=v); x.font = BL if c == 7 else N; x.alignment, x.border = W, TH
-    if link: ws.cell(row=r, column=6).hyperlink = link
-    ws.cell(row=r, column=8, value="Responsabile ufficio tecnico / titolare").font = N
-    for c in range(9, 13): ws.cell(row=r, column=c).border = TH
-    ws.row_dimensions[r].height = 34
+def riga(vals, bold=False):
+    global r
+    for c, v in enumerate(vals, start=1):
+        x = ws.cell(row=r, column=c, value=v); x.font = N; x.alignment, x.border = W, TH
+    ws.row_dimensions[r].height = 40
     r += 1
+def titolo(t):
+    global r
+    ws.cell(row=r, column=1, value=t).font = B
+    r += 1
+titolo("A. Verificate: attive, circa 10+ addetti — da chiamare")
+for k, v in enumerate(verificate, start=1):
+    riga([k, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], None])
+    ws.cell(row=r - 1, column=10).hyperlink = v[8]
+r += 1; titolo("B. Scartate dopo la verifica")
+for k, v in enumerate(scartate, start=1):
+    riga([k, v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8], None])
+    ws.cell(row=r - 1, column=10).hyperlink = v[8]
+r += 1; titolo("C. Non verificate — controlla su Google o ufficiocamerale.it prima di chiamare")
+for k, v in enumerate(nonver, start=1):
+    riga([k, v[0], v[1], v[2], v[3], "n.d.", "n.d.", "n.d.", "Da verificare", None, None])
 r += 1
-ws.cell(row=r, column=1, value="Come usarla").font = B
+ws.cell(row=r, column=1, value="Come trovare altre aziende (il modo più rapido)").font = B
 for k, t in enumerate([
-    "Le 28 righe sono 'da verificare': l'elenco dà nome, indirizzo e categoria. Ho scelto quelle con attività plausibile (carpenteria, officina, macchine, ricambi) e scartato riparazioni auto e piccole botteghe evidenti, ma la dimensione resta sconosciuta.",
-    "Prima di chiamare: 5 minuti sul sito aziendale o su Google. Se trovi un ufficio tecnico, un catalogo o più macchine di produzione, sono segnali di azienda adatta.",
-    "Non servono viaggi: telefono in pausa pranzo (12:30-14:00) o dopo le 17:30, oppure una videochiamata. Se vogliono vederti, scegli un orario serale o il sabato mattina.",
-    "Entro 20 km da San Donato: Mediglia, Peschiera Borromeo, San Giuliano, Melegnano, Opera, Rozzano, Segrate, Pioltello, Paullo. Per ampliare, usa le stesse categorie su reteimprese.it per altri comuni.",
-    "Privacy: contatta solo ruoli aziendali (B2B), dì chi sei e perché scrivi, e se ti dicono di non scrivere più, annotalo e fermati.",
+    "Cerca il nome su Google con 'ufficiocamerale' oppure 'aziende.it': la scheda dice stato (attiva / in liquidazione), addetti e fatturato. Scarta chi è in liquidazione o ha meno di circa 8 addetti.",
+    "Aggiungi comuni vicini oltre ai nove già usati (Lodi, Melzo, Cassina de' Pecchi, Vimodrone, Cologno Monzese, Assago, Buccinasco) e sempre le categorie 'carpenterie metalliche', 'costruzioni meccaniche', 'lavorazione lamiere', 'macchine per...'.",
+    "Il sistema che ho usato per verificare non poteva leggere direttamente ufficiocamerale.it e registroaziende.it (bloccano i programmi): ho usato le informazioni indicizzate dalla ricerca. Qualche scheda può essere vecchia.",
+    "Fonte per l'allargamento ideale: elenco soci delle associazioni di categoria (Assolombarda, UCIMU) e fiere del settore.",
 ], start=1):
     c = ws.cell(row=r + k, column=1, value=t); c.font, c.alignment = N, W
-    ws.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=12); ws.row_dimensions[r + k].height = 30
+    ws.merge_cells(start_row=r + k, start_column=1, end_row=r + k, end_column=11); ws.row_dimensions[r + k].height = 32
 ws.freeze_panes = "D5"
 
 # ---------------- Copione
