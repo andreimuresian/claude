@@ -62,3 +62,19 @@ order in every run. Scripts: `sweepfit.py` (module), `run_sweepfit.py`, `diag_sw
 - Hold-out away from the launch (`holdout_nolaunch.py`): fit 1.5-4.5 mm, predict 4.5-7.2 mm: B residual 0.27,
   0.33, 0.39 at 25, 30, 35 GHz; 0.75-1.7 at 40-60 GHz; 0.8-14 at 5-20 GHz. Excluding the launch zone does not
   make the six modes predictive outside 25-35 GHz.
+
+## Matrix pencil on the TD gap fields, model-free (`pencil_gap.py`, `pencil_sign.py`; logs alongside)
+One sample per cell at each of 25 non-stem cell positions (snapshots sharing the poles), 44 cells over 0-8 mm.
+(First version conjugated the poles; fixed.) Validation: on a synthetic B built from the six-mode fit the pencil
+returns the modes' n and loss to 1e-3 (`n 2.236/0.23, 2.903/0.56, 3.121/0.22 dB/mm`).
+- A CPW: one forward wave, n 2.29 (5 GHz), 2.27 (10), 2.24 (30), 2.23 (60), loss 0.07-0.29 dB/mm; eigen CPW
+  n 2.269 (10), 2.236 (30), 2.224 (60): TD and eigen CPW index agree to 0.005.
+- B CPW (-55 to -72 dB below A's CPW pattern): 2-5 waves reproduce it to 1.1-2.8 %. 20-50 GHz: |n| 2.8-3.2 and
+  |n| 2.0-2.1 with phase moving toward -z, plus n +2.4..+2.8; 5-15 GHz: |n| 3-13 with 2.5-7 dB/mm.
+- 65-99 % of B's CPW energy (all 12 frequencies) is in waves whose amplitude changes the wrong way for their phase
+  direction (sign(n) != sign(alpha)): e.g. 30 GHz n -3.02 decaying 0.95 dB/mm toward +z, n -2.00 decaying 1.72,
+  n +2.49 growing 3.25. A single guided mode of a passive line cannot do this; A's CPW: 0 %; A's slot pattern
+  (-46 to -63 dB): 14-98 %. Candidates: TD numerical floor at -55..-72 dB, or a non-modal (continuous-spectrum,
+  radiated) field from the line ends, which a few exponentials only mimic. Either way no eigenmode set can fit it,
+  which is why the six-mode fit and the hold-outs fail. The 30 GHz plane result ("two backward waves, |n| 2.84-3.04
+  and 1.94-2.05") is the same pair; "backward" there referred to the phase only.
