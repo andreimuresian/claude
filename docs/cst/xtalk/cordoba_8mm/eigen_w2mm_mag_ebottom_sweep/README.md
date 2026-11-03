@@ -59,3 +59,6 @@ order in every run. Scripts: `sweepfit.py` (module), `run_sweepfit.py`, `diag_sw
   6e-3, strips vs bottom 3e-3 (alpha 17 %: its n has a minimum at 15 deg; needs another form). Gap patterns
   change per eigen step by 0.8 % (CPW), 0.9 % (slot), 1.5-3 % (A vs B), 6 % (strips vs bottom); nearest and
   interpolated patterns give the same fits to 0.004. CPW split 2.0e-5 -> 2.8e-5, smooth.
+- Hold-out away from the launch (`holdout_nolaunch.py`): fit 1.5-4.5 mm, predict 4.5-7.2 mm: B residual 0.27,
+  0.33, 0.39 at 25, 30, 35 GHz; 0.75-1.7 at 40-60 GHz; 0.8-14 at 5-20 GHz. Excluding the launch zone does not
+  make the six modes predictive outside 25-35 GHz.
