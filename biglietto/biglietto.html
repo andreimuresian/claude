@@ -2,168 +2,184 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>Biglietto da visita – MB Pubblicità &amp; Stampa</title>
+<title>Biglietto da visita – YB Yhakelin Borda</title>
 <!--
   Formato finito: 90 x 50 mm. File di stampa: 96 x 56 mm (3 mm di abbondanza per lato).
-  Zona sicura del testo: 4 mm dal bordo del taglio.
-  Per cambiare nome, social o testi, modifica solo questo file e rigenera il PDF (vedi genera.sh).
+  Le coordinate di tutti gli elementi sono in mm rispetto all'angolo in alto a sinistra del taglio.
+  Zona sicura del testo: almeno 3 mm dal bordo del taglio.
+  Per modificare testi o contatti: cambia questo file e lancia ./genera.sh
 -->
 <style>
+  @font-face { font-family: "Montserrat"; font-weight: 600; src: url("fonts/montserrat-latin-600-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Montserrat"; font-weight: 700; src: url("fonts/montserrat-latin-700-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Montserrat"; font-weight: 800; src: url("fonts/montserrat-latin-800-normal.woff2") format("woff2"); }
+  @font-face { font-family: "Montserrat"; font-weight: 800; font-style: italic; src: url("fonts/montserrat-latin-800-italic.woff2") format("woff2"); }
+  @font-face { font-family: "Kaushan Script"; font-weight: 400; src: url("fonts/kaushan-script-latin-400-normal.woff2") format("woff2"); }
+
   @page { size: 96mm 56mm; margin: 0; }
-  :root {
-    --navy: #0b2a63;
-    --blue: #1f5fd1;
-    --sky: #7cc4ff;
-    --ice: #e8f1ff;
-    --ink: #14213d;
-    --grey: #6b7893;
-  }
+  :root { --navy:#0b2358; --navy2:#071a45; --amber:#f5a800; --amber-d:#b97a00; --ink:#0b2358; --grey:#5d6b8c; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: #fff; }
-  body { font-family: "Inter", "Liberation Sans", Arial, sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: "Montserrat", "Inter", Arial, sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* pagina = trim + 3 mm di abbondanza; .t = area di taglio 90 x 50, origine a (3,3) */
-  .page { width: 96mm; height: 56mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; background: #fff; }
-  .page:last-child { page-break-after: auto; break-after: auto; }
+  .page { width: 96mm; height: 56mm; position: relative; overflow: hidden; break-after: page; background: var(--navy); }
+  .page:last-child { break-after: auto; }
   .t { position: absolute; left: 3mm; top: 3mm; width: 90mm; height: 50mm; }
   .abs { position: absolute; }
+  svg.bg { position: absolute; left: -3mm; top: -3mm; width: 96mm; height: 56mm; }
 
   /* ---------- FRONTE ---------- */
-  .f-left  { left: -3mm; top: -3mm; width: 31mm; height: 44mm; background: var(--navy); }  /* arriva fino a x=28 del taglio */
-  .f-bar   { left: -3mm; top: 41mm; width: 96mm; height: 12mm; background: var(--navy); }  /* barra contatti, y=41..50 + abbondanza */
-  .f-accent{ left: 28mm; top: 40.4mm; width: 62mm; height: .6mm; background: var(--sky); }
-
-  .mark { left: 9.5mm; top: 4mm; width: 9mm; height: 9mm; }
-  .brand { left: 0; top: 14.2mm; width: 28mm; text-align: center; color: #fff; font-weight: 700; font-size: 4.4pt; letter-spacing: .16em; line-height: 1.35; }
-  .brand span { color: var(--sky); }
-  .photo { left: 6.5mm; top: 20.6mm; width: 15mm; height: 15mm; border-radius: 50%; border: .5mm solid #fff; overflow: hidden; background: #fff; }
+  .logo { left: 3.6mm; top: 2.6mm; width: 17.5mm; height: 13.1mm; }
+  .photo { left: 24.2mm; top: 3.4mm; width: 13mm; height: 13mm; border-radius: 50%; overflow: hidden; background: #fff; }
   .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .name { left: 0; top: 36.3mm; width: 28mm; text-align: center; color: #fff; font-weight: 700; font-size: 6.6pt; letter-spacing: .01em; }
+  .ring { left: 23.4mm; top: 2.6mm; width: 14.6mm; height: 14.6mm; border-radius: 50%; border: .6mm solid var(--amber); }
+  .name { left: 4mm; top: 16.5mm; font-weight: 800; font-size: 6.8pt; letter-spacing: .03em; color: var(--navy); white-space: nowrap; }
+  .sub  { left: 4mm; top: 19.6mm; font-weight: 700; font-size: 3.9pt; letter-spacing: .13em; color: var(--amber-d); text-transform: uppercase; white-space: nowrap; }
 
-  .tag { left: 31.5mm; top: 4mm; width: 56mm; font-weight: 800; font-size: 7pt; line-height: 1.12; color: var(--blue); letter-spacing: -.005em; }
-  .tag em { font-style: normal; color: var(--navy); }
+  .tag { left: 51.5mm; top: 5mm; width: 36mm; font-family: "Kaushan Script", cursive; font-size: 9.2pt; line-height: 1.22; color: #fff; }
+  .tag b { font-weight: 400; color: var(--amber); font-size: 12.5pt; }
 
-  .h { font-weight: 800; font-size: 4.8pt; letter-spacing: .2em; color: var(--grey); text-transform: uppercase; }
-  .sv-h { left: 31.5mm; top: 10.7mm; }
-  .sv { left: 31.5mm; top: 13.3mm; width: 56mm; font-size: 5.5pt; line-height: 1; columns: 2; column-gap: 2.2mm; list-style: none; }
-  .sv li { position: relative; padding-left: 2.1mm; margin-bottom: .72mm; font-weight: 500; break-inside: avoid; white-space: nowrap; }
-  .sv li::before { content: ""; position: absolute; left: 0; top: .5mm; width: 1.1mm; height: 1.1mm; background: var(--blue); border-radius: .2mm; }
+  .row { display: flex; align-items: center; left: 4mm; height: 3mm; color: #fff; font-weight: 600; font-size: 5.3pt; white-space: nowrap; }
+  .row i { flex: none; width: 3mm; height: 3mm; border-radius: 50%; background: var(--amber); margin-right: 1.5mm; display: flex; align-items: center; justify-content: center; }
+  .row i svg { width: 1.9mm; height: 1.9mm; }
+  .row em { font-style: normal; font-weight: 700; color: var(--amber); }
 
-  .wh-h { left: 31.5mm; top: 28.2mm; }
-  .wh { left: 31.5mm; top: 30.9mm; width: 57mm; font-size: 5.5pt; line-height: 1; list-style: none; }
-  .wh li { position: relative; padding-left: 3mm; margin-bottom: .85mm; font-weight: 600; color: var(--ink); white-space: nowrap; }
-  .wh li::before { content: ""; position: absolute; left: .1mm; top: .15mm; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: var(--blue); }
-  .wh li::after  { content: ""; position: absolute; left: .62mm; top: .42mm; width: .55mm; height: .95mm; border: solid #fff; border-width: 0 .25mm .25mm 0; transform: rotate(40deg); }
+  .wh-h { left: 47.8mm; top: 25.7mm; font-weight: 800; font-size: 4.5pt; letter-spacing: .16em; color: var(--amber); }
+  .wh { left: 47.8mm; top: 28.4mm; list-style: none; }
+  .wh li { position: relative; padding-left: 3.4mm; height: 2.7mm; font-size: 5pt; font-weight: 600; color: #fff; white-space: nowrap; line-height: 2.4mm; }
+  .wh li::before { content: ""; position: absolute; left: 0; top: .1mm; width: 2.3mm; height: 2.3mm; border-radius: 50%; background: var(--amber); }
+  .wh li::after { content: ""; position: absolute; left: .78mm; top: .55mm; width: .55mm; height: 1.05mm; border: solid var(--navy); border-width: 0 .26mm .26mm 0; transform: rotate(40deg); }
 
-  .ct { top: 41mm; height: 9mm; display: flex; align-items: center; color: #fff; font-size: 5.6pt; font-weight: 600; white-space: nowrap; }
-  .ct svg { width: 3mm; height: 3mm; margin-right: 1.3mm; flex: none; }
-  .ct1 { left: 4mm; }
-  .ct2 { left: 33mm; }
-  .ct3 { left: 70mm; }
+  .sv { top: 38.7mm; width: 16.4mm; text-align: center; }
+  .sv svg { display: block; width: 3.9mm; height: 3.9mm; margin: 0 auto .5mm; }
+  .sv span { display: block; font-weight: 800; font-size: 4.4pt; line-height: 1.12; color: var(--navy); letter-spacing: .005em; }
 
-  /* ---------- RETRO: PREVENTIVO ---------- */
-  .b-top { left: -3mm; top: -3mm; width: 96mm; height: 12mm; background: var(--navy); }  /* y=-3..9 */
-  .b-title { left: 4mm; top: 2.4mm; color: #fff; font-weight: 800; font-size: 8.6pt; letter-spacing: .2em; line-height: 1; }
-  .b-title small { display: block; font-size: 4.6pt; letter-spacing: .12em; font-weight: 600; color: var(--sky); margin-top: .9mm; line-height: 1; }
-  .b-mark { left: 79.4mm; top: 1.2mm; width: 6.6mm; height: 6.6mm; }  /* x fino a 86 = 4 mm dal bordo */
-  .b-strip { left: -3mm; top: 41mm; width: 96mm; height: 12mm; background: var(--ice); }
-  .b-foot { left: 4mm; top: 41mm; width: 82mm; height: 9mm; display: flex; align-items: center; justify-content: space-between; font-size: 5.4pt; font-weight: 600; color: var(--navy); }
-  .b-foot b { color: var(--blue); font-weight: 800; }
-
-  .fld { left: 4mm; width: 82mm; }
-  .lbl { font-weight: 800; font-size: 4.6pt; letter-spacing: .18em; color: var(--grey); text-transform: uppercase; }
-  .ln { position: absolute; height: 0; border-bottom: .2mm solid #9fb0cf; }
-  .box { position: absolute; border: .25mm solid #9fb0cf; border-radius: 1mm; }
+  /* ---------- RETRO ---------- */
+  .blogo { left: 6.6mm; top: 5.2mm; width: 8.8mm; height: 6.6mm; }
+  .b-title { left: 16.8mm; top: 5.5mm; font-weight: 800; font-size: 7pt; letter-spacing: .02em; color: var(--navy); white-space: nowrap; line-height: 1; }
+  .b-sub { left: 16.8mm; top: 8.6mm; font-weight: 600; font-size: 4.4pt; color: var(--grey); white-space: nowrap; line-height: 1; }
+  .lbl { font-weight: 800; font-size: 4.4pt; letter-spacing: .14em; color: var(--grey); text-transform: uppercase; white-space: nowrap; line-height: 1; }
+  .ln { position: absolute; height: 0; border-bottom: .2mm solid #8ea0c6; }
+  .b-foot { left: 4mm; top: 43.5mm; width: 82mm; text-align: center; color: #fff; font-weight: 600; font-size: 5pt; white-space: nowrap; }
+  .b-foot b { color: var(--amber); font-weight: 800; }
 </style>
 </head>
 <body>
 
-<!-- Logo condiviso: monogramma MB + barra azzurra -->
 <svg width="0" height="0" style="position:absolute">
   <defs>
-    <symbol id="logo" viewBox="0 0 90 90">
-      <rect width="90" height="90" rx="20" fill="#fff"/>
-      <text x="45" y="55" text-anchor="middle" font-family="Inter, Liberation Sans, Arial, sans-serif" font-weight="800" font-size="40" letter-spacing="-2" fill="#0b2a63">MB</text>
-      <rect x="17" y="66" width="56" height="7" rx="3.5" fill="#1f5fd1"/>
-      <rect x="55" y="66" width="18" height="7" rx="3.5" fill="#7cc4ff"/>
+    <!-- Logo YB: Y blu notte, B ambra, doppio anello sotto -->
+    <symbol id="yb" viewBox="0 0 120 90">
+      <text x="4" y="62" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-style="italic" font-size="74" letter-spacing="-4" fill="#0b2358">Y</text>
+      <text x="50" y="62" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-style="italic" font-size="74" letter-spacing="-4" fill="#f5a800">B</text>
+      <path d="M6 66 C 8 84, 98 88, 116 56" fill="none" stroke="#0b2358" stroke-width="5.2" stroke-linecap="round"/>
+      <path d="M18 71 C 50 84, 96 78, 114 54" fill="none" stroke="#f5a800" stroke-width="2.6" stroke-linecap="round"/>
     </symbol>
-    <symbol id="i-wa" viewBox="0 0 24 24"><path fill="#7cc4ff" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.2 14.2c-.2.6-1.2 1.1-1.7 1.2-.4.1-1 .1-1.6-.1-3-1.1-4.9-4-5.1-4.2-.1-.2-1.2-1.6-1.2-3s.8-2.1 1-2.4c.3-.3.6-.3.8-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2 1.1 1 2.1 1.300 2.400 1.500.3.1.5.1.6-.1l.9-1.100c.2-.3.4-.2.700-.1l1.900.9c.3.1.5.2.5.3.1.2.1.8-.1 1.400Z"/></symbol>
-    <symbol id="i-mail" viewBox="0 0 24 24"><path fill="#7cc4ff" d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm9 8.2L20 7.5V7H4v.5l8 5.700ZM4 9.900V17h16V9.900l-8 5.700-8-5.700Z"/></symbol>
-    <symbol id="i-ig" viewBox="0 0 24 24"><path fill="#7cc4ff" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.500a4.500 4.500 0 1 1 0 9 4.500 4.500 0 0 1 0-9Zm0 2a2.500 2.500 0 1 0 0 5 2.500 2.500 0 0 0 0-5Zm5.300-3.200a1.100 1.100 0 1 1 0 2.200 1.100 1.100 0 0 1 0-2.200Z"/></symbol>
+    <linearGradient id="nv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10306f"/><stop offset="1" stop-color="#061640"/></linearGradient>
   </defs>
 </svg>
 
 <!-- ============ FRONTE ============ -->
 <section class="page" id="fronte">
   <div class="t">
-    <div class="abs f-left"></div>
-    <div class="abs f-bar"></div>
-    <div class="abs f-accent"></div>
+    <svg class="bg" viewBox="-3 -3 96 56">
+      <rect x="-3" y="-3" width="96" height="56" fill="url(#nv)"/>
+      <!-- onde decorative -->
+      <path d="M52 -3 C 56 10, 74 15, 93 9" fill="none" stroke="#1d4390" stroke-width=".35"/>
+      <path d="M58 -3 C 62 8, 78 12, 93 5" fill="none" stroke="#1d4390" stroke-width=".35"/>
+      <circle cx="88" cy="30" r="22" fill="none" stroke="#18397f" stroke-width=".35"/>
+      <!-- pannello bianco curvo + filo ambra -->
+      <path d="M52 -3 C 51 8, 45.5 18, 33 22.6 C 22 25.2, 8 26, -3 25.4 L-3 -3 Z" fill="none" stroke="#f5a800" stroke-width="1.3"/>
+      <path d="M50.7 -3 C 49.7 7.2, 44.5 16.8, 32.6 21.4 C 22 24, 8 24.8, -3 24.2 L-3 -3 Z" fill="#fff"/>
+      <!-- sottolineatura della frase -->
+      <path d="M54 24.2 C 63 21.8, 76 21.6, 88 24" fill="none" stroke="#f5a800" stroke-width=".7" stroke-linecap="round"/>
+      <!-- separatore centrale -->
+      <path d="M45.2 27 V 36.4" stroke="#2a4d95" stroke-width=".3"/>
+      <!-- fascia servizi -->
+      <rect x="-3" y="37.6" width="96" height="16" fill="#fff"/>
+      <rect x="-3" y="37.2" width="96" height=".7" fill="#f5a800"/>
+      <rect x="-3" y="48.9" width="96" height="4.2" fill="#f5a800"/>
+      <g stroke="#cfd8ec" stroke-width=".25">
+        <path d="M20.4 40 V 46.6"/><path d="M36.8 40 V 46.6"/><path d="M53.2 40 V 46.6"/><path d="M69.6 40 V 46.6"/>
+      </g>
+    </svg>
 
-    <svg class="abs mark"><use href="#logo"/></svg>
-    <div class="abs brand">PUBBLICITÀ<br><span>&amp; STAMPA</span></div>
+    <svg class="abs logo"><use href="#yb"/></svg>
+    <div class="abs ring"></div>
     <div class="abs photo"><img src="foto.png" alt=""></div>
-    <div class="abs name">Milagros Borda</div>
+    <div class="abs name">YHAKELIN BORDA</div>
+    <div class="abs sub">Grafica e pubblicità</div>
 
-    <div class="abs tag">La tua marca <em>si vede,</em><br>si ricorda, vende!</div>
+    <div class="abs tag">La tua marca<br>si vede, si ricorda,<br><b>vende!</b></div>
 
-    <div class="abs h sv-h">Servizi</div>
-    <ul class="abs sv">
-      <li>Pubblicità e grafica</li>
-      <li>Insegne LED e 3D</li>
-      <li>Banner e sticker</li>
-      <li>Roll-up</li>
-      <li>Vetrofanie</li>
-      <li>Decorazioni interni</li>
-      <li>Vinili parete e auto</li>
-      <li>Stampa 3D</li>
-      <li>Stampa su carta</li>
-      <li>Tesi: stampa e rilegatura</li>
-    </ul>
+    <!-- contatti -->
+    <div class="abs row" style="top:26.8mm"><i><svg viewBox="0 0 24 24"><path fill="#0b2358" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1Z"/></svg></i>392 126 1202 <em>&nbsp;· WhatsApp</em></div>
+    <div class="abs row" style="top:30.1mm"><i><svg viewBox="0 0 24 24"><path fill="#0b2358" d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm9 8.2L20 7.5V7H4v.5l8 5.7ZM4 9.9V17h16V9.9l-8 5.7-8-5.7Z"/></svg></i>jhakelin.borda@gmail.com</div>
+    <div class="abs row" style="top:33.4mm"><i><svg viewBox="0 0 24 24"><text x="12" y="17.5" text-anchor="middle" font-family="Montserrat, Arial, sans-serif" font-weight="800" font-size="17" fill="#0b2358">@</text></svg></i>yb.soluzionigrafiche</div>
 
-    <div class="abs h wh-h">Perché sceglierci</div>
+    <!-- perché sceglierci -->
+    <div class="abs wh-h">PERCHÉ SCEGLIERCI</div>
     <ul class="abs wh">
       <li>Oltre 10 anni di esperienza</li>
-      <li>Dall'idea alla stampa, un solo referente</li>
-      <li>Preventivo rapido e tempi concordati</li>
+      <li>Dall'idea alla stampa</li>
+      <li>Preventivo rapido e puntuale</li>
     </ul>
 
-    <div class="abs ct ct1"><svg><use href="#i-wa"/></svg>+39 392 126 1202</div>
-    <div class="abs ct ct2"><svg><use href="#i-mail"/></svg>jhakelin.borda@gmail.com</div>
-    <div class="abs ct ct3"><svg><use href="#i-ig"/></svg>@mb.pubblicita</div>
+    <!-- servizi -->
+    <div class="abs sv" style="left:4mm">
+      <svg viewBox="0 0 24 24"><path d="M7 2v4M17 2v4" stroke="#0b2358" stroke-width="1.6" stroke-linecap="round"/><rect x="2" y="6" width="20" height="11" rx="2.5" fill="#0b2358"/><rect x="4.5" y="8.5" width="15" height="6" rx="1.2" fill="none" stroke="#f5a800" stroke-width="1.4"/><path d="M12.6 9l-2.2 3h2.2l-1 2.5 3-3.5h-2.3z" fill="#f5a800"/><rect x="4" y="19.5" width="16" height="1.8" rx=".9" fill="#0b2358"/></svg>
+      <span>Pubblicità e<br>insegne LED/3D</span></div>
+    <div class="abs sv" style="left:20.4mm">
+      <svg viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="16" rx="1" fill="#0b2358"/><rect x="9" y="5" width="6" height="2" rx=".6" fill="#f5a800"/><rect x="9" y="9" width="6" height="4.5" rx=".6" fill="#fff" opacity=".9"/><rect x="3.5" y="19.5" width="17" height="2.2" rx="1.1" fill="#f5a800"/></svg>
+      <span>Banner, sticker<br>e roll-up</span></div>
+    <div class="abs sv" style="left:36.8mm">
+      <svg viewBox="0 0 24 24"><rect x="3" y="2" width="18" height="20" rx="1.6" fill="none" stroke="#0b2358" stroke-width="2"/><path d="M12 2v20M3 12h18" stroke="#0b2358" stroke-width="1.6"/><path d="M5 5h5.5v5.5H5z" fill="#f5a800"/><path d="M13.5 13.5H19V19h-5.5z" fill="#f5a800"/></svg>
+      <span>Vetrofanie e<br>decorazioni</span></div>
+    <div class="abs sv" style="left:53.2mm">
+      <svg viewBox="0 0 24 24"><path d="M2.5 15.5l1.7-5.2A2 2 0 0 1 6.1 9h11.8a2 2 0 0 1 1.9 1.3l1.7 5.2V19a1 1 0 0 1-1 1H3.5a1 1 0 0 1-1-1Z" fill="#0b2358"/><path d="M6.2 10.5h11.6l1.1 3.3H5.1Z" fill="#fff" opacity=".92"/><path d="M3 16.5h18" stroke="#f5a800" stroke-width="1.6"/><circle cx="7" cy="20" r="2.2" fill="#f5a800"/><circle cx="17" cy="20" r="2.2" fill="#f5a800"/></svg>
+      <span>Vinili parete,<br>muro e auto</span></div>
+    <div class="abs sv" style="left:69.6mm">
+      <svg viewBox="0 0 24 24"><rect x="6" y="2" width="12" height="6" rx=".8" fill="#fff" stroke="#0b2358" stroke-width="1.6"/><rect x="2" y="8" width="20" height="9" rx="2" fill="#0b2358"/><rect x="6" y="13.5" width="12" height="8" rx=".8" fill="#fff" stroke="#0b2358" stroke-width="1.6"/><path d="M8.5 16.5h7M8.5 19h5" stroke="#f5a800" stroke-width="1.3" stroke-linecap="round"/></svg>
+      <span>Stampa carta,<br>tesi e 3D</span></div>
   </div>
 </section>
 
 <!-- ============ RETRO ============ -->
 <section class="page" id="retro">
   <div class="t">
-    <div class="abs b-top"></div>
-    <div class="abs b-title">PREVENTIVO<small>MB PUBBLICITÀ &amp; STAMPA</small></div>
-    <svg class="abs b-mark"><use href="#logo"/></svg>
+    <svg class="bg" viewBox="-3 -3 96 56">
+      <rect x="-3" y="-3" width="96" height="56" fill="url(#nv)"/>
+      <path d="M52 -3 C 56 10, 74 15, 93 9" fill="none" stroke="#1d4390" stroke-width=".35"/>
+      <circle cx="88" cy="30" r="22" fill="none" stroke="#18397f" stroke-width=".35"/>
+      <!-- pannello preventivo -->
+      <rect x="4" y="3.4" width="82" height="39" rx="3.2" fill="#fff"/>
+      <rect x="5.2" y="4.6" width="79.6" height="36.6" rx="2.4" fill="none" stroke="#0b2358" stroke-width=".25" stroke-dasharray="1 .7"/>
+      <!-- onda ambra in basso -->
+      <path d="M-3 47.2 C 20 43.8, 52 51, 93 44.6 L93 53 L-3 53 Z" fill="#f5a800"/>
+    </svg>
 
-    <!-- Cliente + data -->
-    <div class="abs lbl" style="left:4mm; top:11.4mm;">Cliente</div>
-    <div class="ln" style="left:15mm; top:13.9mm; width:45mm;"></div>
-    <div class="abs lbl" style="left:63mm; top:11.4mm;">Data</div>
-    <div class="ln" style="left:69.5mm; top:13.9mm; width:16.5mm;"></div>
+    <svg class="abs blogo"><use href="#yb"/></svg>
+    <div class="abs b-title">RICHIEDI IL TUO PREVENTIVO</div>
+    <div class="abs b-sub">Preventivo personalizzato, scritto al momento</div>
 
-    <!-- Servizio richiesto -->
-    <div class="abs lbl" style="left:4mm; top:16.4mm;">Servizio richiesto</div>
-    <div class="ln" style="left:4mm; top:23mm; width:82mm;"></div>
-    <div class="ln" style="left:4mm; top:28mm; width:82mm;"></div>
+    <div class="abs lbl" style="left:7mm; top:12.6mm;">Cliente</div>
+    <div class="ln" style="left:17mm; top:15.3mm; width:37mm;"></div>
+    <div class="abs lbl" style="left:57.5mm; top:12.6mm;">Data</div>
+    <div class="ln" style="left:64.5mm; top:15.3mm; width:18.5mm;"></div>
 
-    <!-- Misure / consegna / totale -->
-    <div class="abs lbl" style="left:4mm; top:30.2mm;">Misure / quantità</div>
-    <div class="ln" style="left:29mm; top:32.8mm; width:57mm;"></div>
+    <div class="abs lbl" style="left:7mm; top:17.4mm;">Servizio richiesto</div>
+    <div class="ln" style="left:7mm; top:23.4mm; width:76mm;"></div>
+    <div class="ln" style="left:7mm; top:28.2mm; width:76mm;"></div>
 
-    <div class="abs lbl" style="left:4mm; top:35.4mm;">Consegna desiderata</div>
-    <div class="ln" style="left:36mm; top:38mm; width:27mm;"></div>
+    <div class="abs lbl" style="left:7mm; top:30.2mm;">Misure / quantità</div>
+    <div class="ln" style="left:31mm; top:32.8mm; width:52mm;"></div>
 
-    <div class="abs lbl" style="left:66mm; top:35.4mm;">Totale €</div>
-    <div class="ln" style="left:77mm; top:38mm; width:9mm;"></div>
+    <div class="abs lbl" style="left:7mm; top:34.8mm;">Consegna desiderata</div>
+    <div class="ln" style="left:38mm; top:37.4mm; width:22mm;"></div>
+    <div class="abs lbl" style="left:62mm; top:34.8mm;">Totale €</div>
+    <div class="ln" style="left:73mm; top:37.4mm; width:10mm;"></div>
 
-    <div class="abs b-strip"></div>
-    <div class="abs b-foot"><span><b>WhatsApp</b> +39 392 126 1202</span><span>La tua marca si vede, si ricorda, vende!</span></div>
+    <div class="abs b-foot"><b>WhatsApp</b> 392 126 1202 &nbsp;·&nbsp; jhakelin.borda@gmail.com &nbsp;·&nbsp; @yb.soluzionigrafiche</div>
   </div>
 </section>
 
