@@ -1,0 +1,10 @@
+Excerpt of the CST 2025.5 Eigenmode solver log (pasted by the user in chat, 2026-11-03). Settings common to all runs:
+tetrahedral mesh, General (Lossy), accuracy 1e-4, 10 modes requested, losses on, 2nd order, curved elements up to 3.
+Xmin electric, Xmax open, Ymax magnetic, Zmin/Zmax periodic. "Number of modes in search area is smaller than number of selected modes."
+XZ symmetry electric (Ymin electric). Phase 10 deg. Interval (12 GHz, 60 GHz). Residual 10 steps -> 9.086e-05. Solver 2906 s.
+  Mode  Frequency            Total Q   Accuracy
+    1   15.7629456221 GHz    13.74     2.301e-13
+    2   19.2303139127 GHz    30.94     8.201e-13
+    3   20.6021593176 GHz    22.35     5.159e-13
+    4   46.6417138449 GHz    4.441     1.59e-11
+    5   56.3669092162 GHz    4.796     9.949e-11

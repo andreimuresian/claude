@@ -1,0 +1,70 @@
+
+=== even: guided families (first three modes of every run) ===
+strips vs bottom:
+   5 deg  f   7.4020  n 3.1251  n_g 3.115  Q  67.41  alpha 0.031 dB/mm
+  10 deg  f  14.8287  n 3.1199  n_g 3.113  Q  44.72  alpha 0.094 dB/mm
+  15 deg  f  22.2636  n 3.1170  n_g 3.117  Q  38.28  alpha 0.165 dB/mm
+  20 deg  f  29.6728  n 3.1183  n_g 3.135  Q  37.88  alpha 0.224 dB/mm
+  25 deg  f  37.0198  n 3.1243  n_g 3.168  Q  40.99  alpha 0.260 dB/mm
+  30 deg  f  44.2785  n 3.1345  n_g 3.187  Q  47.06  alpha 0.273 dB/mm
+slot:
+   5 deg  f   9.4875  n 2.4382  n_g 2.405  Q  24.29  alpha 0.086 dB/mm
+  10 deg  f  19.1053  n 2.4215  n_g 2.402  Q  28.48  alpha 0.147 dB/mm
+  15 deg  f  28.7474  n 2.4140  n_g 2.399  Q  30.33  alpha 0.207 dB/mm
+  20 deg  f  38.3904  n 2.4102  n_g 2.402  Q  31.38  alpha 0.267 dB/mm
+  25 deg  f  48.0095  n 2.4091  n_g 2.413  Q  32.14  alpha 0.328 dB/mm
+  30 deg  f  57.5639  n 2.4111  n_g 2.421  Q  32.68  alpha 0.388 dB/mm
+CPW:
+   5 deg  f  10.1964  n 2.2687  n_g 2.223  Q  17.07  alpha 0.121 dB/mm
+  10 deg  f  20.6020  n 2.2456  n_g 2.219  Q  22.35  alpha 0.186 dB/mm
+  15 deg  f  31.0442  n 2.2354  n_g 2.214  Q  26.28  alpha 0.238 dB/mm
+  20 deg  f  41.5006  n 2.2296  n_g 2.212  Q  29.54  alpha 0.283 dB/mm
+  25 deg  f  51.9603  n 2.2259  n_g 2.212  Q  32.36  alpha 0.323 dB/mm
+  split even-odd: 
+
+=== odd: guided families (first three modes of every run) ===
+A vs B:
+   5 deg  f   7.7548  n 2.9830  n_g 2.889  Q  17.32  alpha 0.118 dB/mm
+  10 deg  f  15.7629  n 2.9350  n_g 2.873  Q  13.74  alpha 0.300 dB/mm
+  15 deg  f  23.8568  n 2.9089  n_g 2.861  Q  13.61  alpha 0.457 dB/mm
+  20 deg  f  31.9313  n 2.8977  n_g 2.879  Q  14.28  alpha 0.586 dB/mm
+  25 deg  f  39.9256  n 2.8969  n_g 2.920  Q  15.61  alpha 0.680 dB/mm
+  30 deg  f  47.7758  n 2.9051  n_g 2.947  Q  17.88  alpha 0.717 dB/mm
+slot:
+   5 deg  f   9.5517  n 2.4218  n_g 2.390  Q  25.27  alpha 0.082 dB/mm
+  10 deg  f  19.2303  n 2.4058  n_g 2.388  Q  30.94  alpha 0.135 dB/mm
+  15 deg  f  28.9257  n 2.3991  n_g 2.386  Q  34.17  alpha 0.184 dB/mm
+  20 deg  f  38.6162  n 2.3961  n_g 2.390  Q  36.10  alpha 0.233 dB/mm
+  25 deg  f  48.2833  n 2.3955  n_g 2.400  Q  37.16  alpha 0.284 dB/mm
+  30 deg  f  57.8913  n 2.3975  n_g 2.408  Q  37.17  alpha 0.341 dB/mm
+CPW:
+   5 deg  f  10.1964  n 2.2686  n_g 2.223  Q  17.07  alpha 0.121 dB/mm
+  10 deg  f  20.6022  n 2.2456  n_g 2.219  Q  22.35  alpha 0.186 dB/mm
+  15 deg  f  31.0445  n 2.2354  n_g 2.214  Q  26.28  alpha 0.238 dB/mm
+  20 deg  f  41.5010  n 2.2295  n_g 2.212  Q  29.54  alpha 0.283 dB/mm
+  25 deg  f  51.9610  n 2.2259  n_g 2.211  Q  32.37  alpha 0.323 dB/mm
+  split even-odd: 
+
+Even/odd splits (odd - even) / even, frequency at equal phase:
+   5 deg  slot +6.77e-03  CPW +9.03e-06
+  10 deg  slot +6.54e-03  CPW +9.82e-06
+  15 deg  slot +6.20e-03  CPW +1.04e-05
+  20 deg  slot +5.88e-03  CPW +1.12e-05
+  25 deg  slot +5.70e-03  CPW +1.26e-05
+  30 deg  slot +5.69e-03
+
+=== extra modes (beyond the three guided families) vs the TM0 cell-mode model ===
+TM0 index of 525 um Si on PEC: 30 GHz 1.122, 45 GHz 1.907, 50 GHz 2.208, 55 GHz 2.435, 60 GHz 2.606
+   5 deg even  f  54.435  n_z 0.425  Q  4.67  TM0 2.413  k_y W/(pi/2) = 1.72
+   5 deg even  f  58.122  n_z 0.398  Q 14.70  TM0 2.547  k_y W/(pi/2) = 1.95
+   5 deg odd   f  44.872  n_z 0.516  Q  4.00  TM0 1.899  k_y W/(pi/2) = 1.09
+   5 deg odd   f  55.006  n_z 0.421  Q  4.53  TM0 2.436  k_y W/(pi/2) = 1.76
+  10 deg even  f  55.678  n_z 0.831  Q  5.13  TM0 2.461  k_y W/(pi/2) = 1.72
+  10 deg even  f  59.472  n_z 0.778  Q 14.17  TM0 2.590  k_y W/(pi/2) = 1.96
+  10 deg odd   f  46.642  n_z 0.992  Q  4.44  TM0 2.015  k_y W/(pi/2) = 1.09
+  10 deg odd   f  56.367  n_z 0.821  Q  4.80  TM0 2.487  k_y W/(pi/2) = 1.77
+  15 deg even  f  57.684  n_z 1.203  Q  6.10  TM0 2.533  k_y W/(pi/2) = 1.72
+  15 deg odd   f  49.486  n_z 1.402  Q  5.20  TM0 2.181  k_y W/(pi/2) = 1.10
+  15 deg odd   f  58.633  n_z 1.184  Q  5.30  TM0 2.564  k_y W/(pi/2) = 1.78
+  20 deg odd   f  53.259  n_z 1.737  Q  6.46  TM0 2.364  k_y W/(pi/2) = 1.14
+  25 deg odd   f  57.786  n_z 2.002  Q  8.09  TM0 2.536  k_y W/(pi/2) = 1.20
