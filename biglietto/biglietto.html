@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Biglietto da visita – MB Pubblicità &amp; Stampa</title>
+<!--
+  Formato finito: 90 x 50 mm. File di stampa: 96 x 56 mm (3 mm di abbondanza per lato).
+  Zona sicura del testo: 4 mm dal bordo del taglio.
+  Per cambiare nome, social o testi, modifica solo questo file e rigenera il PDF (vedi genera.sh).
+-->
+<style>
+  @page { size: 96mm 56mm; margin: 0; }
+  :root {
+    --navy: #0b2a63;
+    --blue: #1f5fd1;
+    --sky: #7cc4ff;
+    --ice: #e8f1ff;
+    --ink: #14213d;
+    --grey: #6b7893;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #fff; }
+  body { font-family: "Inter", "Liberation Sans", Arial, sans-serif; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* pagina = trim + 3 mm di abbondanza; .t = area di taglio 90 x 50, origine a (3,3) */
+  .page { width: 96mm; height: 56mm; position: relative; overflow: hidden; page-break-after: always; break-after: page; background: #fff; }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+  .t { position: absolute; left: 3mm; top: 3mm; width: 90mm; height: 50mm; }
+  .abs { position: absolute; }
+
+  /* ---------- FRONTE ---------- */
+  .f-left  { left: -3mm; top: -3mm; width: 31mm; height: 44mm; background: var(--navy); }  /* arriva fino a x=28 del taglio */
+  .f-bar   { left: -3mm; top: 41mm; width: 96mm; height: 12mm; background: var(--navy); }  /* barra contatti, y=41..50 + abbondanza */
+  .f-accent{ left: 28mm; top: 40.4mm; width: 62mm; height: .6mm; background: var(--sky); }
+
+  .mark { left: 9.5mm; top: 4mm; width: 9mm; height: 9mm; }
+  .brand { left: 0; top: 14.2mm; width: 28mm; text-align: center; color: #fff; font-weight: 700; font-size: 4.4pt; letter-spacing: .16em; line-height: 1.35; }
+  .brand span { color: var(--sky); }
+  .photo { left: 6.5mm; top: 20.6mm; width: 15mm; height: 15mm; border-radius: 50%; border: .5mm solid #fff; overflow: hidden; background: #fff; }
+  .photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .name { left: 0; top: 36.3mm; width: 28mm; text-align: center; color: #fff; font-weight: 700; font-size: 6.6pt; letter-spacing: .01em; }
+
+  .tag { left: 31.5mm; top: 4mm; width: 56mm; font-weight: 800; font-size: 7pt; line-height: 1.12; color: var(--blue); letter-spacing: -.005em; }
+  .tag em { font-style: normal; color: var(--navy); }
+
+  .h { font-weight: 800; font-size: 4.8pt; letter-spacing: .2em; color: var(--grey); text-transform: uppercase; }
+  .sv-h { left: 31.5mm; top: 10.7mm; }
+  .sv { left: 31.5mm; top: 13.3mm; width: 56mm; font-size: 5.5pt; line-height: 1; columns: 2; column-gap: 2.2mm; list-style: none; }
+  .sv li { position: relative; padding-left: 2.1mm; margin-bottom: .72mm; font-weight: 500; break-inside: avoid; white-space: nowrap; }
+  .sv li::before { content: ""; position: absolute; left: 0; top: .5mm; width: 1.1mm; height: 1.1mm; background: var(--blue); border-radius: .2mm; }
+
+  .wh-h { left: 31.5mm; top: 28.2mm; }
+  .wh { left: 31.5mm; top: 30.9mm; width: 57mm; font-size: 5.5pt; line-height: 1; list-style: none; }
+  .wh li { position: relative; padding-left: 3mm; margin-bottom: .85mm; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .wh li::before { content: ""; position: absolute; left: .1mm; top: .15mm; width: 1.6mm; height: 1.6mm; border-radius: 50%; background: var(--blue); }
+  .wh li::after  { content: ""; position: absolute; left: .62mm; top: .42mm; width: .55mm; height: .95mm; border: solid #fff; border-width: 0 .25mm .25mm 0; transform: rotate(40deg); }
+
+  .ct { top: 41mm; height: 9mm; display: flex; align-items: center; color: #fff; font-size: 5.6pt; font-weight: 600; white-space: nowrap; }
+  .ct svg { width: 3mm; height: 3mm; margin-right: 1.3mm; flex: none; }
+  .ct1 { left: 4mm; }
+  .ct2 { left: 33mm; }
+  .ct3 { left: 70mm; }
+
+  /* ---------- RETRO: PREVENTIVO ---------- */
+  .b-top { left: -3mm; top: -3mm; width: 96mm; height: 12mm; background: var(--navy); }  /* y=-3..9 */
+  .b-title { left: 4mm; top: 2.4mm; color: #fff; font-weight: 800; font-size: 8.6pt; letter-spacing: .2em; line-height: 1; }
+  .b-title small { display: block; font-size: 4.6pt; letter-spacing: .12em; font-weight: 600; color: var(--sky); margin-top: .9mm; line-height: 1; }
+  .b-mark { left: 79.4mm; top: 1.2mm; width: 6.6mm; height: 6.6mm; }  /* x fino a 86 = 4 mm dal bordo */
+  .b-strip { left: -3mm; top: 41mm; width: 96mm; height: 12mm; background: var(--ice); }
+  .b-foot { left: 4mm; top: 41mm; width: 82mm; height: 9mm; display: flex; align-items: center; justify-content: space-between; font-size: 5.4pt; font-weight: 600; color: var(--navy); }
+  .b-foot b { color: var(--blue); font-weight: 800; }
+
+  .fld { left: 4mm; width: 82mm; }
+  .lbl { font-weight: 800; font-size: 4.6pt; letter-spacing: .18em; color: var(--grey); text-transform: uppercase; }
+  .ln { position: absolute; height: 0; border-bottom: .2mm solid #9fb0cf; }
+  .box { position: absolute; border: .25mm solid #9fb0cf; border-radius: 1mm; }
+</style>
+</head>
+<body>
+
+<!-- Logo condiviso: monogramma MB + barra azzurra -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="logo" viewBox="0 0 90 90">
+      <rect width="90" height="90" rx="20" fill="#fff"/>
+      <text x="45" y="55" text-anchor="middle" font-family="Inter, Liberation Sans, Arial, sans-serif" font-weight="800" font-size="40" letter-spacing="-2" fill="#0b2a63">MB</text>
+      <rect x="17" y="66" width="56" height="7" rx="3.5" fill="#1f5fd1"/>
+      <rect x="55" y="66" width="18" height="7" rx="3.5" fill="#7cc4ff"/>
+    </symbol>
+    <symbol id="i-wa" viewBox="0 0 24 24"><path fill="#7cc4ff" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.2 14.2c-.2.6-1.2 1.1-1.7 1.2-.4.1-1 .1-1.6-.1-3-1.1-4.9-4-5.1-4.2-.1-.2-1.2-1.6-1.2-3s.8-2.1 1-2.4c.3-.3.6-.3.8-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2 1.1 1 2.1 1.300 2.400 1.500.3.1.5.1.6-.1l.9-1.100c.2-.3.4-.2.700-.1l1.900.9c.3.1.5.2.5.3.1.2.1.8-.1 1.400Z"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><path fill="#7cc4ff" d="M3 5h18a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Zm9 8.2L20 7.5V7H4v.5l8 5.700ZM4 9.900V17h16V9.900l-8 5.700-8-5.700Z"/></symbol>
+    <symbol id="i-ig" viewBox="0 0 24 24"><path fill="#7cc4ff" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3H7Zm5 3.500a4.500 4.500 0 1 1 0 9 4.500 4.500 0 0 1 0-9Zm0 2a2.500 2.500 0 1 0 0 5 2.500 2.500 0 0 0 0-5Zm5.300-3.200a1.100 1.100 0 1 1 0 2.200 1.100 1.100 0 0 1 0-2.200Z"/></symbol>
+  </defs>
+</svg>
+
+<!-- ============ FRONTE ============ -->
+<section class="page" id="fronte">
+  <div class="t">
+    <div class="abs f-left"></div>
+    <div class="abs f-bar"></div>
+    <div class="abs f-accent"></div>
+
+    <svg class="abs mark"><use href="#logo"/></svg>
+    <div class="abs brand">PUBBLICITÀ<br><span>&amp; STAMPA</span></div>
+    <div class="abs photo"><img src="foto.png" alt=""></div>
+    <div class="abs name">Milagros Borda</div>
+
+    <div class="abs tag">La tua marca <em>si vede,</em><br>si ricorda, vende!</div>
+
+    <div class="abs h sv-h">Servizi</div>
+    <ul class="abs sv">
+      <li>Pubblicità e grafica</li>
+      <li>Insegne LED e 3D</li>
+      <li>Banner e sticker</li>
+      <li>Roll-up</li>
+      <li>Vetrofanie</li>
+      <li>Decorazioni interni</li>
+      <li>Vinili parete e auto</li>
+      <li>Stampa 3D</li>
+      <li>Stampa su carta</li>
+      <li>Tesi: stampa e rilegatura</li>
+    </ul>
+
+    <div class="abs h wh-h">Perché sceglierci</div>
+    <ul class="abs wh">
+      <li>Oltre 10 anni di esperienza</li>
+      <li>Dall'idea alla stampa, un solo referente</li>
+      <li>Preventivo rapido e tempi concordati</li>
+    </ul>
+
+    <div class="abs ct ct1"><svg><use href="#i-wa"/></svg>+39 392 126 1202</div>
+    <div class="abs ct ct2"><svg><use href="#i-mail"/></svg>jhakelin.borda@gmail.com</div>
+    <div class="abs ct ct3"><svg><use href="#i-ig"/></svg>@mb.pubblicita</div>
+  </div>
+</section>
+
+<!-- ============ RETRO ============ -->
+<section class="page" id="retro">
+  <div class="t">
+    <div class="abs b-top"></div>
+    <div class="abs b-title">PREVENTIVO<small>MB PUBBLICITÀ &amp; STAMPA</small></div>
+    <svg class="abs b-mark"><use href="#logo"/></svg>
+
+    <!-- Cliente + data -->
+    <div class="abs lbl" style="left:4mm; top:11.4mm;">Cliente</div>
+    <div class="ln" style="left:15mm; top:13.9mm; width:45mm;"></div>
+    <div class="abs lbl" style="left:63mm; top:11.4mm;">Data</div>
+    <div class="ln" style="left:69.5mm; top:13.9mm; width:16.5mm;"></div>
+
+    <!-- Servizio richiesto -->
+    <div class="abs lbl" style="left:4mm; top:16.4mm;">Servizio richiesto</div>
+    <div class="ln" style="left:4mm; top:23mm; width:82mm;"></div>
+    <div class="ln" style="left:4mm; top:28mm; width:82mm;"></div>
+
+    <!-- Misure / consegna / totale -->
+    <div class="abs lbl" style="left:4mm; top:30.2mm;">Misure / quantità</div>
+    <div class="ln" style="left:29mm; top:32.8mm; width:57mm;"></div>
+
+    <div class="abs lbl" style="left:4mm; top:35.4mm;">Consegna desiderata</div>
+    <div class="ln" style="left:36mm; top:38mm; width:27mm;"></div>
+
+    <div class="abs lbl" style="left:66mm; top:35.4mm;">Totale €</div>
+    <div class="ln" style="left:77mm; top:38mm; width:9mm;"></div>
+
+    <div class="abs b-strip"></div>
+    <div class="abs b-foot"><span><b>WhatsApp</b> +39 392 126 1202</span><span>La tua marca si vede, si ricorda, vende!</span></div>
+  </div>
+</section>
+
+</body>
+</html>
