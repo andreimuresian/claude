@@ -1,0 +1,7 @@
+Gap-pattern change between neighbouring eigen points, ||u_k - c u_{k+1}|| / ||u_k|| (best complex c):
+  e_sb    7->15 GHz 0.060  15->22 GHz 0.058  22->30 GHz 0.058  30->37 GHz 0.059  37->44 GHz 0.059
+  e_slot  9->19 GHz 0.009  19->29 GHz 0.009  29->38 GHz 0.009  38->48 GHz 0.009  48->58 GHz 0.009
+  e_cpw   10->21 GHz 0.008  21->31 GHz 0.008  31->42 GHz 0.008  42->52 GHz 0.008
+  o_AvsB  8->16 GHz 0.031  16->24 GHz 0.024  24->32 GHz 0.020  32->40 GHz 0.017  40->48 GHz 0.015
+  o_slot  10->19 GHz 0.009  19->29 GHz 0.009  29->39 GHz 0.009  39->48 GHz 0.009  48->58 GHz 0.009
+  o_cpw   10->21 GHz 0.008  21->31 GHz 0.008  31->42 GHz 0.008  42->52 GHz 0.008

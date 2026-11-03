@@ -1,0 +1,12 @@
+ 5 GHz six 0.729 -> 0.398  extra: CPW pattern (o), n 0.0, 12 dB/mm; A CPW 0.0049; hold-out 916.08; |H_extra|/|H_data| B 12.62
+10 GHz six 0.502 -> 0.265  extra: CPW pattern (o), n 0.0, 8 dB/mm; A CPW 0.0053; hold-out 89.27; |H_extra|/|H_data| B 8.88
+15 GHz six 0.365 -> 0.175  extra: CPW pattern (e), n 4.0, 0.5 dB/mm; A CPW 0.0092; hold-out 4.89; |H_extra|/|H_data| B 7.15
+20 GHz six 0.212 -> 0.116  extra: CPW pattern (e), n 4.0, 0.5 dB/mm; A CPW 0.0091; hold-out 2.33; |H_extra|/|H_data| B 0.39
+25 GHz six 0.124 -> 0.093  extra: CPW pattern (e), n 0.0, 12 dB/mm; A CPW 0.0135; hold-out 21.03; |H_extra|/|H_data| B 0.20
+30 GHz six 0.138 -> 0.088  extra: CPW pattern (e), n 1.1, 0.5 dB/mm; A CPW 0.0152; hold-out 1.07; |H_extra|/|H_data| B 0.07
+35 GHz six 0.230 -> 0.109  extra: CPW pattern (e), n 1.7, 0.5 dB/mm; A CPW 0.0170; hold-out 0.83; |H_extra|/|H_data| B 0.51
+40 GHz six 0.313 -> 0.210  extra: AvsB pattern (e), n 2.6, 2 dB/mm; A CPW 0.0176; hold-out 0.72; |H_extra|/|H_data| B 2.23
+45 GHz six 0.410 -> 0.244  extra: CPW pattern (e), n 1.7, 0.5 dB/mm; A CPW 0.0230; hold-out 1.18; |H_extra|/|H_data| B 0.24
+50 GHz six 0.590 -> 0.350  extra: AvsB pattern (o), n 2.6, 1 dB/mm; A CPW 0.0233; hold-out 1.53; |H_extra|/|H_data| B 2.33
+55 GHz six 0.856 -> 0.598  extra: AvsB pattern (o), n 2.0, 0.5 dB/mm; A CPW 0.0281; hold-out 2.01; |H_extra|/|H_data| B 0.78
+60 GHz six 1.062 -> 0.791  extra: AvsB pattern (o), n 2.0, 0.5 dB/mm; A CPW 0.0310; hold-out 2.42; |H_extra|/|H_data| B 0.76

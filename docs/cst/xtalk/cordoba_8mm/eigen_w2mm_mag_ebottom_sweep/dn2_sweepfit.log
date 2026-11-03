@@ -1,0 +1,12 @@
+ 5 GHz  best B' CPW 0.679 at dn_sb +0.200 dn_AB +0.200  (A CPW 0.0049, B' slot 0.291)  hold-out 49.35
+10 GHz  best B' CPW 0.502 at dn_sb +0.200 dn_AB -0.050  (A CPW 0.0054, B' slot 0.178)  hold-out 9.31
+15 GHz  best B' CPW 0.346 at dn_sb +0.200 dn_AB +0.200  (A CPW 0.0122, B' slot 0.230)  hold-out 4.14
+20 GHz  best B' CPW 0.190 at dn_sb +0.200 dn_AB +0.200  (A CPW 0.0098, B' slot 0.170)  hold-out 1.10
+25 GHz  best B' CPW 0.111 at dn_sb -0.025 dn_AB +0.200  (A CPW 0.0171, B' slot 0.268)  hold-out 0.58
+30 GHz  best B' CPW 0.134 at dn_sb -0.075 dn_AB +0.075  (A CPW 0.0157, B' slot 0.238)  hold-out 0.58
+35 GHz  best B' CPW 0.199 at dn_sb -0.200 dn_AB -0.200  (A CPW 0.0155, B' slot 0.150)  hold-out 0.82
+40 GHz  best B' CPW 0.237 at dn_sb -0.200 dn_AB -0.200  (A CPW 0.0199, B' slot 0.210)  hold-out 0.96
+45 GHz  best B' CPW 0.345 at dn_sb -0.200 dn_AB -0.200  (A CPW 0.0214, B' slot 0.170)  hold-out 1.22
+50 GHz  best B' CPW 0.490 at dn_sb -0.200 dn_AB -0.200  (A CPW 0.0239, B' slot 0.187)  hold-out 1.80
+55 GHz  best B' CPW 0.655 at dn_sb -0.200 dn_AB -0.000  (A CPW 0.0329, B' slot 0.359)  hold-out 2.21
+60 GHz  best B' CPW 0.871 at dn_sb -0.200 dn_AB -0.000  (A CPW 0.0355, B' slot 0.354)  hold-out 2.41

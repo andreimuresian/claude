@@ -31,3 +31,31 @@ not found in either symmetry. CPW data stop at 52 GHz; 55 and 60 GHz need extrap
   family keeps a constant lateral wavenumber k_y W/(pi/2) = 1.09-1.20 from 5 to 25 deg (one quarter-wave
   pattern across the cell, tracking TM0); even modes at 1.72 and 1.96. Their frequencies depend on the
   cell width; identification to be checked on the exports.
+
+## Six-mode fits at the 12 TD monitor frequencies (2026-11-03)
+Exports unpacked from the user's zips into `p<phase>_<sym>/eig_<sym>_mode<k>_e.txt` and `_xsec.csv`
+(cross-sections now reach y = 1.0). Identification on the gap patterns (CPW/slot ratio): CPW 246-262,
+slot 0.004-0.006, strips vs bottom 0.60 (5 deg) -> 0.97 (30 deg), A vs B 0.32-0.38; consistent with the log
+order in every run. Scripts: `sweepfit.py` (module), `run_sweepfit.py`, `diag_sweepfit.py`,
+`extra_sweepfit.py`, `dn_sweepfit.py`, `dn2_sweepfit.py`, `zloc_sweepfit.py`, `launch_sweepfit.py` (logs alongside).
+
+- Line A, CPW pattern: residual 0.005-0.035 at 5-60 GHz.
+- Line B, CPW pattern (joint fit, A slot x10): 0.73, 0.50, 0.37, 0.21, 0.12, 0.14, 0.23, 0.31, 0.41, 0.59,
+  0.86, 1.06 at 5..60 GHz. Fitting B alone: 0.05-0.10 at 20-45 GHz, 0.26-0.54 at 5-10, 0.34-0.58 at 55-60.
+- Hold-out (fit 0.3-4 mm, predict 4-7.7 mm): B residual >= 0.54 at every frequency. The six modes describe
+  B's field locally, not its evolution along the line.
+- Not the cause: CPW index (A prefers +0.004..+0.010, as TD n_g 2.229 vs eigen 2.212; B unchanged); index
+  shifts of strips vs bottom and A vs B up to +-0.2 (optimum on the grid edge, sign changes with f);
+  the substrate cell modes or any single extra guided wave at 45-60 GHz.
+- At 5-15 GHz B's field is 1.4-2.0x its line mean in the first mm and drops to 0.1-0.4 beyond 3 mm; an extra
+  wave born at z = 0 is best fitted with n ~ 0 and 8-12 dB/mm (decay length ~0.7-1 mm): a non-propagating
+  near field of the launch (port region), absent from any guided-mode basis.
+- EO: model and data agree within 0.6 dB on the fitted samples at all 12 frequencies, including 60 GHz where
+  the B residual is 1.06: projection identity (the forward CPW pair, n 2.23, is close to the optical kernel,
+  n_g 2.27), not a validation. Hold-out EO errors -12 to +18 dB. The excluded samples matter: full-line EO
+  vs interior without stems differs by up to 11 dB (15 GHz: -86.1 vs -97.2 dB); at 5-15 GHz the two 0.31 mm
+  end zones alone exceed the interior contribution.
+- Interpolation: n(f) = n_inf + b/sqrt(f) + c f fits CPW to 1.3e-4 (alpha to 0.3 %), slot to 1e-3, A vs B
+  6e-3, strips vs bottom 3e-3 (alpha 17 %: its n has a minimum at 15 deg; needs another form). Gap patterns
+  change per eigen step by 0.8 % (CPW), 0.9 % (slot), 1.5-3 % (A vs B), 6 % (strips vs bottom); nearest and
+  interpolated patterns give the same fits to 0.004. CPW split 2.0e-5 -> 2.8e-5, smooth.

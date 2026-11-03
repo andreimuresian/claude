@@ -1,0 +1,42 @@
+(1) EO of the data (dB): full line | samples 0.31-7.69 mm all | interior without stems | ends only (z<0.31 or >7.69)
+   5 GHz   -96.39 |  -96.88 | -102.07 |  -92.71   |A| H full/interior-no-stem 1.457
+  10 GHz   -96.93 |  -97.03 |  -96.60 |  -91.68   |A| H full/interior-no-stem 1.460
+  15 GHz   -86.10 |  -97.03 |  -97.23 |  -88.62   |A| H full/interior-no-stem 1.460
+  20 GHz   -83.42 |  -83.09 |  -84.64 |  -87.66   |A| H full/interior-no-stem 1.458
+  25 GHz   -78.65 |  -81.26 |  -80.29 |  -86.53   |A| H full/interior-no-stem 1.462
+  30 GHz   -71.57 |  -74.60 |  -76.33 |  -81.08   |A| H full/interior-no-stem 1.457
+  35 GHz   -69.89 |  -70.16 |  -71.21 |  -88.83   |A| H full/interior-no-stem 1.461
+  40 GHz   -65.80 |  -68.44 |  -70.59 |  -77.43   |A| H full/interior-no-stem 1.459
+  45 GHz   -65.88 |  -66.37 |  -67.75 |  -90.97   |A| H full/interior-no-stem 1.457
+  50 GHz   -64.87 |  -66.53 |  -68.37 |  -77.85   |A| H full/interior-no-stem 1.460
+  55 GHz   -62.93 |  -64.00 |  -65.82 |  -81.40   |A| H full/interior-no-stem 1.456
+  60 GHz   -66.51 |  -66.14 |  -67.88 |  -87.81   |A| H full/interior-no-stem 1.458
+
+(2) B' CPW residual: weighting  line+Aslot x10 | line | B only (A not fitted)
+   5 GHz  0.729 | 0.726 | 0.536
+  10 GHz  0.502 | 0.501 | 0.261
+  15 GHz  0.365 | 0.368 | 0.141
+  20 GHz  0.212 | 0.214 | 0.085
+  25 GHz  0.124 | 0.108 | 0.052
+  30 GHz  0.138 | 0.141 | 0.053
+  35 GHz  0.230 | 0.237 | 0.057
+  40 GHz  0.313 | 0.306 | 0.073
+  45 GHz  0.410 | 0.407 | 0.105
+  50 GHz  0.590 | 0.582 | 0.196
+  55 GHz  0.856 | 0.701 | 0.339
+  60 GHz  1.062 | 0.911 | 0.578
+
+(3) hold-out (line weights, A slot x10): fit on one half, B' CPW on the other half
+   f | fit 1st half -> 2nd: resid, EO err dB | fit 2nd half -> 1st: resid, EO err dB | all-fit resid per half
+   5 | 41.503 +31.57 |  1.062  -0.41 | 0.669 3.797
+  10 |  7.844 +17.07 |  1.037  +6.17 | 0.443 1.237
+  15 |  4.279 +17.69 |  0.748  +0.72 | 0.346 0.478
+  20 |  1.273  -9.73 |  0.539 +13.73 | 0.212 0.215
+  25 |  0.664  +8.06 |  0.214  -0.76 | 0.118 0.141
+  30 |  0.537  -1.72 |  0.307  +7.13 | 0.129 0.155
+  35 |  0.816 -11.51 |  0.515  +1.67 | 0.193 0.283
+  40 |  0.984  -7.79 |  0.656 +11.52 | 0.267 0.384
+  45 |  1.155  -1.65 |  0.775 +11.55 | 0.400 0.426
+  50 |  1.768  -5.87 |  1.013 +17.56 | 0.582 0.604
+  55 |  1.680  -4.03 |  1.096  +8.15 | 0.830 0.912
+  60 |  1.794  -8.66 |  1.212 +11.26 | 1.075 1.021

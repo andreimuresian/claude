@@ -1,0 +1,12 @@
+ 5 GHz  dn=0: A 0.0049 B 0.729 hold 41.50 | best on A: dn -0.004 A 0.0049 B 0.729 hold 41.68 | best on B: dn -0.004 B 0.729
+10 GHz  dn=0: A 0.0053 B 0.502 hold 7.84 | best on A: dn -0.002 A 0.0052 B 0.502 hold 7.86 | best on B: dn -0.004 B 0.502
+15 GHz  dn=0: A 0.0099 B 0.365 hold 4.28 | best on A: dn +0.002 A 0.0098 B 0.365 hold 4.27 | best on B: dn +0.020 B 0.363
+20 GHz  dn=0: A 0.0089 B 0.212 hold 1.27 | best on A: dn +0.004 A 0.0085 B 0.212 hold 1.27 | best on B: dn +0.020 B 0.210
+25 GHz  dn=0: A 0.0138 B 0.124 hold 0.66 | best on A: dn +0.004 A 0.0130 B 0.125 hold 0.67 | best on B: dn -0.004 B 0.124
+30 GHz  dn=0: A 0.0151 B 0.138 hold 0.54 | best on A: dn +0.006 A 0.0133 B 0.139 hold 0.55 | best on B: dn -0.004 B 0.138
+35 GHz  dn=0: A 0.0167 B 0.230 hold 0.82 | best on A: dn +0.006 A 0.0144 B 0.231 hold 0.82 | best on B: dn -0.004 B 0.229
+40 GHz  dn=0: A 0.0223 B 0.313 hold 0.98 | best on A: dn +0.008 A 0.0183 B 0.315 hold 1.00 | best on B: dn -0.004 B 0.312
+45 GHz  dn=0: A 0.0227 B 0.410 hold 1.15 | best on A: dn +0.008 A 0.0181 B 0.410 hold 1.16 | best on B: dn +0.004 B 0.410
+50 GHz  dn=0: A 0.0253 B 0.590 hold 1.77 | best on A: dn +0.008 A 0.0185 B 0.590 hold 1.77 | best on B: dn +0.020 B 0.589
+55 GHz  dn=0: A 0.0328 B 0.856 hold 1.68 | best on A: dn +0.008 A 0.0247 B 0.855 hold 1.67 | best on B: dn +0.020 B 0.853
+60 GHz  dn=0: A 0.0351 B 1.062 hold 1.79 | best on A: dn +0.010 A 0.0254 B 1.060 hold 1.78 | best on B: dn +0.020 B 1.058
