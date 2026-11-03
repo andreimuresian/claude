@@ -10,3 +10,11 @@
 
 Theory reports (`docs/reports`): 1 done (field-based EO crosstalk); 2 TD vs eigenmode comparison;
 3 how the eigenmode solver finds modes; 4 the two-mode model (Ze = Zo).
+
+## 2026-11-03: TD accuracy check (pending)
+Open- and electric-bottom widened TD runs used accuracy -27 dB; B's gap fields lie 55-72 dB below A's, and the
+matrix pencil finds 65-99 % of B's energy in waves that change amplitude the wrong way for their phase direction
+(`cordoba_8mm/eigen_w2mm_mag_ebottom_sweep/pencil_sign.log`). Hypothesis: truncation error of the -27 dB runs.
+Rerun launched by the user: electric bottom, widened, one port, accuracy -60 dB (the -27 dB run took 4 h).
+To do on arrival: check in the log which criterion ended the run (accuracy or time limit); compare B at the 12
+monitor frequencies with the -27 dB run; repeat `pencil_sign.py`; if B changes, redo the TD crosstalk results.
