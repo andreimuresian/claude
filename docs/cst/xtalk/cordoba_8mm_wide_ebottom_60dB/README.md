@@ -25,3 +25,20 @@ one third the size, same 14409 points) and was rewritten in the txt layout; valu
   (-27 dB: 14, 2.4, 1.8, 0.81, 0.27, 0.33, 0.39, 0.75, 1.0, 1.25, 1.74, 1.73).
 * The pencil "sign test" is not a valid diagnostic (`pencil_selftest_60dB.log`): on the six-mode model of B
   (physical waves only) plus a residual of the fit's own size, it reports 70-94 % "wrong-way" waves. Withdrawn.
+
+## Smoothness test (`smoothness.py`, `coeff_noise.py`, `smoothness_coeffs.png`; logs)
+Six-mode coefficients normalised by A's forward CPW amplitude (backward ones also by exp(-gamma_cpw L)), eigen
+patterns aligned to the family's 15 deg pattern.
+* A side, smooth: far-end CPW reflection 0.048 -> 0.056, phase +23 -> -32 deg over 5-60 GHz (about 5 deg per step).
+* B side (pair differences (e-o)/2, strips vs bottom, A vs B): magnitudes 1e-4 .. 3e-2 with phase jumps of 50-180 deg
+  between neighbouring monitors; not smooth.
+* Not random noise: with 10 % white noise added to B, coefficient scatter is 1-14 % (one case 84 %, sb bwd 55 GHz),
+  EO scatter 0.04-0.45 dB.
+* Leave-one-out at the 10 interior monitors: modal interpolation of the coefficients median |dX|/|X| 0.77, direct
+  spline of X 0.80; errors up to 20 dB at 10-15 GHz. The EO on the fitted samples moves -72 -> -62 -> -66 dB from
+  15 to 25 GHz.
+* Expected frequency scales: a backward wave read by the co-propagating optics gives EO ripple with period
+  c/((n_opt + n_wave) L) = 8.3 GHz (CPW) and 7.0 GHz (strips vs bottom); a round trip CPW + strips vs bottom changes
+  phase by about 4.5 rad per 5 GHz. The 5 GHz monitor spacing is below the sampling these need, so amplitudes that
+  contain multiple reflections cannot be interpolated; only end-conversion coefficients with the propagation phases
+  written explicitly (multimode line with end scattering) are candidates for slow variation.
