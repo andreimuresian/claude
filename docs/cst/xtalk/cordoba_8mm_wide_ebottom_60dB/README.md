@@ -42,3 +42,15 @@ patterns aligned to the family's 15 deg pattern.
   phase by about 4.5 rad per 5 GHz. The 5 GHz monitor spacing is below the sampling these need, so amplitudes that
   contain multiple reflections cannot be interpolated; only end-conversion coefficients with the propagation phases
   written explicitly (multimode line with end scattering) are candidates for slow variation.
+
+## End-scattering model (`endmodel.py`, `endmodel.log`, `endmodel_eo_K*.png/csv`)
+Six modes propagating with the eigen gamma(f); one end-scattering matrix R for both ends (z-symmetric ends), block
+diagonal in even/odd (A <-> B symmetry), source vector s; R and s polynomials of order K in f; fitted (linear least
+squares, A/B combinations weighted by their size) to the normalised six-mode amplitudes at the 12 monitors.
+* K = 0, 1, 2: B CPW field residual 0.25-3.3 (best 0.25-0.35 at 20-40 GHz with K = 2; >1 at 5-15 and 60 GHz);
+  leave-one-out EO median |dX|/|X| 0.61 / 0.85 / 1.07 (coefficient interpolation 0.77, direct spline 0.80).
+* Restricted to 15-45 GHz (K = 1): median equation residual 5-23 % per frequency.
+* Not a working interpolator with these data. Candidate causes, not separated: remaining truncation error of B
+  (estimated 5-30 %); index errors accumulated over L in P (0.01 in n = 0.1 rad at 60 GHz; strips vs bottom and
+  A vs B indices from a cell with a different side boundary); 12 frequencies too few to fit R together with index
+  corrections. The dense run (monitors every 1-2 GHz) is needed to test it properly.
