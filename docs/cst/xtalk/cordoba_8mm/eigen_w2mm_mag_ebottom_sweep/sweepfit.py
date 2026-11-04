@@ -24,7 +24,7 @@ from fieldio import load_field_table
 from mzm_interconnect.xtalk_fields import load_field_dir
 
 C0 = 2.99792458e8; LAM = 0.18e-3; L = 8e-3; NG_OPT = 2.27
-TD = os.path.join(HERE, "../../cordoba_8mm_wide_ebottom")
+TD = os.environ.get("TDDIR") or os.path.join(HERE, "../../cordoba_8mm_wide_ebottom")   # TDDIR: another TD run
 PH = [5, 10, 15, 20, 25, 30]
 RUNS = {}
 for p in PH:

@@ -78,3 +78,6 @@ returns the modes' n and loss to 1e-3 (`n 2.236/0.23, 2.903/0.56, 3.121/0.22 dB/
   radiated) field from the line ends, which a few exponentials only mimic. Either way no eigenmode set can fit it,
   which is why the six-mode fit and the hold-outs fail. The 30 GHz plane result ("two backward waves, |n| 2.84-3.04
   and 1.94-2.05") is the same pair; "backward" there referred to the phase only.
+- **Withdrawn (2026-11-04):** the sign test (`pencil_selftest.py`) flags 70-94 % on a physical six-mode B plus noise of
+  the fit residual's size; B is a small, nearly cancelling difference and the pencil split is ill-conditioned. The
+  -27 dB truncation was confirmed instead by direct comparison with a longer run (`../../cordoba_8mm_wide_ebottom_60dB`).
