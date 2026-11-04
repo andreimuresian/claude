@@ -54,3 +54,17 @@ squares, A/B combinations weighted by their size) to the normalised six-mode amp
   (estimated 5-30 %); index errors accumulated over L in P (0.01 in n = 0.1 rad at 60 GHz; strips vs bottom and
   A vs B indices from a cell with a different side boundary); 12 frequencies too few to fit R together with index
   corrections. The dense run (monitors every 1-2 GHz) is needed to test it properly.
+
+## Accuracy comparison plot (`plot_accuracy.py` -> `accuracy_eo_comparison.png`, `plot_accuracy.log`)
+EO of both runs with the change in dB, and the change of each line's CPW gap pattern relative to its own level:
+A 0.2-0.4 %, B 41-241 %. In units of A's CPW rms: change on A -47..-53 dB, change on B -55..-67 dB, B itself
+-52..-75 dB: on B the truncation error is as large as the field.
+
+## S-parameter end-junction model (`sparam_endmodel.py`, `sparam_endmodel.log`, `sparam_endmodel_K0.png`)
+Pre-registered test (criterion stated before running): fit on the 12 monitor frequencies only, predict NEXT and FEXT
+on the 972 other points 1-60 GHz; success = median complex relative error < 0.3 for both and below half of a spline
+through the same 12 points. K = 0 (constant junctions, 46 real parameters, 96 real data): NEXT 0.109 (spline 1.52),
+FEXT 0.164 (spline 0.49); S11 0.088 (0.69), S21 0.018 (0.063). Passed. Caveats: index corrections fitted for the
+slot modes are large (+0.12 even, +0.19 odd; CPW +0.02/+0.03, strips-bottom -0.017, A vs B +0.030), so the slot
+terms may act as generic absorbers; below 5 GHz the model misses the deep nulls; a fit on every 4th dense point
+reached a worse minimum (median 0.09-0.17, 8 starts): the optimiser is not global.

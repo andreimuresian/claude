@@ -1,0 +1,15 @@
+K = 0: 46 real parameters; 12-point fit has 96 real data; dense grid 972 points
+
+fit on 12 monitor frequencies: cost 0.0961; index corrections dn = +0.0235 +0.1219 -0.0166 +0.0227 +0.1949 +0.0295
+   median complex rel. error   on fitted points | on the other dense points | spline from the same points
+   S11: 0.078 | 0.088 | 0.693
+   S21: 0.019 | 0.018 | 0.063
+   S31: 0.038 | 0.109 | 1.517
+   S41: 0.022 | 0.164 | 0.490
+
+fit on every 4th point (descriptive check): cost 24.5; index corrections dn = +0.0487 +0.2344 +0.0617 +0.0484 +0.3535 +0.0530
+   median complex rel. error   on fitted points | on the other dense points | spline from the same points
+   S11: 0.094 | 0.095 | 0.000
+   S21: 0.092 | 0.092 | 0.000
+   S31: 0.151 | 0.151 | 0.000
+   S41: 0.174 | 0.173 | 0.000
