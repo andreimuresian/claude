@@ -68,3 +68,12 @@ FEXT 0.164 (spline 0.49); S11 0.088 (0.69), S21 0.018 (0.063). Passed. Caveats: 
 slot modes are large (+0.12 even, +0.19 odd; CPW +0.02/+0.03, strips-bottom -0.017, A vs B +0.030), so the slot
 terms may act as generic absorbers; below 5 GHz the model misses the deep nulls; a fit on every 4th dense point
 reached a worse minimum (median 0.09-0.17, 8 starts): the optimiser is not global.
+
+## Fields and EO from the junction model (`junction_fields.py`, `junction_fields.log`)
+Modal amplitudes from the S-parameter junction model (K = 0, fitted at the 12 monitors), six constant field scales c_m
+and a per-frequency monitor scale fitted to the gap fields. With the junction's own indices (consistent version):
+A CPW residual 0.05-0.90, B CPW residual 0.39-1.70, EO error +12/-2 dB in sample; leave-one-out EO median
+|dX|/|X| 2.43 (with the eigen CPW split instead: 0.84). The junction model reproduces the port data with an internal
+mode mix that is not the one in the fields: its fitted CPW even/odd index difference is 8e-4, 40 times the eigen split
+(2e-5), and the slot indices move by +0.12/+0.19. It is a usable interpolator of the S-parameters, not a physical
+model of B's field or of the EO crosstalk. (K = 1 run stopped: not needed.)

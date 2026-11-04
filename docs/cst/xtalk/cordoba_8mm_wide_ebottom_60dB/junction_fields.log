@@ -1,0 +1,29 @@
+field scale per mode c_m / c_e_cpw: e_cpw 1(+0), e_slot 0.083(-133), e_sb 0.0346(-51), o_cpw 1(+0), o_slot 0.103(+31), o_AvsB 0.0979(+143)
+ f  | A CPW resid | B CPW resid | EO junction model vs data (dB, deg) | data EO (dB)
+  5 | 0.412 | 0.390 |  +4.55  +20.9 |  -80.3
+ 10 | 0.900 | 0.784 | +11.89  -26.4 |  -79.9
+ 15 | 0.315 | 1.461 |  +4.97 -118.6 |  -72.2
+ 20 | 0.191 | 1.153 |  -1.65 -153.3 |  -61.9
+ 25 | 0.461 | 0.867 |  +1.69  +45.8 |  -66.1
+ 30 | 0.147 | 0.686 |  +6.36  -38.4 |  -65.7
+ 35 | 0.081 | 0.817 |  +3.53  -85.2 |  -61.4
+ 40 | 0.077 | 0.900 |  +7.66 -142.7 |  -66.5
+ 45 | 0.213 | 0.880 | +13.08  -58.0 |  -68.4
+ 50 | 0.080 | 1.172 |  +8.83  -39.9 |  -64.1
+ 55 | 0.053 | 1.696 |  +8.93  -56.7 |  -63.4
+ 60 | 0.285 | 1.583 | +12.00  -34.1 |  -64.1
+
+Leave-one-out (c refitted without the monitor's fields; junction from the S-parameters):
+    5 GHz  |dX|/|X|  8.00  +18.11 dB
+   10 GHz  |dX|/|X|  3.07  +11.99 dB
+   15 GHz  |dX|/|X|  2.46   +4.60 dB
+   20 GHz  |dX|/|X|  1.83   -1.11 dB
+   25 GHz  |dX|/|X|  0.96   +1.53 dB
+   30 GHz  |dX|/|X|  1.46   +6.51 dB
+   35 GHz  |dX|/|X|  1.75   +3.57 dB
+   40 GHz  |dX|/|X|  3.27   +7.65 dB
+   45 GHz  |dX|/|X|  4.07  +13.10 dB
+   50 GHz  |dX|/|X|  2.09   +8.80 dB
+   55 GHz  |dX|/|X|  2.39   +8.91 dB
+   60 GHz  |dX|/|X|  3.26  +12.11 dB
+  median 2.43 (six-mode coefficient interpolation 0.77, direct spline 0.80, field end model 0.61-1.07)
