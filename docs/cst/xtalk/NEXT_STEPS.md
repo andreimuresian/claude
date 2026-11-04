@@ -18,3 +18,11 @@ matrix pencil finds 65-99 % of B's energy in waves that change amplitude the wro
 Rerun launched by the user: electric bottom, widened, one port, accuracy -60 dB (the -27 dB run took 4 h).
 To do on arrival: check in the log which criterion ended the run (accuracy or time limit); compare B at the 12
 monitor frequencies with the -27 dB run; repeat `pencil_sign.py`; if B changes, redo the TD crosstalk results.
+
+## 2026-11-04: dense run launched (pending)
+Widened electric-bottom CORDOBA, one port, accuracy -40 dB; E-field 2D-plane monitors at x = 0.001, 1-60 GHz every
+1 GHz (broadband field monitor tool; no subvolume option there). Exports via result template, sweep all, two
+templates (A_, B_ prefixes, standard gap boxes, step 0.005), excitation [1].
+On arrival: (1) check grid and which x plane the 2D monitor used; (2) dense EO 1-60 GHz; (3) third accuracy level at
+5, 10, ... 60 GHz vs the -27 and -44.5 dB runs: test of the error-scales-with-amplitude assumption; (4) six-mode fits
+with index corrections at 60 frequencies, end-model test; (5) EO ripple period vs c/((n_opt + n_wave) L).
