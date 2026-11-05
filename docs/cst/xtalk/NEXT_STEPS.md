@@ -31,6 +31,18 @@ with index corrections at 60 frequencies, end-model test; (5) EO ripple period v
 Geometry (user): pitch 625 um; line A centred at y = 0, line B at y = -0.625 mm; signal 9.7 um, gaps 4.5 um, outer gap
 edges +-0.00935 mm (B: -0.63435, -0.61565); electrodes from x = slab_h = 0.000275 mm, 2 um thick (to 0.002275);
 line length 8.75 mm. Gap centres: A y = +-0.0071; B y = -0.6321, -0.6179.
-Monitors: 60 E-field subvolume monitors 1-60 GHz, x 0.000275..0.002275, y -0.645..0.015, z 0..8.75 (VBA loop).
-Exports: one line per gap (y min = max = gap centre), x 0.001275, z 0..8.75, step 0.005 (1751 points): the 4.5 um gaps
+Line runs z = 0.3..9.05 (ports at z = 0.3 and 9.05).
+Monitors: 60 E-field subvolume monitors 1-60 GHz, x 0..0.002, y -0.645..0.015, z 0.3..9.05 (as built, run a).
+Exports: one line per gap (y min = max = gap centre), x 0.001275, z 0.3..9.05, step 0.005 (1751 points): the 4.5 um gaps
 cannot be hit by a common-step box spanning both gaps of a line (0.0142 mm is not a multiple of 0.005).
+
+### 2026-11-05: run (a) finished; history list checked against the last CORDOBA run
+Same as CORDOBA: materials (LN 43/28/43, SiO2 3.9, Si 11.9 with 2.5e-4 S/m, Au 4.561e7 S/m), Xmin electric + open
+elsewhere, background XmaxSpace 0.1, TD-S, excitation port 1 only, -40 dB, 0-60 GHz, 50 ohm discrete face ports with
+5 um port + 10 um PEC bridge, E-field monitors 1-60 GHz every 1 GHz. Line B made as a copy of line A shifted -0.625 mm.
+Differences: substrate y -1.0595..0.5175 is not centred on the line pair (outer ground edge to substrate edge
+0.474 mm on the A side, 0.391 mm on the B side; CORDOBA symmetric); gap mesh group 6 steps (CORDOBA 15), global 60
+(CORDOBA 50), no LN mesh group (CORDOBA 8 steps); substrate z faces offset (-8.865, +9.5), so the substrate may extend
+past the line ends (CORDOBA ports sit on the substrate end faces): to be confirmed in the GUI; SUBSTRATE:solid5_1 (Si
+copy) never deleted in the history.
+Exports: AL_ y -0.0071, AR_ y +0.0071, BL_ y -0.6321, BR_ y -0.6179; all x 0.001275, z 0.3..9.05, step 0.005.
