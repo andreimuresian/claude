@@ -1,4 +1,4 @@
-4CA0162: lines with both states: 15 (00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14)
+4CA0162: lines with both states used: 15 (00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14)
 
 File checks: |S21 - S12| / |S21| (reciprocity: median over 0.5-60 GHz and max), max |S11|^2 + |S21|^2 (passivity, <= 1)
   noALD 00: reciprocity median 0.008, max 0.104; passivity 0.916

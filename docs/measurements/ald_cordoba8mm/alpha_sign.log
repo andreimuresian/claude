@@ -1,0 +1,28 @@
+
+4CA0162 (15 lines)
+  delta alpha at  2 GHz: median +0.130 dB/cm, lines up 14/15
+  delta alpha at  5 GHz: median +0.224 dB/cm, lines up 15/15
+  delta alpha at 10 GHz: median +0.272 dB/cm, lines up 15/15
+  delta alpha at 20 GHz: median +0.244 dB/cm, lines up 15/15
+  delta alpha at 30 GHz: median +0.201 dB/cm, lines up 15/15
+  delta alpha at 40 GHz: median +0.234 dB/cm, lines up 15/15
+  delta alpha at 50 GHz: median +0.270 dB/cm, lines up 15/15
+  delta alpha at 58 GHz: median +0.161 dB/cm, lines up 11/15
+  delta of fitted components at 60 GHz (median): a sqrt(f) +0.437, b f -0.385, c +0.160 dB/cm
+  delta n_m (5-50 GHz mean): median +0.0360; delta Re Z0: -0.424 ohm
+  Z0 ripple (std, 15-50 GHz): 0.60 -> 2.33 ohm; mean |S11| 5-50 GHz: -21.25 -> -21.06 dB
+  delta |S21| 1-5 GHz: median -0.162 dB, lines up 0/15
+
+4CA0163 (14 lines)
+  delta alpha at  2 GHz: median +0.087 dB/cm, lines up 14/14
+  delta alpha at  5 GHz: median +0.121 dB/cm, lines up 14/14
+  delta alpha at 10 GHz: median +0.128 dB/cm, lines up 14/14
+  delta alpha at 20 GHz: median +0.086 dB/cm, lines up 14/14
+  delta alpha at 30 GHz: median +0.047 dB/cm, lines up 11/14
+  delta alpha at 40 GHz: median +0.024 dB/cm, lines up 9/14
+  delta alpha at 50 GHz: median +0.034 dB/cm, lines up 9/14
+  delta alpha at 58 GHz: median -0.119 dB/cm, lines up 1/14
+  delta of fitted components at 60 GHz (median): a sqrt(f) +0.297, b f -0.432, c +0.066 dB/cm
+  delta n_m (5-50 GHz mean): median +0.0379; delta Re Z0: -0.257 ohm
+  Z0 ripple (std, 15-50 GHz): 0.59 -> 2.35 ohm; mean |S11| 5-50 GHz: -20.84 -> -20.58 dB
+  delta |S21| 1-5 GHz: median -0.106 dB, lines up 0/14

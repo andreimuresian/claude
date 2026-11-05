@@ -34,8 +34,13 @@ for fn in sorted(glob.glob(os.path.join(HERE, "raw", wafer, f"{wafer}_*_*.s2p"))
     m = re.search(r"_(noALD|ALD)_(\d{2})\.s2p$", fn); s, nn = m.group(1), m.group(2)
     net = rf.Network(fn); fit = extract_line_fit(fn, L_MM)
     data[s][nn] = dict(net=net, fit=fit)
+# bad measurements, excluded from all comparisons with their partner (paired analysis), decided with the user
+EXCLUDE = {"4CA0163": {"04": "ALD measurement bad: |S21| -8 dB at 10 GHz rising to -4.6 dB at 16 GHz, reciprocity 4.9 % median"}}
 lines = sorted(set(data["noALD"]) & set(data["ALD"]))
-print(f"{wafer}: lines with both states: {len(lines)} ({', '.join(lines)})")
+for nn, why in EXCLUDE.get(wafer, {}).items():
+    if nn in lines:
+        lines.remove(nn); print(f"{wafer}: line {nn} excluded (both states): {why}")
+print(f"{wafer}: lines with both states used: {len(lines)} ({', '.join(lines)})")
 
 # ---- file checks ----
 print("\nFile checks: |S21 - S12| / |S21| (reciprocity: median over 0.5-60 GHz and max), max |S11|^2 + |S21|^2 (passivity, <= 1)")
@@ -66,7 +71,7 @@ for q in QN:
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.6), sharey=True)
     for a, s in zip(ax, STATES):
         for i, nn in enumerate(lines):
-            a.plot(f, Q[s][nn][q], color=cmap(i / (len(lines) - 1)), lw=0.8, label=nn)
+            a.plot(f, Q[s][nn][q], color=cmap(int(nn) / 14), lw=0.8, label=nn)
         a.set_title(f"{wafer}, {s}: {len(lines)} lines (raw)", fontsize=10); a.set_xlabel("frequency (GHz)"); a.grid(alpha=0.3)
     ax[0].set_ylabel(q); ax[0].set_ylim(*ylim(q)); ax[1].legend(fontsize=6.5, ncol=3, frameon=False, title="line", title_fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(OUT, f"{fname[q]}_all_lines.png"), dpi=150); plt.close(fig)
@@ -110,7 +115,7 @@ for a, q in zip(ax, BQ):
     va = [V["noALD"][nn][q] for nn in lines]; vb = [V["ALD"][nn][q] for nn in lines]
     a.boxplot([va, vb], positions=[0, 1], widths=0.45, showfliers=False, medianprops=dict(color="k"))
     for i, (nn, y0, y1) in enumerate(zip(lines, va, vb)):
-        c = cmap(i / (len(lines) - 1))
+        c = cmap(int(nn) / 14)
         a.plot([0, 1], [y0, y1], color=c, lw=0.8, alpha=0.7, zorder=1)
         a.scatter([0], [y0], color=c, marker="o", s=22, zorder=3, edgecolor="white", linewidth=0.5, label=nn)
         a.scatter([1], [y1], color=c, marker="s", s=22, zorder=3, edgecolor="white", linewidth=0.5)
@@ -128,7 +133,7 @@ for q in BQ:
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.8), sharey=True)
     for a, s in zip(ax, STATES):
         for i, nn in enumerate(lines):
-            c = cmap(i / (len(lines) - 1)); fit = data[s][nn]["fit"]
+            c = cmap(int(nn) / 14); fit = data[s][nn]["fit"]
             a.plot(f, Q[s][nn][q], color=c, lw=0.5, alpha=0.35)
             a.plot(f, model_curve(fit, q, f), color=c, lw=1.6, label=nn)
             a.plot([F60], [V[s][nn][q]], "o", color=c, ms=4, mec="k", mew=0.4)

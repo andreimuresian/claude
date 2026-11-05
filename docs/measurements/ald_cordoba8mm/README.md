@@ -35,3 +35,13 @@ n_m +0.0375 / +0.0383 (14 of 14 lines up without 04); Re Z0 +0.10 / +0.07 ohm; a
 (13 of 14 lines down); |S21| +0.031 / +0.035 dB.
 Comparison with 4CA0162: n_m rises by the same amount on both wafers (+0.035 / +0.038); attenuation rises on 4CA0162
 (+0.21 dB/cm, 14 of 15 lines) but falls slightly on 4CA0163 (-0.06 dB/cm, 13 of 14 lines).
+
+## Line 04 of 4CA0163 excluded (both states, paired analysis); attenuation sign (`alpha_sign.py`, `alpha_sign.png/.log`)
+4CA0163 now uses 14 lines. Raw per-line change of the de-embedded attenuation (1 GHz running median):
+* 4CA0162: +0.13 (2 GHz), +0.22..+0.27 dB/cm at 5-50 GHz, every line up; flat in frequency.
+* 4CA0163: +0.09..+0.13 dB/cm at 2-20 GHz (every line up), falling to about 0 above 40 GHz, with dips to -0.1/-0.2 at
+  42 and 58 GHz that follow the ~8 GHz pad ripple.
+So ALD raises the attenuation on both wafers; the size differs (about 2x at 10 GHz). The negative fitted 60 GHz change
+on 4CA0163 (-0.06 dB/cm) comes from the top of the band, where the change is within the ripple (fitted change crosses
+zero near 45 GHz). Both wafers: |S21| at 1-5 GHz drops after ALD on every line (-0.16 / -0.11 dB); Z0 ripple grows
+the same way (0.6 -> 2.3 ohm std), mean |S11| unchanged, n_m +0.036 / +0.038.
