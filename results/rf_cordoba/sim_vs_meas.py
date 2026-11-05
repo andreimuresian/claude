@@ -6,7 +6,7 @@ from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 # --- chart: % change, sim vs measured
 labs=["n$_m$","Z$_0$","α @ 30 GHz"]
-sim=[0.68,-0.64,0.64]; w62=[1.6,-1.0,6.0]; w63=[1.8,-0.6,1.4]
+sim=[0.68,-0.64,0.64]; w62=[1.5,-1.0,6.0]; w63=[1.7,-0.6,1.4]
 x=np.arange(3); fig,ax=plt.subplots(figsize=(5.6,3.2),dpi=200)
 for k,(v,c,l) in enumerate([(sim,"#0E2268","Simulation (2D FEM)"),(w62,"#F20013","4CA0162"),(w63,"#F2A900","4CA0163")]):
     b=ax.bar(x+(k-1)*0.26,v,0.26,color=c,label=l)
@@ -30,9 +30,9 @@ def box(x,y,w,h,fill,line=None):
 tb(502920,384048,11000000,640080,[("Simulation vs measurement",28,False,"1A1A1A")])
 tb(548640,932688,10789920,365760,[("2D FEM (volumetric gold, ALD εr 9.8, lossless) vs per-line median change, CORDOBA 8 mm",15,True,"0E2268")])
 rows=[("FOM","Simulation","4CA0162","4CA0163","Agreement"),
- ("Δnm @ 60 GHz","+0.014 (+0.68 %)","+0.034 (+1.6 %)","+0.038 (+1.8 %)","sign ✓, ~2.5× low"),
+ ("Δnm @ 60 GHz","+0.014 (+0.68 %)","+0.034 (+1.5 %)","+0.038 (+1.7 %)","sign ✓, ~2.5× low"),
  ("ΔZ0 (Ω)","−0.23 (−0.64 %)","−0.41 (−1.0 %)","−0.26 (−0.6 %)","✓ good"),
- ("Δα @ 30 GHz (dB/cm)","≈ +0.02–0.03","+0.26","+0.06","4CA0163 ✓, 4CA0162 ~10×"),
+ ("Δα @ 30 GHz (dB/cm)","≈ +0.02–0.03","+0.26 (+6.0 %)","+0.06 (+1.4 %)","4CA0163 ✓, 4CA0162 ~10×"),
  ("Δα @ 60 GHz (dB/cm)","+0.035 (+0.64 %)","+0.21","−0.06 (±0.07)","4CA0163 ✓, 4CA0162 ✗"),
  ("Δα, tan δ = 0.05","+0.07 @ 60 GHz","—","—","upper bound, still < 0.21")]
 tbl=s.shapes.add_table(len(rows),5,Emu(411480),Emu(1371600),Emu(6035040),Emu(2414016)).table
