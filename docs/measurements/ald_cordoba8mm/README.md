@@ -57,3 +57,9 @@ at 50 GHz; (b) bias = raw median near the evaluation frequency minus the fit; (c
 * n_m, extractor saturating fit (N0): stability <= 0.002, bias <= 0.004 at 20-60 GHz in every group: reliable at 60 GHz.
 * Re Z0 (kept as is): stability 0.07-0.5 ohm; local bias -2.2..+4.2 ohm after ALD at 30-60 GHz (the pad ripple): the
   change in Z0 is not resolved below about 0.5 ohm, and its sign changes with the evaluation frequency.
+Follow-up (`fit_check2.py`, `fit_check2.log`): imposing a, b >= 0 on every file is the same as the extractor fit (the
+bound is active only where the free fit goes negative: 3, 6, 0, 0 files): still not uniform. The free fit (A1) is the
+only variant without a data-dependent branch; it differs from the extractor only at 50-60 GHz on 4CA0162.
+Re Z0 as a plain average of the raw curve over whole ripple periods (10.0-42.8 GHz, 4 periods): 42.13 / 41.70 ohm
+before ALD; change -0.41 / -0.26 ohm, every line down on both wafers; shifting the band by half a period changes the
+change by <= 0.01 ohm, using 3 periods by <= 0.11 ohm.

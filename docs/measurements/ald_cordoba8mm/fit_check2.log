@@ -1,0 +1,18 @@
+alpha: per group stability | bias (median), and how many fits sit on a bound (A3)
+  A1 free    @30: | 2no 0.002 +0.008 bnd 0 | 2AL 0.002 -0.021 bnd 0 | 3no 0.001 -0.008 bnd 0 | 3AL 0.001 -0.017 bnd 0
+  A1 free    @40: | 2no 0.022 -0.013 bnd 0 | 2AL 0.022 -0.009 bnd 0 | 3no 0.010 -0.018 bnd 0 | 3AL 0.009 -0.020 bnd 0
+  A1 free    @60: | 2no 0.072 -0.061 bnd 0 | 2AL 0.074 -0.060 bnd 0 | 3no 0.035 -0.088 bnd 0 | 3AL 0.028 -0.091 bnd 0
+  A3 a,b>=0  @30: | 2no 0.003 +0.018 bnd 3 | 2AL 0.002 -0.011 bnd 6 | 3no 0.001 -0.008 bnd 0 | 3AL 0.001 -0.017 bnd 0
+  A3 a,b>=0  @40: | 2no 0.022 -0.013 bnd 3 | 2AL 0.017 -0.009 bnd 6 | 3no 0.010 -0.018 bnd 0 | 3AL 0.009 -0.020 bnd 0
+  A3 a,b>=0  @60: | 2no 0.072 -0.069 bnd 3 | 2AL 0.047 -0.063 bnd 6 | 3no 0.035 -0.088 bnd 0 | 3AL 0.028 -0.091 bnd 0
+
+per-line change ALD - noALD (information only)
+  alpha A1 free                 30:  4CA0162: noALD   4.266  change +0.259 (15/15 up)  4CA0163: noALD   4.078  change +0.058 (14/14 up)
+  alpha A1 free                 40:  4CA0162: noALD   4.862  change +0.260 (15/15 up)  4CA0163: noALD   4.692  change +0.024 (11/14 up)
+  alpha A1 free                 60:  4CA0162: noALD   5.940  change +0.158 (13/15 up)  4CA0163: noALD   5.808  change -0.062 (1/14 up)
+  alpha A3 a,b>=0               30:  4CA0162: noALD   4.266  change +0.259 (15/15 up)  4CA0163: noALD   4.078  change +0.058 (14/14 up)
+  alpha A3 a,b>=0               40:  4CA0162: noALD   4.862  change +0.257 (15/15 up)  4CA0163: noALD   4.692  change +0.024 (11/14 up)
+  alpha A3 a,b>=0               60:  4CA0162: noALD   5.940  change +0.211 (14/15 up)  4CA0163: noALD   5.808  change -0.062 (1/14 up)
+  Z0 10.0-42.8 (4 periods)     :  4CA0162: noALD  42.134  change -0.414 (0/15 up)  4CA0163: noALD  41.701  change -0.263 (0/14 up)
+  Z0 14.1-46.9 (shift 1/2)     :  4CA0162: noALD  42.156  change -0.404 (0/15 up)  4CA0163: noALD  41.689  change -0.257 (0/14 up)
+  Z0 10.0-34.6 (3 periods)     :  4CA0162: noALD  42.070  change -0.500 (0/15 up)  4CA0163: noALD  41.739  change -0.372 (0/14 up)
