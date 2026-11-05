@@ -105,14 +105,17 @@ for q in BQ:
         mad = np.median(abs(v - np.median(v))) * 1.4826
         out += [f"{s} {lines[i]}" for i in np.where(abs(v - np.median(v)) > 3 * mad)[0]] if mad > 0 else []
     print(f"  {q:14s} {np.median(a):9.4f} -> {np.median(b):9.4f}  (change {np.median(b - a):+.4f})  outliers: {', '.join(out) or 'none'}")
-fig, ax = plt.subplots(1, 4, figsize=(15, 4.6))
+fig, ax = plt.subplots(1, 4, figsize=(16.5, 4.8))
 for a, q in zip(ax, BQ):
     va = [V["noALD"][nn][q] for nn in lines]; vb = [V["ALD"][nn][q] for nn in lines]
     a.boxplot([va, vb], positions=[0, 1], widths=0.45, showfliers=False, medianprops=dict(color="k"))
-    for x0, y0, y1 in zip(np.zeros(len(lines)), va, vb):
-        a.plot([0, 1], [y0, y1], color="0.75", lw=0.6, zorder=1)
-    a.scatter(np.zeros(len(lines)), va, color=COL["noALD"], s=14, zorder=3); a.scatter(np.ones(len(lines)), vb, color=COL["ALD"], s=14, zorder=3)
-    a.set_xticks([0, 1]); a.set_xticklabels(["no ALD", "ALD"]); a.set_title(f"{q} at 60 GHz (fitted)", fontsize=10); a.grid(alpha=0.3, axis="y")
-fig.suptitle(f"{wafer}: fitted 60 GHz values per line, before and after 40 nm Al2O3 ({len(lines)} lines; grey lines join the same line)", fontsize=10)
+    for i, (nn, y0, y1) in enumerate(zip(lines, va, vb)):
+        c = cmap(i / (len(lines) - 1))
+        a.plot([0, 1], [y0, y1], color=c, lw=0.8, alpha=0.7, zorder=1)
+        a.scatter([0], [y0], color=c, marker="o", s=22, zorder=3, edgecolor="white", linewidth=0.5, label=nn)
+        a.scatter([1], [y1], color=c, marker="s", s=22, zorder=3, edgecolor="white", linewidth=0.5)
+    a.set_xticks([0, 1]); a.set_xticklabels(["no ALD (o)", "ALD (s)"]); a.set_title(f"{q} at 60 GHz (fitted)", fontsize=10); a.grid(alpha=0.3, axis="y")
+ax[-1].legend(fontsize=7, frameon=False, title="line", title_fontsize=8, loc="center left", bbox_to_anchor=(1.02, 0.5))
+fig.suptitle(f"{wafer}: fitted 60 GHz values per line, before and after 40 nm Al2O3 ({len(lines)} lines; each colour one line, joined before -> after)", fontsize=10)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, "boxplots_60GHz.png"), dpi=150); plt.close(fig)
 print(f"\nfigures in {OUT}")
