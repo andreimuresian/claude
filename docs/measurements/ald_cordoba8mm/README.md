@@ -25,3 +25,13 @@ Fitted curves behind the boxplots: `out_<wafer>/<n_m|Z0|alpha|S21>_fits.png` (ra
 4CA0162: alpha and S21 fits follow the data closely at 60 GHz (S21 model also reproduces the mismatch waviness);
 n_m fits within about 0.005 at 60 GHz but miss the 10-30 GHz shape of lines 00 and 04; Re Z0 fits are smooth averages
 through the pad ripple (+-1 ohm before, +-4 ohm after ALD), so the 60 GHz Z0 values carry about +-1 ohm.
+
+## Wafer 4CA0163 (`wafer_analysis.py 4CA0163`; `out_4CA0163/`, `out_4CA0163_log.txt`)
+All 30 files present (1601 points, 50 ohm, RI). ALD line 04 fails the checks (reciprocity median 4.9 %, max 35 %;
+|S21| rises from about -8 dB at 10 GHz to -4.6 dB at 16 GHz; the alpha fit collapses to a constant 7.0 dB/cm): a bad
+measurement, flagged, still in the plots. Its noALD measurement is normal.
+Medians at 60 GHz, noALD -> ALD, per-line change (all 15 / without line 04):
+n_m +0.0375 / +0.0383 (14 of 14 lines up without 04); Re Z0 +0.10 / +0.07 ohm; alpha -0.056 / -0.062 dB/cm
+(13 of 14 lines down); |S21| +0.031 / +0.035 dB.
+Comparison with 4CA0162: n_m rises by the same amount on both wafers (+0.035 / +0.038); attenuation rises on 4CA0162
+(+0.21 dB/cm, 14 of 15 lines) but falls slightly on 4CA0163 (-0.06 dB/cm, 13 of 14 lines).
