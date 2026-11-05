@@ -118,4 +118,24 @@ for a, q in zip(ax, BQ):
 ax[-1].legend(fontsize=7, frameon=False, title="line", title_fontsize=8, loc="center left", bbox_to_anchor=(1.02, 0.5))
 fig.suptitle(f"{wafer}: fitted 60 GHz values per line, before and after 40 nm Al2O3 ({len(lines)} lines; each colour one line, joined before -> after)", fontsize=10)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, "boxplots_60GHz.png"), dpi=150); plt.close(fig)
+# ---- fitted curves behind the 60 GHz values: raw (thin, light) and fitted model (thick), per line ----
+def model_curve(fit, q, fg):
+    if q == "n_m": return fit.nm(fg)
+    if q == "Re Z0 (ohm)": return np.real(fit.Zc(fg))
+    if q == "alpha (dB/cm)": return fit.alpha_dB_cm(fg)
+    return 20 * np.log10(abs(s21_model(fit, fg)))
+for q in BQ:
+    fig, ax = plt.subplots(1, 2, figsize=(13, 4.8), sharey=True)
+    for a, s in zip(ax, STATES):
+        for i, nn in enumerate(lines):
+            c = cmap(i / (len(lines) - 1)); fit = data[s][nn]["fit"]
+            a.plot(f, Q[s][nn][q], color=c, lw=0.5, alpha=0.35)
+            a.plot(f, model_curve(fit, q, f), color=c, lw=1.6, label=nn)
+            a.plot([F60], [V[s][nn][q]], "o", color=c, ms=4, mec="k", mew=0.4)
+        a.axvline(F60, color="0.5", ls=":", lw=1)
+        a.set_title(f"{wafer}, {s}: raw (thin) and fitted (thick); dots: 60 GHz values", fontsize=10)
+        a.set_xlabel("frequency (GHz)"); a.grid(alpha=0.3)
+    ax[0].set_ylabel(q + (" (fitted line, 50 ohm ends)" if q == "|S21| (dB)" else "")); ax[0].set_ylim(*ylim(q))
+    ax[1].legend(fontsize=6.5, ncol=3, frameon=False, title="line", title_fontsize=7)
+    fig.tight_layout(); fig.savefig(os.path.join(OUT, f"{fname[q]}_fits.png"), dpi=150); plt.close(fig)
 print(f"\nfigures in {OUT}")

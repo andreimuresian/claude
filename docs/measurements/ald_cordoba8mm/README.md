@@ -21,3 +21,7 @@ files pass. Figures: raw curves of all lines per state (`*_all_lines.png`), mean
 Medians noALD -> ALD at 60 GHz: n_m 2.251 -> 2.290 (+0.035), Re Z0 42.22 -> 42.17 ohm (-0.11), alpha 5.94 -> 6.19
 dB/cm (+0.21), |S21| -4.81 -> -5.04 dB (-0.18). Lines 00 and 04: much higher loss in both states (outliers, 3 MAD).
 After ALD the Re Z0 ripple (8 GHz period, pad/probe mismatch) grows from about +-1 to +-4 ohm.
+Fitted curves behind the boxplots: `out_<wafer>/<n_m|Z0|alpha|S21>_fits.png` (raw thin, fitted thick, 60 GHz dots).
+4CA0162: alpha and S21 fits follow the data closely at 60 GHz (S21 model also reproduces the mismatch waviness);
+n_m fits within about 0.005 at 60 GHz but miss the 10-30 GHz shape of lines 00 and 04; Re Z0 fits are smooth averages
+through the pad ripple (+-1 ohm before, +-4 ohm after ALD), so the 60 GHz Z0 values carry about +-1 ohm.
