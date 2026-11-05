@@ -63,3 +63,11 @@ only variant without a data-dependent branch; it differs from the extractor only
 Re Z0 as a plain average of the raw curve over whole ripple periods (10.0-42.8 GHz, 4 periods): 42.13 / 41.70 ohm
 before ALD; change -0.41 / -0.26 ohm, every line down on both wafers; shifting the band by half a period changes the
 change by <= 0.01 ohm, using 3 periods by <= 0.11 ohm.
+
+## Final FOM set and deck (2026-11-05)
+`wafer_analysis.py` now reports per line: n_m at 60 GHz (fit), Re Z0 averaged over 10.0-42.8 GHz (raw, 4 ripple periods),
+alpha at 30 and 60 GHz (extractor fit a sqrt f + b f + c with a, b >= 0, kept: equivalent to one bounded fit on every
+file), |S21| at 30 and 60 GHz from the fitted line; summary with and without the high-loss lines 00, 04 of 4CA0162
+(`summary_FOM.csv`); line-mean curves with the mean of the per-line fits (`mean_fit_panel.png`). Both wafers:
+`compare_wafers.py` -> `compare_wafers.png/.csv`. Deck: `ALD_RF_impact.pptx` (9 slides, company template), built by
+`deck/build_ald_deck.py`; cross-section sketch `cordoba_cross_section_ald.png` (from the user).

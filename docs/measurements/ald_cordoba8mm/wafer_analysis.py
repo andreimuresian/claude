@@ -10,12 +10,15 @@ Figures (in out_<wafer>/):
     alpha (dB/cm), |S11| (dB), |S21| (dB).
  2. <q>_mean.png      : at each frequency, the plain mean over the 15 lines of the raw quantity (dB values for S11
     and S21), noALD vs ALD in one graph; shaded band = +-1 standard deviation across lines.
- 3. boxplots_60GHz.png : one value per line and state at 60 GHz from the fitted line model: n_m, Re Z0, alpha from
-    the fits; S21 synthesised from the fitted line (gamma = alpha + j 2 pi f n_m / c, fitted Zc, L = 8 mm) between
-    50 ohm source and load. Box: median and quartiles; whiskers: 1.5 x IQR; each line as a dot, before and after
-    joined.
+ 3. <q>_mean_fit.png and mean_fit_panel.png: line mean of the raw curve (thin) and line mean of the per-line fitted
+    curves (thick); for Re Z0 the band average 10.0-42.8 GHz (4 pad-ripple periods) instead of a fit.
+ 4. boxplots_FOM.png: one value per line and state: n_m at 60 GHz (fit); Re Z0 averaged over 10.0-42.8 GHz (raw);
+    alpha at 30 and 60 GHz (fit a sqrt f + b f + c with a, b >= 0, the extractor's fit); |S21| at 30 and 60 GHz
+    synthesised from the fitted line (gamma = alpha + j 2 pi f n_m / c, fitted Zc, L = 8 mm) between 50 ohm ends.
+    Box: median and quartiles; whiskers: 1.5 x IQR; each line a colour, before (o) and after (s) joined.
+ 5. <q>_fits.png: per-line raw and fitted curves (reference).
 Also: file checks (reciprocity |S21 - S12|, passivity |S11|^2 + |S21|^2), lines outside median +- 3 MAD flagged,
-and a CSV of the 60 GHz values.
+values_FOM.csv (per line), summary_FOM.csv (median change, all lines and without the TOXIC lines).
 """
 import os, sys, glob, re, csv
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -85,62 +88,104 @@ for q in QN:
     ax.set_title(f"{wafer}: {q}, mean over lines at each frequency (band: +-1 std across lines)", fontsize=10)
     ax.legend(frameon=False, fontsize=8); fig.tight_layout(); fig.savefig(os.path.join(OUT, f"{fname[q]}_mean.png"), dpi=150); plt.close(fig)
 
-# ---- fitted values at 60 GHz ----
+# ---- figures of merit per line ----
+ZB = (10.0, 42.8)                       # 4 periods of the pad ripple c / (2 n L) ~ 8.2 GHz
+TOXIC = {"4CA0162": ["00", "04"]}       # consistent high-loss lines (decided with the user); 4CA0163 04 excluded above
 def s21_model(fit, fg):
     a_np = fit.alpha_dB_cm(fg) * 100 / 8.686; b = 2 * np.pi * fg * 1e9 * fit.nm(fg) / C0
     g = (a_np + 1j * b) * L_MM * 1e-3; zc = fit.Zc(fg)
     return 2 / (2 * np.cosh(g) + (zc / Z_REF + Z_REF / zc) * np.sinh(g))
+zb = (f >= ZB[0]) & (f <= ZB[1])
+FOM = ["n_m @ 60 GHz", "Re Z0 (ohm), 10-43 GHz avg", "alpha (dB/cm) @ 30 GHz", "alpha (dB/cm) @ 60 GHz",
+       "|S21| (dB) @ 30 GHz", "|S21| (dB) @ 60 GHz"]
 V = {s: {} for s in STATES}
 for s in STATES:
     for nn in lines:
         fit = data[s][nn]["fit"]
-        V[s][nn] = {"n_m": float(fit.nm(F60)), "Re Z0 (ohm)": float(np.real(fit.Zc(F60))),
-                    "alpha (dB/cm)": float(fit.alpha_dB_cm(F60)), "|S21| (dB)": float(20 * np.log10(abs(s21_model(fit, F60))))}
-BQ = ["n_m", "Re Z0 (ohm)", "alpha (dB/cm)", "|S21| (dB)"]
-with open(os.path.join(OUT, "values_60GHz.csv"), "w", newline="") as fh:
-    w = csv.writer(fh); w.writerow(["line", "state"] + BQ)
+        V[s][nn] = dict(zip(FOM, [float(fit.nm(60.0)), float(np.mean(Q[s][nn]["Re Z0 (ohm)"][zb])),
+                                  float(fit.alpha_dB_cm(30.0)), float(fit.alpha_dB_cm(60.0)),
+                                  float(20 * np.log10(abs(s21_model(fit, 30.0)))), float(20 * np.log10(abs(s21_model(fit, 60.0))))]))
+with open(os.path.join(OUT, "values_FOM.csv"), "w", newline="") as fh:
+    w = csv.writer(fh); w.writerow(["line", "state"] + FOM)
     for s in STATES:
         for nn in lines:
-            w.writerow([nn, s] + [f"{V[s][nn][q]:.5g}" for q in BQ])
-print("\nFitted values at 60 GHz: median noALD -> ALD (median of per-line change); lines outside median +- 3 MAD")
-for q in BQ:
-    a = np.array([V["noALD"][nn][q] for nn in lines]); b = np.array([V["ALD"][nn][q] for nn in lines])
-    out = []
-    for s, v in (("noALD", a), ("ALD", b)):
-        mad = np.median(abs(v - np.median(v))) * 1.4826
-        out += [f"{s} {lines[i]}" for i in np.where(abs(v - np.median(v)) > 3 * mad)[0]] if mad > 0 else []
-    print(f"  {q:14s} {np.median(a):9.4f} -> {np.median(b):9.4f}  (change {np.median(b - a):+.4f})  outliers: {', '.join(out) or 'none'}")
-fig, ax = plt.subplots(1, 4, figsize=(16.5, 4.8))
-for a, q in zip(ax, BQ):
+            w.writerow([nn, s] + [f"{V[s][nn][q]:.6g}" for q in FOM])
+sets = {"all": lines}
+if TOXIC.get(wafer):
+    sets["without " + ",".join(TOXIC[wafer])] = [x for x in lines if x not in TOXIC[wafer]]
+print("\nFigures of merit: median noALD -> ALD, median per-line change, lines up; outliers (median +- 3 MAD)")
+with open(os.path.join(OUT, "summary_FOM.csv"), "w", newline="") as fh:
+    w = csv.writer(fh); w.writerow(["set", "n", "FOM", "median_noALD", "median_ALD", "median_change", "IQR_change_lo", "IQR_change_hi", "lines_up"])
+    for sn, ls in sets.items():
+        print(f"  [{sn}: {len(ls)} lines]")
+        for q in FOM:
+            a = np.array([V["noALD"][nn][q] for nn in ls]); b = np.array([V["ALD"][nn][q] for nn in ls]); d = b - a
+            out = []
+            for st, v in (("noALD", a), ("ALD", b)):
+                mad = np.median(abs(v - np.median(v))) * 1.4826
+                out += [f"{st} {ls[i]}" for i in np.where(abs(v - np.median(v)) > 3 * mad)[0]] if mad > 0 else []
+            q1, q3 = np.percentile(d, [25, 75])
+            print(f"    {q:28s} {np.median(a):9.4f} -> {np.median(b):9.4f}  change {np.median(d):+.4f} [{q1:+.4f},{q3:+.4f}]"
+                  f"  up {np.sum(d > 0)}/{len(d)}  outliers: {', '.join(out) or 'none'}")
+            w.writerow([sn, len(ls), q, f"{np.median(a):.6g}", f"{np.median(b):.6g}", f"{np.median(d):.6g}", f"{q1:.6g}", f"{q3:.6g}", int(np.sum(d > 0))])
+fig, ax = plt.subplots(2, 3, figsize=(14, 8.4)); ax = ax.ravel()
+for a, q in zip(ax, FOM):
     va = [V["noALD"][nn][q] for nn in lines]; vb = [V["ALD"][nn][q] for nn in lines]
     a.boxplot([va, vb], positions=[0, 1], widths=0.45, showfliers=False, medianprops=dict(color="k"))
-    for i, (nn, y0, y1) in enumerate(zip(lines, va, vb)):
+    for nn, y0, y1 in zip(lines, va, vb):
         c = cmap(int(nn) / 14)
         a.plot([0, 1], [y0, y1], color=c, lw=0.8, alpha=0.7, zorder=1)
         a.scatter([0], [y0], color=c, marker="o", s=22, zorder=3, edgecolor="white", linewidth=0.5, label=nn)
         a.scatter([1], [y1], color=c, marker="s", s=22, zorder=3, edgecolor="white", linewidth=0.5)
-    a.set_xticks([0, 1]); a.set_xticklabels(["no ALD (o)", "ALD (s)"]); a.set_title(f"{q} at 60 GHz (fitted)", fontsize=10); a.grid(alpha=0.3, axis="y")
-ax[-1].legend(fontsize=7, frameon=False, title="line", title_fontsize=8, loc="center left", bbox_to_anchor=(1.02, 0.5))
-fig.suptitle(f"{wafer}: fitted 60 GHz values per line, before and after 40 nm Al2O3 ({len(lines)} lines; each colour one line, joined before -> after)", fontsize=10)
-fig.tight_layout(); fig.savefig(os.path.join(OUT, "boxplots_60GHz.png"), dpi=150); plt.close(fig)
-# ---- fitted curves behind the 60 GHz values: raw (thin, light) and fitted model (thick), per line ----
+    a.set_xticks([0, 1]); a.set_xticklabels(["no ALD (o)", "ALD (s)"]); a.set_title(q, fontsize=10.5); a.grid(alpha=0.3, axis="y")
+ax[2].legend(fontsize=7, frameon=False, title="line", title_fontsize=8, loc="center left", bbox_to_anchor=(1.02, 0.5))
+fig.suptitle(f"{wafer}: per-line figures of merit before and after 40 nm Al2O3 ({len(lines)} lines)", fontsize=11)
+fig.tight_layout(); fig.savefig(os.path.join(OUT, "boxplots_FOM.png"), dpi=150); plt.close(fig)
+old = os.path.join(OUT, "boxplots_60GHz.png")
+if os.path.exists(old): os.remove(old)
+old = os.path.join(OUT, "values_60GHz.csv")
+if os.path.exists(old): os.remove(old)
+
+# ---- line mean of the raw curves with the line mean of the per-line fits ----
 def model_curve(fit, q, fg):
     if q == "n_m": return fit.nm(fg)
     if q == "Re Z0 (ohm)": return np.real(fit.Zc(fg))
     if q == "alpha (dB/cm)": return fit.alpha_dB_cm(fg)
     return 20 * np.log10(abs(s21_model(fit, fg)))
-for q in BQ:
+MQ = ["n_m", "Re Z0 (ohm)", "alpha (dB/cm)", "|S21| (dB)"]
+def mean_fit(a, q, legend=True):
+    for s in STATES:
+        R = np.array([Q[s][nn][q] for nn in lines]).mean(0)
+        a.plot(f, R, color=COL[s], lw=0.8, alpha=0.55, label=f"{s}: line mean (raw)")
+        if q == "Re Z0 (ohm)":
+            v = np.mean([V[s][nn][FOM[1]] for nn in lines])
+            a.plot(ZB, [v, v], color=COL[s], lw=2.6, label=f"{s}: mean over 10-43 GHz = {v:.2f}")
+        else:
+            M = np.array([model_curve(data[s][nn]["fit"], q, f) for nn in lines]).mean(0)
+            a.plot(f, M, color=COL[s], lw=2.2, ls="--", label=f"{s}: line mean of the fits")
+            for fe in ((60.0,) if q == "n_m" else (30.0, 60.0)):
+                i = np.argmin(abs(f - fe)); a.plot([f[i]], [M[i]], "o", color=COL[s], ms=6, mec="k", mew=0.6)
+    a.set_ylim(*ylim(q)); a.set_xlabel("frequency (GHz)"); a.set_ylabel(q); a.grid(alpha=0.3)
+    if legend: a.legend(frameon=False, fontsize=7.5)
+for q in MQ:
+    fig, a = plt.subplots(figsize=(8, 4.4)); mean_fit(a, q)
+    a.set_title(f"{wafer}: {q}, mean over {len(lines)} lines; dots: evaluation points", fontsize=10)
+    fig.tight_layout(); fig.savefig(os.path.join(OUT, f"{fname[q]}_mean_fit.png"), dpi=150); plt.close(fig)
+fig, ax = plt.subplots(2, 2, figsize=(12, 7.6))
+for a, q in zip(ax.ravel(), MQ):
+    mean_fit(a, q); a.set_title(q, fontsize=10.5)
+fig.suptitle(f"{wafer}: mean over {len(lines)} lines, raw (thin) and fitted (thick); dots: values used in the boxplots", fontsize=11)
+fig.tight_layout(); fig.savefig(os.path.join(OUT, "mean_fit_panel.png"), dpi=150); plt.close(fig)
+
+# ---- per-line fitted curves (reference) ----
+for q in MQ:
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.8), sharey=True)
     for a, s in zip(ax, STATES):
-        for i, nn in enumerate(lines):
+        for nn in lines:
             c = cmap(int(nn) / 14); fit = data[s][nn]["fit"]
             a.plot(f, Q[s][nn][q], color=c, lw=0.5, alpha=0.35)
             a.plot(f, model_curve(fit, q, f), color=c, lw=1.6, label=nn)
-            a.plot([F60], [V[s][nn][q]], "o", color=c, ms=4, mec="k", mew=0.4)
-        a.axvline(F60, color="0.5", ls=":", lw=1)
-        a.set_title(f"{wafer}, {s}: raw (thin) and fitted (thick); dots: 60 GHz values", fontsize=10)
-        a.set_xlabel("frequency (GHz)"); a.grid(alpha=0.3)
-    ax[0].set_ylabel(q + (" (fitted line, 50 ohm ends)" if q == "|S21| (dB)" else "")); ax[0].set_ylim(*ylim(q))
-    ax[1].legend(fontsize=6.5, ncol=3, frameon=False, title="line", title_fontsize=7)
+        a.set_title(f"{wafer}, {s}: raw (thin) and fitted (thick)", fontsize=10); a.set_xlabel("frequency (GHz)"); a.grid(alpha=0.3)
+    ax[0].set_ylabel(q); ax[0].set_ylim(*ylim(q)); ax[1].legend(fontsize=6.5, ncol=3, frameon=False, title="line", title_fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(OUT, f"{fname[q]}_fits.png"), dpi=150); plt.close(fig)
 print(f"\nfigures in {OUT}")

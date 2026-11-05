@@ -31,10 +31,13 @@ File checks: |S21 - S12| / |S21| (reciprocity: median over 0.5-60 GHz and max), 
   ALD   13: reciprocity median 0.007, max 0.126; passivity 0.919
   ALD   14: reciprocity median 0.008, max 0.142; passivity 0.919
 
-Fitted values at 60 GHz: median noALD -> ALD (median of per-line change); lines outside median +- 3 MAD
-  n_m               2.2632 ->    2.2989  (change +0.0382)  outliers: noALD 00, ALD 00
-  Re Z0 (ohm)      41.3800 ->   41.6810  (change +0.0667)  outliers: noALD 00, noALD 08
-  alpha (dB/cm)     5.8082 ->    5.7426  (change -0.0618)  outliers: none
-  |S21| (dB)       -4.7288 ->   -4.6808  (change +0.0348)  outliers: none
+Figures of merit: median noALD -> ALD, median per-line change, lines up; outliers (median +- 3 MAD)
+  [all: 14 lines]
+    n_m @ 60 GHz                    2.2632 ->    2.2989  change +0.0382 [+0.0359,+0.0400]  up 14/14  outliers: noALD 00, ALD 00
+    Re Z0 (ohm), 10-43 GHz avg     41.7005 ->   41.4925  change -0.2632 [-0.3490,-0.2029]  up 0/14  outliers: noALD 00, noALD 08, ALD 00
+    alpha (dB/cm) @ 30 GHz          4.0777 ->    4.1655  change +0.0576 [+0.0482,+0.0792]  up 14/14  outliers: none
+    alpha (dB/cm) @ 60 GHz          5.8082 ->    5.7426  change -0.0618 [-0.0918,-0.0358]  up 1/14  outliers: none
+    |S21| (dB) @ 30 GHz            -3.3535 ->   -3.4115  change -0.0387 [-0.0631,-0.0282]  up 1/14  outliers: none
+    |S21| (dB) @ 60 GHz            -4.7288 ->   -4.6808  change +0.0348 [+0.0210,+0.0603]  up 11/14  outliers: none
 
 figures in /home/user/claude/docs/measurements/ald_cordoba8mm/out_4CA0163
