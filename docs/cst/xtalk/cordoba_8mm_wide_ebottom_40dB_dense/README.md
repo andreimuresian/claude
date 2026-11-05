@@ -27,3 +27,15 @@ grids checked (1 x 9 x 1601, x 0.001, both gap columns live); unpacked to `unpac
   (n 3.12: 143 ps) or A vs B back (n 2.90: 137 ps); above ~35 GHz their delay drops to ~0 (direct launch dominates).
   Backward B coefficients: delay 7-17 ps, phase within 4-18 deg of a straight line at 20-50 GHz. The magnitudes dip
   every ~7 GHz: beat of a direct and a round-trip contribution (1/143 ps = 7.0 GHz), the period of the EO ripple.
+
+## End-scattering model on the dense data (`dense_endmodel.py`, `dense_endmodel.log`)
+Band 20-40 GHz (21 frequencies). Pre-registered tests: A = train every 2 GHz, predict the odd GHz, success if median EO
+complex error < 0.3; B = train every 4 GHz, success if < 0.3 and < half the spline error. The polynomial order K was not
+fixed in advance; three were run.
+| K | fit on all 21: median EO error | test A model (spline) | test B model (spline) |
+|---|---|---|---|
+| 0 | 0.31 | 0.37 (0.43) fail | 0.72 (1.46) fail |
+| 1 | 0.20 | 0.22 (0.43) pass | 0.50 (1.46) fail |
+| 2 | 0.13 | 0.37 (0.43) fail | 1.68 (1.46) fail |
+One pass in six tests, at the order that happened to work: not evidence of a predictive model. The model describes the
+dense data (K = 2: EO within ~1 dB at most frequencies) but does not predict reliably from sparser sampling than 1-2 GHz.
