@@ -45,3 +45,15 @@ So ALD raises the attenuation on both wafers; the size differs (about 2x at 10 G
 on 4CA0163 (-0.06 dB/cm) comes from the top of the band, where the change is within the ripple (fitted change crosses
 zero near 45 GHz). Both wafers: |S21| at 1-5 GHz drops after ALD on every line (-0.16 / -0.11 dB); Z0 ripple grows
 the same way (0.6 -> 2.3 ohm std), mean |S11| unchanged, n_m +0.036 / +0.038.
+
+## Fit reliability check (`fit_check.py`, `fit_check.log`)
+Criteria fixed before computing (wafer agreement is not one): (a) stability = change of the value when the fit stops
+at 50 GHz; (b) bias = raw median near the evaluation frequency minus the fit; (c) same behaviour in all four groups.
+* alpha, extractor fit (A0): its automatic sign-constrained refit triggers 3/15 (4CA0162 noALD), 6/15 (4CA0162 ALD),
+  0/14, 0/14 (4CA0163): the fit does not behave the same way in all groups (fails c). Unconstrained robust
+  a sqrt f + b f + c (A1): same model without the branch. At 30-40 GHz both: stability <= 0.022, bias within +-0.02
+  dB/cm in every group; at 60 GHz: stability 0.03-0.07, bias -0.06..-0.09 dB/cm in every group. Without the constant
+  (A2): bias up to -0.13 and stability up to 0.21 dB/cm: rejected.
+* n_m, extractor saturating fit (N0): stability <= 0.002, bias <= 0.004 at 20-60 GHz in every group: reliable at 60 GHz.
+* Re Z0 (kept as is): stability 0.07-0.5 ohm; local bias -2.2..+4.2 ohm after ALD at 30-60 GHz (the pad ripple): the
+  change in Z0 is not resolved below about 0.5 ohm, and its sign changes with the evaluation frequency.
