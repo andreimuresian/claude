@@ -16,10 +16,10 @@ def draw(ax, xl, yl):
             for r in q.interiors: ax.add_patch(plt.Polygon(np.asarray(r.coords), fc="white", ec="#333", lw=0.5))
     ax.set_xlim(*xl); ax.set_ylim(*yl); ax.set_aspect("equal"); ax.set_xlabel("x (µm)")
 xs, xgi, xgo, yel = g["x_sig"], g["x_gi"], g["x_go"], g["y_el"]
-fig = plt.figure(figsize=(15, 8.5)); gs = fig.add_gridspec(2, 2, height_ratios=[1, 1.25])
-a = fig.add_subplot(gs[0, :]); draw(a, (-xgo - 6, xgo + 6), (-1.5, 4)); a.set_aspect("auto")
-a.set_title("Cordoba push-pull (GSG), full electrodes: signal 35 µm, gaps 4.15 µm, grounds 49.85 µm, gold 2 µm")
-for x0, x1, t in ((-xs, xs, "signal"), (xgi, xgo, "ground"), (-xgo, -xgi, "ground")): a.text((x0 + x1) / 2, yel + 0.6, t, ha="center")
+fig = plt.figure(figsize=(16, 8.2)); gs = fig.add_gridspec(2, 2, height_ratios=[0.55, 1.25])
+a = fig.add_subplot(gs[0, :]); draw(a, (-xgo - 6, xgo + 6), (-4.7, 5))
+a.set_title("True 1:1 scale — Cordoba push-pull (GSG), full electrodes: signal 35 µm, gaps 4.15 µm, grounds 49.85 µm, gold 2 µm")
+for x0, x1, t in ((-xs, xs, "signal"), (xgi, xgo, "ground"), (-xgo, -xgi, "ground")): a.text((x0 + x1) / 2, yel + 0.8, t, ha="center")
 b = fig.add_subplot(gs[1, 0]); draw(b, (xs - 1.0, xgi + 1.0), (-0.6, yel + 0.8))
 b.set_title("One gap: rib 1.0 µm (540/270 nm LN), SiO₂ cap 2.0 × 1.4 µm, 40 nm ALD (pink)")
 for x0, t in ((xs - 0.9, "signal"), (xgi + 0.1, "ground")): b.text(x0, 1.3, t)
@@ -29,5 +29,5 @@ c.set_title("Zoom: ground inner corner — ALD on the gold wall and on the LN sl
 c.annotate("40 nm ALD", (xgi - 0.02, g["slab_h"] + 0.25), (xgi - 0.4, g["slab_h"] + 0.33), arrowprops=dict(arrowstyle="->"), fontsize=10)
 c.text(xgi + 0.05, g["slab_h"] + 0.15, "gold"); c.text(xgi - 0.4, g["slab_h"] - 0.08, "LN slab")
 from matplotlib.patches import Patch
-a.legend(handles=[Patch(color=COL[m], label=l) for m, l in (("Au", "gold"), ("LN", "LN"), ("SiO₂" and "SiO2", "SiO₂"), ("Al2O3", "ALD Al₂O₃ 40 nm"))], loc="lower right", ncol=4, fontsize=9)
+a.legend(handles=[Patch(color=COL[m], label=l) for m, l in (("Au", "gold"), ("LN", "LN"), ("SiO₂" and "SiO2", "SiO₂"), ("Al2O3", "ALD Al₂O₃ 40 nm"))], loc="upper center", bbox_to_anchor=(0.5, -0.35), ncol=4, fontsize=9)
 plt.tight_layout(); plt.savefig("cordoba_ALD40_sketch.png", dpi=150); print("ok")
