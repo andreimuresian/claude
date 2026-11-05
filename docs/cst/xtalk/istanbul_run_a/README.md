@@ -29,3 +29,9 @@ FEXT -27.9 dB (46 GHz), EO -30.9 dB (46 GHz). EO - FEXT median -2.6 dB (5-95 % -
 curves with FEXT 0.91, with NEXT 0.74. CORDOBA dense run EO: median -66.7 dB, max -63.2 dB, i.e. about 30 dB lower.
 Caveat: B sampled at 5 um, A at 7.5 um from the line centre; the EO level may carry a bias of unknown size. Re-export
 of B with y -0.6325..-0.6175 (export only, no new run) removes it.
+
+## Line B re-exported as txt (2026-11-05, `e-field (f=1) [1]_lineB_txt.zip`)
+Export dialog (user's screenshot): x 0.001275, y -0.6325..-0.6175, z 0.3..9.05, step 0.005, uniform sampling. The txt
+file has the same grid as the CSV (y -0.63..-0.615, z 0.3025..9.0525) and identical values (difference 0 at 5, 30,
+60 GHz): the format is not the cause; CST places the grid differently from the dialog values. Next: pointlist export
+(`pointlist_B_gaps.txt`).
