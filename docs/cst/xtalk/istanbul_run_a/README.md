@@ -1,4 +1,4 @@
-# Istanbul TD run (a): line only
+# Istanbul TD run (a): bare lines (no termination, no pads); both lines A and B
 
 Upload here the zipped exports of run (a).
 
