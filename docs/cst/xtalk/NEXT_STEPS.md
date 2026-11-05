@@ -26,3 +26,11 @@ templates (A_, B_ prefixes, standard gap boxes, step 0.005), excitation [1].
 On arrival: (1) check grid and which x plane the 2D monitor used; (2) dense EO 1-60 GHz; (3) third accuracy level at
 5, 10, ... 60 GHz vs the -27 and -44.5 dB runs: test of the error-scales-with-amplitude assumption; (4) six-mode fits
 with index corrections at 60 frequencies, end-model test; (5) EO ripple period vs c/((n_opt + n_wave) L).
+
+## 2026-11-05: Istanbul TD runs (a: line only; b: + real termination; c: + input pads; d: full module)
+Geometry (user): pitch 625 um; line A centred at y = 0, line B at y = -0.625 mm; signal 9.7 um, gaps 4.5 um, outer gap
+edges +-0.00935 mm (B: -0.63435, -0.61565); electrodes from x = slab_h = 0.000275 mm, 2 um thick (to 0.002275);
+line length 8.75 mm. Gap centres: A y = +-0.0071; B y = -0.6321, -0.6179.
+Monitors: 60 E-field subvolume monitors 1-60 GHz, x 0.000275..0.002275, y -0.645..0.015, z 0..8.75 (VBA loop).
+Exports: one line per gap (y min = max = gap centre), x 0.001275, z 0..8.75, step 0.005 (1751 points): the 4.5 um gaps
+cannot be hit by a common-step box spanning both gaps of a line (0.0142 mm is not a multiple of 0.005).
