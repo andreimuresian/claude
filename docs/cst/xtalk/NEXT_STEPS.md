@@ -45,4 +45,5 @@ Differences: substrate y -1.0595..0.5175 is not centred on the line pair (outer 
 (CORDOBA 50), no LN mesh group (CORDOBA 8 steps); substrate z faces offset (-8.865, +9.5), so the substrate may extend
 past the line ends (CORDOBA ports sit on the substrate end faces): to be confirmed in the GUI; SUBSTRATE:solid5_1 (Si
 copy) never deleted in the history.
-Exports: AL_ y -0.0071, AR_ y +0.0071, BL_ y -0.6321, BR_ y -0.6179; all x 0.001275, z 0.3..9.05, step 0.005.
+Exports (user's choice, two templates as in CORDOBA): A_ y -0.0075..0.0075, B_ y -0.6325..-0.6175; x 0.001275,
+z 0.3..9.05, step 0.005 (gap samples at +-7.5 um, 0.4 um from the gap centre). Upload folder: istanbul_a_line_only/.
