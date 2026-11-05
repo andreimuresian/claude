@@ -1,7 +1,7 @@
 """Istanbul run (a): NEXT |S31|, FEXT |S41| (port data) and EO crosstalk B/A from the gap fields (50 ohm source and
 load, push-pull, n_g 2.27: the same settings as the CORDOBA dense run, eo_vs_ports.py). Port 3 = line B near end
-(z = 0.3), port 4 = far end: port_check.py. Caveat: line B gap fields sampled 5 um from the line centre, line A 7.5 um
-(see load_fields.py), so the EO level may carry a sampling bias."""
+(z = 0.3), port 4 = far end: port_check.py. Both lines sampled 5 um from their centre (line A re-exported); the first
+line A export (7.5 um) is used only to show the size of the sampling bias."""
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.abspath(os.path.join(HERE, "../../../..")))
@@ -10,7 +10,10 @@ matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from mzm_interconnect import parameters as P, xtalk_fields as XF
 from load_fields import load
 p = P.defaults(); p["Rt_R"] = 50.0; p["Zs_R"] = 50.0
-X = XF.eo_crosstalk_fields(p, load()); f = X["f_GHz"]; eo = 20 * np.log10(abs(X["X"]))
+X = XF.eo_crosstalk_fields(p, load("A5")); f = X["f_GHz"]; eo = 20 * np.log10(abs(X["X"]))
+eo75 = 20 * np.log10(abs(XF.eo_crosstalk_fields(p, load("A7.5"))["X"]))
+print("sampling bias, EO(A at 7.5 um) - EO(A at 5 um), dB: median %+.2f, range %+.2f .. %+.2f"
+      % (np.median(eo75 - eo), (eo75 - eo).min(), (eo75 - eo).max()))
 n = rf.Network(os.path.join(HERE, "v0_istanbul_rf_line.s4p")); fs = n.f / 1e9
 dB = lambda s: 20 * np.log10(np.maximum(abs(s), 1e-12))
 nx_s, fx_s = dB(n.s[:, 2, 0]), dB(n.s[:, 3, 0])
@@ -30,6 +33,7 @@ fig, ax = plt.subplots(figsize=(8.5, 4.6))
 ax.plot(fs, nx_s, color="0.55", lw=1.0, label="NEXT |S31|")
 ax.plot(fs, fx_s, color="#eb6834", lw=1.2, label="FEXT |S41|")
 ax.plot(f, eo, "o-", color="#2a78d6", ms=3, lw=1.4, label="EO crosstalk B/A (gap fields)")
+ax.plot(f, eo75, color="#2a78d6", lw=0.8, alpha=0.45, label="EO, line A at 7.5 um (mismatched sampling)")
 ax.plot(cor[:, 0], cor[:, 3], color="#2a78d6", lw=0.9, ls=":", label="EO, CORDOBA 8 mm dense run (reference)")
 ax.set_xlim(0, 60); ax.set_ylim(-110, -20); ax.set_xlabel("frequency (GHz)"); ax.set_ylabel("dB"); ax.grid(alpha=0.3)
 ax.set_title("Istanbul run (a), 8.75 mm, 625 um pitch, -40 dB: NEXT, FEXT and EO crosstalk", fontsize=10)

@@ -35,3 +35,10 @@ Export dialog (user's screenshot): x 0.001275, y -0.6325..-0.6175, z 0.3..9.05, 
 file has the same grid as the CSV (y -0.63..-0.615, z 0.3025..9.0525) and identical values (difference 0 at 5, 30,
 60 GHz): the format is not the cause; CST places the grid differently from the dialog values. Next: pointlist export
 (`pointlist_B_gaps.txt`).
+
+## Line A re-exported at y -0.005..0.005 (`e-field (f=1) [1]_lineA_5um.zip`): matched sampling
+Grid as requested: y -0.005, 0, 0.005 (gaps at +-5 um, 0.15 um from the signal edge, as line B), z 0.3025..9.0525.
+`xtalk_run_a.py` now uses it. Sampling bias of the first EO (A at 7.5 um, B at 5 um): +2.2 dB, constant with
+frequency (+2.16 .. +2.24 dB). Results with matched sampling: NEXT max -27.0 dB (38 GHz), FEXT max -27.9 dB (46 GHz),
+EO max -33.1 dB (46 GHz); EO - FEXT median -4.8 dB (5-95 % -8.9 .. -0.7), correlation with FEXT 0.91, with NEXT 0.74.
+EO at 5/10/20/30/40/50/60 GHz: -52.5, -51.5, -40.3, -41.7, -33.5, -41.8, -35.1 dB.
