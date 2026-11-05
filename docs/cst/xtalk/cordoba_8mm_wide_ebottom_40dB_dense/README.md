@@ -39,3 +39,10 @@ fixed in advance; three were run.
 | 2 | 0.13 | 0.37 (0.43) fail | 1.68 (1.46) fail |
 One pass in six tests, at the order that happened to work: not evidence of a predictive model. The model describes the
 dense data (K = 2: EO within ~1 dB at most frequencies) but does not predict reliably from sparser sampling than 1-2 GHz.
+
+## EO vs FEXT and NEXT (`eo_vs_ports.py`, `eo_vs_fext_next.png`)
+EO - FEXT: median -6.0 dB, 5-95 % range -10.2 .. -1.6 dB, correlation of the dB curves 0.95 (NEXT 0.69). Expected for
+forward, velocity-matched coupling growing linearly along the line: the co-propagating optics reads B's average,
+half its end value (FEXT), i.e. -6 dB. Solver cost per time step: 7.04 ms (60 subvolume monitors) vs about 7.1 ms
+(12 + 12 full-volume monitors, -44.5 dB run): monitors are not the bottleneck.
+Sampling of the extraction: 1 mm block averages give the EO within 0.1 / 0.7 / 1.4 dB at 10 / 20 / 30 GHz.
