@@ -11,3 +11,13 @@ with L = 8 mm (pads included in the 2-port: they bias the absolute values the sa
   smooth fit are meaningful. n_m x Z0 (proportional to the inductance per length, which a dielectric layer does not
   change) rises by +0.7 %: mostly, but not entirely, consistent with ALD adding capacitance only.
 * alpha: +0.3..+0.5 dB/cm at 8-35 GHz (+7 %), within the noise above 40 GHz.
+
+## Wafer 4CA0162, 15 lines (`wafer_analysis.py 4CA0162`; figures in `out_4CA0162/`, log `out_4CA0162_log.txt`)
+Files: `raw/4CA0162/4CA0162_<noALD|ALD>_NN.s2p` (from `collect_ald_files.py`), all 1601 points, 50 ohm, RI.
+Checks: reciprocity |S21-S12|/|S21| median 0.6-1.0 % (max 7-16 % at the noisy top of the band), passivity <= 0.93: all
+files pass. Figures: raw curves of all lines per state (`*_all_lines.png`), mean over lines at each frequency with
++-1 std (`*_mean.png`), fitted 60 GHz values per line as boxplots with paired lines (`boxplots_60GHz.png`,
+`values_60GHz.csv`). S21 at 60 GHz is synthesised from the fitted line (alpha, n_m, Zc, L = 8 mm) between 50 ohm.
+Medians noALD -> ALD at 60 GHz: n_m 2.251 -> 2.290 (+0.035), Re Z0 42.22 -> 42.17 ohm (-0.11), alpha 5.94 -> 6.19
+dB/cm (+0.21), |S21| -4.81 -> -5.04 dB (-0.18). Lines 00 and 04: much higher loss in both states (outliers, 3 MAD).
+After ALD the Re Z0 ripple (8 GHz period, pad/probe mismatch) grows from about +-1 to +-4 ohm.
