@@ -20,12 +20,13 @@ def _read(raw: bytes):
     return np.loadtxt(io.StringIO(t), skiprows=2)
 
 
-def load(variant="A5"):
-    ZIPS = {"A": VARIANTS[variant][0], "B": B_ZIP}
+def load(variant="A5", base=HERE, a_zip=None):
+    """base: folder with the zips (run a by default; run b: ../istanbul_run_b with a_zip its line A zip, same grid)."""
+    ZIPS = {"A": a_zip or VARIANTS[variant][0], "B": B_ZIP}
     GAPS = {"A": VARIANTS[variant][1], "B": B_GAPS}
     data, z_ref = {}, None
     for line, zn in ZIPS.items():
-        with zipfile.ZipFile(os.path.join(HERE, zn)) as zf:
+        with zipfile.ZipFile(os.path.join(base, zn)) as zf:
             for name in zf.namelist():
                 f = float(re.search(r"f=(\d+(?:\.\d+)?)", name).group(1))
                 a = _read(zf.read(name))
@@ -40,4 +41,4 @@ def load(variant="A5"):
                 assert all(np.all(np.abs(c) > 0) for c in cols), (line, name)
                 data.setdefault(f, {})[line] = tuple(cols)
     fs = np.array(sorted(data))
-    return dict(f_GHz=fs, ports={f: {1: data[f]} for f in fs}, z=z_ref * 1e-3, path=HERE)
+    return dict(f_GHz=fs, ports={f: {1: data[f]} for f in fs}, z=z_ref * 1e-3, path=base)
