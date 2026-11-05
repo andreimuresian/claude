@@ -1,0 +1,2 @@
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.1, "ald": 0.04, "mtx": 2.0, "ms": 1.4, "tri": 138800, "neff": 1.8940421762279702, "IL_dBcm": 0.24760367874832984, "VpiL_Vcm": 1.8586739462688084, "gamma": 0.5101294575071651, "t_s": 883.8}
