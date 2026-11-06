@@ -247,3 +247,113 @@ RESULT {"gap": 3.8, "buf": 0.12, "ald": 0.04, "mtx": 2.0, "ms": 1.4, "tri": 1439
 RESULT {"gap": 3.9, "buf": 0.12, "ald": 0.04, "mtx": 2.0, "ms": 1.4, "tri": 144002, "neff": 1.8940874015006819, "IL_dBcm": 0.05637057499068937, "VpiL_Vcm": 2.0973425315044594, "gamma": 0.5037450745184439, "t_s": 114.9}
              ELECTRO-OPTIC SIMULATION RESULTS
 RESULT {"gap": 4.0, "buf": 0.12, "ald": 0.04, "mtx": 2.0, "ms": 1.4, "tri": 144592, "neff": 1.8940842653758632, "IL_dBcm": 0.04165308312271655, "VpiL_Vcm": 2.1495455524297458, "gamma": 0.5041141733801352, "t_s": 117.2}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.0, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 119612, "neff": 1.8932438105137388, "IL_dBcm": 3.0246966698977333, "VpiL_Vcm": 1.5858664649108192, "gamma": 0.5124720791200117, "t_s": 60.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.2, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 120316, "neff": 1.8932417291289358, "IL_dBcm": 1.670876542940907, "VpiL_Vcm": 1.6911471106756197, "gamma": 0.5126065603473885, "t_s": 60.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.3, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 120506, "neff": 1.8932441594486502, "IL_dBcm": 1.2456490605412571, "VpiL_Vcm": 1.7439260061768904, "gamma": 0.5126269748607823, "t_s": 61.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.1, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 120294, "neff": 1.8932375700314912, "IL_dBcm": 2.2352946281906556, "VpiL_Vcm": 1.638612323411247, "gamma": 0.512508469491984, "t_s": 61.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.4, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 120850, "neff": 1.8932353321525341, "IL_dBcm": 0.9285088848691322, "VpiL_Vcm": 1.7968125687120997, "gamma": 0.5126154716684528, "t_s": 59.2}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 120300, "neff": 1.89323874863418, "IL_dBcm": 0.6932925869223716, "VpiL_Vcm": 1.8496699273222783, "gamma": 0.5126127196463874, "t_s": 59.7}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.7, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121352, "neff": 1.893232596626088, "IL_dBcm": 0.38518712863578364, "VpiL_Vcm": 1.9555597435251637, "gamma": 0.5125617635446147, "t_s": 58.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.6, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121152, "neff": 1.8932460239555402, "IL_dBcm": 0.5162735412434772, "VpiL_Vcm": 1.9025894441689075, "gamma": 0.5125933733966831, "t_s": 59.5}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.8, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121702, "neff": 1.893232935215711, "IL_dBcm": 0.28676210833566335, "VpiL_Vcm": 2.0086354315734174, "gamma": 0.5125049295453181, "t_s": 61.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.9, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121888, "neff": 1.8932287164763146, "IL_dBcm": 0.21463354921807942, "VpiL_Vcm": 2.061651079247296, "gamma": 0.5124659455998494, "t_s": 61.7}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 4.0, "buf": 0.04, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 122546, "neff": 1.8932268105659467, "IL_dBcm": 0.1601914176337451, "VpiL_Vcm": 2.1146899376950286, "gamma": 0.512423291939994, "t_s": 62.3}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.0, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121432, "neff": 1.8934013067921325, "IL_dBcm": 0.969792651978985, "VpiL_Vcm": 1.6358762728936007, "gamma": 0.49680547236130146, "t_s": 71.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.1, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 120964, "neff": 1.8934075477958114, "IL_dBcm": 0.7166329751270344, "VpiL_Vcm": 1.6884760306801587, "gamma": 0.49737318072789544, "t_s": 71.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.2, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121082, "neff": 1.8934197194954698, "IL_dBcm": 0.530424186894686, "VpiL_Vcm": 1.7410217497282992, "gamma": 0.49792204122673356, "t_s": 73.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.3, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121616, "neff": 1.8934279724411176, "IL_dBcm": 0.3936585022780315, "VpiL_Vcm": 1.7935708879615126, "gamma": 0.49843779185308074, "t_s": 73.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.4, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 121648, "neff": 1.8934253653464643, "IL_dBcm": 0.2917999680374098, "VpiL_Vcm": 1.8463828713991037, "gamma": 0.49885315590704643, "t_s": 75.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 122574, "neff": 1.8934261164172874, "IL_dBcm": 0.21684190612474727, "VpiL_Vcm": 1.8990938876058288, "gamma": 0.49927196231890963, "t_s": 74.3}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.6, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 122120, "neff": 1.8934358296568374, "IL_dBcm": 0.16072462544333985, "VpiL_Vcm": 1.9520585525763499, "gamma": 0.49960322147525127, "t_s": 72.6}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.7, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 123130, "neff": 1.8934294611712081, "IL_dBcm": 0.11963535486889729, "VpiL_Vcm": 2.0048978203969297, "gamma": 0.49994824706810637, "t_s": 72.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.8, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 122586, "neff": 1.8934255848334915, "IL_dBcm": 0.08882758528720264, "VpiL_Vcm": 2.057872080633615, "gamma": 0.50024273618786, "t_s": 73.3}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.9, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 122658, "neff": 1.8934252810767758, "IL_dBcm": 0.0660817731489146, "VpiL_Vcm": 2.1107654733192818, "gamma": 0.5005416201743991, "t_s": 73.7}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 4.0, "buf": 0.06, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 123110, "neff": 1.8934203058974977, "IL_dBcm": 0.04919674536565021, "VpiL_Vcm": 2.1636486264413475, "gamma": 0.5008282611434655, "t_s": 75.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.0, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 125518, "neff": 1.89367310238868, "IL_dBcm": 0.4820232019822723, "VpiL_Vcm": 1.7155949732338471, "gamma": 0.47372036941074225, "t_s": 89.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.1, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 125062, "neff": 1.893693002993864, "IL_dBcm": 0.3540737114837962, "VpiL_Vcm": 1.767914497505647, "gamma": 0.4750244964601404, "t_s": 89.7}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.2, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 125186, "neff": 1.8937046985296038, "IL_dBcm": 0.26092549899074624, "VpiL_Vcm": 1.8201782789443586, "gamma": 0.4762682389263662, "t_s": 90.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.3, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 125746, "neff": 1.8937151656353137, "IL_dBcm": 0.19229866933443296, "VpiL_Vcm": 1.8726440528832993, "gamma": 0.4773910511989955, "t_s": 92.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.4, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 125618, "neff": 1.893712323451004, "IL_dBcm": 0.14202081725717303, "VpiL_Vcm": 1.9251773793795945, "gamma": 0.4784358741566875, "t_s": 92.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 126566, "neff": 1.8937110245528463, "IL_dBcm": 0.10504552221512357, "VpiL_Vcm": 1.9776274521568267, "gamma": 0.47944537322169967, "t_s": 91.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.6, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 126148, "neff": 1.8937274131976558, "IL_dBcm": 0.07761607708759861, "VpiL_Vcm": 2.0303741128053363, "gamma": 0.48033253341078425, "t_s": 93.5}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.7, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 127168, "neff": 1.8937211564536862, "IL_dBcm": 0.05746833919998592, "VpiL_Vcm": 2.0829571209165865, "gamma": 0.48121257072110984, "t_s": 89.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.8, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 126640, "neff": 1.8937174320444103, "IL_dBcm": 0.042522668554678615, "VpiL_Vcm": 2.135682197830972, "gamma": 0.48201720339583887, "t_s": 90.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.9, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 126666, "neff": 1.893716588967724, "IL_dBcm": 0.031491509943551536, "VpiL_Vcm": 2.1883807729532565, "gamma": 0.482788910815377, "t_s": 89.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 4.0, "buf": 0.1, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 127230, "neff": 1.893714640972915, "IL_dBcm": 0.023328062445605872, "VpiL_Vcm": 2.2411903194303116, "gamma": 0.4835003836628707, "t_s": 91.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.0, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 130548, "neff": 1.893782653992345, "IL_dBcm": 0.3946493394924762, "VpiL_Vcm": 1.7496391109411955, "gamma": 0.46450281054952103, "t_s": 107.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.1, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 130070, "neff": 1.8938059830038818, "IL_dBcm": 0.289641849012029, "VpiL_Vcm": 1.8016773883288022, "gamma": 0.4661226806765808, "t_s": 107.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.2, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 130278, "neff": 1.8938159692815744, "IL_dBcm": 0.21336271720645178, "VpiL_Vcm": 1.853897287554369, "gamma": 0.4676057887696923, "t_s": 106.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.3, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 130798, "neff": 1.8938221057620093, "IL_dBcm": 0.1572047040552555, "VpiL_Vcm": 1.9060437920298097, "gamma": 0.469025694302371, "t_s": 115.2}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.4, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 130826, "neff": 1.893822034962199, "IL_dBcm": 0.11562448382030624, "VpiL_Vcm": 1.9585857761948569, "gamma": 0.47027499821816376, "t_s": 110.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 131712, "neff": 1.8938215438069728, "IL_dBcm": 0.08534822962158983, "VpiL_Vcm": 2.0109574039962506, "gamma": 0.4714989636322385, "t_s": 110.8}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.6, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 131298, "neff": 1.8938370742335755, "IL_dBcm": 0.06300784028274076, "VpiL_Vcm": 2.0635095721276153, "gamma": 0.4726194414353543, "t_s": 107.0}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.7, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 132298, "neff": 1.8938259113434806, "IL_dBcm": 0.04668479718912412, "VpiL_Vcm": 2.1160180802806785, "gamma": 0.47369403891159406, "t_s": 109.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.8, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 131704, "neff": 1.893826401861911, "IL_dBcm": 0.0345302356933927, "VpiL_Vcm": 2.1684596720620886, "gamma": 0.47473124522616833, "t_s": 108.5}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.9, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 131828, "neff": 1.8938247801571184, "IL_dBcm": 0.025486058357499813, "VpiL_Vcm": 2.221303600089359, "gamma": 0.4756333036964932, "t_s": 107.8}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 4.0, "buf": 0.12, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 132320, "neff": 1.8938242610202565, "IL_dBcm": 0.01884254637675118, "VpiL_Vcm": 2.2740208948277454, "gamma": 0.47651997471560176, "t_s": 108.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.0, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 135018, "neff": 1.8939340028498106, "IL_dBcm": 0.2850187513421982, "VpiL_Vcm": 1.8108498071488641, "gamma": 0.4488015965052037, "t_s": 124.8}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.1, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 134546, "neff": 1.8939477387536918, "IL_dBcm": 0.20868523871434505, "VpiL_Vcm": 1.8625704470429154, "gamma": 0.4508837210938806, "t_s": 123.8}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.2, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 134648, "neff": 1.8939610849585682, "IL_dBcm": 0.15314389208174123, "VpiL_Vcm": 1.9144970027607164, "gamma": 0.45280462815809513, "t_s": 123.7}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.3, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 135252, "neff": 1.8939726106898014, "IL_dBcm": 0.11245685498252951, "VpiL_Vcm": 1.9665064086535935, "gamma": 0.45460493237832295, "t_s": 122.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.4, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 135146, "neff": 1.8939693151719816, "IL_dBcm": 0.08294265970628027, "VpiL_Vcm": 2.0183967396067515, "gamma": 0.4563393828061831, "t_s": 121.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 136182, "neff": 1.893969667291286, "IL_dBcm": 0.0609338295568344, "VpiL_Vcm": 2.0707034419345507, "gamma": 0.4578947968555981, "t_s": 120.2}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.6, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 135674, "neff": 1.8939837149283425, "IL_dBcm": 0.04495507000841246, "VpiL_Vcm": 2.1230064585427555, "gamma": 0.45937436386551617, "t_s": 119.4}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.7, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 136806, "neff": 1.8939805913725922, "IL_dBcm": 0.03315603219543283, "VpiL_Vcm": 2.1753097973652777, "gamma": 0.4607827133735833, "t_s": 120.3}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.8, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 136244, "neff": 1.893971219599287, "IL_dBcm": 0.02446448224612546, "VpiL_Vcm": 2.2277029329742786, "gamma": 0.4621063002176556, "t_s": 121.7}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.9, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 136220, "neff": 1.8939761574423464, "IL_dBcm": 0.018061786438206905, "VpiL_Vcm": 2.280144234323896, "gamma": 0.4633592708387128, "t_s": 124.1}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 4.0, "buf": 0.16, "ald": 0.0, "mtx": 2.0, "ms": 1.4, "tri": 136814, "neff": 1.8939715294584698, "IL_dBcm": 0.013350833098678218, "VpiL_Vcm": 2.33241803316099, "gamma": 0.4645892648315299, "t_s": 135.1}
