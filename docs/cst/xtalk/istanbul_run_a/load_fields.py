@@ -20,8 +20,11 @@ def _read(raw: bytes):
     return np.loadtxt(io.StringIO(t), skiprows=2)
 
 
-def load(variant="A5", base=HERE, a_zip=None):
-    """base: folder with the zips (run a by default; run b: ../istanbul_run_b with a_zip its line A zip, same grid)."""
+def load(variant="A5", base=HERE, a_zip=None, drop="last", skip_f=()):
+    """base: folder with the zips (run a by default; run b: ../istanbul_run_b with a_zip its line A zip, same grid).
+    drop: z point to discard, "last" (runs a, b: 9.0525 beyond the far port, zero) or "first" (run c: grid 0.300..9.050,
+    line A is zero at z = 0.300, the line/pad boundary).
+    skip_f: frequencies (GHz) to leave out (run c: corrupted line B exports at 2 and 15 GHz)."""
     ZIPS = {"A": a_zip or VARIANTS[variant][0], "B": B_ZIP}
     GAPS = {"A": VARIANTS[variant][1], "B": B_GAPS}
     data, z_ref = {}, None
@@ -29,12 +32,15 @@ def load(variant="A5", base=HERE, a_zip=None):
         with zipfile.ZipFile(os.path.join(base, zn)) as zf:
             for name in zf.namelist():
                 f = float(re.search(r"f=(\d+(?:\.\d+)?)", name).group(1))
+                if f in skip_f:
+                    continue
                 a = _read(zf.read(name))
                 cols = []
                 for y in GAPS[line]:
                     m = np.isclose(a[:, 1], y, atol=1e-7)
                     z = a[m, 2]; o = np.argsort(z)
-                    cols.append(((a[m, 5] + 1j * a[m, 6])[o])[:-1]); zz = z[o][:-1]
+                    sl = slice(None, -1) if drop == "last" else slice(1, None)
+                    cols.append(((a[m, 5] + 1j * a[m, 6])[o])[sl]); zz = z[o][sl]
                 if z_ref is None:
                     z_ref = zz
                 assert np.allclose(zz, z_ref)
