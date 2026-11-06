@@ -1,5 +1,7 @@
 # Exercise 1: EO crosstalk at 20 GHz from field data, on paper
 
+
+> Superseded by `toy_problems.md` (P1 to P7, self-check with `check.py`); this data set is problem P7 there.
 Goal: compute the EO crosstalk $X = I_B/I_A$ yourself from a reduced data set, deriving every step. Ask for a hint
 when stuck; do not ask for the method. When you have a number (magnitude in dB and phase), give it to Claude, who has
 the answer key (not in the repository) and will only say how far off you are and in which step to look.
