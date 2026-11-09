@@ -28,7 +28,9 @@ Prezzi e parti sono indicativi e vanno verificati prima di acquistare. Nessun li
 
 ## Parametri di difficoltà (da regolare dopo ogni prova)
 
-- velocità massima dello scatto;
+La velocità massima e l'accelerazione sono fissate dall'hardware (giri del motore, riduzione, diametro ruote, tensione della batteria, aderenza, peso). Il codice può solo ridurle sotto quel limite. Progetta l'hardware con margine (se vuoi circa 2 m/s, punta a 2,5-3) e limita in codice.
+
+- velocità dello scatto (sotto il limite dell'hardware);
 - ritardo di reazione dopo l'urto;
 - numero e ampiezza dei zigzag;
 - durata della pausa;
