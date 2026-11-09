@@ -30,3 +30,12 @@ and FEXT are at the same level. This points to a resonant coupling path added by
 the substrate below), not to the distributed coupling along the line; the path is not identified yet.
 |S11| at port 1 rises to -5 to -8 dB above 30 GHz (run c: about -23 dB); the bond wires are a likely cause, unverified.
 The EO-from-fields result does not depend on the S-parameter normalization.
+
+## Comparison with the measurement (`compare_lab.py` -> `sim_vs_lab.png`, `compare_lab.log`)
+Measured curve: MZ3toMZ4 of module K00626 (SN 6A077700), the worst of the measured pairs, digitized by the user from
+the lab plot (`lab_extracted_EO_xtalk.xlsx`, copied to `lab_MZ3toMZ4_extracted.csv`; digitizer accuracy about 1 dB).
+5-60 GHz: median measured -19.3 dB vs simulated -27.3 dB; maximum -14.3 vs -20.1 dB; ripple period about 5 GHz
+measured vs about 6.5-7 GHz simulated (the estimate depends on the method: 6.4 from the raw spectrum, 6.9 here).
+Below about 25 GHz the two agree within a few dB; above about 27 GHz the measured curve is 5-8 dB higher.
+The simulation reproduces the order of magnitude and the rippled shape, but it underestimates this pair. The other
+measured pairs are lower (about -30 to -20 dB), so part of the gap is pair-to-pair spread.
