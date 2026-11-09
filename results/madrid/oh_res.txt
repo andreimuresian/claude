@@ -1,0 +1,4 @@
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.12, "ald": 0.0, "mtx": 10.0, "mtx_gnd": 0.5, "ms": 1.4, "tri": 126488, "neff": 1.8938270218108713, "IL_dBcm": 0.2201123664478057, "VpiL_Vcm": 1.852506462790459, "gamma": 0.5118278132560868, "t_s": 114.9}
+             ELECTRO-OPTIC SIMULATION RESULTS
+RESULT {"gap": 3.5, "buf": 0.12, "ald": 0.04, "mtx": 10.0, "mtx_gnd": 0.5, "ms": 1.4, "tri": 140526, "neff": 1.894091399808934, "IL_dBcm": 0.2855122083729723, "VpiL_Vcm": 1.7758889935750113, "gamma": 0.5339096842894869, "t_s": 119.9}
