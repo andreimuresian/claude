@@ -39,3 +39,12 @@ measured vs about 6.5-7 GHz simulated (the estimate depends on the method: 6.4 f
 Below about 25 GHz the two agree within a few dB; above about 27 GHz the measured curve is 5-8 dB higher.
 The simulation reproduces the order of magnitude and the rippled shape, but it underestimates this pair. The other
 measured pairs are lower (about -30 to -20 dB), so part of the gap is pair-to-pair spread.
+
+### Second measured pair: MZ4toMZ3 (added 2026-11-09)
+Digitized by the user in normalized units (`lab_MZ4toMZ3_raw.txt`). Mapping ASSUMED: f = 60 GHz * x,
+dB = -50 + 50 * y; with it the three deep dips fall at 5, 33 and 75 GHz at about -48 dB, as on the lab plot.
+5-60 GHz: median -29.6 dB, max -22.5 dB (simulated -27.3 / -20.1 dB, MZ3toMZ4 -19.3 / -14.3 dB). The simulation lies
+between the two measured directions, about 2 dB above MZ4toMZ3 and 8 dB below MZ3toMZ4 (median). The ripple period
+of MZ4toMZ3 is not reliable (sparse, uneven points). The 10 dB difference between the two directions of the same pair
+is larger than the simulation error; the simulated geometry is mirror-symmetric only if the two lines' surroundings
+are, which is not verified.
