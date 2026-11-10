@@ -3,22 +3,28 @@
    10.0-42.8 GHz), no ALD vs ALD, every line a black dot, no pairing lines (from out_<wafer>/values_FOM.csv);
  - v2_S11.png, v2_S21.png: line mean of the measured |S| (dB) and line mean of the per-line fitted-line |S| (alpha,
    n_m, Zc fits, L = 8 mm, 50 ohm ends), no ALD and ALD in one graph.
-Lines excluded as in wafer_analysis.py (4CA0163 line 04)."""
+Lines excluded as in wafer_analysis.py (4CA0163 line 04).
+Usage: python3 figs_v2.py                      (CORDOBA: wafers 4CA0162 4CA0163, this folder, CORDOBA axes)
+       python3 figs_v2.py --base ../jerez --wafers 6JZ0011 --nm 2.22 2.29 0.01 --z0 42 44 0.25"""
 import os, sys, glob, re, csv
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.abspath(os.path.join(HERE, "../../..")))
 import numpy as np, skrf as rf, matplotlib
 matplotlib.use("Agg"); import matplotlib.pyplot as plt
 from mzm_interconnect.extractor import extract_line_fit
 from mzm_interconnect.physics import C0
+import argparse
+ap = argparse.ArgumentParser(); ap.add_argument("--base", default=HERE); ap.add_argument("--wafers", nargs="+", default=["4CA0162", "4CA0163"])
+ap.add_argument("--nm", nargs=3, type=float, default=[2.20, 2.35, 0.01]); ap.add_argument("--z0", nargs=3, type=float, default=[40.0, 45.0, 0.5])
+args = ap.parse_args(); BASE = os.path.abspath(args.base); WAFERS = args.wafers
 EXCL = {"4CA0163": ["04"]}; L = 8e-3; ZR = 50.0
-YS = {"n_m": (2.20, 2.35, 0.01), "Z0": (40.0, 45.0, 0.5)}     # common axes for both wafers (user)
+YS = {"n_m": tuple(args.nm), "Z0": tuple(args.z0)}     # common axes for all wafers of a set (user)
 COL = {"noALD": "#2a78d6", "ALD": "#eb6834"}; LAB = {"noALD": "no ALD", "ALD": "ALD"}
 def s_model(fit, f):
     a = fit.alpha_dB_cm(f) * 100 / 8.686; b = 2 * np.pi * f * 1e9 * fit.nm(f) / C0; g = (a + 1j * b) * L; zc = fit.Zc(f)
     den = 2 * zc * ZR * np.cosh(g) + (zc ** 2 + ZR ** 2) * np.sinh(g)
     return (zc ** 2 - ZR ** 2) * np.sinh(g) / den, 2 * zc * ZR / den
-for w in ("4CA0162", "4CA0163"):
-    out = os.path.join(HERE, f"out_{w}")
+for w in WAFERS:
+    out = os.path.join(BASE, f"out_{w}")
     rows = list(csv.DictReader(open(os.path.join(out, "values_FOM.csv"))))
     for key, col, ylab in (("n_m", "n_m @ 60 GHz", "n_m at 60 GHz (fit)"), ("Z0", "Re Z0 (ohm), 10-43 GHz avg", "Re Z0 (ohm), mean 10-43 GHz")):
         v = {s: [float(r[col]) for r in rows if r["state"] == s] for s in ("noALD", "ALD")}
@@ -32,7 +38,7 @@ for w in ("4CA0162", "4CA0163"):
         ax.set_title(f"{w}: {ylab.split(' (')[0].split(' at')[0]} ({len(v['noALD'])} lines)", fontsize=10)
         fig.tight_layout(); fig.savefig(os.path.join(out, f"v2_box_{key}.png"), dpi=150); plt.close(fig)
     curves = {s: {"S11": [], "S21": [], "S11f": [], "S21f": []} for s in ("noALD", "ALD")}
-    for fn in sorted(glob.glob(os.path.join(HERE, "raw", w, f"{w}_*_*.s2p"))):
+    for fn in sorted(glob.glob(os.path.join(BASE, "raw", w, f"{w}_*_*.s2p"))):
         m = re.search(r"_(noALD|ALD)_(\d{2})\.s2p$", fn); s, nn = m.group(1), m.group(2)
         if nn in EXCL.get(w, []): continue
         net = rf.Network(fn); fit = extract_line_fit(fn, 8.0); f = fit.raw_f_GHz; sel = net.f / 1e9 > 0.5
@@ -57,16 +63,16 @@ for w in ("4CA0162", "4CA0163"):
 fig, ax = plt.subplots(1, 2, figsize=(10, 4.8))
 for a, (key, col, ylab) in zip(ax, (("n_m", "n_m @ 60 GHz", "n_m at 60 GHz (fit)"), ("Z0", "Re Z0 (ohm), 10-43 GHz avg", "Re Z0 (ohm), mean 10-43 GHz"))):
     groups, labels = [], []
-    for w in ("4CA0162", "4CA0163"):
-        rows = list(csv.DictReader(open(os.path.join(HERE, f"out_{w}", "values_FOM.csv"))))
+    for w in WAFERS:
+        rows = list(csv.DictReader(open(os.path.join(BASE, f"out_{w}", "values_FOM.csv"))))
         for s_ in ("noALD", "ALD"):
             groups.append([float(r[col]) for r in rows if r["state"] == s_]); labels.append(f"{w}\n{LAB[s_]}")
-    pos = [0, 1, 2.6, 3.6]
+    pos = [k * 2.6 + i for k in range(len(WAFERS)) for i in (0, 1)]
     a.boxplot(groups, positions=pos, widths=0.5, showfliers=False, medianprops=dict(color="k"))
     rng = np.random.default_rng(1)
     for p, g in zip(pos, groups):
         a.scatter(p + rng.uniform(-0.08, 0.08, len(g)), g, color="k", s=12, zorder=3)
     a.set_xticks(pos); a.set_xticklabels(labels, fontsize=8.5); a.set_ylabel(ylab); a.grid(alpha=0.3, axis="y")
     lo, hi, st = YS[key]; a.set_ylim(lo, hi); a.set_yticks(np.round(np.arange(lo, hi + st / 2, st), 3))
-    a.set_title(ylab.split(" (")[0].split(" at")[0] + ": both wafers", fontsize=10)
-fig.tight_layout(); fig.savefig(os.path.join(HERE, "v2_box_both_wafers.png"), dpi=150); plt.close(fig)
+    a.set_title(ylab.split(" (")[0].split(" at")[0] + (": both wafers" if len(WAFERS) > 1 else f": {WAFERS[0]}"), fontsize=10)
+fig.tight_layout(); fig.savefig(os.path.join(BASE, "v2_box_both_wafers.png" if len(WAFERS) > 1 else "v2_box_wafer.png"), dpi=150); plt.close(fig)

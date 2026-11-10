@@ -1,0 +1,44 @@
+6JZ0011: lines with both states used: 15 (00, 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 12, 13, 14)
+
+File checks: |S21 - S12| / |S21| (reciprocity: median over 0.5-60 GHz and max), max |S11|^2 + |S21|^2 (passivity, <= 1)
+  noALD 00: reciprocity median 0.010, max 0.138; passivity 0.906
+  noALD 01: reciprocity median 0.008, max 0.086; passivity 0.912
+  noALD 02: reciprocity median 0.008, max 0.129; passivity 0.912
+  noALD 03: reciprocity median 0.008, max 0.100; passivity 0.907
+  noALD 04: reciprocity median 0.008, max 0.125; passivity 0.903
+  noALD 05: reciprocity median 0.008, max 0.145; passivity 0.910
+  noALD 06: reciprocity median 0.008, max 0.095; passivity 0.913
+  noALD 07: reciprocity median 0.008, max 0.086; passivity 0.913
+  noALD 08: reciprocity median 0.008, max 0.096; passivity 0.909
+  noALD 09: reciprocity median 0.008, max 0.117; passivity 0.908
+  noALD 10: reciprocity median 0.008, max 0.095; passivity 0.910
+  noALD 11: reciprocity median 0.008, max 0.078; passivity 0.912
+  noALD 12: reciprocity median 0.008, max 0.147; passivity 0.912
+  noALD 13: reciprocity median 0.009, max 0.101; passivity 0.911
+  noALD 14: reciprocity median 0.008, max 0.102; passivity 0.912
+  ALD   00: reciprocity median 0.010, max 0.130; passivity 0.902
+  ALD   01: reciprocity median 0.011, max 0.112; passivity 0.908
+  ALD   02: reciprocity median 0.009, max 0.147; passivity 0.912
+  ALD   03: reciprocity median 0.009, max 0.123; passivity 0.909
+  ALD   04: reciprocity median 0.009, max 0.100; passivity 0.906
+  ALD   05: reciprocity median 0.009, max 0.136; passivity 0.909
+  ALD   06: reciprocity median 0.009, max 0.097; passivity 0.908
+  ALD   07: reciprocity median 0.008, max 0.105; passivity 0.908
+  ALD   08: reciprocity median 0.009, max 0.119; passivity 0.908
+  ALD   09: reciprocity median 0.010, max 0.124; passivity 0.911
+  ALD   10: reciprocity median 0.009, max 0.120; passivity 0.911
+  ALD   11: reciprocity median 0.009, max 0.112; passivity 0.909
+  ALD   12: reciprocity median 0.008, max 0.087; passivity 0.907
+  ALD   13: reciprocity median 0.009, max 0.090; passivity 0.910
+  ALD   14: reciprocity median 0.010, max 0.103; passivity 0.916
+
+Figures of merit: median noALD -> ALD, median per-line change, lines up; outliers (median +- 3 MAD)
+  [all: 15 lines]
+    n_m @ 60 GHz                    2.2426 ->    2.2607  change +0.0177 [+0.0166,+0.0198]  up 15/15  outliers: noALD 04
+    Re Z0 (ohm), 10-43 GHz avg     42.8288 ->   42.7717  change -0.0777 [-0.1489,-0.0550]  up 2/15  outliers: none
+    alpha (dB/cm) @ 30 GHz          3.7241 ->    3.6858  change -0.0301 [-0.0564,-0.0162]  up 0/15  outliers: none
+    alpha (dB/cm) @ 60 GHz          5.3989 ->    5.3178  change -0.0213 [-0.0868,+0.0144]  up 5/15  outliers: none
+    |S21| (dB) @ 30 GHz            -3.0536 ->   -3.0111  change +0.0285 [+0.0149,+0.0496]  up 15/15  outliers: none
+    |S21| (dB) @ 60 GHz            -4.3588 ->   -4.3009  change +0.0143 [-0.0165,+0.0608]  up 9/15  outliers: noALD 04
+
+figures in /home/user/claude/docs/measurements/jerez/out_6JZ0011

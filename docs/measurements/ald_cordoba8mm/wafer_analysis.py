@@ -1,7 +1,8 @@
 """
 ALD impact on one wafer of CORDOBA 8 mm lines (15 lines, measured before = noALD and after = ALD).
 
-Usage: python3 wafer_analysis.py <wafer>      (files raw/<wafer>/<wafer>_<noALD|ALD>_NN.s2p)
+Usage: python3 wafer_analysis.py <wafer> [base]   (files <base>/raw/<wafer>/<wafer>_<noALD|ALD>_NN.s2p, figures in
+       <base>/out_<wafer>/; base defaults to this folder, e.g. ../jerez for the JEREZ wafer)
 
 Per file, the MZM Studio extractor (mzm_interconnect.extractor.extract_line_fit, L = 8 mm, fit from 0.5 GHz) gives the
 raw de-embedded n_m(f), Zc(f), alpha(f) and their fitted models; S11 and S21 are the measured ones.
@@ -29,11 +30,12 @@ from mzm_interconnect.extractor import extract_line_fit
 from mzm_interconnect.physics import C0
 
 wafer = sys.argv[1] if len(sys.argv) > 1 else "4CA0162"
+BASE = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else HERE
 L_MM = 8.0; F60 = 60.0; Z_REF = 50.0
-OUT = os.path.join(HERE, f"out_{wafer}"); os.makedirs(OUT, exist_ok=True)
+OUT = os.path.join(BASE, f"out_{wafer}"); os.makedirs(OUT, exist_ok=True)
 STATES = ("noALD", "ALD"); COL = {"noALD": "#2a78d6", "ALD": "#eb6834"}
 data = {s: {} for s in STATES}
-for fn in sorted(glob.glob(os.path.join(HERE, "raw", wafer, f"{wafer}_*_*.s2p"))):
+for fn in sorted(glob.glob(os.path.join(BASE, "raw", wafer, f"{wafer}_*_*.s2p"))):
     m = re.search(r"_(noALD|ALD)_(\d{2})\.s2p$", fn); s, nn = m.group(1), m.group(2)
     net = rf.Network(fn); fit = extract_line_fit(fn, L_MM)
     data[s][nn] = dict(net=net, fit=fit)
@@ -139,7 +141,7 @@ for a, q in zip(ax, FOM):
         a.scatter([1], [y1], color=c, marker="s", s=22, zorder=3, edgecolor="white", linewidth=0.5)
     a.set_xticks([0, 1]); a.set_xticklabels(["no ALD (o)", "ALD (s)"]); a.set_title(q, fontsize=10.5); a.grid(alpha=0.3, axis="y")
 ax[2].legend(fontsize=7, frameon=False, title="line", title_fontsize=8, loc="center left", bbox_to_anchor=(1.02, 0.5))
-fig.suptitle(f"{wafer}: per-line figures of merit before and after 40 nm Al2O3 ({len(lines)} lines)", fontsize=11)
+fig.suptitle(f"{wafer}: per-line figures of merit before and after the Al2O3 (ALD) layer ({len(lines)} lines)", fontsize=11)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, "boxplots_FOM.png"), dpi=150); plt.close(fig)
 old = os.path.join(OUT, "boxplots_60GHz.png")
 if os.path.exists(old): os.remove(old)
