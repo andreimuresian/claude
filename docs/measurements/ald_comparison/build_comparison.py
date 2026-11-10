@@ -64,13 +64,11 @@ table(s, 0.5, 5.0, 12.35, rows, [2.2, 1.9, 1.7, 1.9, 1.9, 2.4], size=11.5, row_h
 
 # 4 conclusions
 s = new(); title(s, "Conclusions", "")
-stat(s, 0.5, 1.45, 3.95, 2.2, "+0.4 to +1.7 %", "n_{m} at 60 GHz: up on every chip of every wafer")
-stat(s, 4.69, 1.45, 3.95, 2.2, "−0.2 to −1.0 %", "Z_{0} (−0.08 to −0.41 Ω): down on every wafer (median)")
-stat(s, 8.88, 1.45, 3.97, 2.2, "−3.6 to +6 %", "α at 30 GHz: sign depends on the design", col=RED)
-card(s, 0.5, 3.9, 4.0, 2.5, "Common to all designs", ["ALD adds capacitance: n_{m} up, Z_{0} down.",
-     "Effect per chip is consistent within each wafer (narrow interquartile ranges)."], size=14)
-card(s, 4.67, 3.9, 4.0, 2.5, "Design-dependent", ["n_{m} rise: CORDOBA +0.035 / +0.038, JEREZ +0.018, HELSINKI +0.010.",
-     "Loss: up on CORDOBA, down on JEREZ and HELSINKI."], size=14)
-card(s, 8.84, 3.9, 4.01, 2.5, "Open points", ["ALD thickness and process for each wafer.", "Measurement sessions (probes, calibration).",
-     "Cause of the opposite loss change."], hc=RED, size=14)
+stat(s, 0.5, 1.45, 3.95, 2.2, "n_{m} ↑", "+0.4 to +1.7 % at 60 GHz, every chip of every wafer")
+stat(s, 4.69, 1.45, 3.95, 2.2, "Z_{0} ↓", "−0.2 to −1.0 % (median), every wafer")
+stat(s, 8.88, 1.45, 3.97, 2.2, "α: open", "Direction differs between designs and between fit and measured S_{21}", col=RED)
+card(s, 0.5, 3.9, 6.05, 2.5, "Established", ["ALD adds capacitance: n_{m} increases and Z_{0} decreases on all four wafers.",
+     "Size of the n_{m} increase depends on the design: CORDOBA +0.035 / +0.038, JEREZ +0.018, HELSINKI +0.010."], size=14)
+card(s, 6.78, 3.9, 6.07, 2.5, "Open: attenuation", ["Fitted α at 60 GHz is sensitive to fit and data noise; the change is of the order of its uncertainty.",
+     "Band-averaged measured S_{21} does not confirm the fitted direction on every wafer (JEREZ)."], hc=RED, size=14)
 prs.save(os.path.join(HERE, "ALD_RF_impact_comparison.pptx")); print("saved", len(prs.slides._sldIdLst), "slides")

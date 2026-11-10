@@ -49,13 +49,10 @@ figp(s, P(f"out_{W}", "v2_S21.png"), 6.95, 4.9, 5.9, 2.0)
 
 # 5 conclusions
 s = new(); title(s, "Conclusions", "")
-stat(s, 0.5, 1.45, 3.95, 2.2, "+0.4 %", "n_{m} at 60 GHz (+0.010), every chip")
-stat(s, 4.69, 1.45, 3.95, 2.2, "−3.6 %", "α at 30 GHz (−0.12 dB/cm), every chip", col=RED)
-stat(s, 8.88, 1.45, 3.97, 2.2, "+0.16 dB", "|S_{21}| at 30 GHz over 13 mm, every chip")
-card(s, 0.5, 3.9, 6.05, 2.95, "Reading", ["ALD raises n_{m} on every chip: added capacitance.",
-     "Loss decreases on every chip, at 30 and 60 GHz (−0.12 / −0.08 dB/cm).",
-     "Z_{0} −0.23 Ω on every chip, below the 0.5 Ω resolution; pad ripple smaller after ALD (1.8 → 1.0 Ω std)."], size=13.5)
-card(s, 6.78, 3.9, 6.07, 2.95, "Compared with JEREZ and CORDOBA", ["n_{m} increase smallest: +0.010 (JEREZ +0.018, CORDOBA +0.035 / +0.038).",
-     "Loss decrease as on JEREZ, about 4× larger at 30 GHz; CORDOBA showed an increase.",
-     "Pad ripple shrinks after ALD; on CORDOBA it grew."], hc=RED, size=13.5)
+stat(s, 0.5, 1.45, 3.95, 2.2, "n_{m} ↑", "+0.4 % at 60 GHz (+0.010), every chip")
+stat(s, 4.69, 1.45, 3.95, 2.2, "Z_{0} ↓", "Median per-chip decrease after ALD")
+stat(s, 8.88, 1.45, 3.97, 2.2, "α: open", "Change of the order of the fit uncertainty", col=RED)
+card(s, 0.5, 3.9, 6.05, 2.5, "Established", ["ALD adds capacitance: n_{m} increases and Z_{0} decreases."], size=14)
+card(s, 6.78, 3.9, 6.07, 2.5, "Open: attenuation", ["Fitted α depends on the fit and on the data noise.",
+     "To be checked against the band-averaged measured S_{21} (no fit)."], hc=RED, size=14)
 prs.save(P("ALD_RF_impact_HELSINKI.pptx")); print("saved", len(prs.slides._sldIdLst), "slides")
