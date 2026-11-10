@@ -7,12 +7,13 @@ matplotlib.use("Agg"); import matplotlib.pyplot as plt
 HERE = os.path.dirname(os.path.abspath(__file__))
 import argparse
 ap = argparse.ArgumentParser(); ap.add_argument("--base", default=HERE); ap.add_argument("--wafers", nargs="+", default=["4CA0162", "4CA0163"])
-ap.add_argument("--nm", nargs=3, type=float, default=[2.20, 2.35, 0.01]); ap.add_argument("--z0", nargs=3, type=float, default=[40.0, 45.0, 0.5])
+ap.add_argument("--nm", nargs=3, type=float, default=[2.20, 2.35, 0.01]); ap.add_argument("--z0", nargs=3, type=float, default=[40.0, 45.0, 0.5]); ap.add_argument("--length", type=float, default=8.0)
 args = ap.parse_args(); BASE = os.path.abspath(args.base); WAFERS = args.wafers
-YS = {"n_m": tuple(args.nm), "Z0": tuple(args.z0)}; LAB = {"noALD": "no ALD", "ALD": "ALD"}
+YS = {"n_m": tuple(args.nm), "Z0": tuple(args.z0)}
+ZCOL = next(k for k in csv.DictReader(open(os.path.join(BASE, f"out_{WAFERS[0]}", "values_FOM.csv"))).fieldnames if k.startswith("Re Z0")); LAB = {"noALD": "no ALD", "ALD": "ALD"}
 fig, ax = plt.subplots(1, 2, figsize=(10, 4.8))
 for a, (key, col, ylab, fmt) in zip(ax, (("n_m", "n_m @ 60 GHz", "n_m at 60 GHz (fit)", "{:.4f}"),
-                                         ("Z0", "Re Z0 (ohm), 10-43 GHz avg", "Re Z0 (ohm), mean 10-43 GHz", "{:.2f}"))):
+                                         ("Z0", ZCOL, "Re Z0 (ohm), mean " + ZCOL.split(", ")[1].replace(" avg", ""), "{:.2f}"))):
     groups, labels = [], []
     for w in WAFERS:
         rows = list(csv.DictReader(open(os.path.join(BASE, f"out_{w}", "values_FOM.csv"))))

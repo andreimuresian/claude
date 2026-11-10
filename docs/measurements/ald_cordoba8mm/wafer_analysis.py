@@ -1,8 +1,9 @@
 """
 ALD impact on one wafer of CORDOBA 8 mm lines (15 lines, measured before = noALD and after = ALD).
 
-Usage: python3 wafer_analysis.py <wafer> [base]   (files <base>/raw/<wafer>/<wafer>_<noALD|ALD>_NN.s2p, figures in
-       <base>/out_<wafer>/; base defaults to this folder, e.g. ../jerez for the JEREZ wafer)
+Usage: python3 wafer_analysis.py <wafer> [base] [L_mm] [Z0 band top, GHz]   (files <base>/raw/<wafer>/<wafer>_<noALD|ALD>_NN.s2p, figures in
+       <base>/out_<wafer>/; base defaults to this folder, e.g. ../jerez for the JEREZ wafer; L 8 mm and Z0 band
+       10-42.8 GHz by default, e.g. ../helsinki 13 41.5 for HELSINKI: 6 periods of its 5.25 GHz pad ripple)
 
 Per file, the MZM Studio extractor (mzm_interconnect.extractor.extract_line_fit, L = 8 mm, fit from 0.5 GHz) gives the
 raw de-embedded n_m(f), Zc(f), alpha(f) and their fitted models; S11 and S21 are the measured ones.
@@ -31,7 +32,7 @@ from mzm_interconnect.physics import C0
 
 wafer = sys.argv[1] if len(sys.argv) > 1 else "4CA0162"
 BASE = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else HERE
-L_MM = 8.0; F60 = 60.0; Z_REF = 50.0
+L_MM = float(sys.argv[3]) if len(sys.argv) > 3 else 8.0; F60 = 60.0; Z_REF = 50.0
 OUT = os.path.join(BASE, f"out_{wafer}"); os.makedirs(OUT, exist_ok=True)
 STATES = ("noALD", "ALD"); COL = {"noALD": "#2a78d6", "ALD": "#eb6834"}
 data = {s: {} for s in STATES}
@@ -46,6 +47,7 @@ for nn, why in EXCLUDE.get(wafer, {}).items():
     if nn in lines:
         lines.remove(nn); print(f"{wafer}: line {nn} excluded (both states): {why}")
 print(f"{wafer}: lines with both states used: {len(lines)} ({', '.join(lines)})")
+NMAX = max(1, max(int(x) for x in lines))   # colour scale over the line numbers
 
 # ---- file checks ----
 print("\nFile checks: |S21 - S12| / |S21| (reciprocity: median over 0.5-60 GHz and max), max |S11|^2 + |S21|^2 (passivity, <= 1)")
@@ -76,7 +78,7 @@ for q in QN:
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.6), sharey=True)
     for a, s in zip(ax, STATES):
         for i, nn in enumerate(lines):
-            a.plot(f, Q[s][nn][q], color=cmap(int(nn) / 14), lw=0.8, label=nn)
+            a.plot(f, Q[s][nn][q], color=cmap(int(nn) / NMAX), lw=0.8, label=nn)
         a.set_title(f"{wafer}, {s}: {len(lines)} lines (raw)", fontsize=10); a.set_xlabel("frequency (GHz)"); a.grid(alpha=0.3)
     ax[0].set_ylabel(q); ax[0].set_ylim(*ylim(q)); ax[1].legend(fontsize=6.5, ncol=3, frameon=False, title="line", title_fontsize=7)
     fig.tight_layout(); fig.savefig(os.path.join(OUT, f"{fname[q]}_all_lines.png"), dpi=150); plt.close(fig)
@@ -91,14 +93,15 @@ for q in QN:
     ax.legend(frameon=False, fontsize=8); fig.tight_layout(); fig.savefig(os.path.join(OUT, f"{fname[q]}_mean.png"), dpi=150); plt.close(fig)
 
 # ---- figures of merit per line ----
-ZB = (10.0, 42.8)                       # 4 periods of the pad ripple c / (2 n L) ~ 8.2 GHz
+ZB = (10.0, float(sys.argv[4]) if len(sys.argv) > 4 else 42.8)   # whole periods of the pad ripple c / (2 n L) (8 mm: 4 x ~8.2 GHz)
 TOXIC = {"4CA0162": ["00", "04"]}       # consistent high-loss lines (decided with the user); 4CA0163 04 excluded above
 def s21_model(fit, fg):
     a_np = fit.alpha_dB_cm(fg) * 100 / 8.686; b = 2 * np.pi * fg * 1e9 * fit.nm(fg) / C0
     g = (a_np + 1j * b) * L_MM * 1e-3; zc = fit.Zc(fg)
     return 2 / (2 * np.cosh(g) + (zc / Z_REF + Z_REF / zc) * np.sinh(g))
 zb = (f >= ZB[0]) & (f <= ZB[1])
-FOM = ["n_m @ 60 GHz", "Re Z0 (ohm), 10-43 GHz avg", "alpha (dB/cm) @ 30 GHz", "alpha (dB/cm) @ 60 GHz",
+ZLAB = f"Re Z0 (ohm), {ZB[0]:.0f}-{ZB[1]:.0f} GHz avg"
+FOM = ["n_m @ 60 GHz", ZLAB, "alpha (dB/cm) @ 30 GHz", "alpha (dB/cm) @ 60 GHz",
        "|S21| (dB) @ 30 GHz", "|S21| (dB) @ 60 GHz"]
 V = {s: {} for s in STATES}
 for s in STATES:
@@ -135,7 +138,7 @@ for a, q in zip(ax, FOM):
     va = [V["noALD"][nn][q] for nn in lines]; vb = [V["ALD"][nn][q] for nn in lines]
     a.boxplot([va, vb], positions=[0, 1], widths=0.45, showfliers=False, medianprops=dict(color="k"))
     for nn, y0, y1 in zip(lines, va, vb):
-        c = cmap(int(nn) / 14)
+        c = cmap(int(nn) / NMAX)
         a.plot([0, 1], [y0, y1], color=c, lw=0.8, alpha=0.7, zorder=1)
         a.scatter([0], [y0], color=c, marker="o", s=22, zorder=3, edgecolor="white", linewidth=0.5, label=nn)
         a.scatter([1], [y1], color=c, marker="s", s=22, zorder=3, edgecolor="white", linewidth=0.5)
@@ -161,7 +164,7 @@ def mean_fit(a, q, legend=True):
         a.plot(f, R, color=COL[s], lw=0.8, alpha=0.55, label=f"{s}: line mean (raw)")
         if q == "Re Z0 (ohm)":
             v = np.mean([V[s][nn][FOM[1]] for nn in lines])
-            a.plot(ZB, [v, v], color=COL[s], lw=2.6, label=f"{s}: mean over 10-43 GHz = {v:.2f}")
+            a.plot(ZB, [v, v], color=COL[s], lw=2.6, label=f"{s}: mean over {ZB[0]:.0f}-{ZB[1]:.0f} GHz = {v:.2f}")
         else:
             M = np.array([model_curve(data[s][nn]["fit"], q, f) for nn in lines]).mean(0)
             a.plot(f, M, color=COL[s], lw=2.2, ls="--", label=f"{s}: line mean of the fits")
@@ -184,7 +187,7 @@ for q in MQ:
     fig, ax = plt.subplots(1, 2, figsize=(13, 4.8), sharey=True)
     for a, s in zip(ax, STATES):
         for nn in lines:
-            c = cmap(int(nn) / 14); fit = data[s][nn]["fit"]
+            c = cmap(int(nn) / NMAX); fit = data[s][nn]["fit"]
             a.plot(f, Q[s][nn][q], color=c, lw=0.5, alpha=0.35)
             a.plot(f, model_curve(fit, q, f), color=c, lw=1.6, label=nn)
         a.set_title(f"{wafer}, {s}: raw (thin) and fitted (thick)", fontsize=10); a.set_xlabel("frequency (GHz)"); a.grid(alpha=0.3)

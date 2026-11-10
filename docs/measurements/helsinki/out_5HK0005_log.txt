@@ -1,0 +1,30 @@
+5HK0005: lines with both states used: 8 (00, 01, 02, 03, 04, 05, 06, 07)
+
+File checks: |S21 - S12| / |S21| (reciprocity: median over 0.5-60 GHz and max), max |S11|^2 + |S21|^2 (passivity, <= 1)
+  noALD 00: reciprocity median 0.012, max 0.140; passivity 0.920
+  noALD 01: reciprocity median 0.011, max 0.143; passivity 0.922
+  noALD 02: reciprocity median 0.011, max 0.146; passivity 0.925
+  noALD 03: reciprocity median 0.011, max 0.166; passivity 0.918
+  noALD 04: reciprocity median 0.011, max 0.140; passivity 0.918
+  noALD 05: reciprocity median 0.011, max 0.128; passivity 0.919
+  noALD 06: reciprocity median 0.010, max 0.127; passivity 0.925
+  noALD 07: reciprocity median 0.011, max 0.150; passivity 0.919
+  ALD   00: reciprocity median 0.009, max 0.101; passivity 0.918
+  ALD   01: reciprocity median 0.010, max 0.113; passivity 0.921
+  ALD   02: reciprocity median 0.009, max 0.144; passivity 0.917
+  ALD   03: reciprocity median 0.008, max 0.132; passivity 0.916
+  ALD   04: reciprocity median 0.009, max 0.102; passivity 0.911
+  ALD   05: reciprocity median 0.009, max 0.114; passivity 0.920
+  ALD   06: reciprocity median 0.009, max 0.117; passivity 0.918
+  ALD   07: reciprocity median 0.009, max 0.173; passivity 0.916
+
+Figures of merit: median noALD -> ALD, median per-line change, lines up; outliers (median +- 3 MAD)
+  [all: 8 lines]
+    n_m @ 60 GHz                    2.2742 ->    2.2855  change +0.0098 [+0.0096,+0.0111]  up 8/8  outliers: none
+    Re Z0 (ohm), 10-42 GHz avg     42.6403 ->   42.4514  change -0.2274 [-0.3445,-0.1685]  up 0/8  outliers: ALD 00, ALD 01
+    alpha (dB/cm) @ 30 GHz          3.4137 ->    3.2908  change -0.1224 [-0.1362,-0.1134]  up 0/8  outliers: none
+    alpha (dB/cm) @ 60 GHz          4.7011 ->    4.6290  change -0.0791 [-0.0998,-0.0674]  up 0/8  outliers: none
+    |S21| (dB) @ 30 GHz            -4.4756 ->   -4.3182  change +0.1600 [+0.1462,+0.1737]  up 8/8  outliers: none
+    |S21| (dB) @ 60 GHz            -6.1617 ->   -6.0668  change +0.1036 [+0.0931,+0.1287]  up 8/8  outliers: none
+
+figures in /home/user/claude/docs/measurements/helsinki/out_5HK0005

@@ -14,10 +14,11 @@ from mzm_interconnect.extractor import extract_line_fit
 from mzm_interconnect.physics import C0
 import argparse
 ap = argparse.ArgumentParser(); ap.add_argument("--base", default=HERE); ap.add_argument("--wafers", nargs="+", default=["4CA0162", "4CA0163"])
-ap.add_argument("--nm", nargs=3, type=float, default=[2.20, 2.35, 0.01]); ap.add_argument("--z0", nargs=3, type=float, default=[40.0, 45.0, 0.5])
+ap.add_argument("--nm", nargs=3, type=float, default=[2.20, 2.35, 0.01]); ap.add_argument("--z0", nargs=3, type=float, default=[40.0, 45.0, 0.5]); ap.add_argument("--length", type=float, default=8.0); ap.add_argument("--s21min", type=float, default=-6.5)
 args = ap.parse_args(); BASE = os.path.abspath(args.base); WAFERS = args.wafers
-EXCL = {"4CA0163": ["04"]}; L = 8e-3; ZR = 50.0
-YS = {"n_m": tuple(args.nm), "Z0": tuple(args.z0)}     # common axes for all wafers of a set (user)
+EXCL = {"4CA0163": ["04"]}; L = args.length * 1e-3; ZR = 50.0
+YS = {"n_m": tuple(args.nm), "Z0": tuple(args.z0)}
+ZCOL = next(k for k in csv.DictReader(open(os.path.join(BASE, f"out_{WAFERS[0]}", "values_FOM.csv"))).fieldnames if k.startswith("Re Z0"))     # common axes for all wafers of a set (user)
 COL = {"noALD": "#2a78d6", "ALD": "#eb6834"}; LAB = {"noALD": "no ALD", "ALD": "ALD"}
 def s_model(fit, f):
     a = fit.alpha_dB_cm(f) * 100 / 8.686; b = 2 * np.pi * f * 1e9 * fit.nm(f) / C0; g = (a + 1j * b) * L; zc = fit.Zc(f)
@@ -26,7 +27,7 @@ def s_model(fit, f):
 for w in WAFERS:
     out = os.path.join(BASE, f"out_{w}")
     rows = list(csv.DictReader(open(os.path.join(out, "values_FOM.csv"))))
-    for key, col, ylab in (("n_m", "n_m @ 60 GHz", "n_m at 60 GHz (fit)"), ("Z0", "Re Z0 (ohm), 10-43 GHz avg", "Re Z0 (ohm), mean 10-43 GHz")):
+    for key, col, ylab in (("n_m", "n_m @ 60 GHz", "n_m at 60 GHz (fit)"), ("Z0", ZCOL, "Re Z0 (ohm), mean " + ZCOL.split(", ")[1].replace(" avg", ""))):
         v = {s: [float(r[col]) for r in rows if r["state"] == s] for s in ("noALD", "ALD")}
         fig, ax = plt.subplots(figsize=(4.6, 4.6))
         ax.boxplot([v["noALD"], v["ALD"]], positions=[0, 1], widths=0.5, showfliers=False, medianprops=dict(color="k"))
@@ -41,7 +42,7 @@ for w in WAFERS:
     for fn in sorted(glob.glob(os.path.join(BASE, "raw", w, f"{w}_*_*.s2p"))):
         m = re.search(r"_(noALD|ALD)_(\d{2})\.s2p$", fn); s, nn = m.group(1), m.group(2)
         if nn in EXCL.get(w, []): continue
-        net = rf.Network(fn); fit = extract_line_fit(fn, 8.0); f = fit.raw_f_GHz; sel = net.f / 1e9 > 0.5
+        net = rf.Network(fn); fit = extract_line_fit(fn, args.length); f = fit.raw_f_GHz; sel = net.f / 1e9 > 0.5
         s11m, s21m = s_model(fit, f)
         fall = net.f / 1e9
         curves[s]["S11"].append(20 * np.log10(abs(net.s[:, 0, 0]))); curves[s]["S21"].append(20 * np.log10(abs(net.s[:, 1, 0])))
@@ -53,7 +54,7 @@ for w in WAFERS:
             ax.plot(fall, np.mean(curves[s][q], 0), color=COL[s], lw=0.8, alpha=0.6, label=f"{LAB[s]}: measured, mean of {n} lines")
             ax.plot(f, np.mean(curves[s][q + "f"], 0), color=COL[s], lw=2.2, ls="--", label=f"{LAB[s]}: fitted line, mean of {n} lines")
         ax.set_xlabel("frequency (GHz)"); ax.set_ylabel(f"|{q}| (dB)"); ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=8)
-        if q == "S21": ax.set_ylim(-6.5, 0)
+        if q == "S21": ax.set_ylim(args.s21min, 0)
         else: ax.set_ylim(-32.5, 0)
         ax.set_title(f"{w}: |{q}|, measured vs fitted line (alpha, n_m, Z_c fits; 50 ohm ends)", fontsize=10)
         fig.tight_layout(); fig.savefig(os.path.join(out, f"v2_{q}.png"), dpi=150); plt.close(fig)
@@ -61,7 +62,7 @@ for w in WAFERS:
 
 # both wafers in one figure: n_m and Z0, four boxes each
 fig, ax = plt.subplots(1, 2, figsize=(10, 4.8))
-for a, (key, col, ylab) in zip(ax, (("n_m", "n_m @ 60 GHz", "n_m at 60 GHz (fit)"), ("Z0", "Re Z0 (ohm), 10-43 GHz avg", "Re Z0 (ohm), mean 10-43 GHz"))):
+for a, (key, col, ylab) in zip(ax, (("n_m", "n_m @ 60 GHz", "n_m at 60 GHz (fit)"), ("Z0", ZCOL, "Re Z0 (ohm), mean " + ZCOL.split(", ")[1].replace(" avg", "")))):
     groups, labels = [], []
     for w in WAFERS:
         rows = list(csv.DictReader(open(os.path.join(BASE, f"out_{w}", "values_FOM.csv"))))
