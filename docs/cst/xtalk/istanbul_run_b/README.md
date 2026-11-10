@@ -8,8 +8,10 @@ Files: `e-field (f=1) [1]_lineA.zip` (txt, y -0.005/0/0.005), `e-field (f=1) [1]
 z 0.3025..9.0525 step 0.005, 60 frequencies: the same grids as the matched run (a) exports. `v0_istanbul_rf_lineZload.s2p`.
 
 ## Results (`xtalk_run_b.py`, `.log`, `.csv`; `xtalk_run_b.png`, `eo_run_a_vs_b.png`)
-Termination check: S11 at DC +0.0134, input resistance 51.4 ohm (load + line DC resistance, estimated ~11 ohm from the
-gold cross-sections), i.e. a load of roughly 40 ohm; 25 ohm (both RG only) would give S11 ~ -0.16, 8 ohm ~ -0.44.
+Termination check (corrected 2026-11-10): S11 at DC +0.0134, input resistance 51.36 ohm. Run (a), same line with a 50 ohm
+port at the far end, gives 51.39 ohm: the line's DC resistance is about 1.4 ohm, so the termination is about 50 ohm, as
+designed (RS 25 ohm + 2 x RG 50 ohm). The earlier "roughly 40 ohm" used an 11 ohm line resistance estimated from the gold
+cross-sections, which run (a) shows to be wrong.
 |S11| 1-60 GHz median -17.3 dB (run a, 50 ohm port at the far end: -18.2 dB).
 NEXT max -25.8 dB (30 GHz); EO max -31.9 dB (37 GHz). EO b - EO a: median +1.8 dB, 5-95 % -7.7 .. +9.7 dB,
 correlation 0.66. EO dips every ~6.5-7 GHz above 30 GHz (34, 41, 47 GHz).

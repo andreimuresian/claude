@@ -94,3 +94,51 @@ ax.plot(m2[:, 0], m2[:, 1], "s-", ms=2.5, lw=1.1, color=BLUE, label="lab MZ4toMZ
 ax.plot([0, 60, 60, 62], [-30, -30, -22, -22], "--", color="#1A1A1A", lw=1, label="specification")
 ax.legend(frameon=False, fontsize=11, loc="lower center", ncol=2); fig.tight_layout(); fig.savefig(os.path.join(OUT, "sim_vs_lab.png"), dpi=200); plt.close(fig)
 print("figures written to", OUT)
+
+# ---- additions for the revised deck (2026-11-10)
+import sys
+sys.path.insert(0, os.path.join(X, "istanbul_run_a")); import load_fields as LF
+# why FEXT is not enough: two victim profiles with the same far-end value
+z = np.linspace(0, 1, 200)
+fig, ax = plt.subplots(figsize=(6.4, 3.4))
+ax.plot(z, z, color=NAVY, lw=2.2, label="built along the line: light sees ½ FEXT (−6 dB)")
+ax.plot(z, np.ones_like(z), color=RED, lw=2.2, label="present from the input: light sees FEXT (0 dB)")
+ax.plot([1], [1], "o", color="#1A1A1A", ms=7); ax.annotate("same FEXT", (1, 1), (0.62, 0.55), fontsize=12, arrowprops=dict(arrowstyle="->", color="#1A1A1A"))
+ax.set_xlim(0, 1.05); ax.set_ylim(0, 1.6); ax.set_xlabel("position along line B, z / L"); ax.set_ylabel("forward wave on line B / FEXT")
+ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=11, loc="upper left"); fig.tight_layout(); fig.savefig(os.path.join(OUT, "fext_ambiguity.png"), dpi=200); plt.close(fig)
+
+# eigenmode: error scale on line A vs size of line B (Cordoba 8 mm)
+bars = [("Line A field (reference)", 0, 0, NAVY),
+        ("Line A error from the solver index mismatch\n(0.004–0.01 over 8 mm, 30 GHz)", -34, -26, RED),
+        ("Part of line A not described by six modes", -46, -26, RED),
+        ("Line B field (whole crosstalk signal)", -75, -55, TEAL)]
+fig, ax = plt.subplots(figsize=(6.4, 3.4))
+for i, (lab, lo, hi, c) in enumerate(bars):
+    if lo == hi: ax.plot([lo], [i], "s", color=c, ms=12)
+    else: ax.barh(i, hi - lo, left=lo, height=0.5, color=c, alpha=0.85)
+ax.set_yticks(range(len(bars))); ax.set_yticklabels([b[0] for b in bars], fontsize=12); ax.invert_yaxis()
+ax.set_xlim(-80, 0); ax.set_xlabel("level relative to line A field (dB)"); ax.grid(axis="x", alpha=0.3)
+fig.tight_layout(); fig.savefig(os.path.join(OUT, "eigen_error_scale.png"), dpi=200, bbox_inches="tight", pad_inches=0.1); plt.close(fig)
+
+# victim push-pull field along z, relative to line A, 9 GHz: runs a, c, d
+R = {"a": LF.load(), "c": LF.load(base=os.path.join(X, "istanbul_run_c"), a_zip="e-field (f=1) [1]_lineA.zip", drop="first", skip_f=(2.0, 15.0)),
+     "d": LF.load(base=os.path.join(X, "istanbul_run_d"), a_zip="e-field (f=1) [1]_lineA.zip", drop="first")}
+fig, ax = plt.subplots(figsize=(6.4, 3.4))
+for r in "acd":
+    D = R[r]; p = D["ports"][9.0][1]; A = p["A"][0] - p["A"][1]; B = p["B"][0] - p["B"][1]
+    from scipy.ndimage import median_filter
+    y = median_filter(20 * np.log10(abs(B) / np.mean(abs(A))), size=41, mode="nearest")  # removes the slot-cell spikes (180 um period)
+    ax.plot(D["z"] * 1e3 - 0.3, y, color=COL[r], lw=1.8, label=LAB[r])
+ax.set_xlim(0, 8.75); ax.set_ylim(-105, 0); ax.set_xlabel("position along the line (mm)"); ax.set_ylabel("line B / line A (dB)")
+ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=10.5, loc="lower center", ncol=3, handlelength=1.2); ax.set_title("Victim field along the line, 9 GHz (median over 0.2 mm)", fontsize=12)
+fig.tight_layout(); fig.savefig(os.path.join(OUT, "victim_profile_9GHz.png"), dpi=200); plt.close(fig)
+
+# equations (mathtext)
+EQ = {"eq_time": r"$t(z) = t_0 + z\,n_g/c$",
+      "eq_phase": r"$\Delta\varphi_k(t_0) = \kappa \int_0^L E_{y,k}\,(z,\,t(z))\;dz$",
+      "eq_H": r"$H_k = \frac{1}{L}\int_0^L E_{y,k}(z)\,e^{\,j\beta_o z}\,dz,\qquad \beta_o = \omega\, n_g/c$",
+      "eq_pp": r"$H_{\mathrm{line}} = H_{+} - H_{-}\qquad X(f) = \frac{H_B}{H_A}$"}
+for k, v in EQ.items():
+    fig = plt.figure(figsize=(0.1, 0.1)); fig.text(0, 0, v, fontsize=22, color="#1A1A1A")
+    fig.savefig(os.path.join(OUT, k + ".png"), dpi=200, bbox_inches="tight", pad_inches=0.05, transparent=True); plt.close(fig)
+print("revised-deck figures written")

@@ -1,6 +1,6 @@
 """Istanbul EO crosstalk study: slide deck in the company template (python-pptx).
 Template = docs/CST_line_extraction.pptx with its slides removed (same as build_meeting.py).
-Figures: istanbul_figs.py -> istanbul_img/. Output: ../Istanbul_EO_crosstalk.pptx"""
+Figures: istanbul_figs.py -> istanbul_img/. Output: ../Istanbul_EO_crosstalk.pptx (revised 2026-11-10: 12 slides)."""
 import os, re
 from pptx import Presentation
 from pptx.util import Inches, Pt
@@ -41,6 +41,9 @@ def text(s, x, y, w, h, paras, size=14, color=INK, bold=False, align=PP_ALIGN.LE
         sz, col, bd = size, color, bold
         if isinstance(para, tuple):
             para, o = para; sz, col, bd = o.get("size", sz), o.get("color", col), o.get("bold", bd)
+        if para.startswith("- "):
+            para = para[2:]; pPr = p._p.get_or_add_pPr(); pPr.set("marL", str(int(Inches(0.2)))); pPr.set("indent", str(int(-Inches(0.2))))
+            bu = pPr.makeelement(qn("a:buChar"), {"char": "•"}); pPr.append(bu)
         runs(p, para, sz, col, bd)
     return tb
 
@@ -104,189 +107,133 @@ def step(s, x, y, w, h, tag, head, body, hc=NAVY):
 new = lambda: prs.slides.add_slide(L_BLANK)
 def note(s, t): s.notes_slide.notes_text_frame.text = t
 
-# ---------------------------------------------------------------- 1 title
+def eqimg(s, name, x, y, h):
+    path = os.path.join(IMG, name + ".png"); W, H = Image.open(path).size
+    s.shapes.add_picture(path, Inches(x), Inches(y), Inches(h * W / H), Inches(h))
+
+def caption(s, x, y, w, t, h=0.4): text(s, x, y, w, h, t, size=12, color=MUTED)
+
+PURPLE = RGBColor(0x7A, 0x4B, 0xD1)
+
+# 1 ---------------------------------------------------------------- title
 s = prs.slides.add_slide(L_TITLE)
-text(s, 0, 2.15, 13.33, 1.4, ["Electro-optic crosstalk of the Istanbul module:", "simulation step by step, and comparison with the lab"], size=34, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
-text(s, 0, 3.75, 13.33, 0.8, "CST time-domain runs (a)–(d): bare lines, real terminations, launch pads, driver · 8.75 mm lines, 625 µm pitch", size=18, color=MUTED, align=PP_ALIGN.CENTER)
+text(s, 0.5, 2.15, 12.33, 1.4, ["Istanbul electro-optical crosstalk:", "simulation and lab measurement comparison"], size=34, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+text(s, 0.5, 3.75, 12.33, 0.8, "CST time-domain full-wave simulations · 8.75 mm line pair, 625 µm pitch · module K00626", size=18, color=MUTED, align=PP_ALIGN.CENTER)
 
-# ---------------------------------------------------------------- 2 summary
-s = new(); title(s, "Summary", "The full-module simulation falls inside the spread of the lab measurements")
-stat(s, 0.5, 1.6, 3.95, 2.25, "−27 dB", "Simulated EO crosstalk, full module (median 5–60 GHz)", col=RGBColor(0x7A, 0x4B, 0xD1))
-stat(s, 4.69, 1.6, 3.95, 2.25, "−19 / −30 dB", "Lab, the two directions of one line pair (median, read from a plot)", col=RED)
-stat(s, 8.88, 1.6, 3.95, 2.25, "6.4 / 5 GHz", "Ripple period: simulation / lab (worst pair)")
-card(s, 0.5, 4.15, 6.05, 2.75, "What we learned", ["Each piece added to the model raises the EO crosstalk: from −38 dB (bare lines) to −27 dB (full module).",
-     "The driver side changes the picture most: strong crosstalk already at a few GHz and a regular ripple.",
-     "The rule of thumb \"EO = FEXT − 6 dB\" holds only for bare lines; in the module EO ≈ FEXT."])
-card(s, 6.78, 4.15, 6.07, 2.75, "Open points", ["Simulation and lab differ by up to 8 dB for the worst direction; the two lab directions differ by 10 dB.",
-     "Next: real driver data, numeric lab data, and a few sensitivity runs (wires, glue, chip edge)."], hc=RED)
-note(s, "EO crosstalk = modulation of line B's light caused by driving line A, relative to line A's own modulation.")
+# 2 ---------------------------------------------------------------- purpose
+s = new(); title(s, "Purpose", "A fast and reliable simulation of the EO crosstalk between adjacent modulators")
+fig(s, "model_d_driver.png", 0.5, 1.6, 6.3, 3.8, "CST model of the Istanbul module input: driver carrier, bond wires, launch pads, line pair")
+caption(s, 0.5, 5.5, 6.3, "Istanbul full-module model: driver carrier, bond wires, launch pads and the 8.75 mm line pair.", h=0.6)
+step(s, 7.05, 1.6, 5.8, 1.6, "1", "Simulate", ["EO crosstalk of an Istanbul line pair and of the full module, from the driver output to the line end."])
+step(s, 7.05, 3.4, 5.8, 1.6, "2", "Compare", ["Simulated EO crosstalk against the lab measurement of module K00626."])
+step(s, 7.05, 5.2, 5.8, 1.6, "3", "Establish", ["A validated simulation flow for later designs: pitch, terminations, assembly."])
 
-# ---------------------------------------------------------------- 3 what we compute
-s = new(); title(s, "What the EO crosstalk is and how we get it", "Straight from the simulated fields: no circuit or mode model in between")
-step(s, 0.5, 1.6, 3.95, 2.6, "1", "Drive line A only", ["CST time-domain run, one excited port: the aggressor. Line B is terminated as in the module."])
-arrow(s, 4.55, 2.7, 0.5)
-step(s, 5.15, 1.6, 3.95, 2.6, "2", "Read the field in the gaps", ["Field exported along both gaps of both lines, every 5 µm, at 60 frequencies (1–60 GHz)."])
-arrow(s, 9.2, 2.7, 0.5)
-step(s, 9.8, 1.6, 3.05, 2.6, "3", "Follow the light", ["Add up the field the light meets while it travels along each line."])
-card(s, 0.5, 4.5, 6.05, 2.4, "The key idea", ["The light travels together with the electrical wave on its own line.",
-     "A wave on line B that travels in the same direction as the light keeps modulating it: it counts.",
-     "A wave travelling the opposite way changes sign many times as the light passes: it averages out."])
-card(s, 6.78, 4.5, 6.07, 2.4, "Result", ["**EO crosstalk = (modulation of B) / (modulation of A)**, both lines driven in push-pull.",
-     "Optical group index 2.27. Same method for every run, so the runs compare one to one."])
+# 3 ---------------------------------------------------------------- difficulty
+s = new(); title(s, "Why S-parameters are not sufficient", "The EO crosstalk depends on the voltage profile V(z) along the whole victim line")
+fig(s, "fext_ambiguity.png", 0.5, 1.6, 6.4, 3.65, "Two victim profiles with the same FEXT but different EO crosstalk")
+caption(s, 0.5, 5.35, 6.4, "Same FEXT, different EO crosstalk: the optical phase integrates V(z), not its end value.", h=0.6)
+card(s, 7.15, 1.6, 5.7, 1.65, "Port data", ["S-parameters describe the four line ends only. NEXT and FEXT are the victim signal at its near and far end."])
+card(s, 7.15, 3.4, 5.7, 1.85, "Optical response", ["The light collects the field along the full length, in step with its own travel time. Equal FEXT can give EO crosstalk differing by 6 dB."])
+card(s, 7.15, 5.4, 5.7, 1.5, "Consequence", ["V(z) of both lines is taken from full-wave field monitors, every 1 GHz from 1 to 60 GHz (victim ripple period ≈ 6.5 GHz)."], hc=RED)
 
-# ---------------------------------------------------------------- 4 section: setup
-s = new(); title(s, "Simulation set-up: lessons from the Cordoba runs", "Six choices, each one backed by a Cordoba result")
-rows = [["Setting", "Before", "Now", "Why (Cordoba evidence)"],
-        ["Mesh", "6 cells in the gap", "finer (≥ 4–5 cells, 60 steps/λ)", "line speed changed by 1–2 % on refinement"],
-        ["Device width", "21 µm beyond ground", "≈ 400–625 µm", "victim field changed by 20 %, EO by 1–3 dB"],
-        ["Bottom of the silicon", "open", "electric (conductive glue)", "adds a slow substrate wave and the ~7 GHz ripple"],
-        ["Solver accuracy", "−27 dB", "−40 dB", "at −27 dB the victim field was 40–240 % wrong"],
-        ["Field monitors", "every 5 GHz", "every 1 GHz", "5 GHz steps miss a 7 GHz ripple"],
-        ["Excited ports", "4", "1 (others terminated)", "4× shorter runs; matches the lab drive"]]
-table(s, 0.5, 1.6, 12.35, rows, [2.2, 2.2, 2.9, 5.0], size=13, row_h=0.62)
-text(s, 0.5, 6.15, 12.35, 0.8, "Why so strict: line B's field is 30–75 dB below line A's. Small numerical errors on A are large errors on B.", size=14, color=MUTED)
+# 4 ---------------------------------------------------------------- eigenmode
+s = new(); title(s, "Eigenmode solver: physical insight, no quantitative crosstalk", "Six-mode description of the Cordoba 8 mm pair (same platform, simpler geometry)")
+card(s, 0.5, 1.6, 6.0, 2.45, "Strengths", ["- Fast: one periodic cell, about 2 min per solution.",
+     "- Lists the modes a line supports: even/odd coplanar pair, slot modes and, with a conductive bottom, a slow wave between all electrodes and the bottom (index ≈ 3.2).",
+     "- Identified that slow wave as the backward wave found under line B in the time-domain fields."], size=13)
+card(s, 0.5, 4.2, 6.0, 2.7, "Limits", ["- Infinite uniform cell: no line ends, hence no reflections, end conversion or fields localised near the pads.",
+     "- No pads, wire bonds, driver or bends.",
+     "- Line B: misfit of 5–15 % up to 30 GHz, about 100 % at 60 GHz; one prediction test passed out of six."], hc=RED, size=13)
+fig(s, "eigen_error_scale.png", 6.75, 1.6, 6.1, 3.3, "Error scale of the mode description of line A compared with the line B field")
+card(s, 6.75, 5.05, 6.1, 1.85, "Why line B fails", ["The imperfections in the description of line A (red) exceed the whole victim field (green). Mode model abandoned: the EO crosstalk is taken directly from the time-domain fields."], size=13)
 
-# ---------------------------------------------------------------- 5 width + bottom
-s = new(); title(s, "Model the chip as it is mounted: width and bottom", "Cordoba 8 mm, EO crosstalk at 12 frequencies")
-fig(s, "cordoba_width.png", 0.5, 1.55, 6.05, 3.25, "Cordoba EO crosstalk, narrow vs wide substrate")
-fig(s, "cordoba_bottom.png", 6.78, 1.55, 6.07, 3.25, "Cordoba EO crosstalk, open vs electric bottom")
-card(s, 0.5, 5.0, 6.05, 1.9, "Larger device width", ["With the side boundary 21 µm from the outer ground, part of the victim field was cut off: EO 1–3 dB too low.",
-     "Istanbul check: widening from ≈ 400 to 625 µm changed EO by only 0.7 dB."], size=14)
-card(s, 6.78, 5.0, 6.07, 1.9, "Electric bottom", ["The chip sits on conductive glue. A conductor under the silicon guides a slow wave (index ≈ 3.1) under all the metal.",
-     "EO changes by −10 to +5 dB and gets a ripple. Leaving it out is not conservative."], size=14)
+# 5 ---------------------------------------------------------------- EO computation
+s = new(); title(s, "EO crosstalk from full-wave fields", "CST time-domain solver; E_{y} exported in both gaps of both lines, every 5 µm")
+text(s, 0.5, 1.55, 6.4, 0.35, "**1.** Light enters at t_{0} and reaches z at", size=13); eqimg(s, "eq_time", 0.9, 1.92, 0.36)
+text(s, 0.5, 2.4, 6.4, 0.35, "**2.** Phase of arm k (κ: EO constant, equal for all arms)", size=13); eqimg(s, "eq_phase", 0.9, 2.8, 0.5)
+text(s, 0.5, 3.45, 6.4, 0.35, "**3.** Phasor field E(z)·exp(jωt): Δφ_{k} = κL·Re{H_{k}·exp(jωt_{0})}, with", size=13); eqimg(s, "eq_H", 0.9, 3.85, 0.6)
+text(s, 0.5, 4.6, 6.4, 0.35, "**4.** Push-pull (difference of the two gaps) and crosstalk", size=13); eqimg(s, "eq_pp", 0.9, 5.0, 0.5)
+text(s, 0.5, 5.65, 6.4, 1.2, "The integral is evaluated as a sum over the 5 µm samples. Backward waves meet the light with a phase that rotates along the line: their contributions cancel to a small residual. Forward waves keep their phase and add up.", size=12, color=MUTED)
+table(s, 7.1, 1.6, 5.75, [["Assumption", "Assessment"],
+      ["Full-wave field: forward, backward, substrate waves, reflections", "Rigorous: no mode model"],
+      ["Linear Pockels effect, small signal, E_{y} only", "Standard"],
+      ["Optical group index 2.27, constant; no optical loss", "Standard, minor"],
+      ["E_{y} at one point per gap (x = 1.275 µm, 5 µm from centre), not an optical-mode overlap", "Weakness: level depends on the point (2.2 dB for 2.5 µm); ratio partly compensates"],
+      ["Δz = 5 µm; solver stopped at −40 dB", "≤ 0.6 dB above 20 GHz, 1–2 dB below 15 GHz"]], [3.1, 2.65], size=11.5, row_h=0.88, hl=(4,))
 
-# ---------------------------------------------------------------- 6 accuracy + monitors
-s = new(); title(s, "Let the solver finish, and sample finely", "Cordoba 8 mm, electric bottom")
-fig(s, "cordoba_accuracy.png", 0.5, 1.55, 6.05, 3.25, "EO crosstalk vs solver stopping level")
-fig(s, "cordoba_monitors.png", 6.78, 1.55, 6.07, 3.25, "EO crosstalk sampled every 1 GHz vs every 5 GHz")
-card(s, 0.5, 5.0, 6.05, 1.9, "Accuracy −40 dB", ["Stopping at −27 dB leaves energy in the structure: fine for line A, wrong for the weak line B (EO up to 18 dB off).",
-     "−40 dB agrees with −44.5 dB within 0.6 dB above 20 GHz (1–2 dB below 15 GHz)."], size=14)
-card(s, 6.78, 5.0, 6.07, 1.9, "Monitors every 1 GHz", ["The EO crosstalk ripples with a period of about 7 GHz. Every 5 GHz the dips fall between samples.",
-     "Monitors do not slow the solver (7.0 ms per step with 60 monitors)."], size=14)
+# 6 ---------------------------------------------------------------- set-up 1/2
+s = new(); title(s, "Simulation set-up (1/2): length, mesh, substrate bottom", "Corrections derived from earlier Istanbul and Cordoba runs, applied to all Istanbul runs")
+step(s, 0.5, 1.6, 6.3, 1.65, "1", "Full-length line", ["Istanbul 1–8.75 mm: NEXT grows ≈ L²; the two-mode length extrapolation misses it by 10–30 dB. The 8.75 mm line is simulated directly."], hc=NAVY)
+step(s, 0.5, 3.4, 6.3, 1.65, "2", "Mesh refinement", ["Istanbul 3 mm: index 2.113 → 2.138 (1.2 %), i.e. 0.27 rad over 8.75 mm at 60 GHz: relevant for velocity matching. ≥ 4–5 cells across gaps and metal."], hc=NAVY)
+step(s, 0.5, 5.2, 6.3, 1.7, "3", "Electric bottom", ["Chip on 40 µm conductive epoxy on Al₂O₃: a conductor under the silicon. Open boundary = unbounded substrate, without the wave guided between electrodes and bottom."], hc=NAVY)
+fig(s, "cordoba_bottom.png", 7.05, 1.6, 5.8, 3.4, "Cordoba EO crosstalk with open and electric substrate bottom")
+caption(s, 7.05, 5.1, 5.8, "Cordoba 8 mm: the electric bottom changes the EO crosstalk by −10 to +5 dB and adds a ripple. Open-bottom results are not conservative.", h=0.9)
 
-# ---------------------------------------------------------------- 7 mesh + one port
-s = new(); title(s, "Finer mesh and one active port", "Accuracy where it matters, computing time where it does not")
-table(s, 0.5, 1.6, 6.3, [["Istanbul 3 mm line", "Coarse", "Refined"], ["Line index (30 GHz)", "2.113", "2.138"],
-      ["NEXT (30 GHz)", "−45.9 dB", "−45.8 dB"], ["FEXT (30 GHz)", "−50.6 dB", "−50.9 dB"], ["S21 (30 GHz)", "−0.99 dB", "−1.18 dB"]], [2.6, 1.8, 1.8], size=13, row_h=0.5, hl=(1,))
-card(s, 0.5, 4.3, 6.3, 2.6, "Why the mesh matters for EO", ["Refining the mesh changed the crosstalk by less than 0.5 dB, but the speed of the wave by 1–2 %.",
-     "The EO crosstalk depends on how well the electrical wave keeps pace with the light. Over 8.75 mm, 1 % in speed is a visible error at high frequency.",
-     "Rule: at least 4–5 cells across each gap and across the metal."], size=14)
-card(s, 7.05, 1.6, 5.8, 2.45, "One excited port, three idle", ["Every excited port is a full run (Cordoba, −40 dB: 12 h on GPU).",
-     "Exciting all four ports would take ~4× longer."], size=14)
-card(s, 7.05, 4.3, 5.8, 2.6, "Why one is enough", ["In the lab only line A is driven. The other ends are terminated inside the model (resistors, driver port), so one run is exactly the lab situation.",
-     "Four ports are needed only to change terminations afterwards."], size=14)
+# 7 ---------------------------------------------------------------- set-up 2/2
+s = new(); title(s, "Simulation set-up (2/2): accuracy, monitors, excitation", "Validated on the Cordoba 8 mm pair, where the victim is 55–75 dB below the aggressor")
+fig(s, "cordoba_accuracy.png", 0.5, 1.6, 6.05, 3.15, "Cordoba EO crosstalk for three solver stopping levels")
+fig(s, "cordoba_monitors.png", 6.78, 1.6, 6.07, 3.15, "Cordoba EO crosstalk with monitors every 1 GHz and every 5 GHz")
+step(s, 0.5, 4.95, 4.0, 1.95, "4", "Accuracy −40 dB", ["At −27 dB the victim field is 40–240 % wrong (EO up to 18 dB). −40 dB: within 0.6 dB of −44.5 dB above 20 GHz."])
+step(s, 4.67, 4.95, 4.0, 1.95, "5", "Monitors every 1 GHz", ["5 GHz spacing misses the ≈ 7 GHz ripple; models fitted to sparse monitors failed prediction tests."])
+step(s, 8.84, 4.95, 4.01, 1.95, "6", "One active port", ["Line A input excited, all other ends terminated in the model: the lab drive in one run, 4× less time."])
 
-# ---------------------------------------------------------------- 8 eigenmode
-s = new(); title(s, "Why the eigenmode route was stopped", "It explained the physics but could not give reliable numbers")
-card(s, 0.5, 1.6, 4.0, 3.0, "What it is", ["Solves one short slice of an infinitely long, straight line and returns its modes.",
-     "Idea: rebuild line B's field as a sum of six modes."])
-card(s, 4.67, 1.6, 4.0, 3.0, "Why it failed", ["Line B is 55–75 dB below line A. The two solvers differ in line index by 0.004–0.01: this mismatch is as large as B itself.",
-     "Fits got worse above 30 GHz; prediction tests passed once in six."], hc=RED)
-card(s, 8.84, 1.6, 4.01, 3.0, "Why it cannot help the module", ["A periodic slice has no pads, no driver, no bends, no terminations: exactly the parts that drive the module crosstalk."], hc=RED)
-card(s, 0.5, 4.85, 12.35, 2.05, "What we keep from it", ["The slow wave between the metal and the conductive glue (index ≈ 3.1), and that the ripple comes from waves making a round trip along the chip.",
-     "The time-domain fields give the EO crosstalk directly, for any geometry: that is the route for all module runs."])
+# 8 ---------------------------------------------------------------- models
+s = new(); title(s, "Modular build-up: four models", "(b) and (c) each add one element to (a); (d) adds the driver to (c). Each change is isolated.")
+cells = [("model_a_bare.png", "(a) Bare line pair", "8.75 mm, pitch 625 µm. 50 Ω discrete ports at both ends of both lines."),
+         ("model_b_termination.png", "(b) Real far-end termination", "Pads on Si through an LN/SiO₂ trench; lumped RS 25 Ω + 2 × RG 50 Ω (50 Ω). Ports at the near end only."),
+         ("model_c_pads.png", "(c) Input launch pads", "Launch pads on oxide at the line input; 50 Ω discrete ports at the pads and at the far ends."),
+         ("model_d_driver.png", "(d) Driver and bond wires", "Al₂O₃ driver carrier with output traces, 8 bond wires (17 µm); waveguide ports on the carrier traces.")]
+for i, (img, head, body) in enumerate(cells):
+    x = 0.5 + (i % 2) * 6.28; y = 1.55 + (i // 2) * 2.75
+    fig(s, img, x, y, 3.5, 2.55, head)
+    text(s, x + 3.65, y + 0.1, 2.45, 2.4, [(head, {"bold": True, "color": NAVY, "size": 14})] + [(body, {"size": 12.5})], sa=4)
 
-# ---------------------------------------------------------------- 9 build-up overview
-s = new(); title(s, "Istanbul: building the module piece by piece", "Four runs, one piece added each time, same settings")
-fig(s, "module_model.png", 0.5, 1.55, 5.0, 3.0, "CST model of the full module: driver carrier, bond wires, launch pads, lines")
-fig(s, "istanbul_eo_abcd.png", 5.7, 1.55, 7.15, 3.9, "EO crosstalk of runs a to d")
-table(s, 0.5, 4.75, 5.0, [["Run", "Added", "EO median"], ["(a)", "bare lines", "−38.4 dB"], ["(b)", "real terminations", "−36.7 dB"],
-      ["(c)", "launch pads", "−32.8 dB"], ["(d)", "driver + wires", "−27.3 dB"]], [0.8, 2.4, 1.8], size=12.5, row_h=0.42, hl=(4,))
-text(s, 5.7, 5.6, 7.15, 1.3, ["Medians over 5–60 GHz. 2 and 15 GHz left out (corrupted export in run c).",
-     "Line A (aggressor) at y = 0, line B (victim) 625 µm away."], size=12, color=MUTED)
+# 9 ---------------------------------------------------------------- results
+s = new(); title(s, "EO crosstalk: effect of each element", "Medians over 5–60 GHz (2 and 15 GHz excluded: corrupted export in run c)")
+fig(s, "istanbul_eo_abcd.png", 0.5, 1.55, 7.2, 4.1, "EO crosstalk of the four Istanbul runs")
+table(s, 7.9, 1.55, 4.95, [["Step", "EO change", "Cause"],
+      ["(a) → (b)", "+1.5 dB", "≈ 50 Ω like the port of (a); different reflection phase at the far-end pads"],
+      ["(a) → (c)", "+5.4 dB", "Pads couple a wave onto B at the line input, then carried along with the light"],
+      ["(c) → (d)", "+6.4 dB\n(≥ 10 dB below 10 GHz)", "Driver carrier and bond wires inject a strong victim signal before the line"]], [1.05, 1.25, 2.65], size=11.5, row_h=1.0, hl=(3,))
+card(s, 7.9, 5.75, 4.95, 1.15, "Ripple", ["Period 6.2–6.8 GHz in all four runs: a property of the line (round trip ≈ 150 ps)."], size=12.5)
+text(s, 0.5, 5.8, 7.2, 1.0, "Bare line: −38.4 dB · real termination: −36.7 dB · launch pads: −32.8 dB · full module: −27.3 dB", size=13, color=MUTED)
 
-# ---------------------------------------------------------------- 10 a -> b
-s = new(); title(s, "Step (a) → (b): real terminations", "+1.5 dB median; more ripple")
-fig(s, "step_ab.png", 0.5, 1.55, 7.3, 4.1, "EO crosstalk, run a vs run b")
-card(s, 8.05, 1.55, 4.8, 2.6, "What changes", ["The 50 Ω port at the far end is replaced by the real termination: about 40 Ω on silicon pads.",
-     "Part of line A's wave is now reflected back."], size=14)
-card(s, 8.05, 4.35, 4.8, 2.55, "Why EO rises", ["The reflected wave runs backward on A. The crosstalk it creates on B runs forward, with the light, so it counts.",
-     "Each round trip adds a contribution with a different phase: dips every 6.5–7 GHz."], size=14)
-text(s, 0.5, 5.8, 7.3, 1.0, "The ripple period is set by the time a wave needs to go along the line and back.", size=13, color=MUTED)
-
-# ---------------------------------------------------------------- 11 b -> c
-s = new(); title(s, "Step (b) → (c): launch pads", "+3.6 dB median vs (b); EO rises more than FEXT")
-fig(s, "step_bc.png", 0.5, 1.55, 7.3, 4.1, "EO crosstalk, run b vs run c")
-card(s, 8.05, 1.55, 4.8, 2.6, "What changes", ["Wide launch pads at the line input. Their field spreads further sideways than the narrow line's.",
-     "Compared with (a): NEXT +6.1 dB, FEXT +3.7 dB, EO +5.4 dB (medians)."], size=14)
-card(s, 8.05, 4.35, 4.8, 2.55, "Why EO rises more than FEXT", ["The pads couple a wave onto B right at the entrance. It then travels with the light over the full 8.75 mm.",
-     "A head start counts in full; crosstalk built along the line counts only half."], size=14)
-
-# ---------------------------------------------------------------- 12 c -> d
-s = new(); title(s, "Step (c) → (d): the driver", "+6.4 dB median vs (c); 10 dB or more below 10 GHz")
-fig(s, "step_cd.png", 0.5, 1.55, 7.3, 4.1, "EO crosstalk, run c vs run d")
-card(s, 8.05, 1.55, 4.8, 2.05, "What changes", ["Driver carrier (alumina) with its traces, and eight bond wires to the launch pads. The driver itself is an ideal matched source."], size=14)
-card(s, 8.05, 3.75, 4.8, 3.15, "Why the low frequencies change most", ["Crosstalk built along the lines grows with frequency: below 10 GHz it is very weak (runs a–c).",
-     "The driver side adds coupling that does not need high frequency: return currents shared by the carrier and the wires, and a wave guided by the whole metal over the conductive bottom."], size=14)
-text(s, 0.5, 5.8, 7.3, 1.1, ["Most likely explanation, consistent with all runs; not yet proven by a dedicated test."], size=13, color=MUTED)
-
-# ---------------------------------------------------------------- 13 ripple of d
-s = new(); title(s, "The ripple of the full module is a round trip", "Peaks every 6.4 GHz, the same in NEXT, FEXT and EO")
-fig(s, "run_d_ports.png", 0.5, 1.55, 7.3, 4.1, "Run d: NEXT, FEXT and EO crosstalk")
-card(s, 8.05, 1.55, 4.8, 2.55, "One wave, two speeds", ["Out along the line at the line's speed (index 2.23), back under it on the slow substrate wave (index ≈ 3.1)."], size=14)
-card(s, 8.05, 4.25, 4.8, 2.65, "The numbers match", ["Round trip over 8.75 mm: 156 ps → one ripple every 6.4 GHz, as simulated.",
-     "Cordoba (8 mm): 143 ps → 7.0 GHz, as found there."], size=14)
-text(s, 0.5, 5.8, 7.3, 1.1, "NEXT and FEXT at the same level, with the same ripple: the crosstalk no longer comes mainly from the parallel lines.", size=13, color=MUTED)
-
-# ---------------------------------------------------------------- 14 why -6 dB fails
-s = new(); title(s, "Why \"EO = FEXT − 6 dB\" no longer holds", "It assumes all the crosstalk is built up along the line")
-fig(s, "eo_vs_fext_a_d.png", 0.5, 1.55, 8.3, 2.9, "EO crosstalk vs FEXT, runs a and d")
-cd = CategoryChartData(); cd.categories = ["Cordoba", "(a)", "(c)", "(d)"]; cd.add_series("EO − FEXT (dB)", (-6.0, -4.8, -1.7, 0.3))
-gf = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(9.0), Inches(1.55), Inches(3.85), Inches(2.9), cd); ch = gf.chart
-ch.has_legend = False; ch.has_title = True; ch.chart_title.text_frame.text = "EO − FEXT, median (dB)"
-tp = ch.chart_title.text_frame.paragraphs[0]; tp.runs[0].font.size = Pt(12); tp.runs[0].font.bold = True; tp.runs[0].font.name = FONT; tp.runs[0].font.color.rgb = INK
+# 10 --------------------------------------------------------------- EO vs FEXT
+s = new(); title(s, "Full module: EO crosstalk ≈ FEXT", "The driver-side coupling places the victim signal at the line input")
+fig(s, "victim_profile_9GHz.png", 0.5, 1.55, 6.4, 3.5, "Victim field along the line at 9 GHz for runs a, c, d")
+cd = CategoryChartData(); cd.categories = ["(a) bare line", "(c) launch pads", "(d) full module"]; cd.add_series("EO − FEXT (dB)", (-4.8, -1.7, 0.3))
+gf = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(7.15), Inches(1.55), Inches(5.7), Inches(3.5), cd); ch = gf.chart
+ch.has_legend = False; ch.has_title = True; ch.chart_title.text_frame.text = "EO − FEXT, median 5–60 GHz (dB)"
+r0 = ch.chart_title.text_frame.paragraphs[0].runs[0]; r0.font.size = Pt(13); r0.font.bold = True; r0.font.name = FONT; r0.font.color.rgb = INK
 pl = ch.plots[0]; pl.has_data_labels = True; dl = pl.data_labels; dl.number_format = '+0.0;−0.0'; dl.number_format_is_linked = False
-dl.font.size = Pt(11); dl.font.name = FONT; dl.position = XL_LABEL_POSITION.OUTSIDE_END
+dl.font.size = Pt(12); dl.font.name = FONT; dl.position = XL_LABEL_POSITION.OUTSIDE_END
 ser = pl.series[0]; ser.format.fill.solid(); ser.format.fill.fore_color.rgb = NAVY; ser.invert_if_negative = False
 va = ch.value_axis; va.maximum_scale = 2; va.minimum_scale = -8; va.major_unit = 2; va.has_major_gridlines = True
-va.major_gridlines.format.line.color.rgb = BOX; va.tick_labels.font.size = Pt(10); va.tick_labels.font.name = FONT
-ch.category_axis.tick_labels.font.size = Pt(11); ch.category_axis.tick_labels.font.name = FONT
+va.major_gridlines.format.line.color.rgb = BOX; va.tick_labels.font.size = Pt(11); va.tick_labels.font.name = FONT
 from pptx.enum.chart import XL_TICK_LABEL_POSITION
-ch.category_axis.tick_label_position = XL_TICK_LABEL_POSITION.LOW
-card(s, 0.5, 4.7, 6.05, 2.2, "Built along the line → −6 dB", ["On matched bare lines B's wave grows from zero at the input to its full value (FEXT) at the far end.",
-     "The light sees the average: half the far-end value, i.e. −6 dB."], size=14)
-card(s, 6.78, 4.7, 6.07, 2.2, "Injected at the input → 0 dB", ["Pads and driver put crosstalk on B before the line starts. That wave travels with the light all the way: the light sees it in full.",
-     "The more of the crosstalk comes from the input, the closer EO gets to FEXT."], hc=RED, size=14)
+ch.category_axis.tick_label_position = XL_TICK_LABEL_POSITION.LOW; ch.category_axis.tick_labels.font.size = Pt(11); ch.category_axis.tick_labels.font.name = FONT
+card(s, 0.5, 5.2, 6.4, 1.7, "Observation", ["In (d) the victim field is already −20 dB at the line input and stays constant along the line (3 and 9 GHz); in (a) and (c) it is −50 to −70 dB. The added coupling lies between the driver port and the line input (carrier traces or bond wires, not separated)."], size=12.5)
+card(s, 7.15, 5.2, 5.7, 1.7, "Consequence", ["A victim wave present from the input travels with the light over the full length: EO ≈ FEXT. Coupling built along the line gives EO ≈ FEXT − 6 dB (bare line: −4.8 dB)."], hc=RED, size=12.5)
 
-# ---------------------------------------------------------------- 15 lab data
-s = new(); title(s, "Lab measurements and how we read them", "Module K00626 (SN 6A077700): six crosstalk curves")
-fig(s, "lab_measurement_K00626.png", 0.5, 1.55, 7.6, 3.85, "Lab measurement of the module: signals and EO crosstalk")
-card(s, 8.3, 1.55, 4.55, 2.3, "Large spread", ["Three line pairs, both directions: up to ~10 dB between curves at the same frequency.",
-     "MZ3toMZ4 is the worst; its reverse MZ4toMZ3 is among the best."], size=14)
-card(s, 8.3, 4.0, 4.55, 2.9, "Digitized with WebPlotDigitizer", ["automeris.io: load the picture, click two known values on each axis, click points along a curve, export the numbers.",
-     "Done for MZ3toMZ4 (orange, 87 points) and MZ4toMZ3 (blue, 93 points)."], size=14)
-text(s, 0.5, 5.55, 7.6, 1.35, ["**Only an estimate:** in the shared picture one pixel is about 0.2 GHz and 0.15 dB; overlapping curves of similar colour; deep dips fall between the clicked points; for the blue curve the axis scaling was reconstructed from the dip positions."], size=12.5, color=INK)
+# 11 --------------------------------------------------------------- lab
+s = new(); title(s, "Comparison with the lab measurement", "Module K00626: simulated EO crosstalk within the spread of the measured curves")
+fig(s, "sim_vs_lab.png", 0.5, 1.55, 7.7, 4.2, "Simulated EO crosstalk and two digitized lab curves")
+card(s, 8.4, 1.55, 4.45, 1.85, "Lab data", ["Six curves (three pairs, both directions), spread ≈ 10 dB. Two curves digitized from the report image: estimates only."], size=12.5)
+card(s, 8.4, 3.55, 4.45, 1.75, "Agreement", ["Simulated median −27 dB, inside the lab range (−19 to −30 dB). Ripple 6.2–6.8 GHz simulated, ≈ 5 GHz measured."], size=12.5)
+card(s, 8.4, 5.45, 4.45, 1.45, "Limits", ["A sharper comparison needs numerical lab data. Real driver, assembly and lab settings are not modelled."], hc=RED, size=12.5)
+caption(s, 0.5, 5.85, 7.7, "Digitized with WebPlotDigitizer (automeris.io): pixel resolution ≈ 0.2 GHz and 0.15 dB, overlapping curves, notches under-sampled.", h=0.7)
 
-# ---------------------------------------------------------------- 16 sim vs lab
-s = new(); title(s, "Simulation vs lab", "The simulation lies between the two directions of the same line pair")
-fig(s, "sim_vs_lab.png", 0.5, 1.55, 7.7, 4.15, "Simulated EO crosstalk vs the two digitized lab curves")
-table(s, 8.4, 1.55, 4.45, [["5–60 GHz", "Median", "Max", "Ripple"], ["Lab MZ3toMZ4", "−19.3", "−14.3", "5.0 GHz"],
-      ["Simulation (d)", "−27.3", "−20.1", "6.4–6.9 GHz"], ["Lab MZ4toMZ3", "−29.6", "−22.5", "9.2 GHz*"]], [1.75, 0.85, 0.75, 1.1], size=11.5, row_h=0.5, hl=(2,))
-text(s, 8.4, 3.65, 4.45, 0.5, "dB unless noted. *Too few points for a reliable period.", size=11, color=MUTED)
-card(s, 8.4, 4.25, 4.45, 2.65, "Reading", ["Below 25 GHz: simulation and lab agree within a few dB.",
-     "Above 27 GHz: the worst lab direction is 5–8 dB higher, the other ≈ 2 dB lower.",
-     "Both show a regular ripple; the lab one is about 25 % shorter."], size=14)
-text(s, 0.5, 5.85, 7.7, 1.0, "The simulation drives one direction only; the lab directions differ by 10 dB, more than the simulation–lab gap.", size=13, color=MUTED)
-
-# ---------------------------------------------------------------- 17 where from / future
-s = new(); title(s, "Where the remaining differences may come from", "What is not in the model yet, and how to test it")
-rows = [["Possible cause", "Why it matters", "Proposed study"],
-        ["Real driver", "Modelled as an ideal matched port; the real chip and package add length and coupling", "Driver S-parameters or package model in the run"],
-        ["Assembly as built", "Wire loops, glue and carrier position change the shared return path", "Sensitivity runs: wire height, glue / no glue"],
-        ["Chip surroundings", "Four lines per chip and a real chip edge; the model has two lines and open sides", "Four-line run with the real chip edge"],
-        ["Lab method", "Victim driver state and the squelch settings change B's termination", "Ask for the measurement procedure"],
-        ["Read-out", "Values digitized from a picture; low-frequency simulation less converged", "Numeric lab data; longer run below 15 GHz"]]
-table(s, 0.5, 1.6, 12.35, rows, [2.1, 5.6, 4.65], size=12.5, row_h=0.72)
-text(s, 0.5, 6.05, 12.35, 0.8, "Longer ripple path in the lab (5 GHz vs 6.4 GHz) points to the driver side or the return path: a good first target.", size=13, color=NAVY, bold=True)
-
-# ---------------------------------------------------------------- 18 conclusions
+# 12 --------------------------------------------------------------- conclusions
 s = new(); title(s, "Conclusions", "")
-card(s, 0.5, 1.4, 6.05, 5.5, "Simulation", ["Cordoba fixed the set-up: finer mesh, wide chip, electric bottom, −40 dB, 1 GHz monitors, one active port.",
-     "Each added piece raises the EO crosstalk; the driver side most, especially below 10 GHz.",
-     "Crosstalk injected at the input travels with the light and counts in full: EO ≈ FEXT in the module, not FEXT − 6 dB.",
-     "The module ripple matches a round trip line + slow substrate wave (6.4 GHz)."], size=16)
-card(s, 6.78, 1.4, 6.07, 5.5, "Comparison with the lab", ["The full-module simulation (−27 dB median) falls inside the lab spread (−19 to −30 dB).",
-     "It reproduces the level below 25 GHz and the regular ripple; it underestimates the worst direction by up to 8 dB.",
-     "Next: real driver data, numeric lab data, sensitivity runs on wires, glue and chip edge."], hc=RED, size=16)
+stat(s, 0.5, 1.45, 3.95, 2.0, "−27 dB", "Simulated EO crosstalk, full module (median)", col=PURPLE)
+stat(s, 4.69, 1.45, 3.95, 2.0, "−19 to −30 dB", "Lab range, module K00626 (medians)", col=RED)
+stat(s, 8.88, 1.45, 3.97, 2.0, "≈ 6.5 / 5 GHz", "Ripple period, simulation / lab")
+card(s, 0.5, 3.75, 3.95, 2.6, "Method", ["- EO crosstalk from full-wave fields: no mode model.",
+     "- Full length, fine mesh, electric bottom, −40 dB, 1 GHz monitors, one active port."], size=14)
+card(s, 4.69, 3.75, 3.95, 2.6, "Physics", ["- Each module element raises the EO crosstalk; the driver side most.",
+     "- Coupling at the input travels with the light: EO ≈ FEXT, not FEXT − 6 dB."], size=14)
+card(s, 8.88, 3.75, 3.97, 2.6, "Next", ["- Numerical lab data.",
+     "- Optical-mode overlap instead of point sampling.",
+     "- Real driver and assembly variations."], hc=RED, size=14)
 
 out = os.path.join(HERE, "..", "Istanbul_EO_crosstalk.pptx"); prs.save(out); print("saved", os.path.abspath(out))
