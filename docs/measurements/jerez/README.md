@@ -14,7 +14,7 @@ Inputs (user, 2026-11-10):
 ## Results (2026-11-10)
 Scripts (shared with CORDOBA, run from `../ald_cordoba8mm`): `wafer_analysis.py 6JZ0011 ../jerez` (log
 `out_6JZ0011_log.txt`, figures and CSVs in `out_6JZ0011/`); `figs_v2.py` and `box_both_medians.py` with
-`--base ../jerez --wafers 6JZ0011 --nm 2.22 2.29 0.01 --z0 42 44 0.25` (`out_6JZ0011/v2_*.png`, `v2_box_wafer*.png`,
+`--base ../jerez --wafers 6JZ0011 --nm 2.20 2.35 0.01 --z0 40.0 45.0 0.5` (`figs_v2.py` also `--s21min -6`; CORDOBA axes, coworker 2026-11-10) (`out_6JZ0011/v2_*.png`, `v2_box_wafer*.png`,
 `box_medians.log`); deck `deck/build_jerez_deck.py` -> `ALD_RF_impact_JEREZ.pptx` (5 slides).
 Files renamed on placement to `raw/6JZ0011/6JZ0011_<noALD|ALD>_NN.s2p` (NN = chip). All 30 files pass the checks
 (reciprocity median 0.8-1.1 %, passivity <= 0.916); no chip excluded.
