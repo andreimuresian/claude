@@ -10,7 +10,7 @@ Two normalisations are used:
 - for reference, to 1 GHz.
 
 The data in the log and the figure came out as follows.
-- **Check:** the run (a) field result was compared with the line formula, using α, n_m and Z_c extracted from the run (a) s4p.
+- **Check** (`eo_check_run_a.png`): the run (a) field result was compared with the line formula, using α, n_m and Z_c extracted from the run (a) s4p.
   They agree to 0.12 dB (median) and 0.31 dB at most. The field normalisation is therefore consistent across frequency.
 - **Results:**
   - Runs (a), (b) and (c) do not reach −3 dB by 60 GHz. At 60 GHz they are at −1.6, −1.6 and −2.3 dB.

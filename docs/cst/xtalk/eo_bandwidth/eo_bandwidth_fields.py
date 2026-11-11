@@ -57,3 +57,12 @@ ax.axhline(-3, color="0.4", lw=0.9, ls=":"); ax.set_xlim(0, 60); ax.set_ylim(-4,
 ax.set_xlabel("frequency (GHz)"); ax.set_ylabel("EO response, line A (dB)"); ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=8, loc="lower left")
 ax.set_title("Istanbul 8.75 mm, EO response from the CST gap fields (n_g 2.27, push-pull; ref: mean 3–10.7 GHz)", fontsize=9.5)
 fig.tight_layout(); fig.savefig(os.path.join(HERE, "eo_bandwidth_fields.png"), dpi=200)
+
+# check figure: only run (a), fields vs line formula
+fig, ax = plt.subplots(figsize=(8.5, 4.8))
+ax.plot(out["a"][0], out["a"][1], "o-", ms=3.5, lw=1.4, color=C["a"], label="from the CST gap fields")
+ax.plot(out["a"][0], yM, "k--", lw=1.6, label="from the touchstone (line formula with extracted α, n_m, Z_c)")
+ax.axhline(-3, color="0.4", lw=0.9, ls=":"); ax.set_xlim(0, 60); ax.set_ylim(-4, 1)
+ax.set_xlabel("frequency (GHz)"); ax.set_ylabel("EO response, line A (dB)"); ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=9, loc="lower left")
+ax.set_title("Istanbul run (a), 8.75 mm bare line, 50 Ω ports: EO response, fields vs touchstone", fontsize=10)
+fig.tight_layout(); fig.savefig(os.path.join(HERE, "eo_check_run_a.png"), dpi=200)
