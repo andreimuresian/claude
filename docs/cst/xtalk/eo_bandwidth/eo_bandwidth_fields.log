@@ -1,0 +1,6 @@
+check run (a), fields - line formula from the s4p: median -0.12 dB, max abs 0.31 dB
+run | EO response at 20/40/60 GHz (dB, plateau ref) | -3 dB crossing: plateau ref | 1 GHz ref
+ a  | -0.65 -1.21 -1.61 | > 60 | > 60
+ b  | -0.62 -1.09 -1.61 | > 60 | > 60
+ c  | -0.66 -1.65 -2.32 | > 60 | n/a (1 GHz corrupted)
+ d  | -0.28 -2.30 -3.33 | 57.44879321152195 | 57.894147897021405
