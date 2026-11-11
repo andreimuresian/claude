@@ -34,7 +34,8 @@ for name, w, fo, L in WAF:
                 k = (f >= lo) & (f < hi)
                 stats.append([w, q, s, n, f"{lo}-{hi}", round(float(np.sqrt(np.mean((avg[k] - sm[k]) ** 2))), 3)])
         ax.set_xlim(0, 60); ax.set_ylim(YMIN[q], 0); ax.set_xlabel("frequency (GHz)"); ax.set_ylabel(f"|{q}| (dB)")
-        ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=8.5, loc="lower left", ncol=1 if q == "S21" else 2)
+        ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=8.5, ncol=1 if q == "S21" else 2,
+                  loc="upper center" if (w, q) == ("6JZ0011", "S11") else "lower left")   # JEREZ S11 nulls reach the axis floor (user)
         ax.set_title(f"{name} {w} ({L} mm): |{q}|\nSavitzky–Golay {WIN} points ({WIN * df:.2f} GHz), order {ORD}", fontsize=10)
         fig.tight_layout(); fig.savefig(os.path.join(HERE, f"{q}_{w}.png"), dpi=200); plt.close(fig)
     print(w, "done", "df =", round(df * 1e3, 3), "MHz")
