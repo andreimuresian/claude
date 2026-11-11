@@ -98,3 +98,14 @@ for a_, t in zip(ax, ("|S21| at 10 mm (dB)", "|S11| at 10 mm (dB)", "S21 phase e
     a_.set_xlim(0, 60); a_.set_xlabel("frequency (GHz)"); a_.set_ylabel(t); a_.grid(alpha=0.3); a_.legend(frameon=False, fontsize=8)
 fig.suptitle("Istanbul line A extrapolated to 10 mm: two-line de-embedding (5 + 8.75 mm) vs single-line extraction", fontsize=11)
 fig.tight_layout(); fig.savefig(os.path.join(HERE, "two_line_vs_single.png"), dpi=170)
+
+# summary table: single-line fits at each length and the two-line (5 + 8.75 mm) values, away from the blind spots
+QS = (15.0, 30.0, 50.0)
+blind = np.zeros_like(f, bool)
+for m in (1, 2, 3): blind |= abs(f - m * C0 / (2 * 2.10 * 3.75e-3) / 1e9) < 1.5
+win = lambda y, q: np.median(y[(abs(f - q) <= 2.0) & ~blind])
+print("\nTable (n_m | Re Z0 ohm | alpha dB/cm) at " + ", ".join(f"{q:g}" for q in QS) + " GHz")
+for L in (1.0, 3.0, 5.0, 8.75):
+    fit = single(L, 10.0)[0]; q = np.array(QS)
+    print(f"  single {L:5.2f} mm: " + " | ".join(f"{n:.4f} {z:.1f} {a:.2f}" for n, z, a in zip(fit.nm(q), fit.Zc(q).real, fit.alpha_dB_cm(q))))
+print("  two-line 5+8.75 : " + " | ".join(f"{win(nm2(g58), q):.4f}  n/a {win(al2(g58), q):.2f}" for q in QS) + "   (medians +-2 GHz)")
