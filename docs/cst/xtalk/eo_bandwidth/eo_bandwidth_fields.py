@@ -36,9 +36,13 @@ tmp = os.path.join(tempfile.mkdtemp(), "runa_A"); n.write_touchstone(tmp); fit =
 f = out["a"][0]; fr = fit.raw_f_GHz
 H, _ = eo_transfer(f, np.interp(f, fr, fit.raw_alpha_dB_cm), np.interp(f, fr, fit.raw_nm),
                    np.interp(f, fr, fit.raw_Zc.real) + 1j * np.interp(f, fr, fit.raw_Zc.imag), 8.75e-3, 2.27, 50.0, 50.0)
-hm = abs(H); yM = 20 * np.log10(hm / np.mean(hm[(f >= REF[0]) & (f <= REF[1])]))
-d = out["a"][1] - yM
-print(f"check run (a), fields - line formula from the s4p: median {np.median(d):+.2f} dB, max abs {abs(d).max():.2f} dB")
+Hf, _ = eo_transfer(f, fit.alpha_dB_cm(f), fit.nm(f), fit.Zc(f), 8.75e-3, 2.27, 50.0, 50.0)   # fitted (smooth) alpha, n_m, Zc
+nd = lambda h: 20 * np.log10(abs(h) / np.mean(abs(h)[(f >= REF[0]) & (f <= REF[1])]))
+yR, yM = nd(H), nd(Hf)
+for lab, y in (("raw extracted", yR), ("fitted", yM)):
+    d = out["a"][1] - y
+    print(f"check run (a), fields - line formula ({lab} alpha, n_m, Zc): rms {np.sqrt(np.mean(d**2)):.2f}, max abs {abs(d).max():.2f} dB, "
+          f"ripple correlation (1 GHz differences) {np.corrcoef(np.diff(out['a'][1]), np.diff(y))[0, 1]:+.2f}")
 print("run | EO response at 20/40/60 GHz (dB, plateau ref) | -3 dB crossing: plateau ref | 1 GHz ref")
 for r, (f, y, y1) in out.items():
     v = " ".join(f"{y[np.argmin(abs(f - q))]:+.2f}" for q in (20, 40, 60))
@@ -52,7 +56,7 @@ with open(os.path.join(HERE, "eo_bandwidth_fields.csv"), "w") as fh:
 C = {"a": "#eb6834", "b": "#2a78d6", "c": "#1baa7d", "d": "#7a4bd1"}
 fig, ax = plt.subplots(figsize=(8.5, 4.8))
 for r, (f, y, _) in out.items(): ax.plot(f, y, "o-", ms=3, lw=1.3, color=C[r], label=RUNS[r][0])
-ax.plot(out["a"][0], yM, "k--", lw=1.2, label="(a) line formula with α, n_m, Z_c from the s4p (check)")
+ax.plot(out["a"][0], yM, "k--", lw=1.2, label="(a) line formula with fitted α, n_m, Z_c from the s4p (check)")
 ax.axhline(-3, color="0.4", lw=0.9, ls=":"); ax.set_xlim(0, 60); ax.set_ylim(-4, 1)
 ax.set_xlabel("frequency (GHz)"); ax.set_ylabel("EO response, line A (dB)"); ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=8, loc="lower left")
 ax.set_title("Istanbul 8.75 mm, EO response from the CST gap fields (n_g 2.27, push-pull; ref: mean 3–10.7 GHz)", fontsize=9.5)
@@ -61,7 +65,7 @@ fig.tight_layout(); fig.savefig(os.path.join(HERE, "eo_bandwidth_fields.png"), d
 # check figure: only run (a), fields vs line formula
 fig, ax = plt.subplots(figsize=(8.5, 4.8))
 ax.plot(out["a"][0], out["a"][1], "o-", ms=3.5, lw=1.4, color=C["a"], label="from the CST gap fields")
-ax.plot(out["a"][0], yM, "k--", lw=1.6, label="from the touchstone (line formula with extracted α, n_m, Z_c)")
+ax.plot(out["a"][0], yM, "k--", lw=1.6, label="from the touchstone (line formula with fitted α, n_m, Z_c)")
 ax.axhline(-3, color="0.4", lw=0.9, ls=":"); ax.set_xlim(0, 60); ax.set_ylim(-4, 1)
 ax.set_xlabel("frequency (GHz)"); ax.set_ylabel("EO response, line A (dB)"); ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=9, loc="lower left")
 ax.set_title("Istanbul run (a), 8.75 mm bare line, 50 Ω ports: EO response, fields vs touchstone", fontsize=10)

@@ -1,4 +1,5 @@
-check run (a), fields - line formula from the s4p: median -0.12 dB, max abs 0.31 dB
+check run (a), fields - line formula (raw extracted alpha, n_m, Zc): rms 0.16, max abs 0.31 dB, ripple correlation (1 GHz differences) +0.39
+check run (a), fields - line formula (fitted alpha, n_m, Zc): rms 0.11, max abs 0.19 dB, ripple correlation (1 GHz differences) +0.84
 run | EO response at 20/40/60 GHz (dB, plateau ref) | -3 dB crossing: plateau ref | 1 GHz ref
  a  | -0.65 -1.21 -1.61 | > 60 | > 60
  b  | -0.62 -1.09 -1.61 | > 60 | > 60
