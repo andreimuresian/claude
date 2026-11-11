@@ -1,0 +1,16 @@
+check (3+5 -> 8.75 vs simulated 8.75): |S21| err at 30/60 GHz +0.130 -0.427 dB, phase err +0.0 -0.3 deg, |S11| rms 1.53 dB
+
+line parameters at 30 / 60 GHz:   n_m            alpha (dB/cm)
+  two-line 5 + 8.75 mm     2.1006 2.0888   3.408 3.691
+  two-line 3 + 5 mm        2.1000 2.0911   2.886 4.797
+  single  3.00 mm (fit)    2.1124 2.0986   2.753 4.587   Re Zc 65.1 64.9
+  single  5.00 mm (fit)    2.1078 2.0937   2.893 4.583   Re Zc 64.9 64.5
+  single  8.75 mm (fit)    2.1058 2.0920   2.917 4.438   Re Zc 64.7 64.3
+
+10 mm, single-line extrapolation minus two-line (5 + 8.75):
+  from    |S21| at 30/60 GHz (dB)   S21 phase at 30/60 (deg)   |S11| rms 1-60 (dB)   EO at 30/60 (dB)
+two-line pairs, medians over 25-35 GHz (alpha dB/cm +- std point to point, n_m): 5+8.75: 3.10 +- 0.26, 2.1006; 3+5: 3.03 +- 0.18, 2.1000; 1+8.75: 3.05 +- 0.16, 2.0756; 3+8.75: 3.18 +- 0.18, 2.1005
+   3.00   +0.314 -0.349            -2.8   -4.8              2.48                +0.132 -0.040
+   5.00   +0.182 -0.334            -1.2   -1.3              2.49                +0.053 -0.138
+   8.75   +0.169 -0.182            -0.5   -0.2              2.51                +0.058 -0.085
+  (EO: same Zc, 50/50 ohm, n_g 2.27; only alpha and n_m differ)
