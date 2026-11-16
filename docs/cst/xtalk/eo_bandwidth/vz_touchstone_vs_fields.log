@@ -1,0 +1,4 @@
+run | V(z) error 10/30/58 GHz (%), median 3-60 | EO formula - fields: rms, max (dB), ripple corr | Zc fit 30 GHz | far-end |G| model vs fields 30/58
+(a) bare line      | 5.9 5.0 7.6, 5.1 | 0.11, 0.19, +0.84 | 55.5 | 0.055 vs 0.097, 0.049 vs 0.113
+(a) wide substrate | 5.9 5.1 7.5, 5.2 | 0.11, 0.21, +0.80 | 55.5 | 0.055 vs 0.100, 0.049 vs 0.111
+(c) launch pads    | 23.1 24.3 45.1, 28.7 | 0.17, 0.44, +0.25 | 52.1 | 0.025 vs 0.147, 0.013 vs 0.149
