@@ -1,7 +1,7 @@
 """Full equalizer rebuilt as a 2-port cascade: T = T_line(2.70) B T_line(1.44) B T_line(1.44), 50 ohm ports.
 Line: L+S touchstone extraction (raw alpha, n_m, Zc). Bend B: 2-port from L+B+S, B = T(2.16)^-1 T_LBS T(1.08)^-1
 (route (c) of lbs_bend.py), (i) as measured, dips included; (ii) smoothed: |S21| dB, delay and S11 of B
-replaced by a cubic fit in f over the bands outside the dips (14-18, 29-33, 44-50 GHz excluded).
+replaced by a cubic fit in f over the bands outside the dips (14-18, 29-33, 44-50, 60-67, >75 GHz excluded: resonances of the ground-to-ground mode at 16, 31, 47, 63, 79 GHz).
 Compared with the full-equalizer touchstone. Outputs: cascade_test.png, printed table."""
 import os, sys
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.abspath(os.path.join(HERE, "../../../..")))
@@ -23,7 +23,7 @@ inv = np.linalg.inv; A = lambda n: rf.network.s2a(n.s[k], 50.0)
 B = inv(T(2.16e-3)) @ A(nLBS) @ inv(T(1.08e-3))
 # smoothed bend: S-params of B referenced to Zc, fit outside the dips
 S = np.array([rf.network.a2s(B[i:i+1], Z[i])[0] for i in range(len(f))])
-ok = ~(((f > 14) & (f < 18)) | ((f > 29) & (f < 33)) | ((f > 44) & (f < 50)))
+ok = ~(((f > 14) & (f < 18)) | ((f > 29) & (f < 33)) | ((f > 44) & (f < 50)) | ((f > 60) & (f < 67)) | (f > 75))
 def sm(y): return np.polyval(np.polyfit(f[ok], y[ok], 3), f)
 mag = 10 ** (sm(20 * np.log10(abs(S[:, 1, 0]))) / 20); ph = sm(np.unwrap(np.angle(S[:, 1, 0])))
 s11 = sm(S[:, 0, 0].real) + 1j * sm(S[:, 0, 0].imag)
