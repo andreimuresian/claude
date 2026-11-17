@@ -4,23 +4,23 @@
 '
 ' Geometry (parameters of the run, mm): EL_L 2.7, EL_L2 = EL_L3 = 1.44, TAPER_L 0.22434,
 ' BEND_RADIUS 0.1025, WS 0.0347, GAP 0.00445, GAP2 0.0048, MTX 0.002, DEV_L 3.7.
-'   Line 1: centre y = -0.1025, metal z 0 .. 2.7, taper 2.7 .. 2.97434, bend 1 beyond 2.97434
+'   Line 1: centre y = -0.1025, metal z 0 .. 2.7, raised taper 2.7 .. 2.97434, bend 1 beyond 2.97434
 '   Line 2: centre y = +0.1025, metal z 1.26 .. 2.7, tapers 0.98566 .. 1.26 and 2.7 .. 2.97434
 '   Line 3: centre y = +0.3075, metal z 1.26 .. 2.7 (port 2 at z = 2.7), taper 0.98566 .. 1.26
 '   Bend 1: centre y = 0,     arc from z = 2.97434 towards +z, gap radii 0.08275 / 0.12225
 '   Bend 2: centre y = 0.205, arc from z = 0.98566 towards -z, gap radii 0.08275 / 0.12225
-' Gap centres: line centre +/- (WS/2 + GAP/2) = +/- 0.019575 (taper gaps sit 0.175 um further out: still inside).
-' x = 0.001 = half the electrode thickness.
+' Gap centres: line centre +/- (WS/2 + GAP/2) = +/- 0.019575; tapers and bends +/- (WS/2 + GAP2/2 + 0.175 um) = 0.01975.
+' x = 0.001 = mid-height of the buried electrodes; x = 0.0046 = mid-height of the raised ones.
 
 Option Explicit
 
 Const F_MIN As Integer = 1
 Const F_MAX As Integer = 60
 Const EXC As String = "[1]"          ' excitation: [1] = port 1
-' Bends do not modulate (optical waveguides cross there, electrodes raised on the SiO2 buffer):
-' their maps are only for studying RF propagation. They are ~360 MB each, so they are off by default.
-' Before enabling, check the bend metal height: the monitor box stops at x = MTX and x = 0.001 may lie below raised electrodes.
-Const EXPORT_BENDS As Boolean = False
+Const EXPORT_BENDS As Boolean = True ' bend maps, ~360 MB each (RF propagation only: bends do not modulate)
+' Raised sections (tapers + bends): metal on top of the SiO2 cladding, x = CLAD_H .. CLAD_H+MTX = 0.0036 .. 0.0056,
+' gap mid-height x = 0.0046. They need monitors reaching x = CLAD_H+MTX (field_monitors_ubend.bas, re-run).
+' With the old monitors (x 0 .. MTX) these exports fail or come out empty.
 
 Sub Main ()
     Dim outDir As String
@@ -29,15 +29,26 @@ Sub Main ()
     MkDir outDir
     On Error GoTo 0
 
-    '            name        xmin   xmax   ymin       ymax       zmin   zmax   step
-    DoRegion outDir, "L1_gap+",  0.001, 0.001, -0.082925, -0.082925, 0,     2.97,  0.005
-    DoRegion outDir, "L1_gap-",  0.001, 0.001, -0.122075, -0.122075, 0,     2.97,  0.005
-    DoRegion outDir, "L2_gap+",  0.001, 0.001,  0.122075,  0.122075, 0.99,  2.97,  0.005
-    DoRegion outDir, "L2_gap-",  0.001, 0.001,  0.082925,  0.082925, 0.99,  2.97,  0.005
-    DoRegion outDir, "L3_gap+",  0.001, 0.001,  0.327075,  0.327075, 0.99,  2.70,  0.005
-    DoRegion outDir, "L3_gap-",  0.001, 0.001,  0.287925,  0.287925, 0.99,  2.70,  0.005
-    If EXPORT_BENDS Then DoRegion outDir, "BEND1",    0.001, 0.001, -0.13,      0.13,     2.97,  3.10,  0.001
-    If EXPORT_BENDS Then DoRegion outDir, "BEND2",    0.001, 0.001,  0.075,     0.335,    0.86,  0.99,  0.001
+    '                     name                 xmin    xmax    ymin       ymax       zmin   zmax   step
+    ' Buried straight lines (metal x 0 .. MTX), gap centres = line centre +/- (WS/2+GAP/2)
+    DoRegion outDir, "L1_gap+",             0.001,  0.001, -0.082925, -0.082925, 0,     2.70,  0.005
+    DoRegion outDir, "L1_gap-",             0.001,  0.001, -0.122075, -0.122075, 0,     2.70,  0.005
+    DoRegion outDir, "L2_gap+",             0.001,  0.001,  0.122075,  0.122075, 1.26,  2.70,  0.005
+    DoRegion outDir, "L2_gap-",             0.001,  0.001,  0.082925,  0.082925, 1.26,  2.70,  0.005
+    DoRegion outDir, "L3_gap+",             0.001,  0.001,  0.327075,  0.327075, 1.26,  2.70,  0.005
+    DoRegion outDir, "L3_gap-",             0.001,  0.001,  0.287925,  0.287925, 1.26,  2.70,  0.005
+    ' Raised tapers (x mid-height 0.0046), gap centres = line centre +/- 0.01975
+    DoRegion outDir, "L1_taper_gap+",       0.0046, 0.0046, -0.08275,  -0.08275,  2.70,  2.975, 0.005
+    DoRegion outDir, "L1_taper_gap-",       0.0046, 0.0046, -0.12225,  -0.12225,  2.70,  2.975, 0.005
+    DoRegion outDir, "L2_taper_end_gap+",   0.0046, 0.0046,  0.12225,   0.12225,  2.70,  2.975, 0.005
+    DoRegion outDir, "L2_taper_end_gap-",   0.0046, 0.0046,  0.08275,   0.08275,  2.70,  2.975, 0.005
+    DoRegion outDir, "L2_taper_start_gap+", 0.0046, 0.0046,  0.12225,   0.12225,  0.985, 1.26,  0.005
+    DoRegion outDir, "L2_taper_start_gap-", 0.0046, 0.0046,  0.08275,   0.08275,  0.985, 1.26,  0.005
+    DoRegion outDir, "L3_taper_gap+",       0.0046, 0.0046,  0.32725,   0.32725,  0.985, 1.26,  0.005
+    DoRegion outDir, "L3_taper_gap-",       0.0046, 0.0046,  0.28775,   0.28775,  0.985, 1.26,  0.005
+    ' Raised U-bends (2D maps), gap radii 0.08275 / 0.12225 around the bend centre
+    If EXPORT_BENDS Then DoRegion outDir, "BEND1", 0.0046, 0.0046, -0.13,  0.13,  2.97,  3.10,  0.001
+    If EXPORT_BENDS Then DoRegion outDir, "BEND2", 0.0046, 0.0046,  0.075, 0.335, 0.86,  0.99,  0.001
 
     MsgBox "Field export finished: " & outDir
 End Sub

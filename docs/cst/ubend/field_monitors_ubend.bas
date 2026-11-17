@@ -1,5 +1,5 @@
 ' Folded line (3 straight sections + 2 U-bends): 60 E-field monitors, 1..60 GHz every 1 GHz,
-' each on a thin slab (electrode layer x 0..MTX) covering all gaps of all sections and both bends.
+' each on a slab x 0..CLAD_H+MTX (buried electrodes 0..MTX and raised tapers/bends CLAD_H..CLAD_H+MTX) covering all gaps of all sections and both bends.
 ' Run once (Macros > Edit/Run). Each monitor is written to the history list, so it survives history rebuilds.
 ' Names follow the earlier runs: "e-field (f=N)", results appear as "e-field (f=N) [1]".
 Sub Main ()
@@ -15,7 +15,7 @@ Sub Main ()
                "     .MonitorValue """ & CStr(i) & """" & vbCrLf & _
                "     .UseSubvolume ""True""" & vbCrLf & _
                "     .Coordinates ""Free""" & vbCrLf & _
-               "     .SetSubvolume ""0"", ""MTX"", ""-BEND_RADIUS-0.1"", ""3*BEND_RADIUS+0.1"", ""0"", ""DEV_L""" & vbCrLf & _
+               "     .SetSubvolume ""0"", ""CLAD_H+MTX"", ""-BEND_RADIUS-0.1"", ""3*BEND_RADIUS+0.1"", ""0"", ""DEV_L""" & vbCrLf & _
                "     .SetSubvolumeOffset ""0"", ""0"", ""0"", ""0"", ""0"", ""0""" & vbCrLf & _
                "     .SetSubvolumeInflateWithOffset ""False""" & vbCrLf & _
                "     .Create" & vbCrLf & _
