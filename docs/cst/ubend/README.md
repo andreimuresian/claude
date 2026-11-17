@@ -24,3 +24,7 @@ The gap centres sit at line centre ± (WS/2 + GAP/2) = ± 0.019575 mm. The bend 
 Confirm both boxes against the bounding boxes of the bend mesh helpers (component3:solid4/solid5 and their
 component7 copies) before exporting. The 1 um step resolves the 4.8 um bend gaps, where the gap field is radial,
 not along y.
+
+## Single straight reference line (line 1 only, z 0..EL_L)
+Monitors: `field_monitors_straight.bas`, subvolume x 0..MTX, y -BEND_RADIUS ± 0.1, z 0..EL_L.
+Exports: x 0.001, y -0.082925 and y -0.122075 (one line export per gap), z 0 .. 3.24, step 0.005.
