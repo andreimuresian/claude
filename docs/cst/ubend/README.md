@@ -1,8 +1,11 @@
 # Folded line with two U-bends: field monitors and exports
 
-Geometry from the user's history list (parameters: WS 34.7 um, GAP 4.45 um, GAP2 4.8 um in the bends and their
-straight extensions, BEND_RADIUS 0.1025 mm, EL_L 3.24, EL_L2 = EL_L3 = 1.44, DEV_L 3.7, MTX 2 um).
+Project "BASELINE - FULL EQUALIZER" (parameters in `data/BASELINE_FULL_EQUALIZER.s2p` header): WS 34.7 um, GAP 4.45 um,
+GAP2 4.8 um, BEND_RADIUS 0.1025 mm, EL_L 2.7, EL_L2 = EL_L3 = 1.44, TAPER_L 0.22434, DEV_L 3.7, MTX 2 um.
 Port 1 at line 1 (y = -0.1025, z = 0); port 2 at line 3 (y = 0.3075, z = 2.7).
+
+**Exports: run `export_fields_folded.bas`** (one merged file per region, all 60 frequencies, first column f in GHz).
+The table below is superseded by the macro; its z ranges were wrong (EL_L 3.24 assumed).
 
 Monitors: `field_monitors_ubend.bas`. It creates 60 E-field monitors from 1 to 60 GHz, every 1 GHz. Each one is a
 subvolume over x 0..MTX, y -BEND_RADIUS-0.1 .. 3*BEND_RADIUS+0.1, and z 0..DEV_L.
