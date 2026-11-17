@@ -17,6 +17,10 @@ Option Explicit
 Const F_MIN As Integer = 1
 Const F_MAX As Integer = 60
 Const EXC As String = "[1]"          ' excitation: [1] = port 1
+' Bends do not modulate (optical waveguides cross there, electrodes raised on the SiO2 buffer):
+' their maps are only for studying RF propagation. They are ~360 MB each, so they are off by default.
+' Before enabling, check the bend metal height: the monitor box stops at x = MTX and x = 0.001 may lie below raised electrodes.
+Const EXPORT_BENDS As Boolean = False
 
 Sub Main ()
     Dim outDir As String
@@ -32,8 +36,8 @@ Sub Main ()
     DoRegion outDir, "L2_gap-",  0.001, 0.001,  0.082925,  0.082925, 0.99,  2.97,  0.005
     DoRegion outDir, "L3_gap+",  0.001, 0.001,  0.327075,  0.327075, 0.99,  2.70,  0.005
     DoRegion outDir, "L3_gap-",  0.001, 0.001,  0.287925,  0.287925, 0.99,  2.70,  0.005
-    DoRegion outDir, "BEND1",    0.001, 0.001, -0.13,      0.13,     2.97,  3.10,  0.001
-    DoRegion outDir, "BEND2",    0.001, 0.001,  0.075,     0.335,    0.86,  0.99,  0.001
+    If EXPORT_BENDS Then DoRegion outDir, "BEND1",    0.001, 0.001, -0.13,      0.13,     2.97,  3.10,  0.001
+    If EXPORT_BENDS Then DoRegion outDir, "BEND2",    0.001, 0.001,  0.075,     0.335,    0.86,  0.99,  0.001
 
     MsgBox "Field export finished: " & outDir
 End Sub
