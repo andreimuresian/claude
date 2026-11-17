@@ -28,3 +28,13 @@ not along y.
 ## Single straight reference line (line 1 only, z 0..EL_L)
 Monitors: `field_monitors_straight.bas`, subvolume x 0..MTX, y -BEND_RADIUS ± 0.1, z 0..EL_L.
 Exports: x 0.001, y -0.082925 and y -0.122075 (one line export per gap), z 0 .. 3.24, step 0.005.
+
+## Single U-bend (line 1 + bend + line 2)
+Port 1 at line 1 (y = -0.1025, z = 0); port 2 at line 2 (y = 0.1025, z = 1.08).
+Monitors: `field_monitors_single_bend.bas`, subvolume x 0..MTX, y -BEND_RADIUS-0.1 .. BEND_RADIUS+0.1, z 0..DEV_L.
+
+| Export | x | y | z | step |
+|---|---|---|---|---|
+| L1_gap+ / L1_gap- | 0.001 | -0.082925 / -0.122075 | 0 .. 4.24 | 0.005 |
+| L2_gap+ / L2_gap- | 0.001 | 0.122075 / 0.082925 | 0 .. 4.24 | 0.005 |
+| BEND1 | 0.001 | -0.13 .. 0.13 | 3.50 .. 3.65 | 0.001 |
