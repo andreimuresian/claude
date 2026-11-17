@@ -32,7 +32,12 @@ s11 = np.interp(F, fT, Ss[:, 0, 0].real) + 1j * np.interp(F, fT, Ss[:, 0, 0].ima
 Zc = np.interp(F, fit.raw_f_GHz, fit.raw_Zc.real) + 1j * np.interp(F, fit.raw_f_GHz, fit.raw_Zc.imag)
 SB = np.zeros((len(F), 2, 2), complex); SB[:, 0, 0] = SB[:, 1, 1] = s11; SB[:, 1, 0] = SB[:, 0, 1] = 10 ** (mag / 20) * np.exp(1j * ph)
 BB = np.array([rf.network.s2a(SB[i:i+1], Zc[i])[0] for i in range(len(F))])
-tauB = -ph / w
+tauB_poly = -ph / w
+# physical bend (bend_physical.py): uniform section, impedance Zb, theta = loss + j w tau -> ABCD independent of Zc
+pb = np.load(os.path.join(HERE, "bend_physical.npz"))["params"]
+thb = (pb[0] * np.sqrt(F) + pb[1] * F) / 8.686 + 1j * w * pb[2] * 1e-12
+BB_phys = np.array([[[np.cosh(t), pb[3] * np.sinh(t)], [np.sinh(t) / pb[3], np.cosh(t)]] for t in thb])
+BENDS = {"polynomial": (BB, tauB_poly), "physical": (BB_phys, np.full(len(F), pb[2] * 1e-12))}
 
 def gamma(variant):
     if variant == "touchstone":
@@ -43,8 +48,8 @@ def gamma(variant):
 def Tl(g, Z, s):
     gl = g * s; return np.array([[np.cosh(gl), Z * np.sinh(gl)], [np.sinh(gl) / Z, np.cosh(gl)]])
 SECT = [("L1", 2.70e-3, +1), ("L2", 1.44e-3, +1), ("L3", 1.44e-3, -1)]
-def model(variant, ds=5e-6):
-    g = gamma(variant); H = np.zeros(len(F), complex); prof = []
+def model(variant, bend="polynomial", ds=5e-6):
+    BB, tauB = BENDS[bend]; g = gamma(variant); H = np.zeros(len(F), complex); prof = []
     for i in range(len(F)):
         # whole-chain ABCD and input voltage with 50 ohm source (1 V EMF) and 50 ohm load
         Ttot = np.eye(2, dtype=complex)
@@ -64,9 +69,17 @@ def model(variant, ds=5e-6):
 db = lambda h: 20 * np.log10(abs(h) / abs(h[0]))
 ref = fe["db"](fe["H_full"])
 res = {}
+import skrf as _rf
+full = _rf.Network(os.path.join(HERE, "..", "full equalizer", "BASELINE_FULL_EQUALIZER.s2p"))
+fS = full.f / 1e9; S21ref = np.interp(F, fS, abs(full.s[:, 1, 0])); S11ref = np.interp(F, fS, abs(full.s[:, 0, 0]))
 for v in ("touchstone", "fields"):
-    H, prof = model(v); y = db(H); d = y - ref
-    # V(z) profile comparison with the pitch-averaged field V
+  for bnd in ("polynomial", "physical"):
+    H, prof = model(v, bnd); y = db(H); d = y - ref
+    BBx = BENDS[bnd][0]; g = gamma(v); s21m, s11m = [], []
+    for i in range(len(F)):
+        Tt = Tl(g[i], Zc[i], 2.70e-3) @ BBx[i] @ Tl(g[i], Zc[i], 1.44e-3) @ BBx[i] @ Tl(g[i], Zc[i], 1.44e-3)
+        Sx = rf.network.a2s(Tt[None], 50.0)[0]; s21m.append(abs(Sx[1, 0])); s11m.append(abs(Sx[0, 0]))
+    dS21 = 20 * np.log10(np.array(s21m) / S21ref); dS11 = np.array(s11m) - S11ref
     err = []
     for i in range(len(F)):
         mv, fv = [], []
@@ -74,26 +87,26 @@ for v in ("touchstone", "fields"):
             z, Vf = fe["data"][nm]; z0, z1, dr = fe["LINES"][nm]
             k = int(round(0.18e-3 / (z[1] - z[0]))); ker = np.ones(k) / k
             zs = np.convolve(z, ker, "valid"); vs = np.convolve(Vf[i], ker, "valid"); m = (zs >= z0 + 0.09e-3) & (zs <= z1 - 0.09e-3)
-            sf = (zs[m] - z0) if dr > 0 else (z1 - zs[m]); s, Vm = prof[i][nm]
-            mv.append(np.interp(sf, s, Vm.real) + 1j * np.interp(sf, s, Vm.imag)); fv.append(vs[m])
+            sf = (zs[m] - z0) if dr > 0 else (z1 - zs[m]); s_, Vm = prof[i][nm]
+            mv.append(np.interp(sf, s_, Vm.real) + 1j * np.interp(sf, s_, Vm.imag)); fv.append(vs[m])
         mv, fv = np.concatenate(mv), np.concatenate(fv); c = np.vdot(mv, fv) / np.vdot(mv, mv)
         err.append(np.linalg.norm(c * mv - fv) / np.linalg.norm(fv))
-    res[v] = (y, d, np.array(err))
-    print(f"line from {v:10s}: EO model - fields, 1-60 GHz: rms {np.sqrt(np.mean(d**2)):.3f} dB, max {abs(d).max():.3f} dB"
-          f" (at {F[np.argmax(abs(d))]:.0f} GHz) | V(z) rms error: median {100*np.median(err):.1f} %, max {100*max(err):.1f} %")
-print(" f GHz | EO re 1 GHz (dB): fields (CST) | model, touchstone line | model, field line")
+    res[(v, bnd)] = (y, d, np.array(err))
+    print(f"line {v:10s} bend {bnd:10s}: EO rms {np.sqrt(np.mean(d**2)):.3f} max {abs(d).max():.3f} dB | V(z) median {100*np.median(err):.1f} % max {100*max(err):.1f} %"
+          f" | S21 rms {np.sqrt(np.mean(dS21**2)):.3f} max {abs(dS21).max():.3f} dB | |S11| max diff {abs(dS11).max():.3f}")
+print(" f GHz | EO re 1 GHz (dB): fields (CST) | model, polynomial bend | model, physical bend   (touchstone line)")
 for q in (5, 7, 10, 15, 20, 30, 40, 50, 60):
-    i = np.argmin(abs(F - q)); print(f"{F[i]:5.0f}  | {ref[i]:+.2f} | {res['touchstone'][0][i]:+.2f} | {res['fields'][0][i]:+.2f}")
+    i = np.argmin(abs(F - q)); print(f"{F[i]:5.0f}  | {ref[i]:+.2f} | {res[('touchstone','polynomial')][0][i]:+.2f} | {res[('touchstone','physical')][0][i]:+.2f}")
 np.savetxt(os.path.join(HERE, "eo_validation.csv"),
-           np.column_stack([F, ref, res["touchstone"][0], res["fields"][0], res["touchstone"][2], res["fields"][2]]),
-           delimiter=",", fmt="%.5g", comments="", header="f_GHz,EO_fields_CST_dB,EO_model_ts_line_dB,EO_model_field_line_dB,Vz_err_ts,Vz_err_field")
+           np.column_stack([F, ref] + [res[k][0] for k in res] + [res[k][2] for k in res]),
+           delimiter=",", fmt="%.5g", comments="", header="f_GHz,EO_fields_CST_dB," + ",".join(f"EO_{a}_{b}_dB" for a, b in res) + "," + ",".join(f"Vz_err_{a}_{b}" for a, b in res))
 fig, ax = plt.subplots(1, 2, figsize=(12, 4.3))
 ax[0].plot(F, ref, "o", ms=3.5, color="#eb6834", label="full run, from the CST gap fields (reference)")
-ax[0].plot(F, res["touchstone"][0], "k-", lw=1.4, label="offline model, line from the touchstone")
-ax[0].plot(F, res["fields"][0], "--", color="#2a78d6", lw=1.4, label="offline model, line α, n_m from the fields")
+ax[0].plot(F, res[("touchstone", "polynomial")][0], "k-", lw=1.4, label="model, touchstone line, polynomial bend")
+ax[0].plot(F, res[("touchstone", "physical")][0], "--", color="#2a78d6", lw=1.4, label="model, touchstone line, physical bend")
 ax[0].axhline(-3, color="0.4", lw=0.8, ls=":"); ax[0].set_ylim(-3.5, 0.5); ax[0].set_ylabel("EO response re 1 GHz (dB)")
-ax[1].plot(F, res["touchstone"][1], "k-", lw=1.4, label="model (touchstone line) − fields")
-ax[1].plot(F, res["fields"][1], "--", color="#2a78d6", lw=1.4, label="model (field line) − fields")
+ax[1].plot(F, res[("touchstone", "polynomial")][1], "k-", lw=1.4, label="polynomial bend − fields")
+ax[1].plot(F, res[("touchstone", "physical")][1], "--", color="#2a78d6", lw=1.4, label="physical bend − fields")
 ax[1].axhline(0, color="0.4", lw=0.8); ax[1].set_ylabel("EO difference (dB)"); ax[1].set_ylim(-0.5, 0.5)
 for a_ in ax: a_.set_xlabel("frequency (GHz)"); a_.grid(alpha=0.3); a_.legend(frameon=False, fontsize=8)
 fig.suptitle("Equaliser EO response: offline model (L+S line + L+B+S bend) vs full CST run (n_g 2.27, + + −, 50 Ω ports)", fontsize=10)
