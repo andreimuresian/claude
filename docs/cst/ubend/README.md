@@ -1,7 +1,7 @@
 # Folded line with two U-bends: field monitors and exports
 
 Geometry from the user's history list (parameters: WS 34.7 um, GAP 4.45 um, GAP2 4.8 um in the bends and their
-straight extensions, BEND_RADIUS 0.1025 mm, EL_L 3.24, EL_L2 = EL_L3 = 1.44, DEV_L 4.24, MTX 2 um).
+straight extensions, BEND_RADIUS 0.1025 mm, EL_L 3.24, EL_L2 = EL_L3 = 1.44, DEV_L 3.7, MTX 2 um).
 Port 1 at line 1 (y = -0.1025, z = 0); port 2 at line 3 (y = 0.3075, z = 2.7).
 
 Monitors: `field_monitors_ubend.bas`. It creates 60 E-field monitors from 1 to 60 GHz, every 1 GHz. Each one is a
@@ -11,9 +11,9 @@ Exports use 3D Export in Volume, ASCII, one common step, with every frequency of
 
 | Export | x | y | z | step |
 |---|---|---|---|---|
-| L1_gap+ / L1_gap- | 0.001 | -0.082925 / -0.122075 | 0 .. 4.24 | 0.005 |
-| L2_gap+ / L2_gap- | 0.001 | 0.122075 / 0.082925 | 0 .. 4.24 | 0.005 |
-| L3_gap+ / L3_gap- | 0.001 | 0.327075 / 0.287925 | 0 .. 4.24 | 0.005 |
+| L1_gap+ / L1_gap- | 0.001 | -0.082925 / -0.122075 | 0 .. 3.7 | 0.005 |
+| L2_gap+ / L2_gap- | 0.001 | 0.122075 / 0.082925 | 0 .. 3.7 | 0.005 |
+| L3_gap+ / L3_gap- | 0.001 | 0.327075 / 0.287925 | 0 .. 3.7 | 0.005 |
 | BEND1 | 0.001 | -0.13 .. 0.13 | 3.50 .. 3.65 | 0.001 |
 | BEND2 | 0.001 | 0.075 .. 0.335 | 1.375 .. 1.53 | 0.001 |
 
@@ -35,6 +35,6 @@ Monitors: `field_monitors_single_bend.bas`, subvolume x 0..MTX, y -BEND_RADIUS-0
 
 | Export | x | y | z | step |
 |---|---|---|---|---|
-| L1_gap+ / L1_gap- | 0.001 | -0.082925 / -0.122075 | 0 .. 4.24 | 0.005 |
-| L2_gap+ / L2_gap- | 0.001 | 0.122075 / 0.082925 | 0 .. 4.24 | 0.005 |
+| L1_gap+ / L1_gap- | 0.001 | -0.082925 / -0.122075 | 0 .. 3.7 | 0.005 |
+| L2_gap+ / L2_gap- | 0.001 | 0.122075 / 0.082925 | 0 .. 3.7 | 0.005 |
 | BEND1 | 0.001 | -0.13 .. 0.13 | 3.50 .. 3.65 | 0.001 |
