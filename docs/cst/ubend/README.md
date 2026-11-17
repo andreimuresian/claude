@@ -1,6 +1,6 @@
 # Folded line with two U-bends: field monitors and exports
 
-Project "BASELINE - FULL EQUALIZER" (parameters in `data/BASELINE_FULL_EQUALIZER.s2p` header): WS 34.7 um, GAP 4.45 um,
+Project "BASELINE - FULL EQUALIZER" (parameters in `docs/cst/Equalization/BASELINE_FULL_EQUALIZER.s2p` header): WS 34.7 um, GAP 4.45 um,
 GAP2 4.8 um, BEND_RADIUS 0.1025 mm, EL_L 2.7, EL_L2 = EL_L3 = 1.44, TAPER_L 0.22434, DEV_L 3.7, MTX 2 um.
 Port 1 at line 1 (y = -0.1025, z = 0); port 2 at line 3 (y = 0.3075, z = 2.7).
 
