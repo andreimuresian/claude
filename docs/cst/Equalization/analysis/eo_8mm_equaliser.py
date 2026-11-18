@@ -55,7 +55,7 @@ np.savetxt(os.path.join(HERE, "eo_8mm_equaliser.csv"), np.column_stack([F] + [ow
            delimiter=",", fmt="%.5g", comments="", header="f_GHz,straight_own_dB,equaliser_own_dB,straight_abs_dB,equaliser_abs_dB")
 fig, ax = plt.subplots(1, 2, figsize=(12, 4.3)); col = {"straight 8 mm": "k", "equaliser 8 (+) | 4 (+) | 4 (−)": "#eb6834"}
 for j, (dat, tt) in enumerate(((own, "re own 1 GHz value"), (absd, "re straight 8 mm line at 1 GHz"))):
-    for k in H: ax[j].plot(F, dat[k], color=col[k], lw=1.5, label=f"{k}  (−3 dB at {bw(dat[k]):.0f} GHz)")
+    for k in H: ax[j].plot(F, dat[k], color=col[k], lw=1.5, label=f"{k}  (−3 dB at " + (f"{bw(dat[k]):.0f} GHz)" if bw(dat[k]) == bw(dat[k]) else "> 130 GHz)"))
     ax[j].axhline(-3, color="0.4", lw=0.8, ls=":"); ax[j].axvspan(80, 130, color="0.9", zorder=0)
     ax[j].text(82, 0.3, "extrapolated\n(touchstone ends at 80 GHz)", fontsize=7, va="top")
     ax[j].set_ylim(-8, 0.5); ax[j].set_xlim(0, 130); ax[j].set_title(f"EO response {tt}", fontsize=9)
