@@ -1,5 +1,5 @@
 ' Single straight line (line 1 only), project "BASELINE - L+S - clad digs removed".
-' Exports the E-field of monitors "e-field (f=N) [1]" (port 1 excitation), N = 1..60 GHz,
+' Exports the E-field of monitors "e-field (f=N) [1]" (port 1 excitation), N = 1..60 GHz every 1 GHz and 62..130 GHz every 2 GHz,
 ' and writes ONE file per gap containing all frequencies (first column = frequency in GHz).
 '
 ' Coordinates are computed from the project parameters, so they always match the run:
@@ -11,7 +11,7 @@
 Option Explicit
 
 Const F_MIN As Integer = 1
-Const F_MAX As Integer = 60
+Const F_MAX As Integer = 130       ' monitors: every 1 GHz up to 60, every 2 GHz above (field_monitors_130GHz.bas)
 Const EXC As String = "[1]"          ' excitation: [1] = port 1
 Const STP As Double = 0.005
 
@@ -52,6 +52,7 @@ Sub DoRegion (outDir As String, name As String, _
     headerDone = False
 
     For f = F_MIN To F_MAX
+      If f <= 60 Or f Mod 2 = 0 Then
         item = "2D/3D Results\E-Field\e-field (f=" & CStr(f) & ") " & EXC
         If SelectTreeItem(item) = False Then
             ReportWarningToWindow "Missing result: " & item
@@ -83,6 +84,7 @@ Sub DoRegion (outDir As String, name As String, _
             Loop
             Close #fin
         End If
+      End If
     Next f
 
     Close #fout
