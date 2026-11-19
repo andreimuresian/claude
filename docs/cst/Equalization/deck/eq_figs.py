@@ -111,19 +111,19 @@ ax[1].set_xlim(0, 4.11); ax[1].set_ylim(0, 0.68); ax[1].set_xlabel("Path from po
 ax[1].legend(frameon=False, fontsize=9.5, loc="upper left", ncol=2)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, "bend_parasitic.png"), dpi=200); plt.close(fig)
 
-# loss: smooth part vs line, and split along the path
+# loss: smooth part vs line, and loss per section (field route, 10-60 GHz)
 fig, ax = plt.subplots(1, 2, figsize=(13.2, 4.1))
 ax[0].plot(f, dB(SA[:, 1, 0]), "-", color=NAVY, lw=1.2, label="bend block (touchstone)")
 ax[0].plot(f, C["trend"], "--", color=ORANGE, lw=1.8, label="cubic fit outside the dips (±2.5 GHz)")
-ax[0].plot(f, C["line_eq"], ":", color=GREY, lw=2.2, label="0.87 mm of buried line")
+ax[0].plot(f, C["line_eq"], ":", color=GREY, lw=2.2, label="0.87 mm of straight buried line")
 ax[0].set_ylim(-1.4, 0); ax[0].set_xlim(0, 130); ax[0].set_xlabel("Frequency (GHz)"); ax[0].set_ylabel("|S$_{21}$| (dB)"); ax[0].grid(alpha=0.3)
 ax[0].legend(frameon=False, fontsize=10, loc="lower left")
-FF = Lo["F"]
-ax[1].plot(FF, Lo["raised"], "o-", ms=3, lw=1, color=ORANGE, label="raised path (straight + U-bend, 0.76 mm)")
-ax[1].plot(FF, Lo["rise1"] + Lo["rise2"], "s-", ms=3, lw=1, color=BLUE, label="the two rises together")
-ax[1].plot(FF, Lo["total"], "-", color=NAVY, lw=1.6, label="total (forward wave, plane 1 → plane 2)")
-ax[1].plot(FF, Lo["S21B"], ":", color=GREY, lw=2, label="|S$_{21}$| of the block (field route)")
-ax[1].set_ylim(-1.4, 0.4); ax[1].set_xlim(0, 130); ax[1].set_xlabel("Frequency (GHz)"); ax[1].set_ylabel("Change of the forward wave (dB)"); ax[1].grid(alpha=0.3)
-ax[1].axhline(0, color="#5A606E", lw=0.8); ax[1].legend(frameon=False, fontsize=9.5, loc="lower left")
+FF = Lo["F"]; qs = [10, 20, 40, 50, 60]; ii = [int(np.argmin(abs(FF - q))) for q in qs]; xx = np.arange(len(qs)); wdt = 0.26
+ax[1].bar(xx - wdt, [Lo["rise1"][i] + Lo["rise2"][i] for i in ii], wdt, color=BLUE, label="the two 50 µm rises")
+ax[1].bar(xx, [Lo["raised"][i] for i in ii], wdt, color=ORANGE, label="raised straights + U-bend (0.76 mm)")
+ax[1].bar(xx + wdt, [Lo["total"][i] for i in ii], wdt, color=NAVY, label="whole block (plane 1 → plane 2)")
+ax[1].set_xticks(xx); ax[1].set_xticklabels([f"{q} GHz" for q in qs]); ax[1].axhline(0, color="#5A606E", lw=0.8)
+ax[1].set_ylim(-0.5, 0.05); ax[1].set_ylabel("Change of the forward wave (dB)"); ax[1].grid(alpha=0.3, axis="y")
+ax[1].legend(frameon=False, fontsize=10, loc="lower left")
 fig.tight_layout(); fig.savefig(os.path.join(OUT, "bend_loss.png"), dpi=200); plt.close(fig)
 print("bend figures saved")
