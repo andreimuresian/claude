@@ -13,7 +13,7 @@ Calibration (frequency-independent factors fixed at 1 GHz, local so that the 1 G
 on the staircase mesh the exported field of an oblique gap is scaled by a geometric factor (up to x2 at 1 GHz);
 raised and buried gaps differ in width and height. Buried lines are kept raw (their point field swings x2 within each 0.18 mm cell of the
 periodic loading: use cell averages); each raised gap gets one factor that makes the 1 GHz voltage continuous across
-the 50 um rise (cell-averaged buried voltage of the last 0.36 mm vs the first raised point after the taper); each arc point is scaled at 1 GHz to the voltage
+the transition (step + 50 um gap taper; cell-averaged buried voltage of the last 0.36 mm vs the first raised point after the taper); each arc point is scaled at 1 GHz to the voltage
 interpolated between the two arc ends (0.32 mm apart, 1/900 of a wavelength at 1 GHz).
 Checked: point sampling and line integral across the gap give the same calibrated arc profile.
 Outputs: bend_path_130.npz (v_c, v_p along s for every frequency), printed checks."""
