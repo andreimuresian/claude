@@ -1,12 +1,13 @@
 """Where is the bend loss? Forward-wave amplitude along the L+B+S path (calibrated coplanar voltage v_c, bend_path_130.py).
 
-Sections: line 1 (buried, z 0..2.16), rise 1 (50 um), raised path = raised straight + arc + raised straight
-(s = 2.215 .. 2.975 mm, constant cross-section: metal on the cladding), rise 2 (50 um), line 2 (buried).
+Sections: line 1 (buried, z 0..2.16), transition 1 (vertical step at z = 2.16 mm onto the cladding + 50 um gap taper
+4.45 -> 4.8 um; called rise1 in the code), raised path = TAPER_L straight + U-bend + TAPER_L straight (s = 2.215 .. 2.975 mm,
+constant cross-section), transition 2 (rise2), line 2 (buried).
 Fits of V = A e^{-gamma s} + B e^{+gamma s} (A: wave travelling from port 1 towards port 2):
   lines: gamma fixed to the L+S line value, pitch average, 0.18 mm cut at the ports;
   raised path: gamma free (no periodic loading there), multistart over the index.
-Forward amplitudes at the section boundaries give, in dB: rise 1, raised path, rise 2. A small impedance step at a rise
-shifts the forward amplitude by 20 log|1 + Gamma| at rise 1 and 20 log|1 - Gamma| at rise 2: their sum is free of it.
+Forward amplitudes at the section boundaries give, in dB: rise 1, raised path, rise 2. A small impedance step at a transition
+shifts the forward amplitude by 20 log|1 + Gamma| at transition 1 and 20 log|1 - Gamma| at transition 2: their sum is free of it.
 Also: parasitic reflection at the ports from the v_p fits on lines 1 and 2 (|backward / forward| at the port plane),
 and the bend delay from the slope of the S21 phase (both routes, lbs_bend_130.npz).
 Outputs: bend_loss_130.npz, printed table."""

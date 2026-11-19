@@ -1,5 +1,5 @@
 """L+B+S run, 0-130 GHz: coplanar (CPW) and ground-to-ground (parasitic) voltages along the whole path
-port 1 -> line 1 -> rise + raised straight -> U-bend -> raised straight + descent -> line 2 -> port 2.
+port 1 -> line 1 -> vertical step + 50 um gap taper + raised straight (TAPER_L) -> U-bend -> back -> line 2 -> port 2.
 
 Potentials: signal phi_s, inner ground phi_i (bend-centre side), outer ground phi_o.
   v_in = phi_s - phi_i,  v_out = phi_s - phi_o  (gap voltages, field at the gap centre x gap width)
@@ -13,7 +13,7 @@ Calibration (frequency-independent factors fixed at 1 GHz, local so that the 1 G
 on the staircase mesh the exported field of an oblique gap is scaled by a geometric factor (up to x2 at 1 GHz);
 raised and buried gaps differ in width and height. Buried lines are kept raw (their point field swings x2 within each 0.18 mm cell of the
 periodic loading: use cell averages); each raised gap gets one factor that makes the 1 GHz voltage continuous across
-the 50 um rise (cell-averaged buried voltage of the last 0.36 mm vs the first raised point after the rise); each arc point is scaled at 1 GHz to the voltage
+the 50 um rise (cell-averaged buried voltage of the last 0.36 mm vs the first raised point after the taper); each arc point is scaled at 1 GHz to the voltage
 interpolated between the two arc ends (0.32 mm apart, 1/900 of a wavelength at 1 GHz).
 Checked: point sampling and line integral across the gap give the same calibrated arc profile.
 Outputs: bend_path_130.npz (v_c, v_p along s for every frequency), printed checks."""
@@ -64,12 +64,12 @@ S = np.concatenate([sg[1] for sg in segs]); VIN = np.concatenate([sg[2] for sg i
 # local calibration (frequency independent factors, fixed at 1 GHz):
 #  - buried lines: raw (point field x gap);
 #  - raised sections and arc: one factor per gap (inner, outer) per side, so that at 1 GHz the voltage is continuous
-#    across the 50 um rise (the voltage cannot change over 50 um at 1 GHz);
+#    across the transition (step + 50 um gap taper: the voltage cannot change over 55 um at 1 GHz);
 #  - arc points: each point scaled, at 1 GHz, to the voltage interpolated between the two arc ends (0.32 mm apart).
 nseg = [len(sg[1]) for sg in segs]; idx = np.cumsum([0] + nseg); sl = [slice(idx[k], idx[k + 1]) for k in range(5)]
 for V in (VIN, VOUT):
-    # buried side: mean over the last two cells (0.36 mm = 2 pitches) before the rise, i.e. the cell-averaged voltage;
-    # raised side: first point after the rise (z >= 2.215 mm)
+    # buried side: mean over the last two cells (0.36 mm = 2 pitches) before the step, i.e. the cell-averaged voltage;
+    # raised side: first point after the gap taper (z >= 2.215 mm)
     s0, s4 = segs[0][1], segs[4][1]; r1, r3 = segs[1][1], segs[3][1]
     vb1 = abs(V[0, sl[0]][(s0 >= 1.80) & (s0 < 2.16)].mean()); vb2 = abs(V[0, sl[4]][(s4 > s4[0]) & (s4 <= s4[0] + 0.36)].mean())
     vr1 = abs(V[0, sl[1]][np.argmin(abs(r1 - 2.215))]); vr3 = abs(V[0, sl[3]][np.argmin(abs(r3 - (r3[-1] - 0.055)))])

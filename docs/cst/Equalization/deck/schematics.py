@@ -63,7 +63,7 @@ def lbs(name, waves=False, leg=True):
         ax.text(0.55, -RB + 0.05, "z →", fontsize=11, va="bottom"); ax.text(0.80, RB - 0.05, "← s = 2.16 mm − z", fontsize=11, va="top")
         ax.text(2.33, 0, "block B", color=ORANGE, fontsize=12, fontweight="bold", ha="center", va="center")
     else:
-        ax.text(1.4, -0.235, "bend block (between the planes): rise 50 µm, raised straight 0.22 mm, U-bend R = 102.5 µm, raised straight, descent", ha="center", va="top", color=ORANGE, fontsize=10)
+        ax.text(1.4, -0.235, "bend block (between the planes): vertical step at z = 2.16 mm, 50 µm gap taper (4.45 → 4.8 µm), raised straight TAPER_L = 0.224 mm, U-bend R = 102.5 µm, and back", ha="center", va="top", color=ORANGE, fontsize=10)
     if leg: legend(ax, -0.32)
     finish(ax, name, (-0.5, 2.85), (-0.34 if leg else -0.25, 0.26), 12)
 lbs("sch_LBS.png", leg=False); lbs("sch_LBS_waves.png", waves=True)

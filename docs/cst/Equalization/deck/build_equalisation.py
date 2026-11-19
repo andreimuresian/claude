@@ -176,7 +176,7 @@ kpi(s, 6.74, 5.7, 3.0, 1.25, "≤ 1.3 Ω", "Re Z_{c} (3 %)")
 kpi(s, 9.86, 5.7, 3.0, 1.25, "≤ 1.6 Ω", "Im Z_{c}: the field value rises with f (port-2 transition), the fit cannot")
 
 # 6 ---------------------------------------------------------------- bend block: extraction
-s = new(); title(s, "Bend block: two independent extractions", "Block = everything between plane 1 and plane 2 (z = 2.16 mm, ends of the buried electrodes)")
+s = new(); title(s, "Bend block: two independent extractions", "Block between plane 1 and plane 2 (z = 2.16 mm): vertical step, 50 µm gap taper, raised straight, U-bend, and back")
 W, H = Image.open(os.path.join(IMG, "sch_LBS_waves.png")).size; s.shapes.add_picture(os.path.join(IMG, "sch_LBS_waves.png"), Inches(1.9), Inches(1.4), Inches(1.85 * W / H), Inches(1.85))
 text(s, 0.5, 3.3, 12.3, 0.35, "**Touchstone route.** The L+B+S matrix is a chain of port 1, line 1, block, line 2, port 2; lines and ports are known from L+S:", size=12.5)
 eqimg(s, "eq_chain", 0.8, 3.66, 0.34)
@@ -200,17 +200,17 @@ text(s, 4.1, 1.45, 8.75, 0.75, "v_{in}, v_{out}: voltages across the inner and o
 fig(s, "bend_parasitic.png", 0.5, 2.3, 8.3, 2.85, "Parasitic voltage on the lines versus frequency, and along the path")
 text(s, 9.0, 2.35, 3.85, 0.35, "**Resonance comb**", size=12.5); eqimg(s, "eq_comb", 9.0, 2.75, 0.45)
 text(s, 9.0, 3.3, 3.85, 1.85, "n_{p} = 2.39: effective index of the ground-to-ground wave (forward/backward fit of v_{p} on line 1); L_{path} = 4.11 mm: 15.3, 30.5, 45.8, 61.1, 76.4, 91.6 GHz. Dips: 15.5, 30.6, 46.3, 62.1, 78.1, 93.2 GHz. A coplanar round trip would give a 17.2 GHz spacing.", size=11.5)
-card(s, 0.5, 5.3, 4.0, 1.65, "Ports", ["v_{p} → 0 at both ports: the port joins the two grounds (short). Γ_{p} ≈ −1: |Γ_{p}| = 1.0 ± 0.1, phase 160–170°. Coplanar wave: |Γ| = 0.08."], size=11.5)
+card(s, 0.5, 5.3, 4.0, 1.65, "Ports", ["The PEC bridge of each port joins the two grounds: v_{p} = 0 there, a short for this mode. Γ_{p} ≈ −1: |Γ_{p}| = 1.0 ± 0.1, phase 160–170°. Coplanar wave: |Γ| = 0.08."], size=11.5)
 card(s, 4.67, 5.3, 4.0, 1.65, "Birth", ["Inner gap 124 µm shorter than the outer one: the two gap voltages drift out of phase. At 78 GHz v_{p}/v_{c}: 0.06 → 0.45 across the U-bend."], size=11.5)
 card(s, 8.84, 5.3, 4.01, 1.65, "Line 2 stronger", ["Conversion is forward: v_{p} leaves the bend towards port 2; line 1 receives it only after reflection at port 2."], size=11.5)
 note(s, "Arc voltages: the staircase mesh scales the exported field of oblique gap points by a geometric factor (up to x2). Each point is calibrated by its own 1 GHz value; point sampling and line integral then agree. Line voltages averaged over one 0.18 mm cell of the periodic loading. Physical vs artefact: the line-extraction ripples were in per-unit-length quantities (alpha, Zc) and sat at the extraction condition beta L = m pi; these dips are in the transmitted power of the block, appear in both independent routes, and coincide with a measured second mode.")
 
 # 9 ---------------------------------------------------------------- bend loss
-s = new(); title(s, "Bend loss sits in the raised path, not in the rises", "Left: the block against straight line. Right: loss per section (field route)")
+s = new(); title(s, "Bend loss sits in the raised path, not in the transitions", "Left: the block against straight line. Right: loss per section (field route)")
 fig(s, "bend_loss.png", 0.5, 1.5, 12.35, 3.85, "Smooth part of the bend loss and split along the path")
 card(s, 0.5, 5.5, 4.0, 1.45, "Cubic fit: an average", ["Between the dips the data sit up to 0.09 dB above it: each resonance is a dip plus an overshoot. No unique resonance-free reference from this run."], hc=RED, size=11)
-card(s, 4.67, 5.5, 4.0, 1.45, "Where the loss is (≤ 60 GHz)", ["The two rises together: < 0.07 dB. Raised straights + U-bend: the rest; 4.7 dB/cm at 60 GHz, against 3.3 dB/cm for the straight buried line."], size=11)
+card(s, 4.67, 5.5, 4.0, 1.45, "Where the loss is (≤ 60 GHz)", ["The two transitions (step + 50 µm gap taper) together: < 0.07 dB. Raised straights + U-bend: the rest; 4.7 dB/cm at 60 GHz, against 3.3 dB/cm for the straight buried line."], size=11)
 card(s, 8.84, 5.5, 4.01, 1.45, "Forward wave", ["Amplitude of the wave travelling towards port 2, at the section ends; reflected waves excluded. Whole block = |S_{21}| when nothing returns from port 2."], size=11)
-note(s, "Forward wave from forward/backward fits on line 1 and line 2 (gamma of the line) and on the raised path s = 2.215-2.975 mm (gamma free: n = 1.72). Voltage calibration: buried lines raw (cell averages), raised gaps scaled once so that the 1 GHz voltage is continuous across the 50 um rise. Sum of the sections = field-route |S21| within 0.05 dB.")
+note(s, "Forward wave from forward/backward fits on line 1 and line 2 (gamma of the line) and on the raised path s = 2.215-2.975 mm (TAPER_L straights + U-bend; gamma free: n = 1.72). Transition = vertical step at z = 2.16 mm + 50 um gap taper 4.45 -> 4.8 um. Voltage calibration: buried lines as cell averages, raised gaps scaled once so that the 1 GHz voltage is continuous across the transition. Sum of the sections = field-route |S21| within 0.05 dB.")
 
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))

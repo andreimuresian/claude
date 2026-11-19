@@ -119,7 +119,7 @@ ax[0].plot(f, C["line_eq"], ":", color=GREY, lw=2.2, label="0.87 mm of straight 
 ax[0].set_ylim(-1.4, 0); ax[0].set_xlim(0, 130); ax[0].set_xlabel("Frequency (GHz)"); ax[0].set_ylabel("|S$_{21}$| (dB)"); ax[0].grid(alpha=0.3)
 ax[0].legend(frameon=False, fontsize=10, loc="lower left")
 FF = Lo["F"]; qs = [10, 20, 40, 50, 60]; ii = [int(np.argmin(abs(FF - q))) for q in qs]; xx = np.arange(len(qs)); wdt = 0.26
-ax[1].bar(xx - wdt, [Lo["rise1"][i] + Lo["rise2"][i] for i in ii], wdt, color=BLUE, label="the two 50 µm rises")
+ax[1].bar(xx - wdt, [Lo["rise1"][i] + Lo["rise2"][i] for i in ii], wdt, color=BLUE, label="the two transitions (vertical step + 50 µm gap taper)")
 ax[1].bar(xx, [Lo["raised"][i] for i in ii], wdt, color=ORANGE, label="raised straights + U-bend (0.76 mm)")
 ax[1].bar(xx + wdt, [Lo["total"][i] for i in ii], wdt, color=NAVY, label="whole block (plane 1 → plane 2)")
 ax[1].set_xticks(xx); ax[1].set_xticklabels([f"{q} GHz" for q in qs]); ax[1].axhline(0, color="#5A606E", lw=0.8)
