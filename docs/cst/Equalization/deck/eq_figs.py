@@ -127,3 +127,43 @@ ax[1].set_ylim(-0.5, 0.05); ax[1].set_ylabel("Change of the forward wave (dB)");
 ax[1].legend(frameon=False, fontsize=10, loc="lower left")
 fig.tight_layout(); fig.savefig(os.path.join(OUT, "bend_loss.png"), dpi=200); plt.close(fig)
 print("bend figures saved")
+
+# ===================== full equaliser: steps 1-2 =====================
+Q = np.load(os.path.join(A, "full_eq_analysis_130.npz")); FP = np.load(os.path.join(A, "full_eq_path_130.npz")); LS_ = np.load(os.path.join(A, "ls_extraction_130.npz"))
+FF = Q["F"]; cols = {"L1": NAVY, "L2": ORANGE, "L3": BLUE}
+fig, ax = plt.subplots(1, 3, figsize=(13.5, 3.9))
+for k, ln in enumerate(("L1", "L2", "L3")):
+    ax[0].plot(FF, Q["a"][k], "o", ms=2.5, color=cols[ln], label=ln); ax[1].plot(FF, Q["n"][k], "o", ms=2.5, color=cols[ln], label=ln)
+ax[0].plot(LS_["F"], LS_["aF"], "k-", lw=1.2, label="L+S"); ax[1].plot(LS_["F"], LS_["nF"], "k-", lw=1.2, label="L+S")
+ax[0].set_ylabel("α (dB/cm)"); ax[1].set_ylabel("$n_m$"); ax[1].set_ylim(2.2, 2.4)
+trB = np.interp(FF, f, C["trend"]); pair = dB(Q["B1"][1]) + dB(Q["B2"][1])
+ax[2].plot(FF, pair, "o-", ms=3, lw=1, color=ORANGE, label="bend 1 + bend 2 (full run)")
+ax[2].plot(FF, 2 * trB, "--", color=NAVY, lw=1.8, label="2 × smoothed L+B+S bend")
+ax[2].plot(FF, 2 * dB(SB[:, 1, 0]), ":", color=GREY, lw=1.6, label="2 × L+B+S bend, dips kept")
+ax[2].set_ylim(-2.2, 0); ax[2].set_ylabel("|S$_{21}$| of the two bends (dB)")
+for a in ax: a.set_xlim(0, 130); a.set_xlabel("Frequency (GHz)"); a.grid(alpha=0.3); a.legend(frameon=False, fontsize=9.5, loc="lower left" if a is not ax[1] else "upper right")
+fig.tight_layout(); fig.savefig(os.path.join(OUT, "full_blocks.png"), dpi=200); plt.close(fig)
+
+fig, ax = plt.subplots(1, 3, figsize=(13.5, 3.9), gridspec_kw={"width_ratios": [1, 1.15, 1]})
+ax[0].plot(P["F"], 20 * np.log10(P["r2"]), "-", color=GREY, lw=1.6, label="L+B+S, after one bend")
+ax[0].plot(FF, 20 * np.log10(Q["r"][1]), "o-", ms=2.5, lw=1, color=ORANGE, label="full run, L2 (between the bends)")
+ax[0].plot(FF, 20 * np.log10(Q["r"][2]), "o-", ms=2.5, lw=1, color=BLUE, label="full run, L3 (after both bends)")
+ax[0].set_ylim(-60, 0); ax[0].set_ylabel("|v$_p$| / |v$_c$| (dB)"); ax[0].legend(frameon=False, fontsize=9, loc="lower right")
+Sx, VCx, VPx, SGx, nm = FP["S"], FP["VC"], FP["VP"], FP["SEG"], list(FP["names"])
+for nme in ("arc 1", "arc 2"): ss = Sx[SGx == nm.index(nme)]; ax[1].axvspan(ss[0], ss[-1], color="#F6C7AE", zorder=0)
+for q, col in ((30, GREY), (70, ORANGE), (110, NAVY)):
+    i = np.argmin(abs(FP["F"] - q)); vc, vp = VCx[i].copy(), VPx[i].copy()
+    for ln in ("L1", "L2", "L3"): mm = SGx == nm.index(ln); vc[mm] = np.convolve(VCx[i][mm], np.ones(36) / 36, "same"); vp[mm] = np.convolve(VPx[i][mm], np.ones(36) / 36, "same")
+    ok = np.ones(len(Sx), bool)
+    for ln in ("L1", "L2", "L3"): ii = np.where(SGx == nm.index(ln))[0]; ok[ii[:18]] = False; ok[ii[-18:]] = False
+    ax[1].plot(Sx[ok], abs(vp[ok]) / abs(vc[ok]), ".", ms=2, color=col, label=f"{FP['F'][i]:.0f} GHz")
+for x, t in ((1.35, "L1"), (4.29, "L2"), (6.6, "L3")): ax[1].text(x, 0.36, t, ha="center", fontsize=10.5, fontweight="bold")
+ax[1].set_xlim(0, 7.32); ax[1].set_ylim(0, 0.5); ax[1].set_xlabel("Path from port 1 (mm)"); ax[1].set_ylabel("|v$_p$| / |v$_c$|"); ax[1].legend(frameon=False, fontsize=9.5, loc="upper center", ncol=3)
+dev = Q["s21"] - Q["trend"]; ax[2].plot(Q["fS"], dev, "-", color=NAVY, lw=1.2, label="|S$_{21}$| − smooth trend")
+for j, x in enumerate([14.3, 23.9, 34.1, 43.8, 53.2, 63.0, 73.2, 82.8, 91.6, 101.9, 112.4, 120.2]): ax[2].plot(x, 0.13, "v", color=GREY, ms=6, label="|S$_{11}$| peaks (coplanar ripple)" if j == 0 else None)
+for j, x in enumerate([36, 45, 53, 64, 72, 82, 90, 98, 108, 116]): ax[2].plot(x, -0.5, "^", color=ORANGE, ms=6, label="v$_p$ peaks on L1/L3" if j == 0 else None)
+ax[2].set_ylim(-0.95, 0.2); ax[2].set_ylabel("dB"); ax[2].legend(frameon=False, fontsize=9, loc="lower left", ncol=1)
+for a in (ax[0], ax[2]): a.set_xlim(0, 130); a.set_xlabel("Frequency (GHz)")
+for a in ax: a.grid(alpha=0.3)
+fig.tight_layout(); fig.savefig(os.path.join(OUT, "full_parasitic.png"), dpi=200); plt.close(fig)
+print("full-run figures saved")

@@ -213,4 +213,19 @@ card(s, 4.67, 5.5, 4.0, 1.45, "Where the loss is (≤ 60 GHz)", ["The two transi
 card(s, 8.84, 5.5, 4.01, 1.45, "Forward wave", ["Amplitude of the wave travelling towards port 2, at the section ends; reflected waves excluded. Whole block = |S_{21}| when nothing returns from port 2."], size=11)
 note(s, "Forward wave from forward/backward fits on line 1 and line 2 (gamma of the line) and on the raised path s = 2.215-2.975 mm (TAPER_L straights + U-bend; gamma free: n = 1.72). Transition = vertical step at z = 2.16 mm + 50 um gap taper 4.45 -> 4.8 um. Voltage calibration: buried lines as cell averages, raised gaps scaled once so that the 1 GHz voltage is continuous across the transition. Sum of the sections = field-route |S21| within 0.05 dB.")
 
+# 11 --------------------------------------------------------------- full equaliser: building blocks
+s = new(); title(s, "Full equaliser: folds and bends match the building blocks", "Fields of the full run (2.70 + 1.44 + 1.44 mm) against L+S (lines) and L+B+S (bend)")
+fig(s, "full_blocks.png", 0.5, 1.5, 12.35, 3.65, "Line parameters per fold and the two bends of the full run")
+card(s, 0.5, 5.3, 4.0, 1.65, "Lines", ["All three folds: α within 0.06 dB/cm and n_{m} within 0.008 of L+S (0.019 on L2 below 10 GHz). The straight line is the same everywhere."], size=11.5)
+card(s, 4.67, 5.3, 4.0, 1.65, "Bends", ["Delays 4.97 ps (bend 1) and 5.06 ps (bend 2), against 5.00 ps in L+B+S."], size=11.5)
+card(s, 8.84, 5.3, 4.01, 1.65, "Two bends together", ["= 2 × smoothed L+B+S bend within 0.03 dB rms up to 40 GHz. Above: 0.08 dB (40–80 GHz) and 0.2 dB (80–130 GHz) less loss: part of the power converted at bend 1 returns at bend 2."], size=11.5)
+
+# 12 --------------------------------------------------------------- full equaliser: parasitic cancellation
+s = new(); title(s, "Parasitic cancellation: strong up to 40 GHz, partial above", "Bend 1 turns left, bend 2 turns right: their ground-to-ground waves have opposite sign")
+fig(s, "full_parasitic.png", 0.5, 1.5, 12.35, 3.65, "Parasitic voltage per fold, along the path, and the ripple of the full S21")
+card(s, 0.5, 5.3, 4.0, 1.65, "After both bends (L3)", ["16–31 GHz: −40 to −47 dB, against −13 to −30 dB after one bend. Above 80 GHz: −11 to −16 dB, as after one bend: no cancellation left."], size=11.5)
+card(s, 4.67, 5.3, 4.0, 1.65, "Ripple of the full S_{21}", ["Below 60 GHz: coplanar mismatch ripple (on the |S_{11}| peaks, 9.8 GHz). Above 60 GHz: dips on the v_{p} peaks, 8.9 GHz apart: parasitic wave trapped over 7.32 mm; 0.14–0.49 dB."], size=11.5)
+card(s, 8.84, 5.3, 4.01, 1.65, "Why it degrades", ["The two modes travel at different speeds (n_{p} 2.39, n_{m} 2.21): the wave of bend 1 reaches bend 2 out of phase, more so at high f and on longer lines."], hc=RED, size=11.5)
+note(s, "Voltages: left/right gaps with respect to the direction of travel, so that v_p keeps its sign through both bends. Arcs calibrated at 1 GHz as for L+B+S. Comb check: coplanar round trip over the path, n about 2.11 (lines 2.23, raised 1.72): 9.8 GHz; parasitic, effective n about 2.29: 8.9 GHz.")
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))
