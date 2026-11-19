@@ -228,4 +228,14 @@ card(s, 4.67, 5.3, 4.0, 1.65, "Ripple of the full S_{21}", ["Below 60 GHz: copla
 card(s, 8.84, 5.3, 4.01, 1.65, "Why it degrades", ["The two modes travel at different speeds (n_{p} 2.39, n_{m} 2.21): the wave of bend 1 reaches bend 2 out of phase, more so at high f and on longer lines."], hc=RED, size=11.5)
 note(s, "Voltages: left/right gaps with respect to the direction of travel, so that v_p keeps its sign through both bends. Arcs calibrated at 1 GHz as for L+B+S. Comb check: coplanar round trip over the path, n about 2.11 (lines 2.23, raised 1.72): 9.8 GHz; parasitic, effective n about 2.29: 8.9 GHz.")
 
+# 13 --------------------------------------------------------------- cascade validation
+s = new(); title(s, "Two-port cascade: within budget up to 60 GHz, not above", "Line (L+S) + bend (L+B+S) + ports, against the full run; three versions of the bend two-port")
+fig(s, "cascade_130.png", 0.5, 1.5, 12.35, 3.7, "Cascade against the full run: EO response, S21 and EO error")
+table(s, 0.5, 5.35, 7.6, [["Bend two-port", "EO error 1–60 GHz", "EO error 62–130 GHz", "|S_{21}| error 62–130 GHz"],
+      ["Cubic over 1–130 GHz", "0.08 dB rms (0.14 max)", "0.10 dB rms (0.22 max)", "0.21 dB rms"],
+      ["Local bridging of the dips", "0.03 dB rms (0.08 max)", "0.18 dB rms (0.34 max)", "0.35 dB rms"],
+      ["Raw (dips kept)", "0.04 dB rms (0.10 max)", "0.19 dB rms (0.33 max)", "0.44 dB rms"]], [2.2, 1.8, 1.8, 1.8], size=10.5, row_h=0.38)
+card(s, 8.35, 5.35, 4.5, 1.6, "Meaning", ["Up to 60 GHz the bend is a two-port. Above, the cascade loses too much and its EO is too flat: the returned parasitic power is missing. Next: two-mode bend."], hc=RED, size=11)
+note(s, "Light delay in each bend = slope delay of the bend model (5.03 ps). V(z) agreement (one complex scale per frequency): median 0.7-0.9 % up to 60 GHz, 3-7 % above. Error budget of the earlier 0-60 GHz validation: EO within about 0.05 dB rms.")
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))
