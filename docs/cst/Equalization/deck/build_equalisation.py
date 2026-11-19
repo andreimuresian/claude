@@ -269,4 +269,15 @@ table(s, 0.5, 5.35, 7.9, [["L1 + L2 + L3 (mm)", "EO at 60 / 100 / 130 GHz", "Par
 card(s, 8.6, 5.35, 4.25, 1.6, "Meaning", ["Cancellation worsens with length (v_{p} on L3 up 10 dB), but the parasitic wave is also damped: its EO cost falls. The two-port bend overestimates the loss by up to 0.2–0.36 dB."], size=11)
 note(s, "Parasitic effect = EO with the two-mode bend minus EO with kap = 0 (parasitic mode never excited). L1 = 2.70 mm with L2 = L3 = 3, 5, 8 mm: max effect 0.32, 0.24, 0.14 dB (these designs over-equalise: EO rises above 0 dB). EO normalised to 1 GHz; n_g 2.27; light matched to the RF in the bends. All -3 dB EO bandwidths above 130 GHz.")
 
+# 17 --------------------------------------------------------------- optimiser L1 = 10 mm
+s = new(); title(s, "L1 = 10 mm: best sections are 8–9 mm, nearly equal", "Two-mode model, L2 (+) and L3 (−) swept 0.5–10 mm; EO relative to the 10 mm line alone at 1 GHz")
+fig(s, "optimiser_L1_10mm.png", 0.5, 1.5, 12.35, 4.0, "Optimiser map and EO curves of selected designs")
+table(s, 0.5, 5.65, 8.1, [["Design (mm)", "EO at 1 GHz", "Worst 10–130 GHz", "Peaking"],
+      ["10 alone", "0 dB", "−3.9 dB (f_{−3 dB} 90 GHz)", "–"],
+      ["10 + 5 + 5", "−0.2 dB", "−2.4 dB", "0 dB"],
+      ["10 + 8.5 + 8", "0.0 dB", "−1.4 dB", "+0.2 dB"],
+      ["10 + 9 + 9", "−0.5 dB", "−1.2 dB", "+0.8 dB"]], [1.7, 1.3, 2.4, 1.0], size=10.5, row_h=0.27)
+card(s, 8.85, 5.65, 4.0, 1.3, "Trade-off", ["Longer L2, L3: flatter and stronger at high f, until over-equalisation (peaking) and the cost of 28 mm of electrode."], size=10.5)
+note(s, "Validity: 1-130 GHz (no extrapolation of the bend); bend model validated so far on the 1.44 mm sections (10+5+5 run to test it). Not in the model: optical loss and footprint of the longer electrodes, drive power. Light assumed matched to the RF in the bends. L3 > L2 flattens the normalised response further (10+5.5+7) but costs 1.7 dB of low-frequency efficiency.")
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))

@@ -26,3 +26,8 @@ docs/cst/Equalization/deck/build_equalisation.py (13 slides, company template); 
   (H fields: export macros to write; rho = Zc/Zp from H to check the smoothness choice 1.56).
 - Pending runs from the user: single bend (20 um buried stubs, PEC-bridged ports), long equaliser L1 10 / L2 5 / L3 5 mm,
   both with H monitors (field_monitors_H_130GHz.bas). Export macros for H still to be written when the runs finish.
+
+## Optimiser (optimiser_L1_10mm.py, optimiser_plot.py, slide 17)
+L1 = 10 mm, L2/L3 0.5-10 mm, two-mode model, 1-130 GHz. 10 mm alone: f-3dB 90 GHz, worst -3.9 dB. Best absolute flatness
+(re 10 mm line at 1 GHz, worst level 10-130 GHz): 10+8.5+8 (peaking <= 0.25 dB): -1.4 dB, no DC loss; 10+9+9 (peaking <= 1 dB): -1.2 dB.
+10+5+5: -2.4 dB. L3 > L2 flattens the normalised curve but costs low-frequency efficiency. To check against the 10+5+5 run.
