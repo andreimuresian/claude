@@ -119,23 +119,50 @@ s = prs.slides.add_slide(L_TITLE)
 text(s, 0.5, 2.15, 12.33, 1.4, ["Travelling-wave equaliser:", "line and bend models from CST"], size=34, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 text(s, 0.5, 3.75, 12.33, 0.8, "CST time-domain simulations, 0–130 GHz · straight line, line + bend, full equaliser", size=18, color=MUTED, align=PP_ALIGN.CENTER)
 
-# 2 ---------------------------------------------------------------- line: touchstone vs fields
+# 2 ---------------------------------------------------------------- touchstone extraction
+def eqrow(s, tag, label, name, y, h, x=0.5, xe=1.0):
+    text(s, x, y, 12.3, 0.35, f"**{tag}** {label}", size=13)
+    eqimg(s, name, xe, y + 0.36, h)
+
+s = new(); title(s, "Touchstone extraction of α, n_{m} and Z_{c}", "The structure between the two ports is treated as one uniform line of length L")
+eqrow(s, "1.", "Uniform line: forward and backward wave (every reflection is in V^{−})", "eq_waves", 1.5, 0.42)
+eqrow(s, "2.", "Writing V^{±} from the values at z = L gives the line transfer (ABCD) matrix", "eq_abcd_line", 2.38, 0.38)
+eqrow(s, "3.", "Exact conversion of the 50 Ω S-parameters into A, B, C (valid for any mismatch)", "eq_s2a", 3.22, 0.42)
+eqrow(s, "4.", "Matching 2 and 3", "eq_ts_zc", 4.1, 0.34, xe=1.0); eqimg(s, "eq_ts_g", 3.0, 4.46, 0.3)
+eqrow(s, "5.", "Attenuation and microwave index", "eq_ts_an", 4.95, 0.46)
+card(s, 0.5, 5.95, 12.35, 1.0, "Limit", ["Port transitions are folded into γ and Z_{c}. At βL = mπ, sinh γL ≈ 0: B and C both vanish and Z_{c} = √(B/C) is set by the ports."], hc=RED, size=12.5)
+
+# 3 ---------------------------------------------------------------- field extraction
+s = new(); title(s, "Field extraction of α, n_{m} and Z_{c}", "Gap voltage along the line, fitted with a forward and a backward wave")
+eqrow(s, "1.", "Gap voltage from E_{y} at the centre of both gaps (x = 1 µm), 5 µm steps", "eq_f_v", 1.5, 0.42)
+eqrow(s, "2.", "Least squares on γ; V^{+}, V^{−} solved linearly for each trial γ; 0.18 mm excluded at each end", "eq_f_fit", 2.42, 0.36)
+eqrow(s, "3.", "Attenuation and microwave index", "eq_f_an", 3.28, 0.36)
+eqrow(s, "4.", "Impedance from the reflection at port 2 (z = L, 50 Ω load)", "eq_f_zc", 4.14, 0.44)
+card(s, 0.5, 5.15, 6.05, 1.8, "Strength", ["γ is fitted away from the ends: ports only set V^{+} and V^{−}. Reflections are kept as V^{−} (|Γ_{L}| ≈ 0.08). Fit residual ≤ 2.3 %."], size=12.5)
+card(s, 6.8, 5.15, 6.05, 1.8, "Limit", ["Z_{c} needs the load at z = L: the port-2 transition enters Z_{c}. Below ≈ 4 GHz the line is < 0.05 λ long and the two waves are hard to separate."], hc=RED, size=12.5)
+
+# 4 ---------------------------------------------------------------- line: touchstone vs fields
 s = new(); title(s, "Line parameters: touchstone and fields agree", "Straight line 3.24 mm (L+S run), 50 Ω ports, 0–130 GHz")
 fig(s, "line_ts_vs_fields.png", 0.5, 1.55, 6.55, 4.6, "Attenuation, microwave index and impedance from touchstone and fields")
-caption(s, 0.5, 6.25, 6.55, "Touchstone: S → ABCD → γ, Z_{c}. Fields: gap voltage V(z) fitted with forward + backward wave → γ; Z_{c} from the reflection at the 50 Ω port 2.", h=0.7)
-table(s, 7.3, 1.55, 5.55, [["Quantity", "Fields − touchstone", "Origin"],
-      ["α", "rms 0.04 dB/cm (≤ 60 GHz), 0.09 dB/cm (> 60 GHz)", "Touchstone ripple, period 20.8 GHz"],
-      ["n_{m}", "−0.013, constant", "Port transitions ≈ 19 µm of extra line in the touchstone"],
+table(s, 7.3, 1.55, 5.55, [["Quantity", "Fields − touchstone", "Origin of the difference"],
+      ["α", "rms 0.04 dB/cm (≤ 60 GHz), 0.09 dB/cm (> 60 GHz)", "Touchstone ripple, period c / (2n_{m}L) = 20.8 GHz: set by the line ends; not reproduced by a lumped port"],
+      ["n_{m}", "−0.013, constant", "Port transitions: 2.5 pH + 1.7 fF at each end reproduce +0.012"],
       ["Re Z_{c}", "mean < 0.1 Ω", "Touchstone spikes at βL = mπ"],
-      ["Im Z_{c}", "within 2 Ω", "Field value includes the port-2 transition"]], [1.0, 2.2, 2.35], size=11.5, row_h=0.72)
-card(s, 7.3, 5.3, 5.55, 1.6, "Meaning", ["Fields: the line itself. Touchstone: line + ports. Where βL = mπ the line is transparent and the extraction sees only the ports. The port error scales as 1/L."], size=12.5)
+      ["Im Z_{c}", "within 2 Ω", "Port-2 transition in the field value"]], [0.9, 1.9, 2.75], size=11, row_h=0.78)
+card(s, 7.3, 5.55, 5.55, 1.4, "Use", ["γ from the fields; Z_{c} from the touchstone away from βL = mπ. The mismatch ripple of S_{21} and EO is not lost: the cascade rebuilds it from Z_{c} and the port impedances."], size=12)
 
-# 3 ---------------------------------------------------------------- extrapolation
-s = new(); title(s, "Extrapolation from 0–60 GHz data holds up to 130 GHz", "Physical fits of the previous 0–80 GHz run compared with the new 0–130 GHz run")
-fig(s, "line_extrapolation.png", 0.5, 1.55, 12.35, 3.55, "Fits of old data extrapolated against new data")
-stat(s, 0.5, 5.3, 3.95, 1.6, "≤ 2.2 %", "α, fit of 0–60 GHz, at 60–130 GHz (0.5 % with 0–80 GHz)")
-stat(s, 4.69, 5.3, 3.95, 1.6, "≤ 0.009", "n_{m} (0.4 %): fit slightly below the data at 130 GHz")
-stat(s, 8.88, 5.3, 3.97, 1.6, "≤ 1.2 Ω", "Re Z_{c} (3 %): fit decreasing, data slightly rising")
-note(s, "Errors over the extrapolated band. alpha and Re Zc against the field route (smooth); n_m against the touchstone route (the fits are touchstone-based, the fields are 0.013 lower by the port effect).")
+# 5 ---------------------------------------------------------------- extrapolation
+s = new(); title(s, "Extrapolation from 1–60 GHz field data holds up to 130 GHz", "Physical fits of the previous run (fields, 1–60 GHz) compared with the new run (fields, 62–130 GHz)")
+eqimg(s, "eq_fits", 0.6, 1.55, 0.42)
+text(s, 0.6, 2.02, 12.2, 0.4, "√f: skin-effect conductor loss · f: dielectric loss · n_{m}: bounded dispersion, corner f_{c} inside the fitted band · Z_{c}: internal inductance falling with the skin depth", size=11.5, color=MUTED)
+fig(s, "line_extrapolation.png", 0.5, 2.5, 12.35, 3.1, "Fits of the 1-60 GHz field data extrapolated against the 62-130 GHz field data")
+def kpi(s, x, y, w, h, big, small):
+    rect(s, x, y, w, h)
+    text(s, x, y + 0.08, w, 0.6, big, size=28, bold=True, color=NAVY, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
+    text(s, x + 0.15, y + 0.72, w - 0.3, h - 0.75, small, size=12, align=PP_ALIGN.CENTER)
+kpi(s, 0.5, 5.7, 3.0, 1.25, "≤ 1.4 %", "α (0.07 dB/cm)")
+kpi(s, 3.62, 5.7, 3.0, 1.25, "≤ 0.003", "n_{m} (0.14 %)")
+kpi(s, 6.74, 5.7, 3.0, 1.25, "≤ 1.3 Ω", "Re Z_{c} (3 %)")
+kpi(s, 9.86, 5.7, 3.0, 1.25, "≤ 1.6 Ω", "Im Z_{c}: the field value rises with f (port-2 transition), the fit cannot")
 
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))
