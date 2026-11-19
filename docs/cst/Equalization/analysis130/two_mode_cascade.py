@@ -43,7 +43,7 @@ RAW = {"tc": TM["tc"], "rc": TM["rc"], "kap": TM["kap"], "tp": TM["tp"], "G": SM
 gc, Zc = line(F); gp = K * gc.real + 1j * NP * w / C0
 P1, P2 = ports(F, pp[0] * 1e-12, pp[1] * 1e-15); P2i = np.linalg.inv(P2)
 LEN = [2.70e-3, 1.44e-3, 1.44e-3]; POL = [+1, +1, -1]; SIG = [+1, -1]
-def solve(B, rho=RHO, ds=5e-6):
+def solve(B, rho=RHO, ds=5e-6, LEN=LEN, POL=POL):
     S21, S11, H = np.zeros(len(F), complex), np.zeros(len(F), complex), np.zeros(len(F), complex); RP = np.zeros((len(F), 3))
     for i in range(len(F)):
         A = np.zeros((12, 12), complex); y = np.zeros(12, complex); g, Z, q = gc[i], Zc[i], gp[i]
@@ -67,7 +67,7 @@ def solve(B, rho=RHO, ds=5e-6):
         V0, I0 = x[0] + x[1], (x[0] - x[1]) / Z; Vs = P1[i][0] @ np.array([V0, I0]); S11[i] = 2 * Vs - 1
         VL, IL = x[ix(2, 0, 0)] * ec + x[ix(2, 0, 1)] / ec, (x[ix(2, 0, 0)] * ec - x[ix(2, 0, 1)] / ec) / Z; S21[i] = 2 * (P2i[i][0] @ np.array([VL, IL]))
         t0 = 0.0
-        for k in range(3):
+        for k in range(3):  # noqa
             s = np.arange(0, LEN[k] + ds / 2, ds); vc = x[ix(k, 0, 0)] * np.exp(-g * s) + x[ix(k, 0, 1)] * np.exp(g * s)
             vp = x[ix(k, 1, 0)] * np.exp(-q * s) + x[ix(k, 1, 1)] * np.exp(q * s); RP[i, k] = np.sqrt(np.mean(abs(vp) ** 2) / np.mean(abs(vc) ** 2))
             H[i] += POL[k] * np.trapezoid(vc * np.exp(1j * w[i] * (t0 + NG * s / C0)), s); t0 += NG * LEN[k] / C0 + (tauc if k < 2 else 0)

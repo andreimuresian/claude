@@ -258,4 +258,15 @@ table(s, 0.5, 5.3, 8.0, [["Bend model", "EO 1–60 GHz", "EO 62–130 GHz", "|S_
       ["Two-port, local bridging", "0.03 dB rms", "0.18 dB rms (0.34 max)", "0.35 dB rms"]], [2.6, 1.6, 2.1, 1.7], size=10.5, row_h=0.33)
 card(s, 8.75, 5.3, 4.1, 1.65, "Result", ["Best model at all frequencies. Parasitic level on L2 within 1 dB up to 60 GHz, 3 dB above. The returned power (ρκ) is essential above 60 GHz."], size=11)
 
+# 16 --------------------------------------------------------------- longer equalisers
+s = new(); title(s, "Longer equalisers: the parasitic mode costs at most 0.3 dB", "Two-mode prediction (lines from L+S, bends from L+B+S), against ideal cancellation and the two-port bend")
+fig(s, "long_lines_130.png", 0.5, 1.5, 12.35, 3.7, "Predicted 10 + 5 + 5 mm equaliser and effect of the parasitic mode for several lengths")
+table(s, 0.5, 5.35, 7.9, [["L1 + L2 + L3 (mm)", "EO at 60 / 100 / 130 GHz", "Parasitic effect (max)", "v_{p}/v_{c} on L3, 60 GHz"],
+      ["2.70 + 1.44 + 1.44 (simulated)", "−0.83 / −0.86 / −0.90 dB", "0.20 dB", "−29 dB"],
+      ["5.40 + 2.88 + 2.88", "−1.00 / −1.03 / −1.03 dB", "0.16 dB", "−19 dB"],
+      ["8 + 4 + 4", "−1.15 / −1.28 / −1.60 dB", "0.11 dB", "−20 dB"],
+      ["10 + 5 + 5 (run in progress)", "−1.15 / −1.57 / −2.18 dB", "0.08 dB", "−18 dB"]], [2.5, 2.2, 1.6, 1.6], size=10.5, row_h=0.32)
+card(s, 8.6, 5.35, 4.25, 1.6, "Meaning", ["Cancellation worsens with length (v_{p} on L3 up 10 dB), but the parasitic wave is also damped: its EO cost falls. The two-port bend overestimates the loss by up to 0.2–0.36 dB."], size=11)
+note(s, "Parasitic effect = EO with the two-mode bend minus EO with kap = 0 (parasitic mode never excited). L1 = 2.70 mm with L2 = L3 = 3, 5, 8 mm: max effect 0.32, 0.24, 0.14 dB (these designs over-equalise: EO rises above 0 dB). EO normalised to 1 GHz; n_g 2.27; light matched to the RF in the bends. All -3 dB EO bandwidths above 130 GHz.")
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))

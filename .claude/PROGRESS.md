@@ -21,6 +21,8 @@ Last update: 2026-11-19, end of day.
 docs/cst/Equalization/deck/build_equalisation.py (13 slides, company template); images shown to the user, export only at the end.
 
 ## Next
-- Step 6: predict longer lines (L2 3-8 mm, and the user's L1 10 / L2 5 / L3 5 mm run) with the two-mode model.
+- Step 6 done (long_lines_130.py, slide 16): parasitic EO cost <= 0.32 dB in all cases, 0.08 dB for 10+5+5; prediction of 10+5+5:
+  EO -1.15 / -1.57 / -2.18 dB at 60/100/130 GHz, |S21| about -12 dB at 130 GHz. Next: compare with the 10+5+5 run and the single-bend run
+  (H fields: export macros to write; rho = Zc/Zp from H to check the smoothness choice 1.56).
 - Pending runs from the user: single bend (20 um buried stubs, PEC-bridged ports), long equaliser L1 10 / L2 5 / L3 5 mm,
   both with H monitors (field_monitors_H_130GHz.bas). Export macros for H still to be written when the runs finish.
