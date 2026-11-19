@@ -165,4 +165,31 @@ kpi(s, 3.62, 5.7, 3.0, 1.25, "≤ 0.003", "n_{m} (0.14 %)")
 kpi(s, 6.74, 5.7, 3.0, 1.25, "≤ 1.3 Ω", "Re Z_{c} (3 %)")
 kpi(s, 9.86, 5.7, 3.0, 1.25, "≤ 1.6 Ω", "Im Z_{c}: the field value rises with f (port-2 transition), the fit cannot")
 
+# 6 ---------------------------------------------------------------- bend block: two routes
+s = new(); title(s, "Bend block: touchstone and fields give the same two-port", "L+B+S run; block = rise, raised straight, U-bend, raised straight, descent")
+fig(s, "bend_routes.png", 0.5, 1.55, 12.35, 3.75, "Bend block S21, phase delay and S11 from touchstone and fields")
+text(s, 0.5, 5.4, 6.0, 0.35, "**Touchstone:** line and port blocks removed from the L+B+S matrix", size=12.5); eqimg(s, "eq_deemb", 0.7, 5.78, 0.36)
+text(s, 0.5, 6.25, 6.0, 0.7, "Line: γ from the fields, Z_{c} from the touchstone (βL = mπ bands excluded); ports: 2.9 pH + 1.6 fF (fitted on L+S).", size=11, color=MUTED)
+text(s, 6.75, 5.4, 6.1, 0.35, "**Fields:** waves of lines 1 and 2 at the two planes, symmetric block", size=12.5); eqimg(s, "eq_fieldS", 6.95, 5.78, 0.3)
+text(s, 6.75, 6.25, 6.1, 0.7, "Agreement: |S_{21}| within 0.06 dB, delay within 0.05 ps above 60 GHz, |S_{11}| within 0.03. Delay 5.0 ps, i.e. index 1.73 over 0.87 mm.", size=11, color=MUTED)
+
+# 7 ---------------------------------------------------------------- parasitic mode
+s = new(); title(s, "The dips are resonances of a ground-to-ground mode", "Born in the U-bend, reflected at both ports: a standing wave over the 4.11 mm path")
+fig(s, "bend_parasitic.png", 0.5, 1.55, 8.3, 3.6, "Parasitic voltage on the lines and in the arc")
+eqimg(s, "eq_vp", 9.0, 1.6, 0.5)
+text(s, 9.0, 2.2, 3.85, 0.9, "v_{in}, v_{out}: voltage across the inner and outer gap. v_{p} = (φ_{outer} − φ_{inner})/2: potential difference between the two grounds.", size=11.5, color=MUTED)
+eqimg(s, "eq_comb", 9.0, 3.2, 0.5)
+text(s, 9.0, 3.8, 3.85, 1.3, "n_{p} = 2.39 from the fields (line 1), slower than the coplanar mode (2.21). Predicted 15.3, 30.5, 45.8, 61.1, 76.3, 91.6 GHz; dips at 15.5, 30.6, 46.3, 62.1, 78.1, 93.2 GHz.", size=11.5)
+card(s, 0.5, 5.3, 6.05, 1.6, "Birth", ["In the arc the inner gap is 124 µm shorter than the outer one: the two gap voltages fall out of phase. At 78 GHz |v_{p}/v_{c}| grows from 0.06 at the entry to 0.44 at the exit."], size=12)
+card(s, 6.8, 5.3, 6.05, 1.6, "Resonance", ["The ports match only the coplanar mode: the parasitic wave is trapped between them. At each round trip of 2π the trapped wave builds up and draws power from the coplanar mode."], size=12)
+note(s, "Arc stations only at 0, 90 and 180 deg: at oblique angles the exported field of the staircase mesh gives path-dependent gap voltages, even at 1 GHz. Comb drift at high order: the 0.87 mm raised part has a lower parasitic index than the lines (about 2.05 if the dip spacing, 15.6 GHz, is attributed to the whole path).")
+
+# 8 ---------------------------------------------------------------- bend loss
+s = new(); title(s, "Bend loss: line-like up to 50 GHz, growing faster above", "Smooth part of the bend block compared with the same length of straight buried line")
+fig(s, "bend_loss.png", 0.5, 1.55, 7.2, 4.0, "Bend block S21 compared with an equal length of line")
+table(s, 7.95, 1.55, 4.9, [["f (GHz)", "Bend, smooth (dB)", "Line, 0.87 mm (dB)"],
+      ["20", "−0.14", "−0.15"], ["60", "−0.31", "−0.28"], ["100", "−0.54", "−0.37"], ["120", "−0.72", "−0.41"]], [1.1, 1.9, 1.9], size=12, row_h=0.42)
+card(s, 7.95, 3.85, 4.9, 1.7, "Dips", ["Extra loss at the resonances: 0.07 dB at 15.5 GHz, 0.34 dB at 62 GHz, 0.50 dB at 109 GHz. Power converted into the trapped parasitic wave."], size=12)
+card(s, 0.5, 5.75, 12.35, 1.15, "Location within the bend: not resolved", ["E-field data give voltages only; a voltage change across the rise or in the arc can be impedance as well as loss. Power flow ½Re(V I*) needs H: H monitors at the line end, after the rise and at the arc stations in the next run."], hc=RED, size=12)
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))
