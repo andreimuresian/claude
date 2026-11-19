@@ -9,7 +9,13 @@ Gap widths: 4.45 um buried (x = 1 um), 4.8 um raised (x = 4.6 um). In the arc th
   v_in = -E_r(inner gap) * gap, v_out = +E_r(outer gap) * gap, E_r from the 2D map (bilinear interpolation).
 Path coordinate s along the line centre (arc radius 0.1025 mm).
 The bend map (BEND.txt, 477 MB) is read from the split zip in the repository and cached in ./cache (git-ignored).
-Arc: stations at 0, 90, 180 deg only (see the note in the code).
+Calibration (frequency-independent factors fixed at 1 GHz, local so that the 1 GHz standing wave is not imprinted):
+on the staircase mesh the exported field of an oblique gap is scaled by a geometric factor (up to x2 at 1 GHz);
+raised and buried gaps differ in width and height. Buried lines are kept raw (their point field swings x2 within each 0.18 mm cell of the
+periodic loading: use cell averages); each raised gap gets one factor that makes the 1 GHz voltage continuous across
+the 50 um rise (cell-averaged buried voltage of the last 0.36 mm vs the first raised point after the rise); each arc point is scaled at 1 GHz to the voltage
+interpolated between the two arc ends (0.32 mm apart, 1/900 of a wavelength at 1 GHz).
+Checked: point sampling and line integral across the gap give the same calibrated arc profile.
 Outputs: bend_path_130.npz (v_c, v_p along s for every frequency), printed checks."""
 import os, io, glob, zipfile, numpy as np, pandas as pd
 from scipy.interpolate import RegularGridInterpolator
@@ -35,9 +41,7 @@ segs = []                                  # (s array mm, v_in, v_out) per segme
 z, Ep = load("L1_gap+.txt"); _, Em = load("L1_gap-.txt"); segs.append(("line 1", z, G1 * Ep, -G1 * Em))
 z, Ep = load("L1_taper_gap+.txt"); _, Em = load("L1_taper_gap-.txt"); k = (z > 2.16 + 1e-6) & (z <= ZB)
 segs.append(("raised 1", z[k], G2 * Ep[:, k], -G2 * Em[:, k]))
-th = np.radians([0.0, 90.0, 180.0]); s_arc = ZB + RB * th          # s continues from z = ZB
-# Only the grid-aligned stations 0, 90, 180 deg are used: at oblique angles the exported field of the staircase mesh
-# gives a gap voltage that depends on the integration path even at 1 GHz (checked: up to x2), so it is not usable.
+th = np.radians(np.arange(0.0, 180.01, 2.0)); s_arc = ZB + RB * th   # s continues from z = ZB, 2 deg steps
 # arc: true line integral of E_r across each gap (radial span gap +/- 1.2 um, 0.25 um steps; E = 0 inside the metal),
 # so the 1 um staircase of the curved metal edges does not bias the result
 DR = np.arange(-G2 * 1e3 / 2 - 0.0012, G2 * 1e3 / 2 + 0.0012 + 1e-9, 0.00025)
@@ -57,6 +61,22 @@ segs.append(("raised 2", s_end + (ZB - z[k][o]), -G2 * Em[:, k][:, o], G2 * Ep[:
 z, Ep = load("L2_gap+.txt"); _, Em = load("L2_gap-.txt"); o = np.argsort(-z); s_r2 = s_end + (ZB - 2.16)
 segs.append(("line 2", s_r2 + (2.16 - z[o]), -G1 * Em[:, o], G1 * Ep[:, o]))
 S = np.concatenate([sg[1] for sg in segs]); VIN = np.concatenate([sg[2] for sg in segs], 1); VOUT = np.concatenate([sg[3] for sg in segs], 1)
+# local calibration (frequency independent factors, fixed at 1 GHz):
+#  - buried lines: raw (point field x gap);
+#  - raised sections and arc: one factor per gap (inner, outer) per side, so that at 1 GHz the voltage is continuous
+#    across the 50 um rise (the voltage cannot change over 50 um at 1 GHz);
+#  - arc points: each point scaled, at 1 GHz, to the voltage interpolated between the two arc ends (0.32 mm apart).
+nseg = [len(sg[1]) for sg in segs]; idx = np.cumsum([0] + nseg); sl = [slice(idx[k], idx[k + 1]) for k in range(5)]
+for V in (VIN, VOUT):
+    # buried side: mean over the last two cells (0.36 mm = 2 pitches) before the rise, i.e. the cell-averaged voltage;
+    # raised side: first point after the rise (z >= 2.215 mm)
+    s0, s4 = segs[0][1], segs[4][1]; r1, r3 = segs[1][1], segs[3][1]
+    vb1 = abs(V[0, sl[0]][(s0 >= 1.80) & (s0 < 2.16)].mean()); vb2 = abs(V[0, sl[4]][(s4 > s4[0]) & (s4 <= s4[0] + 0.36)].mean())
+    vr1 = abs(V[0, sl[1]][np.argmin(abs(r1 - 2.215))]); vr3 = abs(V[0, sl[3]][np.argmin(abs(r3 - (r3[-1] - 0.055)))])
+    k1, k2 = vb1 / vr1, vb2 / vr3
+    V[:, sl[1]] *= k1; V[:, sl[3]] *= k2
+    a = V[:, sl[2]]; a0, a1 = abs(V[0, sl[1]][-1]), abs(V[0, sl[3]][0])          # 1 GHz voltage at both arc ends
+    target = a0 + (a1 - a0) * th / np.pi; V[:, sl[2]] = a * (target / abs(a[0]))[None, :]
 VC, VP = (VIN + VOUT) / 2, (VIN - VOUT) / 2; SEG = np.concatenate([[n] * len(sg[1]) for n, sg in enumerate(segs)])
 print("path length", round(S[-1], 4), "mm; segments", [(sg[0], round(sg[1][0], 3), round(sg[1][-1], 3)) for sg in segs])
 for q in (10, 31, 40, 79):

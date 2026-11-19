@@ -119,6 +119,16 @@ s = prs.slides.add_slide(L_TITLE)
 text(s, 0.5, 2.15, 12.33, 1.4, ["Travelling-wave equaliser:", "line and bend models from CST"], size=34, bold=True, align=PP_ALIGN.CENTER, anchor=MSO_ANCHOR.MIDDLE)
 text(s, 0.5, 3.75, 12.33, 0.8, "CST time-domain simulations, 0–130 GHz · straight line, line + bend, full equaliser", size=18, color=MUTED, align=PP_ALIGN.CENTER)
 
+# 1b --------------------------------------------------------------- simulated structures
+s = new(); title(s, "Simulated structures", "CST time domain, 0–130 GHz, 50 Ω ports; E-field exported along the centre of both gaps (every 5 µm)")
+for k, (img, lab, txt) in enumerate((("sch_LS.png", "L+S", "Straight line 3.24 mm: line parameters α, n_{m}, Z_{c}"),
+                                     ("sch_LBS.png", "L+B+S", "Line 2.16 mm + bend block + line 1.08 mm: bend block"),
+                                     ("sch_full.png", "Full equaliser", "2.70 (+) + bend + 1.44 (+) + bend + 1.44 (−) mm: validation"))):
+    y = (1.5, 2.85, 4.75)[k]; h = (1.15, 1.75, 2.15)[k]
+    text(s, 0.5, y + 0.05, 2.3, 0.4, lab, size=15, bold=True, color=NAVY)
+    text(s, 0.5, y + 0.45, 2.3, h - 0.45, txt, size=11.5, color=MUTED)
+    W, H = Image.open(os.path.join(IMG, img)).size; hh = min(h, 9.9 * H / W); s.shapes.add_picture(os.path.join(IMG, img), Inches(2.95), Inches(y), Inches(hh * W / H), Inches(hh))
+
 # 2 ---------------------------------------------------------------- touchstone extraction
 def eqrow(s, tag, label, name, y, h, x=0.5, xe=1.0):
     text(s, x, y, 12.3, 0.35, f"**{tag}** {label}", size=13)
@@ -165,31 +175,42 @@ kpi(s, 3.62, 5.7, 3.0, 1.25, "≤ 0.003", "n_{m} (0.14 %)")
 kpi(s, 6.74, 5.7, 3.0, 1.25, "≤ 1.3 Ω", "Re Z_{c} (3 %)")
 kpi(s, 9.86, 5.7, 3.0, 1.25, "≤ 1.6 Ω", "Im Z_{c}: the field value rises with f (port-2 transition), the fit cannot")
 
-# 6 ---------------------------------------------------------------- bend block: two routes
-s = new(); title(s, "Bend block: touchstone and fields give the same two-port", "L+B+S run; block = rise, raised straight, U-bend, raised straight, descent")
-fig(s, "bend_routes.png", 0.5, 1.55, 12.35, 3.75, "Bend block S21, phase delay and S11 from touchstone and fields")
-text(s, 0.5, 5.4, 6.0, 0.35, "**Touchstone:** line and port blocks removed from the L+B+S matrix", size=12.5); eqimg(s, "eq_deemb", 0.7, 5.78, 0.36)
-text(s, 0.5, 6.25, 6.0, 0.7, "Line: γ from the fields, Z_{c} from the touchstone (βL = mπ bands excluded); ports: 2.9 pH + 1.6 fF (fitted on L+S).", size=11, color=MUTED)
-text(s, 6.75, 5.4, 6.1, 0.35, "**Fields:** waves of lines 1 and 2 at the two planes, symmetric block", size=12.5); eqimg(s, "eq_fieldS", 6.95, 5.78, 0.3)
-text(s, 6.75, 6.25, 6.1, 0.7, "Agreement: |S_{21}| within 0.06 dB, delay within 0.05 ps above 60 GHz, |S_{11}| within 0.03. Delay 5.0 ps, i.e. index 1.73 over 0.87 mm.", size=11, color=MUTED)
+# 6 ---------------------------------------------------------------- bend block: extraction
+s = new(); title(s, "Bend block: two independent extractions", "Block = everything between plane 1 and plane 2 (z = 2.16 mm, ends of the buried electrodes)")
+W, H = Image.open(os.path.join(IMG, "sch_LBS_waves.png")).size; s.shapes.add_picture(os.path.join(IMG, "sch_LBS_waves.png"), Inches(1.9), Inches(1.4), Inches(1.85 * W / H), Inches(1.85))
+text(s, 0.5, 3.3, 12.3, 0.35, "**Touchstone route.** The L+B+S matrix is a chain of port 1, line 1, block, line 2, port 2; lines and ports are known from L+S:", size=12.5)
+eqimg(s, "eq_chain", 0.8, 3.66, 0.34)
+eqimg(s, "eq_a2s", 0.8, 4.08, 0.44); text(s, 6.9, 4.12, 5.95, 0.4, "S-parameters of T_{bend}, referenced to the line Z_{c} on both sides", size=11, color=MUTED)
+text(s, 0.5, 4.62, 12.3, 0.35, "**Field route.** Forward/backward wave fit on line 1 (coordinate z) and line 2 (coordinate s), γ of the line; a: towards the block, b: away from it:", size=12.5)
+eqimg(s, "eq_w1", 0.8, 4.98, 0.32); eqimg(s, "eq_w2", 0.8, 5.38, 0.3); eqimg(s, "eq_w3", 0.8, 5.76, 0.3)
+text(s, 0.5, 6.2, 12.3, 0.7, "One excitation (port 1) gives 2 equations for 4 unknowns. Reciprocity (S_{12} = S_{21}) and mirror symmetry of the block about the bend axis (S_{22} = S_{11}) close the system. Neither the ports nor the line Z_{c} enter.", size=11.5, color=MUTED)
 
-# 7 ---------------------------------------------------------------- parasitic mode
-s = new(); title(s, "The dips are resonances of a ground-to-ground mode", "Born in the U-bend, reflected at both ports: a standing wave over the 4.11 mm path")
-fig(s, "bend_parasitic.png", 0.5, 1.55, 8.3, 3.6, "Parasitic voltage on the lines and in the arc")
-eqimg(s, "eq_vp", 9.0, 1.6, 0.5)
-text(s, 9.0, 2.2, 3.85, 0.9, "v_{in}, v_{out}: voltage across the inner and outer gap. v_{p} = (φ_{outer} − φ_{inner})/2: potential difference between the two grounds.", size=11.5, color=MUTED)
-eqimg(s, "eq_comb", 9.0, 3.2, 0.5)
-text(s, 9.0, 3.8, 3.85, 1.3, "n_{p} = 2.39 from the fields (line 1), slower than the coplanar mode (2.21). Predicted 15.3, 30.5, 45.8, 61.1, 76.3, 91.6 GHz; dips at 15.5, 30.6, 46.3, 62.1, 78.1, 93.2 GHz.", size=11.5)
-card(s, 0.5, 5.3, 6.05, 1.6, "Birth", ["In the arc the inner gap is 124 µm shorter than the outer one: the two gap voltages fall out of phase. At 78 GHz |v_{p}/v_{c}| grows from 0.06 at the entry to 0.44 at the exit."], size=12)
-card(s, 6.8, 5.3, 6.05, 1.6, "Resonance", ["The ports match only the coplanar mode: the parasitic wave is trapped between them. At each round trip of 2π the trapped wave builds up and draws power from the coplanar mode."], size=12)
-note(s, "Arc stations only at 0, 90 and 180 deg: at oblique angles the exported field of the staircase mesh gives path-dependent gap voltages, even at 1 GHz. Comb drift at high order: the 0.87 mm raised part has a lower parasitic index than the lines (about 2.05 if the dip spacing, 15.6 GHz, is attributed to the whole path).")
+# 7 ---------------------------------------------------------------- bend block: results
+s = new(); title(s, "Bend block: the two routes agree", "|S_{21}|, delay and |S_{11}| of the block, referenced to the line impedance")
+fig(s, "bend_routes.png", 0.5, 1.5, 12.35, 3.65, "Bend block S21, delay and S11 from touchstone and fields")
+eqimg(s, "eq_delay", 0.6, 5.3, 0.46)
+card(s, 0.5, 5.9, 4.0, 1.05, "Agreement", ["|S_{21}| within 0.06 dB, |S_{11}| within 0.03, delay within 0.03 ps."], size=11.5)
+card(s, 4.67, 5.9, 4.0, 1.05, "Delay of the coplanar wave", ["5.0 ps from plane 1 to plane 2 (same both ways): index 1.72 over 0.87 mm."], size=11.5)
+card(s, 8.84, 5.9, 4.01, 1.05, "Low-frequency phase delay", ["Phase offsets φ_{0} of +1.0° / −0.5°: 1° is 1.4 ps at 2 GHz, where the block is only 3.6°."], size=11.5)
 
-# 8 ---------------------------------------------------------------- bend loss
-s = new(); title(s, "Bend loss: line-like up to 50 GHz, growing faster above", "Smooth part of the bend block compared with the same length of straight buried line")
-fig(s, "bend_loss.png", 0.5, 1.55, 7.2, 4.0, "Bend block S21 compared with an equal length of line")
-table(s, 7.95, 1.55, 4.9, [["f (GHz)", "Bend, smooth (dB)", "Line, 0.87 mm (dB)"],
-      ["20", "−0.14", "−0.15"], ["60", "−0.31", "−0.28"], ["100", "−0.54", "−0.37"], ["120", "−0.72", "−0.41"]], [1.1, 1.9, 1.9], size=12, row_h=0.42)
-card(s, 7.95, 3.85, 4.9, 1.7, "Dips", ["Extra loss at the resonances: 0.07 dB at 15.5 GHz, 0.34 dB at 62 GHz, 0.50 dB at 109 GHz. Power converted into the trapped parasitic wave."], size=12)
-card(s, 0.5, 5.75, 12.35, 1.15, "Location within the bend: not resolved", ["E-field data give voltages only; a voltage change across the rise or in the arc can be impedance as well as loss. Power flow ½Re(V I*) needs H: H monitors at the line end, after the rise and at the arc stations in the next run."], hc=RED, size=12)
+# 8 ---------------------------------------------------------------- parasitic mode
+s = new(); title(s, "The dips are resonances of a ground-to-ground wave", "Generated in the U-bend, trapped between the two ports")
+eqimg(s, "eq_vp", 0.6, 1.5, 0.5)
+text(s, 4.1, 1.45, 8.75, 0.75, "v_{in}, v_{out}: voltages across the inner and outer gap (signal to ground). v_{c}: coplanar mode, opposite fields in the two gaps, push-pull modulation. v_{p} = (φ_{outer} − φ_{inner})/2: the two grounds at different potentials; equal phase in both arms, no modulation.", size=11.5)
+fig(s, "bend_parasitic.png", 0.5, 2.3, 8.3, 2.85, "Parasitic voltage on the lines versus frequency, and along the path")
+text(s, 9.0, 2.35, 3.85, 0.35, "**Resonance comb**", size=12.5); eqimg(s, "eq_comb", 9.0, 2.75, 0.45)
+text(s, 9.0, 3.3, 3.85, 1.85, "n_{p} = 2.39 from the fields, L_{path} = 4.11 mm: 15.3, 30.5, 45.8, 61.1, 76.4, 91.6 GHz. Dips: 15.5, 30.6, 46.3, 62.1, 78.1, 93.2 GHz. A coplanar round trip would give a 17.2 GHz spacing.", size=11.5)
+card(s, 0.5, 5.3, 4.0, 1.65, "Ports", ["v_{p} has a node at both ports: the ports short the two grounds. Reflection |Γ_{p}| = 1.0 (coplanar wave: 0.08)."], size=11.5)
+card(s, 4.67, 5.3, 4.0, 1.65, "Birth", ["Inner gap 124 µm shorter than the outer one: the two gap voltages drift out of phase. At 78 GHz v_{p}/v_{c}: 0.06 → 0.45 across the U-bend."], size=11.5)
+card(s, 8.84, 5.3, 4.01, 1.65, "Line 2 stronger", ["Conversion is forward: v_{p} leaves the bend towards port 2; line 1 receives it only after reflection at port 2."], size=11.5)
+note(s, "Arc voltages: the staircase mesh scales the exported field of oblique gap points by a geometric factor (up to x2). Each point is calibrated by its own 1 GHz value; point sampling and line integral then agree. Line voltages averaged over one 0.18 mm cell of the periodic loading. Physical vs artefact: the line-extraction ripples were in per-unit-length quantities (alpha, Zc) and sat at the extraction condition beta L = m pi; these dips are in the transmitted power of the block, appear in both independent routes, and coincide with a measured second mode.")
+
+# 9 ---------------------------------------------------------------- bend loss
+s = new(); title(s, "Bend loss sits in the raised path", "Smooth part of the block and split of the loss along the path (field route)")
+fig(s, "bend_loss.png", 0.5, 1.5, 12.35, 3.85, "Smooth part of the bend loss and split along the path")
+card(s, 0.5, 5.5, 4.0, 1.45, "Smooth part", ["Cubic polynomial in f fitted to |S_{21}| (dB) outside ±2.5 GHz of each dip: the block without the port-to-port resonance of this test structure."], size=11)
+card(s, 4.67, 5.5, 4.0, 1.45, "Split (≤ 60 GHz)", ["Rises together < 0.07 dB; raised straight + U-bend carry the loss: 4.7 dB/cm at 60 GHz, against 3.3 dB/cm for the buried line."], size=11)
+card(s, 8.84, 5.5, 4.01, 1.45, "Limits", ["Each rise alone shifts the forward wave by ±0.2–0.5 dB (impedance step, cancels in pairs). Above 60 GHz the resonances spoil the split."], hc=RED, size=11)
+note(s, "Forward wave from forward/backward fits on line 1 and line 2 (gamma of the line) and on the raised path s = 2.215-2.975 mm (gamma free: n = 1.72). Voltage calibration: buried lines raw (cell averages), raised gaps scaled once so that the 1 GHz voltage is continuous across the 50 um rise. Sum of the sections = field-route |S21| within 0.05 dB.")
 
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))
