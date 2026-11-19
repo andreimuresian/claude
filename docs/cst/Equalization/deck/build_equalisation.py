@@ -238,4 +238,24 @@ table(s, 0.5, 5.35, 7.6, [["Bend two-port", "EO error 1–60 GHz", "EO error 62�
 card(s, 8.35, 5.35, 4.5, 1.6, "Meaning", ["Up to 60 GHz the bend is a two-port. Above, the cascade loses too much and its EO is too flat: the returned parasitic power is missing. Next: two-mode bend."], hc=RED, size=11)
 note(s, "Light delay in each bend = slope delay of the bend model (5.03 ps). V(z) agreement (one complex scale per frequency): median 0.7-0.9 % up to 60 GHz, 3-7 % above. Error budget of the earlier 0-60 GHz validation: EO within about 0.05 dB rms.")
 
+# 14 --------------------------------------------------------------- two-mode bend
+s = new(); title(s, "Two-mode bend from the L+B+S fields", "Coplanar and parasitic waves fitted on both lines; ports included through Γ_{p}")
+eqimg(s, "eq_tm1", 0.6, 1.5, 0.33); eqimg(s, "eq_tm2", 0.6, 1.95, 0.3)
+text(s, 7.6, 1.95, 5.25, 0.55, "a: waves towards the bend, b: away from it (planes as for the two-port). κ: conversion; ρκ: reconversion (reciprocity between modes of different impedance).", size=10.5, color=MUTED)
+fig(s, "two_mode_coeffs.png", 0.5, 2.5, 12.35, 3.0, "Two-mode bend coefficients")
+table(s, 0.5, 5.65, 12.35, [["t_{c}", "κ", "t_{p}", "ρ = Z_{c}/Z_{p}", "Ports (Γ_{p})", "Parasitic line"],
+      ["smooth, 5.00 ps; no dips", "j · 0.002 f · e^{−jω 5.3 ps}", "5.2 ps; loss 1.3 × t_{c}", "1.56 (Z_{p} ≈ 27 Ω)", "−0.98 e^{−jω 0.56 ps}", "n_{p} 2.38, α_{p} 1.3 α_{c}"]],
+      [1.9, 2.3, 2.0, 2.0, 2.1, 2.05], size=10.5, row_h=0.62)
+note(s, "Assumptions: reciprocity, mirror symmetry, backward conversion and parasitic reflection at the bend neglected. kap and t_p come from the parasitic equations alone; rho is the only free value and is chosen where t_c is smoothest (the trapped resonance removed from the coplanar transmission). The +90 deg of kap at 0 Hz is the path-difference mechanism (inner gap shorter). alpha_p is weakly determined (k from 0.7 to 2 changes the prediction by < 0.01 dB rms). Gamma_p delay 0.56 ps: effective short about 35 um behind the port plane.")
+
+# 15 --------------------------------------------------------------- two-mode cascade
+s = new(); title(s, "The two-mode bend predicts the full equaliser", "No information from the full run; lines from L+S, bends from L+B+S")
+fig(s, "two_mode_cascade.png", 0.5, 1.5, 12.35, 3.65, "Full run against the two-mode and two-port cascades")
+table(s, 0.5, 5.3, 8.0, [["Bend model", "EO 1–60 GHz", "EO 62–130 GHz", "|S_{21}| 62–130 GHz"],
+      ["Two-mode (smooth)", "0.02 dB rms", "0.07 dB rms (0.20 max)", "0.11 dB rms"],
+      ["Two-mode, no reconversion (ρ = 0)", "0.04 dB rms", "0.18 dB rms", "0.31 dB rms"],
+      ["Two-port, cubic", "0.08 dB rms", "0.10 dB rms (0.22 max)", "0.21 dB rms"],
+      ["Two-port, local bridging", "0.03 dB rms", "0.18 dB rms (0.34 max)", "0.35 dB rms"]], [2.6, 1.6, 2.1, 1.7], size=10.5, row_h=0.33)
+card(s, 8.75, 5.3, 4.1, 1.65, "Result", ["Best model at all frequencies. Parasitic level on L2 within 1 dB up to 60 GHz, 3 dB above. The returned power (ρκ) is essential above 60 GHz."], size=11)
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))

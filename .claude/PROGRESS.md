@@ -12,11 +12,15 @@ Last update: 2026-11-19, end of day.
 - Step 3 (cascade_130.py): two-port cascade within budget up to 60 GHz (local bridging: EO 0.03 dB rms), not above
   (best 0.10 dB rms, max 0.22 dB, cubic). Slide 13.
 
+- Step 4-5 (two_mode_gamma_p.py, two_mode_bend.py, two_mode_cascade.py): two-mode bend from L+B+S fields
+  (t_c smooth 5.00 ps, kap = j 0.002 f e^{-jw 5.3 ps}, t_p 5.2 ps, rho = Zc/Zp = 1.56 by smoothness of t_c, Gamma_p = -0.98 e^{-jw 0.56 ps},
+  n_p 2.38, alpha_p 1.3 alpha_c (insensitive)). Prediction of the full run: EO 0.02 dB rms (1-60), 0.07 dB rms (62-130);
+  best of all models; reconversion essential. Slides 14-15.
+
 ## Deck
 docs/cst/Equalization/deck/build_equalisation.py (13 slides, company template); images shown to the user, export only at the end.
 
 ## Next
-- Step 4: two-mode bend model from L+B+S (coplanar + parasitic, reciprocity + mirror symmetry, backward conversion neglected),
-  then step 5 (compare with the two-port on the full run) and step 6 (longer L2).
+- Step 6: predict longer lines (L2 3-8 mm, and the user's L1 10 / L2 5 / L3 5 mm run) with the two-mode model.
 - Pending runs from the user: single bend (20 um buried stubs, PEC-bridged ports), long equaliser L1 10 / L2 5 / L3 5 mm,
   both with H monitors (field_monitors_H_130GHz.bas). Export macros for H still to be written when the runs finish.
