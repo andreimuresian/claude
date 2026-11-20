@@ -31,3 +31,9 @@ docs/cst/Equalization/deck/build_equalisation.py (13 slides, company template); 
 L1 = 10 mm, L2/L3 0.5-10 mm, two-mode model, 1-130 GHz. 10 mm alone: f-3dB 90 GHz, worst -3.9 dB. Best absolute flatness
 (re 10 mm line at 1 GHz, worst level 10-130 GHz): 10+8.5+8 (peaking <= 0.25 dB): -1.4 dB, no DC loss; 10+9+9 (peaking <= 1 dB): -1.2 dB.
 10+5+5: -2.4 dB. L3 > L2 flattens the normalised curve but costs low-frequency efficiency. To check against the 10+5+5 run.
+
+## 10+5+5 run (EL_L 10.08, EL_L2 = EL_L3 5.04 mm) validation (long_run_validation.py, slide 18)
+Uploaded in docs/cst/Equalization/full equalizer 10+5+5 (touchstone, E gap lines + tapers, bend maps as zip parts, 15 H planes).
+Two-mode prediction: EO shape 0.01 dB rms (5-60 GHz), 0.06 dB rms (62-130) after a constant +0.06 dB offset from the 1 GHz
+normalisation; |S21| 0.05 dB rms to 60 GHz, fine ripple +-0.4-0.7 dB above 105 GHz not reproduced. Parasitic effect small (as predicted).
+Next: H-field analysis (Zc from current loops, power flow), offset origin at 1 GHz, single-bend run when available.

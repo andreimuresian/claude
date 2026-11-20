@@ -280,4 +280,14 @@ table(s, 0.5, 5.65, 8.1, [["Design (mm)", "EO at 1 GHz", "Worst 10–130 GHz", "
 card(s, 8.85, 5.65, 4.0, 1.3, "Trade-off", ["Longer L2, L3: flatter and stronger at high f, until over-equalisation (peaking) and the cost of 28 mm of electrode."], size=10.5)
 note(s, "Validity: 1-130 GHz (no extrapolation of the bend); bend model validated so far on the 1.44 mm sections (10+5+5 run to test it). Not in the model: optical loss and footprint of the longer electrodes, drive power. Light assumed matched to the RF in the bends. L3 > L2 flattens the normalised response further (10+5.5+7) but costs 1.7 dB of low-frequency efficiency.")
 
+# 18 --------------------------------------------------------------- long run validation
+s = new(); title(s, "10 + 5 + 5 mm run confirms the prediction", "Run: L1 10.08, L2 = L3 5.04 mm; prediction from L+S and L+B+S only, made before the run")
+fig(s, "long_run_validation.png", 0.5, 1.5, 12.35, 3.75, "Long equaliser run against the predictions")
+table(s, 0.5, 5.4, 8.0, [["Prediction", "EO offset", "EO shape 5–60 GHz", "EO shape 62–130 GHz", "|S_{21}| 1–60 GHz"],
+      ["Two-mode bend", "+0.06 dB", "0.01 dB rms", "0.06 dB rms (0.13 max)", "0.05 dB rms"],
+      ["No conversion", "+0.09 dB", "0.01 dB rms", "0.06 dB rms (0.17 max)", "0.07 dB rms"],
+      ["Two-port bend", "−0.10 dB", "0.02 dB rms", "0.07 dB rms (0.19 max)", "0.03 dB rms"]], [1.7, 1.2, 1.6, 2.0, 1.5], size=10.5, row_h=0.36)
+card(s, 8.75, 5.4, 4.1, 1.55, "Result", ["EO shape within 0.01 dB rms up to 60 GHz; parasitic levels on L2, L3 within a few dB. As predicted, the parasitic mode matters little on long lines (0.03 dB between two-mode and no conversion)."], size=10.5)
+note(s, "EO offset: constant difference from 5 GHz upwards, set by the 1 GHz normalisation point; 'shape' = rms after removing it. |S21| above 105 GHz: CST shows a fine ripple (+-0.4-0.7 dB) not reproduced point by point. Folds of the run vs L+S: alpha within 0.05 dB/cm, n_m within 0.003; bend delays 4.99 / 5.10 ps.")
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))
