@@ -2,7 +2,8 @@
 # Madrid-Ti: continuous LN slab, Ti strips directly on the slab (conductor at DC, lossy optically),
 # Au pad on Ti, Au bridge to a tall Au electrode standing on a SiO2 buffer that exists only outside the Ti.
 GAP = G_TI                                   # field-defining gap = Ti gap
-N_TI = complex(3.7, 4.4)                     # ASSUMED (literature-typical, no measurement)
+import os
+N_TI = complex(os.environ.get("N_TI", "3.7+4.4j").replace(" ", ""))  # ASSUMED literature value; Al: 1.55+16j
 eps_ti = (N_TI.real - 1j * N_TI.imag) ** 2   # exp(+jwt): Im(eps) < 0 is loss
 MATERIALS["Ti_sig"] = {"color": "#d62728", "eps_dc": (1.0, 1.0), "eps_opt": (eps_ti,) * 3, "desc": "Ti (signal)"}
 MATERIALS["Ti_gnd"] = {"color": "#a01818", "eps_dc": (1.0, 1.0), "eps_opt": (eps_ti,) * 3, "desc": "Ti (ground)"}
@@ -78,4 +79,5 @@ def build_polygons():
     return out, y_clad_top
 
 
-_TI_RES = {"tiR": (h_skin, 0.15), "tiL": (h_skin, 0.15), "fillR": (0.050, 0.30), "fillL": (0.050, 0.30)}
+_h_m = 0.007 if abs(N_TI.imag) > 10 else h_skin   # Al skin depth ~16 nm: finer
+_TI_RES = {"tiR": (_h_m, 0.15), "tiL": (_h_m, 0.15), "fillR": (0.050, 0.30), "fillL": (0.050, 0.30)}
