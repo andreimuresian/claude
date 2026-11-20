@@ -8,7 +8,7 @@ src = "\n".join("".join(c["source"]) for c in nb["cells"][:5])
 for k, v in (("wl", 1.625), ("BUFFER_H", 0.12), ("T_ALD", 0.0), ("MESH_SCALE", 1.4)):
     src, n = re.subn(rf"\n{k} = (?:[0-9.]+|None)", f"\n{k} = {v}", src, count=1); assert n == 1, k
 src, n = re.subn(r"\nUSE_ALD = \w+", "\nUSE_ALD = True", src, count=1); assert n == 1
-par = f"G_TI={G}; TI_H={TH}; TI_P={P}; PAD_W=2.0; PAD_H=0.5; TI_X=0.5; SP_W=1.0; BR_H=0.3; OUT_W=30.0; TALL_H=10.0\n"
+par = f"G_TI={G}; TI_H={TH}; TI_P={P}; PAD_W=2.0; PAD_H=0.5; TI_X={float(__import__('os').environ.get('TI_X','0.5'))}; SP_W=1.0; BR_H=0.3; OUT_W=30.0; TALL_H=10.0\n"
 geo = open("/home/user/claude/results/madrid/ti_design/ti_geom.py").read()
 mark = "\npolygons, Y_TOP = build_polygons()"
 assert src.count(mark) == 1
@@ -20,7 +20,7 @@ t0 = time.time(); g = {}
 exec(compile(pre + src, "nb", "exec"), g)
 import numpy as np
 # loss split: integral |Im eps| |E|^2 per material (relative)
-res = dict(gti=G, ti_h=TH, ti_p=P, au_gap=G + 2 * P, tri=int(g["skfem_mesh"].nelements), neff=float(g["n_eff"].real),
+res = dict(gti=G, ti_h=TH, ti_p=P, ti_x=float(__import__("os").environ.get("TI_X","0.5")), n_m=__import__("os").environ.get("N_TI","3.7+4.4j"), au_gap=G + 2 * P, tri=int(g["skfem_mesh"].nelements), neff=float(g["n_eff"].real),
            IL_dBcm=float(g["att_opt_dB_cm"]), VpiL_Vcm=float(g["Vpi_L_Vcm"]), gamma=float(abs(g["overlap"])), t_s=round(time.time() - t0, 1))
 try:
     from skfem import Functional
