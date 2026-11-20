@@ -1,0 +1,3 @@
+# Full equaliser 10 + 5 + 5 mm, 0-130 GHz run
+
+Touchstone, E-field and H-field exports (export_fields_full_long.bas). Large files as split zip: <name>.zip.001, .002, ...
