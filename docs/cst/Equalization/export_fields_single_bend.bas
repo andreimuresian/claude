@@ -23,8 +23,8 @@ Const NMAX As Integer = 40
 Dim nR As Integer
 Dim rName(NMAX) As String, rFld(NMAX) As String, rBox(NMAX, 6) As Double, rDone(NMAX) As Boolean
 
-Sub AddR (fld As String, name As String, x0 As Double, x1 As Double, y0 As Double, y1 As Double, z0 As Double, z1 As Double, stp As Double)
-    rName(nR) = name: rFld(nR) = fld
+Sub AddR (fld As String, nm As String, x0 As Double, x1 As Double, y0 As Double, y1 As Double, z0 As Double, z1 As Double, stp As Double)
+    rName(nR) = nm: rFld(nR) = fld
     rBox(nR, 0) = x0: rBox(nR, 1) = x1: rBox(nR, 2) = y0: rBox(nR, 3) = y1: rBox(nR, 4) = z0: rBox(nR, 5) = z1: rBox(nR, 6) = stp
     nR = nR + 1
 End Sub
