@@ -290,4 +290,13 @@ table(s, 0.5, 5.4, 8.0, [["Prediction", "EO offset", "EO shape 5–60 GHz", "EO 
 card(s, 8.75, 5.4, 4.1, 1.55, "Result", ["EO shape within 0.01 dB rms up to 60 GHz; parasitic levels on L2, L3 within a few dB. As predicted, the parasitic mode matters little on long lines (0.03 dB between two-mode and no conversion)."], size=10.5)
 note(s, "EO offset: constant difference from 5 GHz upwards, set by the 1 GHz normalisation point; 'shape' = rms after removing it. |S21| above 105 GHz: CST shows a fine ripple (+-0.4-0.7 dB) not reproduced point by point. Folds of the run vs L+S: alpha within 0.05 dB/cm, n_m within 0.003; bend delays 4.99 / 5.10 ps.")
 
+# 19 --------------------------------------------------------------- H-field impedance
+s = new(); title(s, "H fields: line impedance from the current", "10 + 5 + 5 mm run; current = loop integral of H around the signal electrode, 3 planes in one cell per line")
+fig(s, "h_field_zc.png", 0.5, 1.5, 8.2, 2.75, "Line impedance from the H-field current against the touchstone")
+card(s, 8.95, 1.5, 3.9, 2.75, "Result", ["All three lines: Re Z_{c} 39–40 Ω, the same within 0.5 Ω; Im Z_{c} follows the touchstone.", "Re Z_{c} 3.3 Ω (8 %) below the touchstone value."], size=11)
+card(s, 0.5, 4.45, 6.05, 2.5, "Why the 8 % gap", ["Z_{c} = V/I needs a voltage. Here V is the field at the gap centre × 4.45 µm outside the apertures; inside a loaded cell V changes (×2 in the aperture) while I stays constant (0.2 % over the cell).",
+     "The impedance seen by the ports is the cell-averaged one (touchstone, with port blocks): it reproduces S_{11} of all runs."], size=10.5)
+card(s, 6.8, 4.45, 6.05, 2.5, "Next run", ["Export E on the same planes as H: power flow P = ½∫(E × H*)·dA through the cross-section gives Z_{c} = 2P/|I|^{2} without any voltage definition, and the loss between planes (step, taper, U-bend)."], hc=RED, size=10.5)
+note(s, "Power along the path from 1/2 Re(V I*) is not reliable with these exports: buried, raised and apex voltages use different definitions (point field x nominal gap vs line integral), which differ by up to 10 %. Local V/I on the raised sections and apexes: 33-49 ohm (standing waves).")
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))

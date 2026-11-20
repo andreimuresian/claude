@@ -37,3 +37,8 @@ Uploaded in docs/cst/Equalization/full equalizer 10+5+5 (touchstone, E gap lines
 Two-mode prediction: EO shape 0.01 dB rms (5-60 GHz), 0.06 dB rms (62-130) after a constant +0.06 dB offset from the 1 GHz
 normalisation; |S21| 0.05 dB rms to 60 GHz, fine ripple +-0.4-0.7 dB above 105 GHz not reproduced. Parasitic effect small (as predicted).
 Next: H-field analysis (Zc from current loops, power flow), offset origin at 1 GHz, single-bend run when available.
+
+## H-field analysis (h_field_analysis.py, h_field_plot.py, slide 19)
+Loop current (0.2 % spread over a cell). Re Zc of L1/L2/L3 = 39-40 ohm, identical within 0.5 ohm; Im follows the touchstone; 3.3 ohm (8 %)
+below the touchstone (voltage definition in a loaded cell). Power along the path not reliable (different V definitions).
+Next run: export E on the same planes as H -> Zc = 2P/|I|^2 from the Poynting flux, and loss between planes.
