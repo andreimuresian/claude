@@ -32,13 +32,13 @@ End Sub
 Sub Main ()
     Dim outDir As String, br As Double, ws As Double, gp2 As Double, mtx As Double, clad As Double, l1 As Double, l2 As Double, tl As Double
     Dim dy2 As Double, xr As Double, zb As Double, hw As Double, xb0 As Double, xb1 As Double, xr0 As Double, xr1 As Double
-    Dim zs1 As Double, zs2 As Double, zA As Double, zM As Double, zB As Double, sd As Integer, ys As Double, tag As String
+    Dim zs1 As Double, zs2 As Double, zPa As Double, zPm As Double, zPb As Double, sd As Integer, ys As Double, tag As String
     br = RestoreDoubleParameter("BEND_RADIUS"): ws = RestoreDoubleParameter("WS"): gp2 = RestoreDoubleParameter("GAP2")
     mtx = RestoreDoubleParameter("MTX"): clad = RestoreDoubleParameter("CLAD_H"): tl = RestoreDoubleParameter("TAPER_L")
     l1 = RestoreDoubleParameter("EL_L"): l2 = RestoreDoubleParameter("EL_L2")
     dy2 = ws / 2 + gp2 / 2: xr = clad + mtx / 2: zb = l1 + 0.05 + tl: hw = 0.026
     xb0 = -0.001: xb1 = mtx + 0.001: xr0 = clad - 0.001: xr1 = clad + mtx + 0.001
-    zs1 = l1 / 2: zs2 = (l1 - l2) + l2 / 2: zA = l1 + 0.06: zM = l1 + 0.05 + tl / 2: zB = zb - 0.01
+    zs1 = l1 / 2: zs2 = (l1 - l2) + l2 / 2: zPa = l1 + 0.06: zPm = l1 + 0.05 + tl / 2: zPb = zb - 0.01
     nR = 0
     For sd = 1 To 2
         If sd = 1 Then
@@ -51,9 +51,9 @@ Sub Main ()
         Else
             AddR "E", "E_stub2", xb0, xb1, ys - hw, ys + hw, zs2, zs2, 0.0005: AddR "H", "H_stub2", xb0, xb1, ys - hw, ys + hw, zs2, zs2, 0.0005
         End If
-        AddR "E", "E_A" & tag, xr0, xr1, ys - hw, ys + hw, zA, zA, 0.0005: AddR "H", "H_A" & tag, xr0, xr1, ys - hw, ys + hw, zA, zA, 0.0005
-        AddR "E", "E_M" & tag, xr0, xr1, ys - hw, ys + hw, zM, zM, 0.0005: AddR "H", "H_M" & tag, xr0, xr1, ys - hw, ys + hw, zM, zM, 0.0005
-        AddR "E", "E_B" & tag, xr0, xr1, ys - hw, ys + hw, zB, zB, 0.0005: AddR "H", "H_B" & tag, xr0, xr1, ys - hw, ys + hw, zB, zB, 0.0005
+        AddR "E", "E_A" & tag, xr0, xr1, ys - hw, ys + hw, zPa, zPa, 0.0005: AddR "H", "H_A" & tag, xr0, xr1, ys - hw, ys + hw, zPa, zPa, 0.0005
+        AddR "E", "E_M" & tag, xr0, xr1, ys - hw, ys + hw, zPm, zPm, 0.0005: AddR "H", "H_M" & tag, xr0, xr1, ys - hw, ys + hw, zPm, zPm, 0.0005
+        AddR "E", "E_B" & tag, xr0, xr1, ys - hw, ys + hw, zPb, zPb, 0.0005: AddR "H", "H_B" & tag, xr0, xr1, ys - hw, ys + hw, zPb, zPb, 0.0005
         If EXPORT_LINES Then
             AddR "E", "L" & tag & "_taper_gap+", xr, xr, ys + dy2, ys + dy2, l1, zb, 0.005
             AddR "E", "L" & tag & "_taper_gap-", xr, xr, ys - dy2, ys - dy2, l1, zb, 0.005
@@ -92,7 +92,7 @@ Sub Main ()
       End If
     Next f
     MsgBox "Field export finished: " & outDir & vbCrLf & "EL_L = " & l1 & ", EL_L2 = " & l2 & ", arc centre z = " & zb & vbCrLf & _
-           "planes A / M / B at z = " & zA & " / " & zM & " / " & zB & ", stubs at z = " & zs1 & " / " & zs2
+           "planes A / M / B at z = " & zPa & " / " & zPm & " / " & zPb & ", stubs at z = " & zs1 & " / " & zs2
 End Sub
 
 ' Exports region k at frequency f (the field result is already selected) and appends it to <outDir><name>.txt
