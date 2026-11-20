@@ -41,7 +41,11 @@ Sub Main ()
     zs1 = l1 / 2: zs2 = (l1 - l2) + l2 / 2: zA = l1 + 0.06: zM = l1 + 0.05 + tl / 2: zB = zb - 0.01
     nR = 0
     For sd = 1 To 2
-        If sd = 1 Then ys = -br: tag = "1" Else ys = br: tag = "2"
+        If sd = 1 Then
+            ys = -br: tag = "1"
+        Else
+            ys = br: tag = "2"
+        End If
         If sd = 1 Then
             AddR "E", "E_stub1", xb0, xb1, ys - hw, ys + hw, zs1, zs1, 0.0005: AddR "H", "H_stub1", xb0, xb1, ys - hw, ys + hw, zs1, zs1, 0.0005
         Else
@@ -70,18 +74,21 @@ Sub Main ()
         Close #fo: rDone(k) = False
     Next k
 
-    Dim f As Integer, fld As String
+    Dim f As Integer, q As Integer, fld As String, item As String, ok As Boolean
     For f = 1 To F_MAX
       If f <= 60 Or f Mod 2 = 0 Then
-        For Each fld In Array("E", "H")
-            Dim item As String, ok As Boolean
-            If fld = "E" Then item = "2D/3D Results\E-Field\e-field (f=" & CStr(f) & ") " & EXC Else item = "2D/3D Results\H-Field\h-field (f=" & CStr(f) & ") " & EXC
+        For q = 0 To 1
+            If q = 0 Then
+                fld = "E": item = "2D/3D Results\E-Field\e-field (f=" & CStr(f) & ") " & EXC
+            Else
+                fld = "H": item = "2D/3D Results\H-Field\h-field (f=" & CStr(f) & ") " & EXC
+            End If
             ok = SelectTreeItem(item)
             If Not ok Then ReportWarningToWindow "Missing result: " & item
             For k = 0 To nR - 1
                 If ok And rFld(k) = fld Then ExportOne outDir, k, f
             Next k
-        Next fld
+        Next q
       End If
     Next f
     MsgBox "Field export finished: " & outDir & vbCrLf & "EL_L = " & l1 & ", EL_L2 = " & l2 & ", arc centre z = " & zb & vbCrLf & _
