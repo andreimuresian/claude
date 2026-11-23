@@ -137,18 +137,23 @@ card(s, 7.35, 3.35, 5.5, 2.05, "Why it fails", ["The pair is not uniform: pads, 
 card(s, 7.35, 5.55, 5.5, 1.35, "Consequence", ["V(z) of both lines is taken from full-wave field monitors (slides 11–13: EO from S-parameters 5–8 dB too high)."], size=13)
 
 # 5 ---------------------------------------------------------------- EO computation
-s = new(); title(s, "EO crosstalk from full-wave fields", "CST time-domain solver; E_{y} exported in both gaps of both lines, every 5 µm")
-text(s, 0.5, 1.55, 6.4, 0.35, "**1.** Light enters at t_{0} and reaches z at", size=13); eqimg(s, "eq_time", 0.9, 1.92, 0.36)
-text(s, 0.5, 2.4, 6.4, 0.35, "**2.** Phase of arm k (κ: EO constant, equal for all arms)", size=13); eqimg(s, "eq_phase", 0.9, 2.8, 0.5)
-text(s, 0.5, 3.45, 6.4, 0.35, "**3.** Phasor field E(z)·exp(jωt): Δφ_{k} = κL·Re{H_{k}·exp(jωt_{0})}, with", size=13); eqimg(s, "eq_H", 0.9, 3.85, 0.6)
-text(s, 0.5, 4.6, 6.4, 0.35, "**4.** Push-pull (difference of the two gaps) and crosstalk", size=13); eqimg(s, "eq_pp", 0.9, 5.0, 0.5)
-text(s, 0.5, 5.65, 6.4, 1.2, "The integral is evaluated as a sum over the 5 µm samples. Backward waves meet the light with a phase that rotates along the line: their contributions cancel to a small residual. Forward waves keep their phase and add up.", size=12, color=MUTED)
-table(s, 7.1, 1.6, 5.75, [["Assumption", "Assessment"],
-      ["Full-wave field: forward, backward, substrate waves, reflections", "Rigorous: no mode model"],
-      ["Linear Pockels effect, small signal, E_{y} only", "Standard"],
-      ["Optical group index 2.27, constant; no optical loss", "Standard, minor"],
-      ["E_{y} at one point per gap (x = 1.275 µm, 5 µm from centre), not an optical-mode overlap", "Weakness: level depends on the point (2.2 dB for 2.5 µm); ratio partly compensates"],
-      ["Δz = 5 µm; solver stopped at −40 dB", "≤ 0.6 dB above 20 GHz, 1–2 dB below 15 GHz"]], [3.1, 2.65], size=11.5, row_h=0.88, hl=(4,))
+s = new(); title(s, "EO crosstalk from full-wave fields", "CST time-domain solver; E_{y} sampled in both gaps of both lines, every 5 µm along the line")
+fig(s, "eo_sampling.png", 0.5, 1.5, 5.6, 4.73, "One line: two gaps, the optical arm in each gap and the field sample points")
+text(s, 0.5, 6.3, 5.6, 0.65, "Gap voltage V_{±} ∝ E_{y} at the sample points; same points in both lines, so the constant cancels in X_{EO}. Linear Pockels effect, n_{g} = 2.27, no optical loss.", size=11, color=MUTED)
+EQK = 0.62 / 200     # inches per pixel of the equation images (same scale for all)
+def eq(name, x, y):
+    H = Image.open(os.path.join(IMG, name + ".png")).size[1]; eqimg(s, name, x, y, H * EQK); return y + H * EQK
+X0 = 6.45
+text(s, X0, 1.5, 6.4, 0.55, "**1. Pockels effect.** The voltage across a gap shifts the optical phase of the arm in that gap; the two arms shift in opposite directions.", size=12)
+y = eq("eq5_pockels", X0 + 0.3, 2.07)
+text(s, X0 + 0.3, y + 0.02, 6.1, 0.3, "κ: EO constant (phase per volt and unit length); V_{π}: voltage for a π shift over L.", size=10.5, color=MUTED)
+text(s, X0, 2.98, 6.4, 0.55, "**2. Light in transit.** The light enters at t_{0} and reaches z at t_{0} + n_{g}z/c: each arm adds up the voltage it meets on its way.", size=12)
+y = eq("eq5_arm", X0 + 0.3, 3.55)
+text(s, X0, 4.12, 6.4, 0.3, "**3. Phasor form.** H is the voltage the light sees, averaged along its path.", size=12)
+y = eq("eq5_phasor", X0 + 0.3, 4.45); y = eq("eq5_H", X0 + 0.3, y + 0.06)
+text(s, X0 + 0.3, y + 0.02, 6.1, 0.3, "A wave travelling with the light adds up; a backward wave averages out.", size=10.5, color=MUTED)
+text(s, X0, 5.73, 6.4, 0.55, "**4. Crosstalk.** The modulator output follows the arm difference M; X_{EO} is the victim modulation per unit of aggressor modulation.", size=12)
+eq("eq5_X", X0 + 0.3, 6.3)
 
 # 6 ---------------------------------------------------------------- set-up 1/2
 s = new(); title(s, "Simulation set-up (1/2): length, mesh, substrate bottom", "Corrections derived from earlier Istanbul and Cordoba runs, applied to all Istanbul runs")
