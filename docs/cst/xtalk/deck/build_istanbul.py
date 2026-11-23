@@ -134,18 +134,7 @@ fig(s, "slide3_victim.png", 0.5, 1.55, 6.6, 3.85, "Victim V(z) from fields and f
 caption(s, 0.5, 5.5, 6.6, "Same NEXT and FEXT at the ends, different V(z) in between: the uniform-line model does not hold.", h=0.6)
 card(s, 7.35, 1.55, 5.5, 1.65, "From S-parameters", ["NEXT and FEXT give the victim at both ends. With γ and Z_{c} of a uniform pair they fix V(z) everywhere."], size=13)
 card(s, 7.35, 3.35, 5.5, 2.05, "Why it fails", ["The pair is not uniform: pads, bond wires and driver are folded into γ and Z_{c}. The victim is the small difference of two nearly equal modes (Δn ≈ 0.005): small errors in γ give large errors in V(z)."], hc=RED, size=13)
-card(s, 7.35, 5.55, 5.5, 1.35, "Consequence", ["V(z) of both lines is taken from full-wave field monitors (slides 12–14: EO from S-parameters 5–8 dB too high)."], size=13)
-
-# 4 ---------------------------------------------------------------- eigenmode
-s = new(); title(s, "Eigenmode solver: physical insight, no quantitative crosstalk", "Six-mode description of the Cordoba 8 mm pair (same platform, simpler geometry)")
-card(s, 0.5, 1.6, 6.0, 2.45, "Strengths", ["- Fast: one periodic cell, about 2 min per solution.",
-     "- Lists the modes a line supports: even/odd coplanar pair, slot modes and, with a conductive bottom, a slow wave between all electrodes and the bottom (index ≈ 3.2).",
-     "- Identified that slow wave as the backward wave found under line B in the time-domain fields."], size=13)
-card(s, 0.5, 4.2, 6.0, 2.7, "Limits", ["- Infinite uniform cell: no line ends, hence no reflections, end conversion or fields localised near the pads.",
-     "- No pads, wire bonds, driver or bends.",
-     "- Line B: misfit of 5–15 % up to 30 GHz, about 100 % at 60 GHz; one prediction test passed out of six."], hc=RED, size=13)
-fig(s, "eigen_error_scale.png", 6.75, 1.6, 6.1, 3.3, "Error scale of the mode description of line A compared with the line B field")
-card(s, 6.75, 5.05, 6.1, 1.85, "Why line B fails", ["The imperfections in the description of line A (red) exceed the whole victim field (green). Mode model abandoned: the EO crosstalk is taken directly from the time-domain fields."], size=13)
+card(s, 7.35, 5.55, 5.5, 1.35, "Consequence", ["V(z) of both lines is taken from full-wave field monitors (slides 11–13: EO from S-parameters 5–8 dB too high)."], size=13)
 
 # 5 ---------------------------------------------------------------- EO computation
 s = new(); title(s, "EO crosstalk from full-wave fields", "CST time-domain solver; E_{y} exported in both gaps of both lines, every 5 µm")
@@ -229,7 +218,7 @@ fig(s, "review_vz.png", 0.5, 1.5, 12.35, 3.55, "V(z) of both lines from S-parame
 card(s, 0.5, 5.2, 4.0, 1.75, "From S-parameters", ["Even/odd modes: cosh γL = (A+D)/2, Z_{c} = √(B/C); V(z) = V(0) cosh γz − Z_{c}I(0) sinh γz. The S-matrix holds exactly γ and Z_{c} of the two modes: any pad, wire or driver is folded into the line."], size=10.5)
 card(s, 4.67, 5.2, 4.0, 1.75, "From fields", ["Gap voltage from E_{y} every 5 µm along both lines: no line model, pads and driver included as they are."], size=10.5)
 card(s, 8.84, 5.2, 4.01, 1.75, "Result (median level error)", ["Aggressor: 0.1 dB (a), 0.4 dB (c). Victim: 4 dB (a), 5 dB (c), up to 10 dB. The victim is the small difference of two modes (Δn ≈ 0.005): small errors in γ give large errors. (d): ports at the driver, |S| only: no V(z)."], hc=RED, size=10.5)
-note(s, "S route: only port 1 is excited in the runs; the uniform-pair symmetries (mirror A-B, end reversal, reciprocity) fill the 4-port. Field route: line voltage = mean of the two gap voltages; the 2 of 40 samples per 0.2 mm cell that fall on the cell loading are interpolated. Both normalised to line A at the far-end port. Error = median over z of |dB difference| of |V|. The bottom-guided slow wave (slide 4) is a further mode outside the two-mode picture.")
+note(s, "S route: only port 1 is excited in the runs; the uniform-pair symmetries (mirror A-B, end reversal, reciprocity) fill the 4-port. Field route: line voltage = mean of the two gap voltages; the 2 of 40 samples per 0.2 mm cell that fall on the cell loading are interpolated. Both normalised to line A at the far-end port. Error = median over z of |dB difference| of |V|.")
 
 # R2 --------------------------------------------------------------- review: EE crosstalk
 s = new(); title(s, "EE crosstalk: S-parameters and fields agree", "NEXT and FEXT of runs a, c, d from the touchstone and from the field at the line ends")
@@ -243,7 +232,7 @@ note(s, "Point-by-point scatter 2-6 dB: ripple shifts and the accuracy of a vict
 s = new(); title(s, "EO crosstalk: the S-parameter route fails on the victim", "X = H[V_{B}] / H[V_{A}], H[V] = (1/L) ∫ V(z) exp(jβ_{o}(z − L)) dz, with V(z) from S or from the fields")
 fig(s, "review_eo.png", 0.5, 1.5, 12.35, 3.55, "EO crosstalk from the S-parameter V(z) and from the fields")
 table(s, 0.5, 5.2, 6.4, [["5–60 GHz, median", "EO from fields", "EO from S", "S − fields"], ["(a) bare line", "−38.4 dB", "−32.3 dB", "+5.2 dB"], ["(c) + pads", "−32.8 dB", "−24.8 dB", "+7.5 dB"], ["(d) + driver", "−27.3 dB", "not possible", "–"]], [1.6, 1.6, 1.6, 1.6], size=10.5, row_h=0.4)
-card(s, 7.15, 5.2, 5.7, 1.75, "Meaning", ["The light integrates the victim V(z), which the S-parameters do not fix: the S route overestimates by 5–8 dB, more with pads. FEXT ≈ EO only in (d), where the victim is injected before the line (slide 10)."], hc=RED, size=10.5)
+card(s, 7.15, 5.2, 5.7, 1.75, "Meaning", ["The light integrates the victim V(z), which the S-parameters do not fix: the S route overestimates by 5–8 dB, more with pads. FEXT ≈ EO only in (d), where the victim is injected before the line (slide 9)."], hc=RED, size=10.5)
 note(s, "Push-pull with symmetric gaps, n_g 2.27, 50 ohm source and loads. Run d: the touchstone export failed, the ASCII S-parameters are magnitudes only (no phase), so no V(z) can be built from them.")
 
 # R4 --------------------------------------------------------------- review: INTERCONNECT
@@ -252,11 +241,11 @@ card(s, 0.5, 1.6, 4.0, 2.5, "Feasibility", ["- Possible: it is the discrete form
      "- Cells ≤ λ_{RF}/20 ≈ 0.1 mm at 60 GHz: ≈ 90 cells per line, 180 voltage taps and optical delays."], size=13.5)
 card(s, 4.67, 1.6, 4.0, 2.5, "Physics", ["- Same equations as the Python cascade: no new information.",
      "- Result at best as good as the cell parameters it is given."], size=13.5)
-card(s, 8.84, 1.6, 4.01, 2.5, "Inputs", ["- Each cell needs γ, Z_{c} and the coupling of the victim: the quantities S-parameters and eigenmodes do not give accurately (previous slides, slide 4).",
+card(s, 8.84, 1.6, 4.01, 2.5, "Inputs", ["- Each cell needs γ, Z_{c} and the coupling of the victim: the quantities the S-parameters do not give accurately (slides 11–13).",
      "- Pads, wires, driver as S-blocks give only port quantities."], hc=RED, size=13.5)
 card(s, 0.5, 4.35, 6.1, 1.9, "Status", ["A scripted coupled-electrode element (two-mode line, exact 4-port and V(z) integrals) already exists in INTERCONNECT. It reproduces the Python model and inherits its limits on the victim."], size=14)
 card(s, 6.75, 4.35, 6.1, 1.9, "Recommendation", ["EO crosstalk from the CST fields (Python), as in this study. INTERCONNECT only at link level: the simulated crosstalk transfer function as a black box for eye and BER studies."], hc=NAVY, size=14)
-note(s, "lambda_RF at 60 GHz with n about 2.3: 2.2 mm. The coupling built up in the cells is the two-mode description, which misses the bottom-guided slow wave and the pad/driver injection; both dominate the module crosstalk (slides 9, 10).")
+note(s, "lambda_RF at 60 GHz with n about 2.3: 2.2 mm. The coupling built up in the cells is the two-mode description, which misses the bottom-guided slow wave and the pad/driver injection; both dominate the module crosstalk (slides 8, 9).")
 
 # 12 --------------------------------------------------------------- conclusions
 s = new(); title(s, "Conclusions", "")
