@@ -196,21 +196,14 @@ card(s, 7.9, 5.5, 4.95, 1.45, "Ripple", ["Period 6.2–6.9 GHz in all runs, i.e.
 note(s, "Median over the 54 monitor frequencies 5-60 GHz of the EO crosstalk in dB (2 and 15 GHz excluded: corrupted export in run c). The curve ripples by 10-20 dB with deep notches: a mean of dB values is pulled down by the notches, a mean of power is dominated by the peaks; the median is the level the curve exceeds at half of the frequencies. Power means: -37.6, -36.0, -31.0, -25.3 dB. Ripple: periodogram of the detrended dB curve, 6.94 / 6.60 / 6.24 / 6.67 GHz for a / b / c / d. One-way group delay of S21 (run a) 64-68 ps (n_g 2.2-2.3); the return at n about 3 is consistent with the wave guided between the electrodes and the conductive bottom.")
 
 # 10 --------------------------------------------------------------- EO vs FEXT
-s = new(); title(s, "Full module: EO crosstalk ≈ FEXT", "The driver-side coupling places the victim signal at the line input")
-fig(s, "victim_profile_9GHz.png", 0.5, 1.55, 6.4, 3.5, "Victim field along the line at 9 GHz for runs a, c, d")
-cd = CategoryChartData(); cd.categories = ["(a) bare line", "(c) launch pads", "(d) full module"]; cd.add_series("EO − FEXT (dB)", (-4.8, -1.7, 0.3))
-gf = s.shapes.add_chart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(7.15), Inches(1.55), Inches(5.7), Inches(3.5), cd); ch = gf.chart
-ch.has_legend = False; ch.has_title = True; ch.chart_title.text_frame.text = "EO − FEXT, median 5–60 GHz (dB)"
-r0 = ch.chart_title.text_frame.paragraphs[0].runs[0]; r0.font.size = Pt(13); r0.font.bold = True; r0.font.name = FONT; r0.font.color.rgb = INK
-pl = ch.plots[0]; pl.has_data_labels = True; dl = pl.data_labels; dl.number_format = '+0.0;−0.0'; dl.number_format_is_linked = False
-dl.font.size = Pt(12); dl.font.name = FONT; dl.position = XL_LABEL_POSITION.OUTSIDE_END
-ser = pl.series[0]; ser.format.fill.solid(); ser.format.fill.fore_color.rgb = NAVY; ser.invert_if_negative = False
-va = ch.value_axis; va.maximum_scale = 2; va.minimum_scale = -8; va.major_unit = 2; va.has_major_gridlines = True
-va.major_gridlines.format.line.color.rgb = BOX; va.tick_labels.font.size = Pt(11); va.tick_labels.font.name = FONT
-from pptx.enum.chart import XL_TICK_LABEL_POSITION
-ch.category_axis.tick_label_position = XL_TICK_LABEL_POSITION.LOW; ch.category_axis.tick_labels.font.size = Pt(11); ch.category_axis.tick_labels.font.name = FONT
-card(s, 0.5, 5.2, 6.4, 1.7, "Observation", ["In (d) the victim field is already −20 dB at the line input and stays constant along the line (3 and 9 GHz); in (a) and (c) it is −50 to −70 dB. The added coupling lies between the driver port and the line input (carrier traces or bond wires, not separated)."], size=12.5)
-card(s, 7.15, 5.2, 5.7, 1.7, "Consequence", ["A victim wave present from the input travels with the light over the full length: EO ≈ FEXT. Coupling built along the line gives EO ≈ FEXT − 6 dB (bare line: −4.8 dB)."], hc=RED, size=12.5)
+s = new(); title(s, "Full module: EO crosstalk ≈ FEXT", "Where the victim signal is created sets how much of it the light collects")
+fig(s, "coupling_paths.png", 0.5, 1.5, 6.2, 4.17, "Coupling along the line and before the line, with the resulting victim profiles")
+fig(s, "victim_profile_9GHz.png", 6.95, 1.5, 5.9, 3.13, "Simulated victim field along the line at 9 GHz, runs a, c, d")
+table(s, 6.95, 4.75, 5.9, [["EO − FEXT, 5–60 GHz", "(a) bare lines", "(c) + pads", "(d) full module"],
+      ["Median", "−4.8 dB", "−1.7 dB", "+0.3 dB"], ["5–95 % range", "−8.9 … −0.7 dB", "−8.9 … +6.0 dB", "−3.2 … +5.0 dB"]], [1.85, 1.35, 1.35, 1.35], size=10.5, row_h=0.3)
+card(s, 0.5, 5.85, 6.2, 1.1, "Run (d)", ["The victim is already −20 dB at the line input and stays flat along the line: the extra coupling is in the driver traces or bond wires (not separated in this run)."], size=11)
+card(s, 6.95, 5.85, 5.9, 1.1, "Why EO can exceed FEXT", ["FEXT is read at the far end, after 3–4 dB of line loss. EO compares victim and aggressor modulation along the whole line, where both lose alike."], hc=RED, size=11)
+note(s, "Idealised profiles: a victim built up uniformly along the line grows linearly from zero; its average over the line is half its end value (-6 dB). A victim injected before the line travels with the light at constant ratio to the aggressor. EO - FEXT percentiles from xtalk_run_a.csv and xtalk_run_d.csv; run (d) EO above FEXT at 56 % of the frequencies. Median |S21|: -2.9 dB (a), -4.3 dB (d).")
 
 # 11 --------------------------------------------------------------- lab
 s = new(); title(s, "Comparison with the lab measurement", "Module K00626: simulated EO crosstalk within the spread of the measured curves")

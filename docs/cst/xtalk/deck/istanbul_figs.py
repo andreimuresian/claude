@@ -131,7 +131,7 @@ for r in "acd":
     y = median_filter(20 * np.log10(abs(B) / np.mean(abs(A))), size=41, mode="nearest")  # removes the slot-cell spikes (180 um period)
     ax.plot(D["z"] * 1e3 - 0.3, y, color=COL[r], lw=1.8, label=LAB[r])
 ax.set_xlim(0, 8.75); ax.set_ylim(-105, 0); ax.set_xlabel("position along the line (mm)"); ax.set_ylabel("line B / line A (dB)")
-ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=10.5, loc="lower center", ncol=3, handlelength=1.2); ax.set_title("Victim field along the line, 9 GHz (median over 0.2 mm)", fontsize=12)
+ax.grid(alpha=0.3); ax.legend(frameon=False, fontsize=10.5, loc="lower right", ncol=1, handlelength=1.2); ax.set_title("Victim field along the line, 9 GHz (simulated)", fontsize=12)
 fig.tight_layout(); fig.savefig(os.path.join(OUT, "victim_profile_9GHz.png"), dpi=200); plt.close(fig)
 
 # equations (mathtext)
