@@ -216,8 +216,8 @@ caption(s, 0.5, 5.85, 7.7, "Digitized with WebPlotDigitizer (automeris.io): pixe
 # R1 --------------------------------------------------------------- review: V(z) from S vs fields
 s = new(); title(s, "V(z) from S-parameters: aggressor reproduced, victim not", "Same runs, V(z) from the touchstone (uniform coupled pair) and from the gap fields")
 fig(s, "review_vz.png", 0.5, 1.45, 12.35, 3.7, "V(z) of both lines from S-parameters and from fields, runs a and c")
-text(s, 0.5, 5.25, 6.2, 0.35, "**From S-parameters:** even and odd mode m of a uniform pair", size=12)
-for k_, (nm, yy) in enumerate((("eq12_mode", 5.62), ("eq12_V", 6.22), ("eq12_AB", 6.58))):
+text(s, 0.5, 5.2, 6.3, 0.45, "**From S-parameters a mode model is required.** Here: symmetric uniform pair, two modes m (even, odd), each a line with γ_{m}, Z_{m} fitted to the touchstone.", size=11.5)
+for k_, (nm, yy) in enumerate((("eq12_mode", 5.72), ("eq12_V", 6.3), ("eq12_AB", 6.64))):
     H_ = Image.open(os.path.join(IMG, nm + ".png")).size[1]; eqimg(s, nm, 0.75, yy, H_ * 0.0034)
 card(s, 6.95, 5.25, 5.9, 1.7, "Why the victim fails", ["(a) V_{B} is the small difference of two nearly equal modes (n_{e} − n_{o} ≈ 0.005): S-parameter errors of −40 dB shift it by 1–6 dB.",
      "(c) The pads are folded into the line: Z_{o} − Z_{e} jumps from 1 to 11 Ω (40 GHz), i.e. the pad coupling is spread along z: victim ≈ +7 dB."], hc=RED, size=11)
