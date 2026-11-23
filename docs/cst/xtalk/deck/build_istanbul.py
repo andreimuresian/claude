@@ -139,7 +139,7 @@ card(s, 7.35, 5.55, 5.5, 1.35, "Consequence", ["V(z) of both lines is taken from
 # 5 ---------------------------------------------------------------- EO computation
 s = new(); title(s, "EO crosstalk from full-wave fields", "CST time-domain solver; E_{y} sampled in both gaps of both lines, every 5 µm along the line")
 fig(s, "eo_sampling.png", 0.5, 1.5, 5.6, 4.73, "One line: two gaps, the optical arm in each gap and the field sample points")
-text(s, 0.5, 6.3, 5.6, 0.65, "Gap voltage V_{±} ∝ E_{y} at the sample points; same points in both lines, so the constant cancels in X_{EO}. Linear Pockels effect, n_{g} = 2.27, no optical loss.", size=11, color=MUTED)
+text(s, 0.5, 6.3, 5.6, 0.65, "V_{±} ∝ E_{y} at the sample points, next to the signal edge (export grid of line B; line A re-exported at the same points, so the constant cancels in X_{EO}). Linear Pockels effect, n_{g} = 2.27, no optical loss.", size=11, color=MUTED)
 EQK = 0.62 / 200     # inches per pixel of the equation images (same scale for all)
 def eq(name, x, y):
     H = Image.open(os.path.join(IMG, name + ".png")).size[1]; eqimg(s, name, x, y, H * EQK); return y + H * EQK
