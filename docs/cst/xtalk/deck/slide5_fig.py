@@ -60,3 +60,20 @@ EQ.update({"eq12_mode": r"$\cosh\gamma_m L = \dfrac{A_m + D_m}{2},\qquad Z_m = \
 for k, v in EQ.items():
     f = plt.figure(figsize=(0.1, 0.1)); f.text(0, 0, v, fontsize=22, color="#1A1A1A")
     f.savefig(os.path.join(OUT, k + ".png"), dpi=200, bbox_inches="tight", pad_inches=0.05, transparent=True); plt.close(f)
+
+# slide 13: port sketch and NEXT/FEXT from the fields
+fig, a = plt.subplots(figsize=(3.6, 2.0)); a.set_xlim(-1.6, 11.6); a.set_ylim(-0.6, 5.0); a.axis("off")
+for y, lab, c in ((3.4, "A", NAVY), (1.0, "B", ORANGE)):
+    a.plot([0, 10], [y, y], color=c, lw=3); a.text(5, y + 0.4, f"line {lab}", ha="center", fontsize=10, color=c, weight="bold")
+for x, y, t, col in ((0, 3.4, "1\ndriven", NAVY), (10, 3.4, "2", MUTED), (0, 1.0, "3", MUTED), (10, 1.0, "4", MUTED)):
+    a.plot(x, y, "s", color=col, ms=9); a.text(x + (-0.5 if x == 0 else 0.5), y, t, ha="right" if x == 0 else "left", va="center", fontsize=9.5, color=col)
+for x, y, t in ((10, 3.4, "V$_A$(L)"), (0, 1.0, "V$_B$(0)"), (10, 1.0, "V$_B$(L)")):
+    a.plot(x, y, "o", color=RED, ms=6, zorder=5); a.text(x, y - 0.65, t, ha="center", fontsize=10, color=RED)
+a.text(5, -0.45, "z = 0 … L", ha="center", fontsize=9, color=MUTED)
+fig.savefig(os.path.join(OUT, "ports_sketch.png"), dpi=200, bbox_inches="tight", pad_inches=0.02, transparent=True); plt.close(fig)
+EQ2 = {"eq13_port": r"$a_j = 0\ (j = 2, 3, 4)\;\Rightarrow\; V_j = b_j\sqrt{Z_0}$",
+       "eq13_next": r"$\mathrm{NEXT} = |S_{31}| = |S_{21}|\;\left|\dfrac{V_B(0)}{V_A(L)}\right|$",
+       "eq13_fext": r"$\mathrm{FEXT} = |S_{41}| = |S_{21}|\;\left|\dfrac{V_B(L)}{V_A(L)}\right|$"}
+for k, v in EQ2.items():
+    f = plt.figure(figsize=(0.1, 0.1)); f.text(0, 0, v, fontsize=22, color="#1A1A1A")
+    f.savefig(os.path.join(OUT, k + ".png"), dpi=200, bbox_inches="tight", pad_inches=0.05, transparent=True); plt.close(f)

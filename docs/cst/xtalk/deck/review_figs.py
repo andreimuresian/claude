@@ -46,7 +46,7 @@ for k, r in enumerate("acd"):
     for lab, s, fl in (("NEXT", d["S31"], d["NEXT_f"]), ("FEXT", d["S41"], d["FEXT_f"])):
         e = dB(fl)-dB(s); print(r, lab, "field - S, 5-60 GHz: median %+.1f, mean |diff| %.1f dB" % (np.median(e[m5]), np.mean(abs(e[m5]))))
 ax[0].set_ylabel("EE crosstalk (dB)")
-top_legend(fig, ax, ncol=5, top=0.86); fig.savefig(os.path.join(OUT, "review_ee.png"), dpi=200); plt.close(fig)
+top_legend(fig, ax, ncol=5, top=0.9); fig.savefig(os.path.join(OUT, "review_ee.png"), dpi=200); plt.close(fig)
 
 # EO crosstalk: S-parameter route vs fields
 fig, ax = plt.subplots(1, 3, figsize=(15, 4.3), sharey=True)
