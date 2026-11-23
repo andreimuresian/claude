@@ -227,8 +227,8 @@ note(s, "S route: only port 1 is excited in the runs; the uniform-pair symmetrie
 s = new(); title(s, "EE crosstalk: S-parameters and fields agree", "NEXT and FEXT of runs a, c, d from the touchstone and from the field at the line ends")
 fig(s, "review_ee.png", 0.92, 1.42, 11.51, 3.3, "NEXT and FEXT from S-parameters and from fields")
 fig(s, "ports_sketch.png", 0.5, 5.05, 3.2, 1.68, "Port 1 driven; field voltages read at the three other line ends")
-text(s, 3.95, 4.85, 5.0, 0.5, "**From the fields:** voltages at the line ends (fit over the last 0.3 mm). Ports 2, 3, 4 receive no wave, so their voltage is the outgoing wave:", size=11)
-y_ = 5.4
+text(s, 3.95, 4.8, 5.0, 0.6, "**From the fields:** end voltages from a quadratic fit over the last 0.3 mm (1.5 electrode cells, λ/7 at 60 GHz; 0.1–1 mm changes the medians by ≤ 1 dB). Ports 2, 3, 4 receive no wave:", size=11)
+y_ = 5.45
 for nm in ("eq13_port", "eq13_next", "eq13_fext"):
     H_ = Image.open(os.path.join(IMG, nm + ".png")).size[1]; eqimg(s, nm, 4.2, y_, H_ * 0.0029); y_ += H_ * 0.0029 + 0.05
 text(s, 3.95, y_ - 0.02, 5.0, 0.3, "The field scale cancels in the ratios; |S_{21}| refers them to the incident wave.", size=10, color=MUTED)
