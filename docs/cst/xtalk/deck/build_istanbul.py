@@ -129,12 +129,12 @@ step(s, 7.05, 3.4, 5.8, 1.6, "2", "Compare", ["Simulated EO crosstalk against th
 step(s, 7.05, 5.2, 5.8, 1.6, "3", "Establish", ["A validated simulation flow for later designs: pitch, terminations, assembly."])
 
 # 3 ---------------------------------------------------------------- difficulty
-s = new(); title(s, "Why S-parameters are not sufficient", "The EO crosstalk depends on the voltage profile V(z) along the whole victim line")
-fig(s, "fext_ambiguity.png", 0.5, 1.6, 6.4, 3.65, "Two victim profiles with the same FEXT but different EO crosstalk")
-caption(s, 0.5, 5.35, 6.4, "Same FEXT, different EO crosstalk: the optical phase integrates V(z), not its end value.", h=0.6)
-card(s, 7.15, 1.6, 5.7, 1.65, "Port data", ["S-parameters describe the four line ends only. NEXT and FEXT are the victim signal at its near and far end."])
-card(s, 7.15, 3.4, 5.7, 1.85, "Optical response", ["The light collects the field along the full length, in step with its own travel time. Equal FEXT can give EO crosstalk differing by 6 dB."])
-card(s, 7.15, 5.4, 5.7, 1.5, "Consequence", ["V(z) of both lines is taken from full-wave field monitors, every 1 GHz from 1 to 60 GHz (victim ripple period ≈ 6.5 GHz)."], hc=RED)
+s = new(); title(s, "Why S-parameters are not sufficient", "The EO crosstalk integrates the victim voltage V(z) along the whole line")
+fig(s, "slide3_victim.png", 0.5, 1.55, 6.6, 3.85, "Victim V(z) from fields and from S-parameters with a uniform-pair model")
+caption(s, 0.5, 5.5, 6.6, "Same NEXT and FEXT at the ends, different V(z) in between: the uniform-line model does not hold.", h=0.6)
+card(s, 7.35, 1.55, 5.5, 1.65, "From S-parameters", ["NEXT and FEXT give the victim at both ends. With γ and Z_{c} of a uniform pair they fix V(z) everywhere."], size=13)
+card(s, 7.35, 3.35, 5.5, 2.05, "Why it fails", ["The pair is not uniform: pads, bond wires and driver are folded into γ and Z_{c}. The victim is the small difference of two nearly equal modes (Δn ≈ 0.005): small errors in γ give large errors in V(z)."], hc=RED, size=13)
+card(s, 7.35, 5.55, 5.5, 1.35, "Consequence", ["V(z) of both lines is taken from full-wave field monitors (slides 12–14: EO from S-parameters 5–8 dB too high)."], size=13)
 
 # 4 ---------------------------------------------------------------- eigenmode
 s = new(); title(s, "Eigenmode solver: physical insight, no quantitative crosstalk", "Six-mode description of the Cordoba 8 mm pair (same platform, simpler geometry)")

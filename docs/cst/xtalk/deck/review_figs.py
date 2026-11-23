@@ -72,3 +72,15 @@ for k, r in enumerate("acd"):
     ax[k].set_ylim(-80, 0); ax[k].set_xlim(0, 60); ax[k].set_xlabel("Frequency (GHz)"); ax[k].grid(alpha=0.3); ax[k].set_title(TT[r], fontsize=12)
 ax[0].set_ylabel("EO crosstalk (dB)")
 top_legend(fig, ax, ncol=4, top=0.86); fig.savefig(os.path.join(OUT, "review_eo.png"), dpi=200); plt.close(fig)
+
+# Slide 3: victim V(z) with matching ends (NEXT, FEXT) but a different profile in between
+fig, ax = plt.subplots(1, 2, figsize=(9.6, 4.6), sharey=True)
+for k, (r, q) in enumerate((("a", 20), ("c", 30))):
+    d = R[r]; i = np.argmin(abs(d["f"]-q)); z = d["z"]*1e3; n = np.max(abs(d["Vf_A"][i])); ns = np.max(abs(d["Vs_A"][i]))
+    ax[k].plot(z, dB(d["Vf_B"][i]/n), color=NAVY, lw=1.6, label="victim V(z), full-wave fields")
+    ax[k].plot(z, dB(d["Vs_B"][i]/ns), "--", color=RED, lw=1.6, label="victim V(z), S-parameters + uniform-pair model")
+    ax[k].set_ylim(-60, 0); ax[k].set_xlim(0, 8.75); ax[k].set_xlabel("Position along the line z (mm)"); ax[k].grid(alpha=0.3)
+    ax[k].set_title(f"{TT[r]}, {q} GHz", fontsize=12)
+    ax[k].annotate("NEXT end", (0.1, -8), fontsize=11, color="#5A606E"); ax[k].annotate("FEXT end", (6.6, -8), fontsize=11, color="#5A606E")
+ax[0].set_ylabel("|V(z)| (dB, aggressor max = 0)")
+top_legend(fig, ax, ncol=1, top=0.82); fig.savefig(os.path.join(OUT, "slide3_victim.png"), dpi=200); plt.close(fig)
