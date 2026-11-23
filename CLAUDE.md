@@ -11,6 +11,20 @@
 - Presentations (user's standing rules): short (few slides, only the essential messages), not descriptive (results and
   conclusions, not narration of what was done), formal impersonal language (no "we"/"our"/"I"). Company template:
   `docs/CST_line_extraction.pptx` (see `docs/cst/xtalk/deck/build_istanbul.py`). All dB plots start at 0 dB at the top.
+- Slide content (lessons from the Istanbul deck review, user's standing rules):
+  - Write for the audience, not for yourself: every number on a slide says what it is (mean, median, maximum, over
+    what range, relative to what) and where it comes from. No unexplained figures such as "150 ps" or "2.2 dB for 2.5 µm".
+  - Prefer an illustration to text: geometry, sampling points, coupling paths, signal flow are drawn, not described.
+  - Draw only what was simulated: read the model and the exports (coordinates, ports, materials) before drawing any
+    geometry. Never add elements that are not in the simulation.
+  - State every dependence and weakness up front: if a "field-based" result uses the touchstone, if sampling points
+    are not where intended, if a parameter was chosen by judgement. Never bury it in a note or a passing phrase.
+  - Justify every processing choice (fit windows, thresholds, averaging) with a sensitivity test, or remove it and
+    use the simplest option.
+  - Equations rendered (mathtext images), large enough to read; no "exp(...)" in text. Define every symbol.
+  - Derivations as a chain: each step states why it follows from the previous one and its physical meaning.
+  - Drop slides about methods that were abandoned; keep only what supports the conclusions.
+  - Review workflow: send one slide image at a time for approval; build and send the full .pptx only at the end.
 - Figures (user's standing rule): a legend must never overlap plot curves. Inside the axes is fine if it sits in empty space; otherwise put it outside. Check the rendered image.
 - Spelling: British English in all answers, reports and slides (equaliser, polarisation, modelling, colour).
 - Answer style (user's standing instructions, from their Claude Code settings): all answers brief and concise, short
