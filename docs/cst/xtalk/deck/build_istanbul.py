@@ -214,12 +214,14 @@ card(s, 8.4, 5.45, 4.45, 1.45, "Limits", ["A sharper comparison needs numerical 
 caption(s, 0.5, 5.85, 7.7, "Digitized with WebPlotDigitizer (automeris.io): pixel resolution ≈ 0.2 GHz and 0.15 dB, overlapping curves, notches under-sampled.", h=0.7)
 
 # R1 --------------------------------------------------------------- review: V(z) from S vs fields
-s = new(); title(s, "V(z) from S-parameters: exact only for a uniform line", "Same runs, V(z) from the touchstone (uniform coupled pair) and from the gap fields")
-fig(s, "review_vz.png", 0.5, 1.5, 12.35, 3.55, "V(z) of both lines from S-parameters and from fields, runs a and c")
-card(s, 0.5, 5.2, 4.0, 1.75, "From S-parameters", ["Even/odd modes: cosh γL = (A+D)/2, Z_{c} = √(B/C); V(z) = V(0) cosh γz − Z_{c}I(0) sinh γz. The S-matrix holds exactly γ and Z_{c} of the two modes: any pad, wire or driver is folded into the line."], size=10.5)
-card(s, 4.67, 5.2, 4.0, 1.75, "From fields", ["Gap voltage from E_{y} every 5 µm along both lines: no line model, pads and driver included as they are."], size=10.5)
-card(s, 8.84, 5.2, 4.01, 1.75, "Result (median level error)", ["Aggressor: 0.1 dB (a), 0.4 dB (c). Victim: 4 dB (a), 5 dB (c), up to 10 dB. The victim is the small difference of two modes (Δn ≈ 0.005): small errors in γ give large errors. (d): ports at the driver, |S| only: no V(z)."], hc=RED, size=10.5)
-note(s, "S route: only port 1 is excited in the runs; the uniform-pair symmetries (mirror A-B, end reversal, reciprocity) fill the 4-port. Field route: line voltage = mean of the two gap voltages; the 2 of 40 samples per 0.2 mm cell that fall on the cell loading are interpolated. Both normalised to line A at the far-end port. Error = median over z of |dB difference| of |V|.")
+s = new(); title(s, "V(z) from S-parameters: aggressor reproduced, victim not", "Same runs, V(z) from the touchstone (uniform coupled pair) and from the gap fields")
+fig(s, "review_vz.png", 0.5, 1.45, 12.35, 3.7, "V(z) of both lines from S-parameters and from fields, runs a and c")
+text(s, 0.5, 5.25, 6.2, 0.35, "**From S-parameters:** even and odd mode m of a uniform pair", size=12)
+for k_, (nm, yy) in enumerate((("eq12_mode", 5.62), ("eq12_V", 6.22), ("eq12_AB", 6.58))):
+    H_ = Image.open(os.path.join(IMG, nm + ".png")).size[1]; eqimg(s, nm, 0.75, yy, H_ * 0.0034)
+card(s, 6.95, 5.25, 5.9, 1.7, "Why the victim fails", ["(a) V_{B} is the small difference of two nearly equal modes (n_{e} − n_{o} ≈ 0.005): S-parameter errors of −40 dB shift it by 1–6 dB.",
+     "(c) The pads are folded into the line: Z_{o} − Z_{e} jumps from 1 to 11 Ω (40 GHz), i.e. the pad coupling is spread along z: victim ≈ +7 dB."], hc=RED, size=11)
+note(s, "S route: only port 1 is excited in the runs; the uniform-pair symmetries (mirror A-B, end reversal, reciprocity) fill the 4-port. Field route: line voltage = mean of the two gap voltages; the 2 of 40 samples per 0.2 mm cell that fall on the cell loading are interpolated. Both normalised to line A at the far-end port. Sensitivity: complex noise of -40 / -50 / -60 dB added to S11, S21, S31, S41 (run a) changes the S-route victim by 6 / 3.8 / 1.3 dB at 10 GHz and 1 / 0.5 / 0.1 dB at 40 GHz (median over z); the aggressor by < 0.1 dB.")
 
 # R2 --------------------------------------------------------------- review: EE crosstalk
 s = new(); title(s, "EE crosstalk: S-parameters and fields agree", "NEXT and FEXT of runs a, c, d from the touchstone and from the field at the line ends")

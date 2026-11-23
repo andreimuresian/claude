@@ -54,6 +54,9 @@ EQ = {"eq5_pockels": r"$\dfrac{d\varphi_\pm}{dz} = \pm\,\kappa\,V_\pm(z,t),\qqua
       "eq5_H": r"$H[V] = \dfrac{1}{L}\int_0^L V(z)\,e^{j\beta_o z}\,dz,\qquad \beta_o = \dfrac{\omega\,n_g}{c}$",
       "eq5_X": r"$\varphi_+ - \varphi_- = \kappa L\,\mathrm{Re}\{M\,e^{j\omega t_0}\},\qquad M = H[V_+] + H[V_-] = 2\,H[V_d]$",
       "eq5_X2": r"$V_d = \dfrac{V_+ + V_-}{2},\quad V_c = \dfrac{V_+ - V_-}{2}\ \mathrm{(cancels)},\qquad X_{EO} = \dfrac{M_B}{M_A}$"}
+EQ.update({"eq12_mode": r"$\cosh\gamma_m L = \dfrac{A_m + D_m}{2},\qquad Z_m = \sqrt{B_m/C_m}$",
+           "eq12_V": r"$V_m(z) = V_m(0)\cosh\gamma_m z - Z_m I_m(0)\sinh\gamma_m z$",
+           "eq12_AB": r"$V_A = V_{even} + V_{odd},\qquad V_B = V_{even} - V_{odd}$"})
 for k, v in EQ.items():
     f = plt.figure(figsize=(0.1, 0.1)); f.text(0, 0, v, fontsize=22, color="#1A1A1A")
     f.savefig(os.path.join(OUT, k + ".png"), dpi=200, bbox_inches="tight", pad_inches=0.05, transparent=True); plt.close(f)

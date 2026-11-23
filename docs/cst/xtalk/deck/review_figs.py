@@ -21,30 +21,19 @@ dB = lambda x: 20*np.log10(np.maximum(abs(x), 1e-12))
 R = {r: M.analyse(r) for r in "acd"}; TT = {"a": "(a) bare line pair", "c": "(c) + input launch pads", "d": "(d) + driver and bond wires"}
 m5 = R["a"]["f"] >= 5
 
-# V(z): profiles at 40 GHz (a, c) and victim error against frequency
-fig, ax = plt.subplots(1, 3, figsize=(15, 4.3), gridspec_kw=dict(width_ratios=[1, 1, 1.05]))
+# V(z): profiles at 40 GHz (a, c)
+fig, ax = plt.subplots(1, 2, figsize=(13, 3.9), sharey=True)
 q = 40
 for k, r in enumerate("ac"):
     d = R[r]; i = np.argmin(abs(d["f"]-q)); z = d["z"]*1e3; n = np.max(abs(d["Vf_A"][i])); ns = np.max(abs(d["Vs_A"][i]))
-    ax[k].plot(z, dB(d["Vf_A"][i]/n), color=NAVY, lw=1.6, label="line A, fields")
-    ax[k].plot(z, dB(d["Vs_A"][i]/ns), "--", color=BLUE, lw=1.4, label="line A, from S")
-    ax[k].plot(z, dB(d["Vf_B"][i]/n), color=ORANGE, lw=1.6, label="line B, fields")
-    ax[k].plot(z, dB(d["Vs_B"][i]/ns), "--", color=RED, lw=1.4, label="line B, from S")
+    ax[k].plot(z, dB(d["Vf_A"][i]/n), color=NAVY, lw=1.6, label="line A (aggressor), fields")
+    ax[k].plot(z, dB(d["Vs_A"][i]/ns), "--", color=BLUE, lw=1.5, label="line A, from S-parameters")
+    ax[k].plot(z, dB(d["Vf_B"][i]/n), color=ORANGE, lw=1.6, label="line B (victim), fields")
+    ax[k].plot(z, dB(d["Vs_B"][i]/ns), "--", color=RED, lw=1.5, label="line B, from S-parameters")
     ax[k].set_ylim(-60, 0); ax[k].set_xlim(0, 8.75); ax[k].set_xlabel("Position along the line z (mm)"); ax[k].grid(alpha=0.3)
     ax[k].set_title(f"{TT[r]}, {q} GHz", fontsize=12)
 ax[0].set_ylabel("|V(z)| (dB, line A max = 0)")
-for r, c in (("a", NAVY), ("c", ORANGE)):
-    d = R[r]; ok = ~d["bad"]
-    # level error: median over z of the dB difference of |V| (S route - fields), each normalised to its own line A mean
-    lev = lambda Vs, Vf, ns, nf: np.median(abs(dB(Vs[:, ok]/ns)-dB(Vf[:, ok]/nf)), 1)
-    nS = np.mean(abs(d["Vs_A"]), 1)[:, None]; nF = np.mean(abs(d["Vf_A"]), 1)[:, None]
-    eA, eB = lev(d["Vs_A"], d["Vf_A"], nS, nF), lev(d["Vs_B"], d["Vf_B"], nS, nF)
-    ax[2].plot(d["f"], eA, "-", color=c, lw=1.0, alpha=0.6, label=f"error, line A {TT[r][:3]}")
-    ax[2].plot(d["f"], eB, "o-", color=c, ms=3, lw=1.5, label=f"error, line B {TT[r][:3]}")
-    print(r, "median level error 5-60 GHz: A %.2f dB, B %.1f dB" % (np.median(eA[m5]), np.median(eB[m5])))
-ax[2].set_ylim(0, 12); ax[2].set_xlim(0, 60); ax[2].set_xlabel("Frequency (GHz)"); ax[2].set_ylabel("median level error of |V(z)| from S (dB)"); ax[2].grid(alpha=0.3)
-ax[2].set_title("Error of the S-parameter V(z) against the fields", fontsize=12)
-top_legend(fig, ax, ncol=4, top=0.80); fig.savefig(os.path.join(OUT, "review_vz.png"), dpi=200); plt.close(fig)
+top_legend(fig, ax, ncol=4, top=0.9); fig.savefig(os.path.join(OUT, "review_vz.png"), dpi=200); plt.close(fig)
 
 # EE crosstalk: S-parameters vs fields
 fig, ax = plt.subplots(1, 3, figsize=(15, 4.3), sharey=True)
