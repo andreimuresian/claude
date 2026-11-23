@@ -183,14 +183,17 @@ for i, (img, head, body) in enumerate(cells):
     text(s, x + 3.65, y + 0.1, 2.45, 2.4, [(head, {"bold": True, "color": NAVY, "size": 14})] + [(body, {"size": 12.5})], sa=4)
 
 # 9 ---------------------------------------------------------------- results
-s = new(); title(s, "EO crosstalk: effect of each element", "Medians over 5–60 GHz (2 and 15 GHz excluded: corrupted export in run c)")
-fig(s, "istanbul_eo_abcd.png", 0.5, 1.55, 7.2, 4.1, "EO crosstalk of the four Istanbul runs")
-table(s, 7.9, 1.55, 4.95, [["Step", "EO change", "Cause"],
+s = new(); title(s, "EO crosstalk: effect of each element", "One EO crosstalk value per frequency (whole 8.75 mm line); levels summarised over 5–60 GHz")
+fig(s, "istanbul_eo_abcd.png", 0.5, 1.55, 7.2, 3.98, "EO crosstalk of the four Istanbul runs")
+table(s, 0.5, 5.65, 7.2, [["Run", "Median 5–60 GHz", "Maximum 5–60 GHz"],
+      ["(a) bare lines", "−38.4 dB", "−33.1 dB at 46 GHz"], ["(b) + real terminations", "−36.7 dB", "−31.9 dB at 37 GHz"],
+      ["(c) + launch pads", "−32.8 dB", "−26.1 dB at 48 GHz"], ["(d) + driver (full module)", "−27.3 dB", "−20.1 dB at 29 GHz"]], [2.6, 2.0, 2.6], size=11, row_h=0.26)
+table(s, 7.9, 1.55, 4.95, [["Step", "Median change", "Cause"],
       ["(a) → (b)", "+1.5 dB", "≈ 50 Ω like the port of (a); different reflection phase at the far-end pads"],
       ["(a) → (c)", "+5.4 dB", "Pads couple a wave onto B at the line input, then carried along with the light"],
-      ["(c) → (d)", "+6.4 dB\n(≥ 10 dB below 10 GHz)", "Driver carrier and bond wires inject a strong victim signal before the line"]], [1.05, 1.25, 2.65], size=11.5, row_h=1.0, hl=(3,))
-card(s, 7.9, 5.75, 4.95, 1.15, "Ripple", ["Period 6.2–6.8 GHz in all four runs: a property of the line (round trip ≈ 150 ps)."], size=12.5)
-text(s, 0.5, 5.8, 7.2, 1.0, "Bare line: −38.4 dB · real termination: −36.7 dB · launch pads: −32.8 dB · full module: −27.3 dB", size=13, color=MUTED)
+      ["(c) → (d)", "+6.4 dB\n(≥ 10 dB below 10 GHz)", "Driver carrier and bond wires inject a strong victim signal before the line"]], [1.05, 1.25, 2.65], size=11.5, row_h=0.95, hl=(3,))
+card(s, 7.9, 5.5, 4.95, 1.45, "Ripple", ["Period 6.2–6.9 GHz in all runs, i.e. two victim contributions 1/Δf ≈ 150 ps apart: one trip along the line (65 ps, S_{21}) plus a slower return (≈ 85 ps, n ≈ 3)."], size=11.5)
+note(s, "Median over the 54 monitor frequencies 5-60 GHz of the EO crosstalk in dB (2 and 15 GHz excluded: corrupted export in run c). The curve ripples by 10-20 dB with deep notches: a mean of dB values is pulled down by the notches, a mean of power is dominated by the peaks; the median is the level the curve exceeds at half of the frequencies. Power means: -37.6, -36.0, -31.0, -25.3 dB. Ripple: periodogram of the detrended dB curve, 6.94 / 6.60 / 6.24 / 6.67 GHz for a / b / c / d. One-way group delay of S21 (run a) 64-68 ps (n_g 2.2-2.3); the return at n about 3 is consistent with the wave guided between the electrodes and the conductive bottom.")
 
 # 10 --------------------------------------------------------------- EO vs FEXT
 s = new(); title(s, "Full module: EO crosstalk ≈ FEXT", "The driver-side coupling places the victim signal at the line input")

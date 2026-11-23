@@ -59,7 +59,8 @@ LAB = {"a": "(a) bare lines", "b": "(b) + real terminations", "c": "(c) + launch
 COL = {"a": ORANGE, "b": BLUE, "c": TEAL, "d": PURPLE}
 fig, ax = ax_(figsize=(7.6, 4.2), ylim=(-80, 0))
 for r in "abcd": ax.plot(f, EO[r], "o-", ms=3, lw=1.3, color=COL[r], label=LAB[r])
-save(fig, ax, "istanbul_eo_abcd.png")
+ax.legend(frameon=False, fontsize=11.5, loc="upper center", ncol=2); fig.tight_layout()
+fig.savefig(os.path.join(OUT, "istanbul_eo_abcd.png"), dpi=200); plt.close(fig)
 for a_, b_ in (("a", "b"), ("b", "c"), ("c", "d")):
     fig, ax = ax_(figsize=(7.0, 3.9), ylim=(-80, 0))
     for r in "abcd":
