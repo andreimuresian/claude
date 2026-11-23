@@ -139,21 +139,21 @@ card(s, 7.35, 5.55, 5.5, 1.35, "Consequence", ["V(z) of both lines is taken from
 # 5 ---------------------------------------------------------------- EO computation
 s = new(); title(s, "EO crosstalk from full-wave fields", "CST time-domain solver; E_{y} sampled in both gaps of both lines, every 5 µm along the line")
 fig(s, "eo_sampling.png", 0.5, 1.5, 5.6, 4.73, "One line: two gaps, the optical arm in each gap and the field sample points")
-text(s, 0.5, 6.3, 5.6, 0.65, "V_{±} ∝ E_{y} at the sample points, next to the signal edge (export grid of line B; line A re-exported at the same points, so the constant cancels in X_{EO}). Linear Pockels effect, n_{g} = 2.27, no optical loss.", size=11, color=MUTED)
-EQK = 0.62 / 200     # inches per pixel of the equation images (same scale for all)
+text(s, 0.5, 6.3, 5.6, 0.65, "V_{±} ∝ E_{y} at the sample points; same points in both lines, so the constant cancels in X_{EO}. Aggressor: V_{c} ≈ 0; victim: V_{c} ≠ 0. Linear Pockels effect, n_{g} = 2.27, no optical loss.", size=11, color=MUTED)
+EQK = 0.58 / 200     # inches per pixel of the equation images (same scale for all)
 def eq(name, x, y):
     H = Image.open(os.path.join(IMG, name + ".png")).size[1]; eqimg(s, name, x, y, H * EQK); return y + H * EQK
 X0 = 6.45
-text(s, X0, 1.5, 6.4, 0.55, "**1. Pockels effect.** The voltage across a gap shifts the optical phase of the arm in that gap; the two arms shift in opposite directions.", size=12)
-y = eq("eq5_pockels", X0 + 0.3, 2.07)
-text(s, X0 + 0.3, y + 0.02, 6.1, 0.3, "κ: EO constant (phase per volt and unit length); V_{π}: voltage for a π shift over L.", size=10.5, color=MUTED)
-text(s, X0, 2.98, 6.4, 0.55, "**2. Light in transit.** The light enters at t_{0} and reaches z at t_{0} + n_{g}z/c: each arm adds up the voltage it meets on its way.", size=12)
-y = eq("eq5_arm", X0 + 0.3, 3.55)
-text(s, X0, 4.12, 6.4, 0.3, "**3. Phasor form.** H is the voltage the light sees, averaged along its path.", size=12)
-y = eq("eq5_phasor", X0 + 0.3, 4.45); y = eq("eq5_H", X0 + 0.3, y + 0.06)
-text(s, X0 + 0.3, y + 0.02, 6.1, 0.3, "A wave travelling with the light adds up; a backward wave averages out.", size=10.5, color=MUTED)
-text(s, X0, 5.73, 6.4, 0.55, "**4. Crosstalk.** The modulator output follows the arm difference M; X_{EO} is the victim modulation per unit of aggressor modulation.", size=12)
-eq("eq5_X", X0 + 0.3, 6.3)
+text(s, X0, 1.45, 6.4, 0.55, "**1. Pockels effect.** The voltage across a gap shifts the optical phase of the arm in that gap; the two arms shift in opposite directions.", size=12)
+y = eq("eq5_pockels", X0 + 0.3, 1.98)
+text(s, X0 + 0.3, y, 6.1, 0.3, "κ: EO constant (phase per volt and unit length); V_{π}: voltage for a π shift over L.", size=10.5, color=MUTED)
+text(s, X0, 2.8, 6.4, 0.55, "**2. Light in transit.** The light enters at t_{0} and reaches z at t_{0} + n_{g}z/c: each arm adds up the voltage it meets on its way.", size=12)
+y = eq("eq5_arm", X0 + 0.3, 3.33)
+text(s, X0, 3.85, 6.4, 0.3, "**3. Phasor form.** H is the voltage the light sees, averaged along its path.", size=12)
+y = eq("eq5_phasor", X0 + 0.3, 4.15); y = eq("eq5_H", X0 + 0.3, y + 0.05)
+text(s, X0 + 0.3, y, 6.1, 0.3, "A wave travelling with the light adds up; a backward wave averages out.", size=10.5, color=MUTED)
+text(s, X0, 5.33, 6.4, 0.55, "**4. Push-pull.** The output follows φ_{+} − φ_{−}: only the differential gap voltage V_{d} modulates; a common part V_{c} shifts both arms alike and cancels.", size=12)
+y = eq("eq5_X", X0 + 0.3, 5.88); eq("eq5_X2", X0 + 0.3, y + 0.04)
 
 # 6 ---------------------------------------------------------------- set-up 1/2
 s = new(); title(s, "Simulation set-up (1/2): length, mesh, substrate bottom", "Corrections derived from earlier Istanbul and Cordoba runs, applied to all Istanbul runs")
