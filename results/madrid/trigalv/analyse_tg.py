@@ -1,5 +1,7 @@
 import json,numpy as np,matplotlib;matplotlib.use('Agg');import matplotlib.pyplot as plt
 R=[json.loads(l[7:]) for l in open('sweep.txt') if l.startswith('RESULT')]
+F=[json.loads(l[7:]) for l in open('sweep_fs.txt') if l.startswith('RESULT')]
+R=[r for r in R if r['buf']>0]+[r for r in F if r['buf']==0]   # no-buffer: full Al-bottom skin mesh only (old mesh had an artificial mirror)
 q=lambda **k:sorted([r for r in R if all(abs(r[a]-v)<1e-9 for a,v in k.items())],key=lambda r:r[[a for a in ('g_al','buf','tox','p') if a not in k][0]])
 f,ax=plt.subplots(2,2,figsize=(15,10))
 a=ax[0,0]
@@ -18,7 +20,7 @@ a.set_title('Top oxide: < 0.7 % effect (Al gap 3.5, buffer 120 nm)');a.grid(alph
 a=ax[1,0]
 s=q(g_al=3.5,buf=0.12,tox=0.2);a.plot([r['p'] for r in s],[r['IL_dBcm'] for r in s],'o-',ms=3,c='#5b3f8c',label='buffer 120 nm, Al gap 3.5')
 s=q(g_al=4.5,buf=0.0,tox=0.2);a.plot([r['p'] for r in s],[r['IL_dBcm'] for r in s],'s-',ms=4,c='#d62728',label='NO buffer, Al gap 4.5')
-a.set_xlabel('buried Al protrusion P (µm)');a.set_ylabel('IL (dB/cm)');a.set_title('Protrusion: flat with buffer, resonant without');a.grid(alpha=.3);a.legend()
+a.set_xlabel('buried Al protrusion P (µm)');a.set_ylabel('IL (dB/cm)');a.set_title('Protrusion: flat with and without buffer (full Al-skin mesh)');a.grid(alpha=.3);a.legend()
 a=ax[1,1]
 s=q(buf=0.12,tox=0.1,p=2.0);a.semilogx([r['IL_dBcm'] for r in s],[r['VpiL_Vcm'] for r in s],'o-',ms=3,c='#5b3f8c',label='tri-galvanic, Al gap 3.0–4.5 (buf 120)')
 s=q(g_al=3.5,tox=0.2,p=2.0);s=[r for r in s if r['buf']>0];a.semilogx([r['IL_dBcm'] for r in s],[r['VpiL_Vcm'] for r in s],'^-',ms=4,c='#9d7cd8',label='tri-galvanic, buffer 100–200 (gap 3.5)')

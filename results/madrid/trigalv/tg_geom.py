@@ -58,6 +58,8 @@ def build_polygons():
     patches = unary_union([pr, mirror(pr)])
     xs_al = _xg + 1.5                                   # fine Al skin out to 1.5 um under Au1
     skA = box(_xa, yb, xs_al, yal).difference(box(_xa + SKIN_A, yb + SKIN_A, xs_al, yal - SKIN_A))
+    if os.environ.get("FULL_SKIN"):          # fine skin along the WHOLE Al bottom (Al/LN or Al/buffer interface)
+        skA = unary_union([skA, box(_xa, yb, X_EL_OUT, yb + SKIN_A)])
     skA = unary_union([skA, mirror(skA)])
     skE = unary_union([box(_xg, yal, _xg + SKIN_T, y1)]); skE = unary_union([skE, mirror(skE)])
     polys = OrderedDict()

@@ -17,7 +17,7 @@ src, n = re.subn(r'np\.where\(mat_of_el == "Au_gnd"\)', 'np.where(np.isin(mat_of
 t0 = time.time(); g = {}
 exec(compile(pre + src, "nb", "exec"), g)
 import numpy as np
-res = dict(g_al=G, buf=B, tox=TX, p=P, au1_gap=G + 2 * P, tri=int(g["skfem_mesh"].nelements), neff=float(g["n_eff"].real),
+res = dict(full_skin=bool(os.environ.get("FULL_SKIN")), g_al=G, buf=B, tox=TX, p=P, au1_gap=G + 2 * P, tri=int(g["skfem_mesh"].nelements), neff=float(g["n_eff"].real),
            IL_dBcm=float(g["att_opt_dB_cm"]), VpiL_Vcm=float(g["Vpi_L_Vcm"]), gamma=float(abs(g["overlap"])), t_s=round(time.time() - t0, 1))
 try:
     from skfem import Functional
