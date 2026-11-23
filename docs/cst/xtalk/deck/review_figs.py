@@ -40,10 +40,10 @@ fig, ax = plt.subplots(1, 3, figsize=(15, 4.3), sharey=True)
 for k, r in enumerate("acd"):
     d = R[r]; f = d["f"]
     nl = "NEXT |S31| (run d: |S51|)"
-    ax[k].plot(f, dB(d["S31"]), color=NAVY, lw=1.6, label=nl); ax[k].plot(f, dB(d["NEXT_f"]), "--", color=BLUE, lw=1.4, label="NEXT from fields")
-    ax[k].plot(f, dB(d["S41"]), color=ORANGE, lw=1.6, label="FEXT |S41|"); ax[k].plot(f, dB(d["FEXT_f"]), "--", color=RED, lw=1.4, label="FEXT from fields")
+    ax[k].plot(f, dB(d["S31"]), color=NAVY, lw=1.6, label=nl); ax[k].plot(f, dB(d["NEXT_p"]), "--", color=BLUE, lw=1.4, label="NEXT from fields")
+    ax[k].plot(f, dB(d["S41"]), color=ORANGE, lw=1.6, label="FEXT |S41|"); ax[k].plot(f, dB(d["FEXT_p"]), "--", color=RED, lw=1.4, label="FEXT from fields")
     ax[k].set_ylim(-80, 0); ax[k].set_xlim(0, 60); ax[k].set_xlabel("Frequency (GHz)"); ax[k].grid(alpha=0.3); ax[k].set_title(TT[r], fontsize=12)
-    for lab, s, fl in (("NEXT", d["S31"], d["NEXT_f"]), ("FEXT", d["S41"], d["FEXT_f"])):
+    for lab, s, fl in (("NEXT", d["S31"], d["NEXT_p"]), ("FEXT", d["S41"], d["FEXT_p"])):
         e = dB(fl)-dB(s); print(r, lab, "field - S, 5-60 GHz: median %+.1f, mean |diff| %.1f dB" % (np.median(e[m5]), np.mean(abs(e[m5]))))
 ax[0].set_ylabel("EE crosstalk (dB)")
 top_legend(fig, ax, ncol=5, top=0.9); fig.savefig(os.path.join(OUT, "review_ee.png"), dpi=200); plt.close(fig)

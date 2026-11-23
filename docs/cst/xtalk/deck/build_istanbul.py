@@ -226,14 +226,14 @@ note(s, "S route: only port 1 is excited in the runs; the uniform-pair symmetrie
 # R2 --------------------------------------------------------------- review: EE crosstalk
 s = new(); title(s, "EE crosstalk: S-parameters and fields agree", "NEXT and FEXT of runs a, c, d from the touchstone and from the field at the line ends")
 fig(s, "review_ee.png", 0.92, 1.42, 11.51, 3.3, "NEXT and FEXT from S-parameters and from fields")
-fig(s, "ports_sketch.png", 0.5, 5.05, 3.2, 1.68, "Port 1 driven; field voltages read at the three other line ends")
-text(s, 3.95, 4.8, 5.0, 0.6, "**From the fields:** end voltages from a quadratic fit over the last 0.3 mm (1.5 electrode cells, λ/7 at 60 GHz; 0.1–1 mm changes the medians by ≤ 1 dB). Ports 2, 3, 4 receive no wave:", size=11)
-y_ = 5.45
-for nm in ("eq13_port", "eq13_next", "eq13_fext"):
-    H_ = Image.open(os.path.join(IMG, nm + ".png")).size[1]; eqimg(s, nm, 4.2, y_, H_ * 0.0029); y_ += H_ * 0.0029 + 0.05
-text(s, 3.95, y_ - 0.02, 5.0, 0.3, "The field scale cancels in the ratios; |S_{21}| refers them to the incident wave.", size=10, color=MUTED)
-table(s, 9.15, 4.95, 3.7, [["Field − S, median", "NEXT", "FEXT"], ["(a) bare line", "−2.0 dB", "−1.7 dB"], ["(c) + pads", "−0.1 dB", "−2.6 dB"], ["(d) + driver", "+0.7 dB", "−1.1 dB"]], [1.7, 1.0, 1.0], size=10.5, row_h=0.4)
-note(s, "Point-by-point scatter 2-6 dB: ripple shifts and the accuracy of a victim 30-60 dB below the aggressor (solver -40 dB, one sample per gap). In (c) the S-parameter NEXT is at the pad port, in (d) at the driver port of line B (S51); the field value is at the line input: the levels still agree. EE crosstalk is a port quantity: the S-parameters give it directly.")
+fig(s, "ports_sketch.png", 0.5, 5.05, 3.2, 1.68, "Port 1 driven; victim read at both line ends, aggressor forward wave at the input")
+text(s, 3.95, 4.8, 5.0, 0.62, "**From the fields only (no touchstone):** victim at the first and last sample of line B; reference = forward wave of A entering the line, from a two-wave fit along A.", size=11)
+y_ = 5.48
+for nm in ("eq13_next", "eq13_fit"):
+    H_ = Image.open(os.path.join(IMG, nm + ".png")).size[1]; eqimg(s, nm, 4.2, y_, H_ * 0.0029); y_ += H_ * 0.0029 + 0.06
+text(s, 3.95, y_, 5.0, 0.45, "Ports 3, 4 are matched: V_{B} there is the outgoing victim wave. Port 1 carries incident and reflected waves: only the forward part is the drive.", size=10, color=MUTED)
+table(s, 9.15, 4.95, 3.7, [["Field − S, median", "NEXT", "FEXT"], ["(a) bare line", "−2.8 dB", "−0.5 dB"], ["(c) + pads", "−0.2 dB", "+0.6 dB"], ["(d) + driver", "+1.2 dB", "+1.0 dB"]], [1.7, 1.0, 1.0], size=10.5, row_h=0.4)
+note(s, "Fields only: |V_B| at the first and last field sample (2.5 um from the ports) over |V_A+(0)|, the forward wave of line A at the line input (two-wave fit along the whole line, n and alpha scanned; residual 7 %). The field-to-voltage scale cancels. In (c) and (d) the field reference is the wave entering the line, the S-parameter reference the wave at the pad or driver port (S51 for NEXT in (d)). Point-by-point scatter 2-7 dB (mean |difference|): ripple shifts and the accuracy of a victim 30-60 dB below the aggressor (solver -40 dB, one sample per gap). A quadratic fit over the last 0.1-1 mm instead of the end sample changes the medians by <= 1.3 dB and reduces the scatter in (a) from 5 to 3 dB.")
 
 # R3 --------------------------------------------------------------- review: EO crosstalk
 s = new(); title(s, "EO crosstalk: the S-parameter route fails on the victim", "X = H[V_{B}] / H[V_{A}], H[V] = (1/L) ∫ V(z) exp(jβ_{o}(z − L)) dz, with V(z) from S or from the fields")

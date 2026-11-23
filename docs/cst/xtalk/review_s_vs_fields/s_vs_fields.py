@@ -56,6 +56,17 @@ def v_model(g, Z, z):
     V0 = 0.5*np.sqrt(R0)*2*Zin/(Zin+R0); I0 = V0/Zin
     return V0*np.cosh(g*z) - Z*I0*np.sinh(g*z)
 
+def forward_amp(V, z, f):
+    """Amplitude at z = 0 of the forward wave of a line voltage: two-wave fit V = V+ e^{-gz} + V- e^{gz} over the whole
+    line, n (2.0-2.6, step 0.002) and alpha (0-40 Np/m) scanned. Returns V+(0) and the relative residual."""
+    b0 = 2*np.pi*f*1e9/C0; best = (np.inf, 0)
+    for n in np.arange(2.0, 2.6, 0.002):
+        for a in (0, 5, 10, 20, 40):
+            g = a + 1j*b0*n; A = np.stack([np.exp(-g*z), np.exp(g*z)], 1); c, *_ = np.linalg.lstsq(A, V, rcond=None)
+            r = np.linalg.norm(V - A @ c)/np.linalg.norm(V)
+            if r < best[0]: best = (r, c[0])
+    return best[1], best[0]
+
 def H(V, z, f):
     return np.trapezoid(V*np.exp(1j*2*np.pi*f*1e9*NG/C0*(z-z[-1])), z)/(z[-1]-z[0])
 
@@ -64,6 +75,7 @@ def analyse(r):
     Vf = {k: np.array([(Xf["V"][q][k][0]+Xf["V"][q][k][1])/2 for q in f]) for k in "AB"}
     # cell loading (pitch 0.2 mm): the E_y sample drops by 20-40 % on 2 of the 40 points of each cell. Those points are
     # found from line A (mean over f of |V| against its running median) and replaced by interpolation, on both lines.
+    Vraw = {k: v.copy() for k, v in Vf.items()}
     a = np.mean(abs(Vf["A"]), 0); med = np.array([np.median(a[max(0, j-20):j+21]) for j in range(len(a))])
     bad = a < 0.9*med; good = ~bad
     for k in "AB":
@@ -93,6 +105,9 @@ def analyse(r):
             Sd[key].append([float(v) for v in ln.split()])
         g = lambda k: 10**(np.interp(f, *np.array(Sd[k]).T)/20)
         out.update(S21=g("S2,1"), S31=g("S5,1"), S41=g("S4,1"))
+    # fields only: victim at the line ends (first and last sample) over the aggressor forward wave entering the line
+    VAp = np.array([forward_amp(Vf["A"][i], z, q)[0] for i, q in enumerate(f)])
+    out["NEXT_p"] = abs(Vraw["B"][:, 0]/VAp); out["FEXT_p"] = abs(Vraw["B"][:, -1]/VAp)
     s21 = abs(out["S21"])
     out["NEXT_f"] = s21*abs(Vend["B"][0]/Vend["A"][1]); out["FEXT_f"] = s21*abs(Vend["B"][1]/Vend["A"][1])
     return out
