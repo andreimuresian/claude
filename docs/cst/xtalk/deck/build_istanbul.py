@@ -223,6 +223,41 @@ card(s, 8.4, 3.55, 4.45, 1.75, "Agreement", ["Simulated median −27 dB, inside 
 card(s, 8.4, 5.45, 4.45, 1.45, "Limits", ["A sharper comparison needs numerical lab data. Real driver, assembly and lab settings are not modelled."], hc=RED, size=12.5)
 caption(s, 0.5, 5.85, 7.7, "Digitized with WebPlotDigitizer (automeris.io): pixel resolution ≈ 0.2 GHz and 0.15 dB, overlapping curves, notches under-sampled.", h=0.7)
 
+# R1 --------------------------------------------------------------- review: V(z) from S vs fields
+s = new(); title(s, "V(z) from S-parameters: exact only for a uniform line", "Same runs, V(z) from the touchstone (uniform coupled pair) and from the gap fields")
+fig(s, "review_vz.png", 0.5, 1.5, 12.35, 3.55, "V(z) of both lines from S-parameters and from fields, runs a and c")
+card(s, 0.5, 5.2, 4.0, 1.75, "From S-parameters", ["Even/odd modes: cosh γL = (A+D)/2, Z_{c} = √(B/C); V(z) = V(0) cosh γz − Z_{c}I(0) sinh γz. The S-matrix holds exactly γ and Z_{c} of the two modes: any pad, wire or driver is folded into the line."], size=10.5)
+card(s, 4.67, 5.2, 4.0, 1.75, "From fields", ["Gap voltage from E_{y} every 5 µm along both lines: no line model, pads and driver included as they are."], size=10.5)
+card(s, 8.84, 5.2, 4.01, 1.75, "Result (median level error)", ["Aggressor: 0.1 dB (a), 0.4 dB (c). Victim: 4 dB (a), 5 dB (c), up to 10 dB. The victim is the small difference of two modes (Δn ≈ 0.005): small errors in γ give large errors. (d): ports at the driver, |S| only: no V(z)."], hc=RED, size=10.5)
+note(s, "S route: only port 1 is excited in the runs; the uniform-pair symmetries (mirror A-B, end reversal, reciprocity) fill the 4-port. Field route: line voltage = mean of the two gap voltages; the 2 of 40 samples per 0.2 mm cell that fall on the cell loading are interpolated. Both normalised to line A at the far-end port. Error = median over z of |dB difference| of |V|. The bottom-guided slow wave (slide 4) is a further mode outside the two-mode picture.")
+
+# R2 --------------------------------------------------------------- review: EE crosstalk
+s = new(); title(s, "EE crosstalk: S-parameters and fields agree", "NEXT and FEXT of runs a, c, d from the touchstone and from the field at the line ends")
+fig(s, "review_ee.png", 0.5, 1.5, 12.35, 3.55, "NEXT and FEXT from S-parameters and from fields")
+card(s, 0.5, 5.2, 4.0, 1.75, "Definition", ["Aggressor driven at port 1, all ports matched: NEXT = S_{31}, FEXT = S_{41} (victim wave at its near and far end per incident wave)."], size=10.5)
+card(s, 4.67, 5.2, 4.0, 1.75, "From fields", ["A matched port without incident wave has V_{j} = b_{j}√Z_{0}: S_{31} = S_{21}·V_{B}(0)/V_{A}(L), S_{41} = S_{21}·V_{B}(L)/V_{A}(L), with the voltage ratios from the fields."], size=10.5)
+table(s, 8.84, 5.2, 4.01, [["Field − S, median", "NEXT", "FEXT"], ["(a) bare line", "−2.0 dB", "−1.7 dB"], ["(c) + pads", "−0.1 dB", "−2.6 dB"], ["(d) + driver", "+0.7 dB", "−1.1 dB"]], [1.81, 1.1, 1.1], size=10.5, row_h=0.4)
+note(s, "Point-by-point scatter 2-6 dB: ripple shifts and the accuracy of a victim 30-60 dB below the aggressor (solver -40 dB, one sample per gap). In (c) and (d) the S-parameter NEXT is at the pad or driver port, the field value at the line input: the levels still agree. EE crosstalk is a port quantity: the S-parameters give it directly.")
+
+# R3 --------------------------------------------------------------- review: EO crosstalk
+s = new(); title(s, "EO crosstalk: the S-parameter route fails on the victim", "X = H[V_{B}] / H[V_{A}], H[V] = (1/L) ∫ V(z) exp(jβ_{o}(z − L)) dz, with V(z) from S or from the fields")
+fig(s, "review_eo.png", 0.5, 1.5, 12.35, 3.55, "EO crosstalk from the S-parameter V(z) and from the fields")
+table(s, 0.5, 5.2, 6.4, [["5–60 GHz, median", "EO from fields", "EO from S", "S − fields"], ["(a) bare line", "−38.4 dB", "−32.3 dB", "+5.2 dB"], ["(c) + pads", "−32.8 dB", "−24.8 dB", "+7.5 dB"], ["(d) + driver", "−27.3 dB", "not possible", "–"]], [1.6, 1.6, 1.6, 1.6], size=10.5, row_h=0.4)
+card(s, 7.15, 5.2, 5.7, 1.75, "Meaning", ["The light integrates the victim V(z), which the S-parameters do not fix: the S route overestimates by 5–8 dB, more with pads. FEXT ≈ EO only in (d), where the victim is injected before the line (slide 10)."], hc=RED, size=10.5)
+note(s, "Push-pull with symmetric gaps, n_g 2.27, 50 ohm source and loads. Run d: the touchstone export failed, the ASCII S-parameters are magnitudes only (no phase), so no V(z) can be built from them.")
+
+# R4 --------------------------------------------------------------- review: INTERCONNECT
+s = new(); title(s, "Lumped-block crosstalk model in INTERCONNECT", "Proposal: cascade of lumped coupled-line cells, each driving a lumped EO phase cell")
+card(s, 0.5, 1.6, 4.0, 2.5, "Feasibility", ["- Possible: it is the discrete form of the same integral H[V].",
+     "- Cells ≤ λ_{RF}/20 ≈ 0.1 mm at 60 GHz: ≈ 90 cells per line, 180 voltage taps and optical delays."], size=13.5)
+card(s, 4.67, 1.6, 4.0, 2.5, "Physics", ["- Same equations as the Python cascade: no new information.",
+     "- Result at best as good as the cell parameters it is given."], size=13.5)
+card(s, 8.84, 1.6, 4.01, 2.5, "Inputs", ["- Each cell needs γ, Z_{c} and the coupling of the victim: the quantities S-parameters and eigenmodes do not give accurately (previous slides, slide 4).",
+     "- Pads, wires, driver as S-blocks give only port quantities."], hc=RED, size=13.5)
+card(s, 0.5, 4.35, 6.1, 1.9, "Status", ["A scripted coupled-electrode element (two-mode line, exact 4-port and V(z) integrals) already exists in INTERCONNECT. It reproduces the Python model and inherits its limits on the victim."], size=14)
+card(s, 6.75, 4.35, 6.1, 1.9, "Recommendation", ["EO crosstalk from the CST fields (Python), as in this study. INTERCONNECT only at link level: the simulated crosstalk transfer function as a black box for eye and BER studies."], hc=NAVY, size=14)
+note(s, "lambda_RF at 60 GHz with n about 2.3: 2.2 mm. The coupling built up in the cells is the two-mode description, which misses the bottom-guided slow wave and the pad/driver injection; both dominate the module crosstalk (slides 9, 10).")
+
 # 12 --------------------------------------------------------------- conclusions
 s = new(); title(s, "Conclusions", "")
 stat(s, 0.5, 1.45, 3.95, 2.0, "−27 dB", "Simulated EO crosstalk, full module (median)", col=PURPLE)

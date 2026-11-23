@@ -8,6 +8,7 @@
 - Presentations (user's standing rules): short (few slides, only the essential messages), not descriptive (results and
   conclusions, not narration of what was done), formal impersonal language (no "we"/"our"/"I"). Company template:
   `docs/CST_line_extraction.pptx` (see `docs/cst/xtalk/deck/build_istanbul.py`). All dB plots start at 0 dB at the top.
+- Figures (user's standing rule): a legend must never overlap plot curves. Inside the axes is fine if it sits in empty space; otherwise put it outside. Check the rendered image.
 - Spelling: British English in all answers, reports and slides (equaliser, polarisation, modelling, colour).
 - Answer style (user's standing instructions, from their Claude Code settings): all answers brief and concise, short
   and direct to the point (the user hates long answers). Natural language with a logical flow. Use examples,
