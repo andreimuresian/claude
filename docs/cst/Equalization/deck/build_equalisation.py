@@ -299,4 +299,13 @@ card(s, 0.5, 4.45, 6.05, 2.5, "Why the 8 % gap", ["Z_{c} = V/I needs a voltage. 
 card(s, 6.8, 4.45, 6.05, 2.5, "Next run", ["Export E on the same planes as H: power flow P = ½∫(E × H*)·dA through the cross-section gives Z_{c} = 2P/|I|^{2} without any voltage definition, and the loss between planes (step, taper, U-bend)."], hc=RED, size=10.5)
 note(s, "Power along the path from 1/2 Re(V I*) is not reliable with these exports: buried, raised and apex voltages use different definitions (point field x nominal gap vs line integral), which differ by up to 10 %. Local V/I on the raised sections and apexes: 33-49 ohm (standing waves).")
 
+# 20 --------------------------------------------------------------- single bend
+s = new(); title(s, "Single bend: 0.3 dB at 60 GHz, raised straights dominate", "Single U-bend run with 20 µm buried stubs; loss from net power ½Re(VI*), mirror sides paired")
+fig(s, "single_bend_130.png", 0.5, 1.5, 12.35, 4.0, "Loss split of the single bend and its |S21|")
+table(s, 0.5, 5.65, 7.6, [["Net power loss", "10 GHz", "40 GHz", "60 GHz", "100 GHz"],
+      ["Single-bend run", "−0.09 dB", "−0.23 dB", "−0.32 dB", "−0.38 dB"],
+      ["L+B+S bend block", "−0.10 dB", "−0.22 dB", "−0.35 dB", "−0.53 dB"]], [2.0, 1.4, 1.4, 1.4, 1.4], size=10.5, row_h=0.36)
+card(s, 8.35, 5.65, 4.5, 1.3, "Meaning", ["Same bend loss as extracted from L+B+S. The 79.3 GHz dip is the ground-to-ground mode trapped between the two ports (not present on the long lines, where it leaks away)."], size=10.5)
+note(s, "Check: P(stub 2)/P(stub 1) = |S21|^2/(1-|S11|^2) within 0.02 dB. Individual plane-to-plane splits carry +-0.2-0.5 dB calibration differences between plane types (buried, raised, apex voltages); only sums over the mirror sides are shown. Local V/I: about 50 ohm at the stubs, 41-53 ohm on the raised sections (standing waves). Group delay of the single bend 5.3-5.5 ps (includes 2 x 20 um stubs), L+B+S block 5.0-5.4 ps.")
+
 out = os.path.join(HERE, "..", "Equalisation.pptx"); prs.save(out); print("saved", os.path.abspath(out))
