@@ -265,6 +265,7 @@ card(s, 4.69, 3.75, 3.95, 2.6, "Physics", ["- Each module element raises the EO 
      "- Coupling at the input travels with the light: EO ≈ FEXT, not FEXT − 6 dB."], size=14)
 card(s, 8.88, 3.75, 3.97, 2.6, "Next", ["- Numerical lab data.",
      "- Optical-mode overlap instead of point sampling.",
-     "- Real driver and assembly variations."], hc=RED, size=14)
+     "- Real driver and assembly variations.",
+     "- Bare line level crosstalk measurement."], hc=RED, size=14)
 
 out = os.path.join(HERE, "..", "Istanbul_EO_crosstalk.pptx"); prs.save(out); print("saved", os.path.abspath(out))
