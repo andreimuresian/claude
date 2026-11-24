@@ -13,5 +13,5 @@ def pl(a,tag,key,xl,title,xf=lambda r:r):
 pl(ax[0],"WIDTH","trw","trench width (µm)","Trench width (floor 100 nm, pillars touch gold)",lambda r:r["trw"])
 pl(ax[1],"FLOOR","trf","oxide left above rib top (nm)","Trench floor (width 1.0 µm)",lambda r:r["trf"]*1e3)
 s=pl(ax[2],"PILLAR","trw","pillar width (µm)","Pillars 200 nm away from the gold (air gap)",lambda r:round((r["cap_w"]-r["trw"])/2,3))
-ax[2].plot([1.0],[1.7820],"*",c="k",ms=12); ax[2].annotate("pillars touching gold\n(width 1.25 µm, trench 1.0)",(1.0,1.782),(0.45,1.80),fontsize=8.5,arrowprops=dict(arrowstyle="->"))
+ax[2].plot([1.25],[1.7820],"*",c="k",ms=14); ax[2].set_xlim(0.25,1.35); ax[2].annotate("pillars touching gold\n(1.25 µm, trench 1.0 µm)",(1.25,1.782),(0.55,1.81),fontsize=8.5,arrowprops=dict(arrowstyle="->"))
 f.suptitle("Madrid 1 U-slot, gap 3.5 µm, buffer 130 nm, fill 2.0 µm, λ = 1625 nm (FEM)",fontsize=11.5); f.tight_layout(); f.savefig("uslot_1d_sweeps.png",dpi=150)
