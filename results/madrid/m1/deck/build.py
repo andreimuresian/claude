@@ -54,6 +54,7 @@ box(s, 0.6, 5.65, 6.0, 1.25, [("Without buffer the ripple period grows with λ (
 box(s, 6.85, 5.65, 5.95, 1.25, [("Minimum buffer: 90 nm nominal → 50 nm with −40 nm error", {"size": 12.5, "bold": True, "color": NAVY, "space": 3}),
     ("50 nm: round trip ≤ 10⁻¹⁴, 2D flat (0.07 %). Working minimum 100 nm (IL)", {"size": 11.5})])
 
+exec(open(D + "slides_5_9.py").read())
 sldIdLst = prs.slides._sldIdLst
 for sid in list(sldIdLst)[:first_new]:
     prs.part.drop_rel(sid.rId); sldIdLst.remove(sid)
