@@ -7,5 +7,5 @@ d={(r['gap'],r['buf'],r['cap_w'],r['cap_h'],r['mtx_small']) for r in (json.loads
 for l in open('jobs_gp.txt'):
   k=tuple(map(float,l.split()[:5]))
   if k not in d: print(l.strip())" > jobs_gp_todo.txt
-cat jobs_gp_todo.txt | xargs -P3 -L1 python3 run_m1r.py >> sweep_gp.txt
+cat jobs_gp_todo.txt | xargs -P4 -L1 python3 run_m1r.py >> sweep_gp.txt
 echo ALLDONE >> sweep_gp.txt

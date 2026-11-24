@@ -14,8 +14,9 @@ def build_polygons():
     yb = round(ys + BUFFER_H, 6); ycap = round(yb + CAP_H, 6); y_clad_top = ys + CLAD_H
     core = Polygon([(-WG_BOTTOM / 2, ys), (-WG_TOP / 2, ys + WG_H), (WG_TOP / 2, ys + WG_H), (WG_BOTTOM / 2, ys)])
     slab = box(-x_dev, 0.0, x_dev, ys)
-    buf = _areal(box(-x_dev, ys, x_dev, yb).difference(core)) if BUFFER_H > 0 else Polygon()
-    cap = _areal(box(-CAP_W / 2, ys, CAP_W / 2, ycap).difference(unary_union([core, buf])))
+    # buffer only OUTSIDE the cap; the cap (same SiO2) fills down to the slab: no LN/buffer/cap triple point at the rib
+    buf = _areal(box(-x_dev, ys, x_dev, yb).difference(box(-CAP_W / 2, ys, CAP_W / 2, yb))) if BUFFER_H > 0 else Polygon()
+    cap = _areal(box(-CAP_W / 2, ys, CAP_W / 2, ycap).difference(core))
     elR = box(_xg, yb, _xg + W_S, yb + MTX_BIG)
     elL = Polygon(unary_union([box(-_xg - W_T, yb, -_xg, yb + MTX_SMALL),
                                box(-_xg - W_T - W_G, yb, -_xg - W_T, yb + MTX_BIG)]).exterior)
@@ -35,7 +36,7 @@ def build_polygons():
     r_c = min(CORNER_R, 0.4 * BUFFER_H) if BUFFER_H > 0 else CORNER_R
     pts = [(_xg, yb), (_xg + W_S, yb), (-_xg, yb), (-_xg - W_T - W_G, yb)]
     patches = unary_union([box(px - r_c, py - r_c, px + r_c, py + r_c) for px, py in pts])
-    if BUFFER_H > 0 and os.environ.get("RIBPATCH", "1") == "1":   # rib-base corners: LN / buffer / cap junctions
+    if BUFFER_H > 0 and os.environ.get("RIBPATCH", "0") == "1":   # rib-base corners: LN / buffer / cap junctions
         xb = WG_BOTTOM / 2.0; xt = xb - BUFFER_H / np.tan(np.deg2rad(ALPHA)); rr = min(0.02, 0.3 * BUFFER_H)
         rp = unary_union([box(x - rr, y - rr, x + rr, y + rr) for x, y in ((xb, ys), (xt, yb))])
         patches = unary_union([patches, rp, mirror(rp)])
