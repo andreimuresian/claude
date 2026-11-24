@@ -20,6 +20,15 @@ def build_polygons():
     elR = box(_xg, yb, _xg + W_S, yb + MTX_BIG)
     elL = Polygon(unary_union([box(-_xg - W_T, yb, -_xg, yb + MTX_SMALL),
                                box(-_xg - W_T - W_G, yb, -_xg - W_T, yb + MTX_BIG)]).exterior)
+    # --- gold tongues over the oxide fill (process: gold mask gap < oxide gap) ---
+    TGL = float(os.environ.get("TGL", "0")); TGR = float(os.environ.get("TGR", "0")); BELLY = float(os.environ.get("BELLY", "0.2"))
+    ycap_ = round(yb + CAP_H, 6)
+    if TGR > 0:
+        elR = Polygon(unary_union([elR, box(_xg - TGR, ycap_, _xg + 0.01, yb + MTX_BIG)]).exterior)
+    if TGL > 0:
+        parts = [elL, box(-_xg, ycap_, -_xg + TGL, ycap_ + MTX_SMALL)]
+        if BELLY > 0: parts.append(Polygon([(-_xg - BELLY, ycap_), (-_xg, ycap_), (-_xg, ycap_ + BELLY)]))
+        elL = Polygon(unary_union(parts).buffer(0).exterior)
     # --- Gemini variants (all default off) ---
     TRW = float(os.environ.get("TRW", "0")); TRF = float(os.environ.get("TRF", "0.2"))      # U-slot trench width, floor above rib top
     STW = float(os.environ.get("STW", "0")); STT = float(os.environ.get("STT", "0"))        # stepped buffer: width under inner edge, total thickness
