@@ -1,4 +1,5 @@
 # Madrid 1 (tri-galvanic) single-arm cross-section, injected before `polygons, Y_TOP = build_polygons()`.
+import os
 # Signal (right): tall Au (MTX_BIG) of width W_S. Ground (left): thin tongue MTX_SMALL x W_T, then tall MTX_BIG x W_G.
 # Flat SiO2 buffer BUFFER_H on the continuous slab; SiO2 cap CAP_W x CAP_H (CAP_H from the buffer top); air above.
 GAP = M1_GAP; BUFFER_H = M1_BUF; CAP_W = M1_CW; CAP_H = M1_CH
@@ -34,6 +35,10 @@ def build_polygons():
     r_c = min(CORNER_R, 0.4 * BUFFER_H) if BUFFER_H > 0 else CORNER_R
     pts = [(_xg, yb), (_xg + W_S, yb), (-_xg, yb), (-_xg - W_T - W_G, yb)]
     patches = unary_union([box(px - r_c, py - r_c, px + r_c, py + r_c) for px, py in pts])
+    if BUFFER_H > 0 and os.environ.get("RIBPATCH", "1") == "1":   # rib-base corners: LN / buffer / cap junctions
+        xb = WG_BOTTOM / 2.0; xt = xb - BUFFER_H / np.tan(np.deg2rad(ALPHA)); rr = min(0.02, 0.3 * BUFFER_H)
+        rp = unary_union([box(x - rr, y - rr, x + rr, y + rr) for x, y in ((xb, ys), (xt, yb))])
+        patches = unary_union([patches, rp, mirror(rp)])
     # gold skin: the full bottom face of both electrodes, plus the inner walls
     skin = unary_union([box(-x_dev, yb, x_dev, yb + SKIN_T),
                         box(_xg, yb, _xg + SKIN_T, yb + MTX_BIG), box(-_xg - SKIN_T, yb, -_xg, yb + MTX_SMALL)])
