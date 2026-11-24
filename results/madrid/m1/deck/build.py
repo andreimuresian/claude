@@ -47,12 +47,12 @@ box(s, 9.0, 3.25, 3.8, 3.0, [H("Reading"), ("No buffer: the lateral wave under t
     ("With ≥ 50 nm SiO₂ the wave is cut off: IL flat", B)])
 
 # 4 wavelength / minimum buffer ------------------------------------------------------
-s = new("Across C + L (1525–1625 nm) and minimum buffer", "1D slab model of the lateral wave under Au / SiO₂ / LN, 5 nm steps; 2D check at 1625 nm")
+s = new("Across C + L (1525–1625 nm) and minimum buffer", "1D slab model of the lateral wave under Au / SiO₂ / LN, 5 nm steps; 2D checks at 1525 and 1625 nm")
 image(s, D + "F3_wavelength.png", 0.35, 1.55, w=12.6)
 box(s, 0.6, 5.65, 6.0, 1.25, [("Without buffer the ripple period grows with λ (+12 % over the band): any 10 µm electrode crosses ≈ 1 peak in the band", {"size": 11.5, "space": 3}),
     ("Cut-off 32.8–33.1 nm, flat in λ; 1625 nm decays slowest (worst case)", {"size": 11.5})])
 box(s, 6.85, 5.65, 5.95, 1.25, [("Minimum buffer: 90 nm nominal → 50 nm with −40 nm error", {"size": 12.5, "bold": True, "color": NAVY, "space": 3}),
-    ("50 nm: round trip ≤ 10⁻¹⁴, 2D flat (0.07 %). Working minimum 100 nm (IL)", {"size": 11.5})])
+    ("50 nm: round trip ≤ 10⁻¹⁴; 2D flat at both band edges (0.071 % at 1525 nm, 0.07 % at 1625 nm). Working minimum 100 nm (IL)", {"size": 11.5})])
 
 exec(open(D + "slides_5_9.py").read())
 sldIdLst = prs.slides._sldIdLst
