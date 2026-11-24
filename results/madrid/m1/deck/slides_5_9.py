@@ -17,12 +17,26 @@ table(s, [["Target", "Model chosen", "R²", "MAPE", "max err.", "95 % cover"],
           ["Vπ·L", nm(cv_) + (", log" if cv_["log10"] else ", linear"), f"{cv_['cv']['R2_phys']:.4f}", f"{cv_['cv']['MAPE_pct']:.2f} %", f"{cv_['cv']['maxAPE_pct']:.1f} %", f"{cv_['cv']['cover95_pct']:.0f} %"]],
       0.6, 5.55, 8.2, [1.3, 2.6, 1.0, 1.0, 1.1, 1.2], size=11)
 box(s, 9.0, 5.45, 3.8, 1.35, [("Candidates: Matérn 5/2, 3/2, RBF × linear mean on/off × Vπ·L log/linear. Chosen: best MAPE with ≥ 85 % coverage. Largest IL errors at buffer ≈ 50 nm (near cut-off)", {"size": 10})])
+# 6b optimiser method
+s = new("How the optimiser works", "Constrained search on the surrogate: one FEM run costs ≈ 2.6 min, one surrogate evaluation ≈ 10 µs")
+steps = [("1  Grid", "Every combination of GAP (0.05 µm), BUFFER_H (5 nm), CAP_F (0.1), CAP_H (0.1 µm), MTX_small (0.1 µm): 429 660 designs inside the trained box"),
+         ("2  Predict", "GP mean and 95 % interval of Vπ·L and IL for every design (vectorised, ≈ 30 s in total)"),
+         ("3  Constrain", "Keep designs with IL upper-95 % bound ≤ 0.4 dB/cm and BUFFER_H ≥ 100 nm (uses the surrogate's own uncertainty as margin)"),
+         ("4  Rank", "Sort by predicted Vπ·L; keep the best design of each (GAP, CAP_F, CAP_H) family → top 15 distinct designs"),
+         ("5  Robust variant", "Same, but the IL constraint is applied at BUFFER_H − 40 nm (process worst case)"),
+         ("6  Verify", "Re-simulate the top designs with FEM, plus mesh check")]
+y = 1.75
+for t, d in steps:
+    box(s, 0.6, y, 8.3, 0.74, [(t, {"size": 13, "bold": True, "color": NAVY, "space": 1}), (d, {"size": 11})]); y += 0.82
+box(s, 9.2, 1.75, 3.6, 4.6, [H("Why not a genetic algorithm"), ("5 inputs and a microsecond surrogate: the exhaustive grid is cheaper than a GA and cannot miss the optimum", B),
+    ("Every parameter is monotone, but they compete for the same IL budget: the optimum sits on IL = 0.4 and the search decides which knob spends it", B),
+    ("The grid also gives the Pareto front and sensitivities for free", B)])
 # 7 optimum
 s = new("Optimum on the surrogate", "Exhaustive grid of 429 660 designs · min Vπ·L s.t. IL upper-95 % ≤ 0.4 dB/cm, buffer ≥ 100 nm")
 image(s, GP + "F7_optimum.png", 0.35, 1.55, w=8.9)
 table(s, [["", "Nominal", "Robust"], ["GAP", "3.05 µm", "3.05 µm"], ["BUFFER_H", "150 nm", "190 nm"], ["CAP_W", "3.00 µm", "3.00 µm"],
-          ["CAP_H", "1.0–1.2 µm", "1.1 µm"], ["MTX_small", "1.0 µm", "1.0 µm"], ["Vπ·L / IL", "1.747 / 0.377", "1.799 / 0.268"],
-          ["buffer −40 nm", "1.687 / 0.552", "1.747 / 0.371"]], 9.4, 1.65, 3.5, [1.15, 1.2, 1.15], size=10)
+          ["CAP_H", "1.0–1.2 µm", "1.1 µm"], ["MTX_small", "1.0 µm", "1.0 µm"], ["Vπ·L / IL (FEM)", "1.747 / 0.377", "1.801 / 0.276"],
+          ["buffer −40 nm (FEM)", "1.687 / 0.552", "1.747 / 0.377"]], 9.4, 1.65, 3.5, [1.15, 1.2, 1.15], size=10)
 box(s, 9.4, 4.55, 3.5, 2.2, [("Gap at minimum, cap fills the gap, MTX_small max. Buffer not at minimum: at the IL limit a thick buffer + small gap beats a thin buffer + wider gap. CAP_H barely matters (≤ 0.004 V·cm). Robust: IL ≤ 0.4 also at −40 nm", {"size": 10})], fill=TINT)
 # 8 validation
 s = new("FEM validation of the surrogate", "Independent FEM runs at the predicted optima · mesh check at MESH_SCALE 1.0")
@@ -38,9 +52,31 @@ table(s, [["Design (GAP / BUF / CAP_W / CAP_H / MTXs)", "Vπ·L FEM", "Vπ·L GP
       0.6, 1.7, 12.2, [4.6, 1.5, 1.5, 1.5, 3.1], size=11, highlight=(1,))
 box(s, 0.6, 5.0, 12.2, 1.6, [("Vπ·L within 0.3 % everywhere; IL within 1.7 % at buffer ≥ 100 nm, −11.5 % at 50 nm (steep near cut-off, outside the optimisation range)", B),
     ("Mesh 1.0 vs 1.4 at the optimum: Vπ·L 1.7467 vs 1.7465 (0.01 %), IL 0.3713 vs 0.3773 (1.6 %); baseline IL 0.2570 vs 0.2615 (1.7 %)", B)])
+# 8b gap >= 3.5
+s = new("Optimum with GAP ≥ 3.5 µm", "Same search restricted to GAP ≥ 3.5 µm · FEM-verified (GP underestimates IL by 9–15 % here: CAP_W = GAP is the edge of the trained box)")
+table(s, [["", "Nominal (buffer ≥ 100 nm)", "Robust (IL ≤ 0.4 at −40 nm)"],
+          ["GAP / CAP_W", "3.50 / 3.50 µm (cap fills gap)", "3.50 / 3.50 µm"], ["BUFFER_H", "100 nm", "115 nm"], ["CAP_H / MTX_small", "1.1 / 1.0 µm", "1.1 / 1.0 µm"],
+          ["Vπ·L / IL  (FEM)", "1.857 / 0.233", "1.880 / 0.192"], ["at buffer −40 nm (FEM)", "1.790 / 0.579", "1.816 / 0.371"],
+          ["GP prediction (nominal)", "1.853 / 0.210", "1.877 / 0.170"]], 0.6, 1.8, 8.0, [2.6, 2.7, 2.7], size=12, highlight=(4,))
+box(s, 8.9, 1.8, 3.9, 4.4, [H("Reading"), ("+0.11–0.13 V·cm vs GAP 3.05 µm, as expected from ≈ 0.05 V·cm per 0.1 µm", B),
+    ("Buffer now hits its 100 nm floor: the wider gap frees IL budget", B), ("Robust design keeps IL < 0.4 at 75 nm buffer", B),
+    ("Same picture as Madrid B (1.854 / 0.209 at gap 3.2): geometry gains are worth ≈ 0.05–0.1 V·cm; the gap dominates", B)])
 # 9 predictor
 s = new("Offline predictor", "madrid1_predictor.html · single file, no Python, no internet · GP maths in JavaScript from model_card.json")
 image(s, GP + "gui_screenshot.png", 0.5, 1.55, w=7.6)
 box(s, 8.4, 1.6, 4.4, 4.7, [H("Features"), ("Sliders for the 5 parameters, live cross-section", B), ("Vπ·L and IL with 95 % intervals", B),
     ("Worst case at buffer −40 nm", B), ("Flags: IL > 0.4, buffer < 100 nm, extrapolation", B), ("Buttons: baseline, optimiser best", B),
     ("predictor.py: same model, numpy only, batch predictions; matches scikit-learn to 1e-11", B)])
+
+# 10 conclusions
+s = new("Conclusions", "Madrid 1 (tri-galvanic), λ = 1625 nm, no ALD")
+table(s, [["Design", "GAP", "BUFFER", "Vπ·L (V·cm)", "IL (dB/cm)", "IL at −40 nm"],
+          ["Baseline", "3.20", "100", "1.827", "0.261", "—"], ["Optimum (nominal)", "3.05", "150", "1.747", "0.377", "0.552"],
+          ["Optimum (robust)", "3.05", "190", "1.801", "0.276", "0.377"], ["GAP ≥ 3.5, nominal", "3.50", "100", "1.857", "0.233", "0.579"],
+          ["GAP ≥ 3.5, robust", "3.50", "115", "1.880", "0.192", "0.371"], ["Madrid B (reference)", "3.20", "120", "1.854", "0.209", "—"]],
+      0.6, 1.8, 7.9, [2.3, 0.8, 1.0, 1.3, 1.2, 1.3], size=12, highlight=(3,))
+text(s, 0.6, 4.25, 7.9, 0.4, [("All values FEM (λ = 1625 nm). −40 nm column: IL with the buffer 40 nm thinner than nominal", {"size": 10, "color": MUT})])
+box(s, 8.8, 1.8, 4.0, 4.6, [H("Takeaways"), ("Standing wave: present without buffer, removed for buffer ≥ 50 nm across 1525–1625 nm", B),
+    ("Best geometry: gap at minimum, cap filling the gap, thick ground tongue; CAP_H irrelevant", B),
+    ("Gain over Madrid B ≈ 3–6 % at equal gap: without narrowing the gap Vπ·L stays ≈ 1.75–1.88 V·cm", B),
+    ("Tools delivered: dataset, GP surrogate, optimiser, offline predictor", B)])

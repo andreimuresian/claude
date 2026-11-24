@@ -6,7 +6,9 @@ import sys, json, itertools, numpy as np
 from predictor import Predictor
 IL_MAX = float(sys.argv[1]) if len(sys.argv) > 1 else 0.4; BUF_MIN = float(sys.argv[2]) if len(sys.argv) > 2 else 0.10
 P = Predictor("models/model_card.json")
-G = np.round(np.arange(3.0, 4.5001, 0.05), 3); Bf = np.round(np.arange(BUF_MIN, 0.2001, 0.005), 4)
+import os
+GAP_MIN = float(os.environ.get("GAP_MIN", "3.0"))
+G = np.round(np.arange(GAP_MIN, 4.5001, 0.05), 3); Bf = np.round(np.arange(BUF_MIN, 0.2001, 0.005), 4)
 F = np.round(np.linspace(0, 1, 11), 3); CH = np.round(np.arange(0.5, 1.4001, 0.1), 3); MS = np.round(np.arange(0.5, 1.0001, 0.1), 3)
 X = np.array(list(itertools.product(G, Bf, F, CH, MS))); print("grid", len(X))
 res = {"VpiL": [], "IL": [], "ILhi": []}
@@ -37,6 +39,6 @@ j0 = top[0]; sens = {}
 for k, name in enumerate(["GAP", "BUFFER_H", "CAP_F", "CAP_H", "MTX_SMALL"]):
     grid = np.linspace(P.lo[k], P.hi[k], 31); Xs = np.repeat(X[j0][None], 31, 0); Xs[:, k] = grid; r = P.predict_array(Xs)
     sens[name] = dict(x=grid.tolist(), VpiL=r["VpiL"]["mean"].tolist(), IL=r["IL"]["mean"].tolist())
-json.dump(dict(IL_MAX=IL_MAX, BUF_MIN=BUF_MIN, top=out, pareto=pareto, sensitivity=sens), open(f"optimum_IL{IL_MAX}_buf{BUF_MIN}.json", "w"), indent=1)
+json.dump(dict(IL_MAX=IL_MAX, BUF_MIN=BUF_MIN, top=out, pareto=pareto, sensitivity=sens), open(f"optimum_IL{IL_MAX}_buf{BUF_MIN}" + (f"_gap{GAP_MIN}" if GAP_MIN != 3.0 else "") + ".json", "w"), indent=1)
 print(f"{'#':>2} {'GAP':>5} {'BUF':>5} {'CAP_W':>6} {'CAP_H':>5} {'MTXs':>4} | {'VpiL':>6} {'IL':>6} {'ILhi':>6} | buf-40: {'VpiL':>6} {'IL':>6}")
 for o in out: print(f"{o['rank']:>2} {o['GAP']:5.2f} {o['BUFFER_H']*1e3:5.0f} {o['CAP_W']:6.3f} {o['CAP_H']:5.2f} {o['MTX_SMALL']:4.1f} | {o['VpiL']:6.4f} {o['IL']:6.4f} {o['IL_hi95']:6.4f} | {o['VpiL_buf_m40']:13.4f} {o['IL_buf_m40']:6.4f}")
