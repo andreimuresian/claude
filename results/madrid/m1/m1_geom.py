@@ -20,6 +20,26 @@ def build_polygons():
     elR = box(_xg, yb, _xg + W_S, yb + MTX_BIG)
     elL = Polygon(unary_union([box(-_xg - W_T, yb, -_xg, yb + MTX_SMALL),
                                box(-_xg - W_T - W_G, yb, -_xg - W_T, yb + MTX_BIG)]).exterior)
+    # --- Gemini variants (all default off) ---
+    TRW = float(os.environ.get("TRW", "0")); TRF = float(os.environ.get("TRF", "0.2"))      # U-slot trench width, floor above rib top
+    STW = float(os.environ.get("STW", "0")); STT = float(os.environ.get("STT", "0"))        # stepped buffer: width under inner edge, total thickness
+    SBX = float(os.environ.get("SBX", "0")); SBH = float(os.environ.get("SBH", "0.35"))     # inverted-L: bottom gold setback, height
+    extra_ox = []
+    if STW > 0:
+        for s_ in (1, -1):
+            st = box(_xg, ys, _xg + STW, ys + STT) if s_ > 0 else box(-_xg - STW, ys, -_xg, ys + STT)
+            extra_ox.append(st)
+        elR = Polygon(elR.difference(extra_ox[0]).exterior); elL = Polygon(elL.difference(extra_ox[1]).exterior)
+    if SBX > 0:
+        for s_ in (1, -1):
+            sb = box(_xg, yb, _xg + SBX, yb + SBH) if s_ > 0 else box(-_xg - SBX, yb, -_xg, yb + SBH)
+            extra_ox.append(sb)
+        elR = Polygon(elR.difference(extra_ox[-2]).exterior); elL = Polygon(elL.difference(extra_ox[-1]).exterior)
+    if extra_ox:
+        cap = _areal(unary_union([cap] + extra_ox).difference(unary_union([core, elR, elL])))
+        buf = _areal(buf.difference(unary_union(extra_ox)))
+    if TRW > 0:
+        cap = _areal(cap.difference(box(-TRW / 2, ys + WG_H + TRF, TRW / 2, ycap + 1.0)))
     solids = unary_union([core, slab, buf, cap, elR, elL])
     clad = box(-x_dev, 0.0, x_dev, y_clad_top).difference(solids)
     near = box(-_xg, ycap, _xg, ycap + 0.6)
@@ -35,13 +55,22 @@ def build_polygons():
     base["clad_far"] = _areal(clad.difference(near))
     r_c = min(CORNER_R, 0.4 * BUFFER_H) if BUFFER_H > 0 else CORNER_R
     pts = [(_xg, yb), (_xg + W_S, yb), (-_xg, yb), (-_xg - W_T - W_G, yb)]
+    if STW > 0: pts += [(s_ * _xg, ys + STT) for s_ in (1, -1)] + [(s_ * (_xg + STW), ys + STT) for s_ in (1, -1)] + [(s_ * (_xg + STW), yb) for s_ in (1, -1)]
+    if SBX > 0: pts += [(s_ * (_xg + SBX), yb) for s_ in (1, -1)] + [(s_ * (_xg + SBX), yb + SBH) for s_ in (1, -1)] + [(s_ * _xg, yb + SBH) for s_ in (1, -1)]
+    pts = [p for p in pts if not (p == (-_xg, yb) and (STW > 0 or SBX > 0)) and not (p == (_xg, yb) and (STW > 0 or SBX > 0))]
     patches = unary_union([box(px - r_c, py - r_c, px + r_c, py + r_c) for px, py in pts])
     if BUFFER_H > 0 and os.environ.get("RIBPATCH", "0") == "1":   # rib-base corners: LN / buffer / cap junctions
         xb = WG_BOTTOM / 2.0; xt = xb - BUFFER_H / np.tan(np.deg2rad(ALPHA)); rr = min(0.02, 0.3 * BUFFER_H)
         rp = unary_union([box(x - rr, y - rr, x + rr, y + rr) for x, y in ((xb, ys), (xt, yb))])
         patches = unary_union([patches, rp, mirror(rp)])
     # gold skin: the full bottom face of both electrodes, plus the inner walls
-    skin = unary_union([box(-x_dev, yb, x_dev, yb + SKIN_T),
+    _sk = []
+    for s_ in (1, -1):
+        if STW > 0: _sk.append(box(min(s_ * _xg, s_ * (_xg + STW)), ys + STT, max(s_ * _xg, s_ * (_xg + STW)), ys + STT + SKIN_T))
+        if SBX > 0:
+            _sk.append(box(min(s_ * (_xg + SBX), s_ * (_xg + SBX + SKIN_T)), yb, max(s_ * (_xg + SBX), s_ * (_xg + SBX + SKIN_T)), yb + SBH))
+            _sk.append(box(min(s_ * _xg, s_ * (_xg + SBX)), yb + SBH, max(s_ * _xg, s_ * (_xg + SBX)), yb + SBH + SKIN_T))
+    skin = unary_union(_sk + [box(-x_dev, yb, x_dev, yb + SKIN_T),
                         box(_xg, yb, _xg + SKIN_T, yb + MTX_BIG), box(-_xg - SKIN_T, yb, -_xg, yb + MTX_SMALL)])
     polys = OrderedDict()
     for name, reg in base.items():

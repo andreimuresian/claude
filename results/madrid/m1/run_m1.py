@@ -20,6 +20,6 @@ src = src.replace('if d["te_ratio"] >= 0.75 and d["core_conf"] >= 0.20 and d["un
 assert "abs(d[\"neff\"].real - n_guess)" in src
 t0 = time.time(); g = {}
 exec(compile(pre + src, "nb", "exec"), g)
-print("RESULT " + json.dumps(dict(wl=float(os.environ.get("WL", "1.625")), gap=G, buf=B, cap_w=CW, cap_h=CH, mtx_small=MS_, w_s=WS, tri=int(g["skfem_mesh"].nelements),
+print("RESULT " + json.dumps(dict(trw=float(os.environ.get("TRW","0")), trf=float(os.environ.get("TRF","0.2")), stw=float(os.environ.get("STW","0")), stt=float(os.environ.get("STT","0")), sbx=float(os.environ.get("SBX","0")), wl=float(os.environ.get("WL", "1.625")), gap=G, buf=B, cap_w=CW, cap_h=CH, mtx_small=MS_, w_s=WS, tri=int(g["skfem_mesh"].nelements),
       neff=float(g["n_eff"].real), IL_dBcm=float(g["att_opt_dB_cm"]), VpiL_Vcm=float(g["Vpi_L_Vcm"]),
       gamma=float(abs(g["overlap"])), t_s=round(time.time() - t0, 1))), flush=True)
