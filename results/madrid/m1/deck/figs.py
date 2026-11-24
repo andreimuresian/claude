@@ -24,12 +24,12 @@ f.tight_layout();f.savefig('F1_xs.png',dpi=200);plt.close()
 # ---- F2 standing wave ----
 R0=[json.loads(l[7:]) for l in open('../sweep_sw.txt') if l.startswith('RESULT')]
 R5=[json.loads(l[7:]) for l in open('../sweep_sw50.txt') if l.startswith('RESULT')]
-f,ax=plt.subplots(1,2,figsize=(11,4.0))
-for rs,b,c,lab in ((R0,0.0,'#c0392b','no buffer'),(R5,0.05,'#e67e22','50 nm'),(R0,0.1,'#1f4e79','100 nm')):
+f,ax=plt.subplots(1,2,figsize=(11,4.8))
+for rs,b,c,lab,mk,off in ((R0,0.0,'#c0392b','no buffer','o-',0),(R5,0.05,'#e67e22','50 nm','s--',0),(R0,0.1,'#1f4e79','100 nm','^:',0)):
   s=sorted([r for r in rs if r['buf']==b],key=lambda r:r['w_s']);w=[r['w_s'] for r in s];il=np.array([r['IL_dBcm'] for r in s])
-  ax[0].plot(w,100*(il/il.mean()-1),'o-',ms=3.5,c=c,label=f'{lab}: mean IL {il.mean():.3g} dB/cm')
+  ax[0].plot(w,100*(il/il.mean()-1),mk,ms=4 if b else 3.5,mfc='none' if b==0.05 else c,c=c,label=f'{lab}: mean IL {il.mean():.3g} dB/cm, ripple {100*(il.max()-il.min())/il.mean():.2g} %')
   ax[1].plot([b*1e3],[il.mean()],'o',c=c,ms=9)
-ax[0].set_xlabel('signal electrode width W$_S$ (µm)');ax[0].set_ylabel('IL deviation from mean (%)');ax[0].legend(fontsize=9,loc='lower right');ax[0].grid(alpha=.3)
+ax[0].set_xlabel('signal electrode width W$_S$ (µm)');ax[0].set_ylabel('IL deviation from mean (%)');ax[0].legend(fontsize=8.5,loc='upper center',bbox_to_anchor=(0.5,-0.18),ncol=1,frameon=False);ax[0].grid(alpha=.3)
 ax[0].set_title('IL vs signal width: ±15 % ripple without buffer, flat with',fontsize=10.5)
 ax[1].set_yscale('log');ax[1].set_xlabel('buffer (nm)');ax[1].set_ylabel('mean IL (dB/cm)');ax[1].grid(alpha=.3,which='both');ax[1].set_xlim(-10,110)
 ax[1].set_title('Mean IL (gap 3.2, cap 3.0×0.5, 1625 nm)',fontsize=10.5)
@@ -38,10 +38,10 @@ f.tight_layout();f.savefig('F2_standing_wave.png',dpi=200);plt.close()
 D=json.load(open('cutoff_1d_fine.json'));wl=np.array([o['wl'] for o in D])*1e3
 f,ax=plt.subplots(1,3,figsize=(12,3.8))
 ax[0].plot(wl,[o['period0_um'] for o in D],'-',c='#c0392b',lw=2);ax[0].set_ylabel('ripple period, no buffer (µm)');ax[0].set_title('Peaks move to larger W$_S$ as λ grows',fontsize=10)
-ax[0].plot([1625],[0.95],'s',c='k',ms=7,label='2D fit, 1625 nm');ax[0].legend(fontsize=8)
+ax[0].plot([1625],[0.95],'s',c='k',ms=7,label='2D (FEM) at 1625 nm');ax[0].legend(fontsize=8,loc='upper left')
 ax[1].plot(wl,[o['tc_nm'] for o in D],'-',c='#1f4e79',lw=2);ax[1].set_ylim(25,45);ax[1].set_ylabel('buffer cut-off (nm)');ax[1].set_title('Cut-off flat across the band: 32.8–33.1 nm',fontsize=10)
 for b,c in ((0.04,'#e67e22'),(0.05,'#2ca02c'),(0.06,'#17becf'),(0.1,'#1f4e79')):
   k=np.array([o['kappa'][str(b)] if str(b) in o['kappa'] else o['kappa'][b] for o in D]);ax[2].semilogy(wl,np.exp(-2*k*10),'-',c=c,lw=2,label=f'{int(b*1e3)} nm')
-ax[2].set_ylabel('round-trip amplitude over 10 µm');ax[2].set_title('Above cut-off the wave dies before returning',fontsize=10);ax[2].legend(fontsize=8,title='buffer')
+ax[2].set_ylabel('round-trip amplitude over 10 µm');ax[2].set_title('Above cut-off the wave dies before returning',fontsize=10);ax[2].legend(fontsize=7.5,loc='center',bbox_to_anchor=(0.5,0.33),ncol=4,frameon=False,handlelength=1.2,columnspacing=0.8)
 for a in ax: a.set_xlabel('λ (nm)');a.grid(alpha=.3,which='both')
 f.tight_layout();f.savefig('F3_wavelength.png',dpi=200);plt.close()

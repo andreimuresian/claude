@@ -38,7 +38,7 @@ box(s, 8.5, 1.8, 4.3, 4.4, [H("Plan"), ("32 corners + 80 Latin-hypercube points 
 
 # 3 standing wave -----------------------------------------------------------------
 s = new("Standing wave under the 10 µm signal electrode", "Gap 3.2 µm, cap 3.0 × 0.5 µm, MTX_small 1.0 µm, λ = 1625 nm · signal width swept 9–11 µm in 0.1 µm steps")
-image(s, D + "F2_standing_wave.png", 0.4, 1.6, w=8.4)
+image(s, D + "F2_standing_wave.png", 0.4, 1.55, w=8.4)
 table(s, [["Buffer", "IL (dB/cm)", "Ripple", "Vπ·L"], ["none", "31–41", "±15 %", "1.514"],
           ["50 nm", "0.779", "0.07 %", "1.724"], ["100 nm", "0.261", "0.04 %", "1.827"]],
       9.0, 1.7, 3.8, [1.0, 1.1, 0.8, 0.9], size=11)
