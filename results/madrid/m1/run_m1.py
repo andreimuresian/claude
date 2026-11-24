@@ -13,6 +13,7 @@ src, n = re.subn(r"\nnum_modes_search = \d+", "\nnum_modes_search = %d" % int(os
 src, n = re.subn(r"\nn_guess = [0-9.]+", "\nn_guess = %s" % os.environ.get("NGUESS", "1.895"), src, count=1); assert n == 1
 par = f"M1_GAP={G}; M1_BUF={B}; M1_CW={CW}; M1_CH={CH}; MTX_SMALL={MS_}; MTX_BIG=10.0; W_S={WS}; W_T=10.0; W_G=10.0\n"
 mark = "\npolygons, Y_TOP = build_polygons()"; assert src.count(mark) == 1
+src = src.replace("\nresolutions = {}", "\n_base_res.setdefault(\"trn\", (0.035, 0.30))\nresolutions = {}", 1)
 src = src.replace(mark, "\n" + par + open("/home/user/claude/results/madrid/m1/m1_geom.py").read() + mark)
 _NWIN = float(os.environ.get("NWIN", "0.03"))   # reject spurious rib-corner modes: keep candidates near the expected rib index
 src = src.replace('if d["te_ratio"] >= 0.75 and d["core_conf"] >= 0.20 and d["unipolarity"] >= 0.85',

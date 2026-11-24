@@ -38,13 +38,22 @@ def build_polygons():
     if extra_ox:
         cap = _areal(unary_union([cap] + extra_ox).difference(unary_union([core, elR, elL])))
         buf = _areal(buf.difference(unary_union(extra_ox)))
+    TRMODE = os.environ.get("TRMODE", "both")      # both | opt (air optically, SiO2 at DC) | dc (air at DC, SiO2 optically)
+    trench = Polygon()
     if TRW > 0:
+        trench = _areal(box(-TRW / 2, ys + WG_H + TRF, TRW / 2, ycap).intersection(cap))
         cap = _areal(cap.difference(box(-TRW / 2, ys + WG_H + TRF, TRW / 2, ycap + 1.0)))
-    solids = unary_union([core, slab, buf, cap, elR, elL])
+        if TRMODE != "both":
+            MATERIALS["TRENCH"] = {"color": "#ffd0e0", "desc": "trench (split test)",
+                "eps_dc": (3.75, 3.75) if TRMODE == "opt" else (1.0, 1.0),
+                "eps_opt": (1.0, 1.0, 1.0) if TRMODE == "opt" else (n_sio2 ** 2,) * 3}
+            PREFIX_TO_MAT.insert(0, ("trn", "TRENCH"))
+    solids = unary_union([core, slab, buf, cap, elR, elL] + ([trench] if (TRW > 0 and TRMODE != "both") else []))
     clad = box(-x_dev, 0.0, x_dev, y_clad_top).difference(solids)
     near = box(-_xg, ycap, _xg, ycap + 0.6)
     base = OrderedDict()
     base["core"] = core; base["cap"] = cap
+    if TRW > 0 and TRMODE != "both": base["trn"] = trench
     if BUFFER_H > 0: base["buf_fine"] = buf
     base["elR_bulk"] = elR; base["elL_bulk"] = elL
     base["slab_fine"] = slab                       # fine slab everywhere: the lateral slab wave must be resolved
