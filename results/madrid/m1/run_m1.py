@@ -6,7 +6,7 @@ nb = json.load(open("/home/user/claude/VPI_Madrid.ipynb"))
 pre = "import matplotlib; matplotlib.use('Agg')\nimport matplotlib.pyplot as plt\n"
 pre += ("_figc=[0]\ndef _show(*a,**k):\n    _figc[0]+=1; plt.savefig(%r+f'_{_figc[0]}.png',dpi=110); plt.close('all')\nplt.show=_show\n" % FIG) if FIG else "plt.show=lambda *a,**k: plt.close('all')\n"
 src = "\n".join("".join(c["source"]) for c in nb["cells"][:5])
-for k, v in (("wl", 1.625), ("T_ALD", 0.0), ("MESH_SCALE", float(os.environ.get("MS", "1.4")))):
+for k, v in (("wl", float(os.environ.get("WL", "1.625"))), ("T_ALD", 0.0), ("MESH_SCALE", float(os.environ.get("MS", "1.4")))):
     src, n = re.subn(rf"\n{k} = (?:[0-9.]+|None)", f"\n{k} = {v}", src, count=1); assert n == 1, k
 src, n = re.subn(r"\nUSE_ALD = \w+", "\nUSE_ALD = True", src, count=1); assert n == 1
 src, n = re.subn(r"\nnum_modes_search = \d+", "\nnum_modes_search = %d" % int(os.environ.get("NMODES", "16")), src, count=1); assert n == 1
@@ -20,6 +20,6 @@ src = src.replace('if d["te_ratio"] >= 0.75 and d["core_conf"] >= 0.20 and d["un
 assert "abs(d[\"neff\"].real - n_guess)" in src
 t0 = time.time(); g = {}
 exec(compile(pre + src, "nb", "exec"), g)
-print("RESULT " + json.dumps(dict(gap=G, buf=B, cap_w=CW, cap_h=CH, mtx_small=MS_, w_s=WS, tri=int(g["skfem_mesh"].nelements),
+print("RESULT " + json.dumps(dict(wl=float(os.environ.get("WL", "1.625")), gap=G, buf=B, cap_w=CW, cap_h=CH, mtx_small=MS_, w_s=WS, tri=int(g["skfem_mesh"].nelements),
       neff=float(g["n_eff"].real), IL_dBcm=float(g["att_opt_dB_cm"]), VpiL_Vcm=float(g["Vpi_L_Vcm"]),
       gamma=float(abs(g["overlap"])), t_s=round(time.time() - t0, 1))), flush=True)
