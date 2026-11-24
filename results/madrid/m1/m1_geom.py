@@ -24,7 +24,8 @@ def build_polygons():
     TGL = float(os.environ.get("TGL", "0")); TGR = float(os.environ.get("TGR", "0")); BELLY = float(os.environ.get("BELLY", "0.2"))
     ycap_ = round(yb + CAP_H, 6)
     if TGR > 0:
-        elR = Polygon(unary_union([elR, box(_xg - TGR, ycap_, _xg + 0.01, yb + MTX_BIG)]).exterior)
+        # first (1 um) gold layer only: tongue of height MTX_SMALL on the oxide; the 9 um layer keeps its wall at the oxide edge
+        elR = Polygon(unary_union([elR, box(_xg - TGR, ycap_, _xg + 0.01, ycap_ + MTX_SMALL)]).exterior)
     if TGL > 0:
         parts = [elL, box(-_xg, ycap_, -_xg + TGL, ycap_ + MTX_SMALL)]
         if BELLY > 0: parts.append(Polygon([(-_xg - BELLY, ycap_), (-_xg, ycap_), (-_xg, ycap_ + BELLY)]))
