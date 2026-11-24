@@ -1,0 +1,23 @@
+samples 112
+IL {'kind': 'm52', 'linmean': True, 'log': True} {'R2_t': np.float64(0.9995), 'R2_phys': np.float64(0.9995), 'MAE': 0.0042, 'MAPE_pct': 2.4535, 'maxAPE_pct': 19.8598, 'cover95_pct': 90.1786}
+IL {'kind': 'm52', 'linmean': False, 'log': True} {'R2_t': np.float64(0.9996), 'R2_phys': np.float64(0.9996), 'MAE': 0.0038, 'MAPE_pct': 2.3284, 'maxAPE_pct': 19.3969, 'cover95_pct': 90.1786}
+IL {'kind': 'm32', 'linmean': True, 'log': True} {'R2_t': np.float64(0.9995), 'R2_phys': np.float64(0.9992), 'MAE': 0.0048, 'MAPE_pct': 2.2509, 'maxAPE_pct': 22.1967, 'cover95_pct': 94.6429}
+IL {'kind': 'm32', 'linmean': False, 'log': True} {'R2_t': np.float64(0.9995), 'R2_phys': np.float64(0.9999), 'MAE': 0.003, 'MAPE_pct': 2.2762, 'maxAPE_pct': 22.232, 'cover95_pct': 95.5357}
+IL {'kind': 'rbf', 'linmean': True, 'log': True} {'R2_t': np.float64(0.9989), 'R2_phys': np.float64(0.9976), 'MAE': 0.0086, 'MAPE_pct': 4.0206, 'maxAPE_pct': 27.6796, 'cover95_pct': 86.6071}
+IL {'kind': 'rbf', 'linmean': False, 'log': True} {'R2_t': np.float64(0.9993), 'R2_phys': np.float64(0.9995), 'MAE': 0.0061, 'MAPE_pct': 2.8045, 'maxAPE_pct': 23.3498, 'cover95_pct': 82.1429}
+VpiL {'kind': 'm52', 'linmean': True, 'log': True} {'R2_t': np.float64(0.9998), 'R2_phys': np.float64(0.9998), 'MAE': 0.0037, 'MAPE_pct': 0.1723, 'maxAPE_pct': 1.2868, 'cover95_pct': 88.3929}
+VpiL {'kind': 'm52', 'linmean': True, 'log': False} {'R2_t': np.float64(0.9997), 'R2_phys': np.float64(0.9997), 'MAE': 0.0038, 'MAPE_pct': 0.1777, 'maxAPE_pct': 1.0041, 'cover95_pct': 91.9643}
+VpiL {'kind': 'm52', 'linmean': False, 'log': True} {'R2_t': np.float64(0.9998), 'R2_phys': np.float64(0.9998), 'MAE': 0.0037, 'MAPE_pct': 0.1706, 'maxAPE_pct': 1.2305, 'cover95_pct': 87.5}
+VpiL {'kind': 'm52', 'linmean': False, 'log': False} {'R2_t': np.float64(0.9998), 'R2_phys': np.float64(0.9998), 'MAE': 0.0036, 'MAPE_pct': 0.1645, 'maxAPE_pct': 0.9906, 'cover95_pct': 91.9643}
+VpiL {'kind': 'm32', 'linmean': True, 'log': True} {'R2_t': np.float64(0.9996), 'R2_phys': np.float64(0.9996), 'MAE': 0.005, 'MAPE_pct': 0.2345, 'maxAPE_pct': 1.6202, 'cover95_pct': 93.75}
+VpiL {'kind': 'm32', 'linmean': True, 'log': False} {'R2_t': np.float64(0.9997), 'R2_phys': np.float64(0.9997), 'MAE': 0.0044, 'MAPE_pct': 0.2072, 'maxAPE_pct': 1.181, 'cover95_pct': 94.6429}
+VpiL {'kind': 'm32', 'linmean': False, 'log': True} {'R2_t': np.float64(0.9996), 'R2_phys': np.float64(0.9996), 'MAE': 0.0049, 'MAPE_pct': 0.2284, 'maxAPE_pct': 1.6418, 'cover95_pct': 95.5357}
+VpiL {'kind': 'm32', 'linmean': False, 'log': False} {'R2_t': np.float64(0.9997), 'R2_phys': np.float64(0.9997), 'MAE': 0.0043, 'MAPE_pct': 0.2002, 'maxAPE_pct': 1.3375, 'cover95_pct': 97.3214}
+VpiL {'kind': 'rbf', 'linmean': True, 'log': True} {'R2_t': np.float64(0.9997), 'R2_phys': np.float64(0.9997), 'MAE': 0.0044, 'MAPE_pct': 0.1988, 'maxAPE_pct': 1.1417, 'cover95_pct': 88.3929}
+VpiL {'kind': 'rbf', 'linmean': True, 'log': False} {'R2_t': np.float64(0.9997), 'R2_phys': np.float64(0.9997), 'MAE': 0.0044, 'MAPE_pct': 0.2051, 'maxAPE_pct': 1.1362, 'cover95_pct': 83.9286}
+VpiL {'kind': 'rbf', 'linmean': False, 'log': True} {'R2_t': np.float64(0.9998), 'R2_phys': np.float64(0.9997), 'MAE': 0.0041, 'MAPE_pct': 0.1831, 'maxAPE_pct': 1.097, 'cover95_pct': 92.8571}
+VpiL {'kind': 'rbf', 'linmean': False, 'log': False} {'R2_t': np.float64(0.9997), 'R2_phys': np.float64(0.9997), 'MAE': 0.0041, 'MAPE_pct': 0.1883, 'maxAPE_pct': 1.1078, 'cover95_pct': 88.3929}
+IL final {'kind': 'm32', 'linmean': True, 'log': True} ls [  2.319   1.909   1.577 100.    100.   ] noise 1.0000000000000007e-09
+VpiL final {'kind': 'm52', 'linmean': False, 'log': False} ls [ 7.945 17.813  3.439 13.35  37.082] noise 1.0000000000000007e-09
+IL numpy vs sklearn max rel diff 1.7341683644644945e-13 1.6917883132183675e-06
+VpiL numpy vs sklearn max rel diff 1.2735590360080096e-11 1.0150583912515998e-05
