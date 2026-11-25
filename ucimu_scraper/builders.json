@@ -1,0 +1,819 @@
+[
+ {
+  "name": "ABB ROBOTICS",
+  "city": "Sesto San Giovanni",
+  "prov": "MI",
+  "website": "http://new.abb.com/products/robotics/it",
+  "groups": [
+   24,
+   27
+  ]
+ },
+ {
+  "name": "AIDA",
+  "city": "Pavone Del Mella",
+  "prov": "BS",
+  "website": "http://www.aida-europe.com",
+  "groups": [
+   1,
+   14,
+   15,
+   18,
+   20
+  ]
+ },
+ {
+  "name": "ANDRITZ FARINA PRESSE",
+  "city": "Suello",
+  "prov": "LC",
+  "website": "http://www.farinapresse.com",
+  "groups": [
+   1,
+   15,
+   18,
+   20,
+   21,
+   24
+  ]
+ },
+ {
+  "name": "ASSERVIMENTIPRESSE",
+  "city": "Massalengo",
+  "prov": "LO",
+  "website": "http://www.asservimentipresse.it",
+  "groups": [
+   20,
+   21
+  ]
+ },
+ {
+  "name": "AUTOMATOR",
+  "city": "Corsico",
+  "prov": "MI",
+  "website": "http://www.automator.com",
+  "groups": [
+   6,
+   13,
+   15,
+   16,
+   17,
+   20,
+   22,
+   24,
+   26
+  ]
+ },
+ {
+  "name": "BALCONI",
+  "city": "Varedo",
+  "prov": "MB",
+  "website": "http://www.balconi.it",
+  "groups": [
+   1,
+   15
+  ]
+ },
+ {
+  "name": "BELOTTI",
+  "city": "Suisio",
+  "prov": "BG",
+  "website": "https://www.belotti.com/it/",
+  "groups": [
+   2,
+   22
+  ]
+ },
+ {
+  "name": "BENTIVOGLIO MAKE & TRADE",
+  "city": "Rovato",
+  "prov": "BS",
+  "website": "http://www.make-srl.com",
+  "groups": [
+   6
+  ]
+ },
+ {
+  "name": "BLM",
+  "city": "Cantù",
+  "prov": "CO",
+  "website": "https://www.blmgroup.com/",
+  "groups": [
+   2,
+   19,
+   22
+  ]
+ },
+ {
+  "name": "BONETTI",
+  "city": "Castelleone",
+  "prov": "CR",
+  "website": "http://www.bonettigroup.eu",
+  "groups": [
+   10
+  ]
+ },
+ {
+  "name": "BRAGONZI",
+  "city": "Lonate Pozzolo",
+  "prov": "VA",
+  "website": "http://www.bragonzi.it",
+  "groups": [
+   2,
+   5
+  ]
+ },
+ {
+  "name": "BUFFOLI TRANSFER",
+  "city": "Brescia",
+  "prov": "BS",
+  "website": "http://www.buffoli.com",
+  "groups": [
+   1,
+   2,
+   3,
+   4,
+   8,
+   14,
+   19,
+   22,
+   24,
+   25
+  ]
+ },
+ {
+  "name": "BYSTRONIC",
+  "city": "Rozzano",
+  "prov": "MI",
+  "website": "http://www.bystronic.it",
+  "groups": [
+   22
+  ]
+ },
+ {
+  "name": "CAMU",
+  "city": "Legnano",
+  "prov": "MI",
+  "website": "http://www.camuitaly.com",
+  "groups": [
+   2,
+   3,
+   4,
+   6
+  ]
+ },
+ {
+  "name": "CARLO SALVI",
+  "city": "Garlate",
+  "prov": "LC",
+  "website": "http://www.carlosalvi.com",
+  "groups": [
+   1
+  ]
+ },
+ {
+  "name": "CARNAGHI MARIO",
+  "city": "Olgiate Olona",
+  "prov": "VA",
+  "website": "http://www.mariocarnaghi.it",
+  "groups": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   9
+  ]
+ },
+ {
+  "name": "CARPENTERIA COLOMBO",
+  "city": "Monte Marenzo",
+  "prov": "LC",
+  "website": "http://www.carpenteriacolombo.com",
+  "groups": [
+   27
+  ]
+ },
+ {
+  "name": "CB FERRARI",
+  "city": "Mornago",
+  "prov": "VA",
+  "website": "http://www.cbferrari.com",
+  "groups": [
+   1,
+   2,
+   5,
+   6,
+   11,
+   22,
+   24
+  ]
+ },
+ {
+  "name": "CEMSA INTERNATIONAL",
+  "city": "Cologno Monzese",
+  "prov": "MI",
+  "website": "http://www.cemsa.it",
+  "groups": [
+   23,
+   24,
+   26
+  ]
+ },
+ {
+  "name": "CHIRON",
+  "city": "Rodano Millepini",
+  "prov": "MI",
+  "website": "http://www.chironitalia.it",
+  "groups": [
+   2,
+   3
+  ]
+ },
+ {
+  "name": "CMS",
+  "city": "Zogno",
+  "prov": "BG",
+  "website": "http://www.cms.it",
+  "groups": [
+   2,
+   6,
+   19,
+   22
+  ]
+ },
+ {
+  "name": "COMI",
+  "city": "Ciserano",
+  "prov": "BG",
+  "website": "http://www.comispa.it",
+  "groups": [
+   2,
+   6,
+   14
+  ]
+ },
+ {
+  "name": "COSBERG",
+  "city": "Terno D'Isola",
+  "prov": "BG",
+  "website": "http://www.cosberg.com",
+  "groups": [
+   1,
+   24
+  ]
+ },
+ {
+  "name": "COSEMA INTERNATIONAL",
+  "city": "Lomagna",
+  "prov": "LC",
+  "website": "http://cosema.cloud",
+  "groups": [
+   1
+  ]
+ },
+ {
+  "name": "CRIPPA",
+  "city": "Arosio",
+  "prov": "CO",
+  "website": "http://www.crippa.it",
+  "groups": [
+   14,
+   19,
+   25
+  ]
+ },
+ {
+  "name": "DELTA",
+  "city": "Cura Carpignano",
+  "prov": "PV",
+  "website": "http://www.delta-spa.it",
+  "groups": [
+   11
+  ]
+ },
+ {
+  "name": "DMG MORI BERGAMO",
+  "city": "Brembate Di Sopra",
+  "prov": "BG",
+  "website": "http://www.dmgmori.com",
+  "groups": [
+   3
+  ]
+ },
+ {
+  "name": "EMAG SU",
+  "city": "San Giuliano Milanese",
+  "prov": "MI",
+  "website": "http://www.emag.com",
+  "groups": [
+   6,
+   7,
+   11,
+   12
+  ]
+ },
+ {
+  "name": "FANUC",
+  "city": "Lainate",
+  "prov": "MI",
+  "website": "https://www.fanuc.eu/it/it",
+  "groups": [
+   2,
+   22,
+   24
+  ]
+ },
+ {
+  "name": "FAP",
+  "city": "Besana In Brianza",
+  "prov": "MB",
+  "website": "https://www.fapitaly.com",
+  "groups": [
+   1,
+   14,
+   18,
+   20,
+   23,
+   25
+  ]
+ },
+ {
+  "name": "FICEP",
+  "city": "Gazzada Schianno",
+  "prov": "VA",
+  "website": "https://www.ficepgroup.com/",
+  "groups": [
+   1,
+   4,
+   6,
+   10,
+   14,
+   15,
+   19,
+   20,
+   21,
+   24
+  ]
+ },
+ {
+  "name": "FIVES PIETRO CARNAGHI",
+  "city": "Villa Cortese",
+  "prov": "MI",
+  "website": "http://www.pietrocarnaghi.it",
+  "groups": [
+   1,
+   2,
+   3,
+   5,
+   6,
+   11
+  ]
+ },
+ {
+  "name": "GALDABINI",
+  "city": "Cardano Al Campo",
+  "prov": "VA",
+  "website": "http://www.galdabini.it",
+  "groups": [
+   4,
+   16,
+   19,
+   20,
+   25
+  ]
+ },
+ {
+  "name": "GERARDI",
+  "city": "Lonate Pozzolo",
+  "prov": "VA",
+  "website": "http://www.gerardispa.com",
+  "groups": [
+   11
+  ]
+ },
+ {
+  "name": "GHIRINGHELLI",
+  "city": "Luino",
+  "prov": "VA",
+  "website": "http://www.ghiringhelli.it",
+  "groups": [
+   1,
+   11
+  ]
+ },
+ {
+  "name": "GIUSEPPE GIANA",
+  "city": "Magnago",
+  "prov": "MI",
+  "website": "http://www.giana.it",
+  "groups": [
+   3,
+   4,
+   7,
+   11,
+   13
+  ]
+ },
+ {
+  "name": "GOZIO",
+  "city": "Ospitaletto",
+  "prov": "BS",
+  "website": "http://www.goziotransfer.com",
+  "groups": [
+   2,
+   14
+  ]
+ },
+ {
+  "name": "HURCO",
+  "city": "Rozzano",
+  "prov": "MI",
+  "website": "http://www.hurco.it",
+  "groups": [
+   2,
+   3
+  ]
+ },
+ {
+  "name": "IMET",
+  "city": "Cisano Bergamasco",
+  "prov": "BG",
+  "website": "http://www.imetsaws.com",
+  "groups": [
+   10
+  ]
+ },
+ {
+  "name": "INNSE BERARDI",
+  "city": "Brescia",
+  "prov": "BS",
+  "website": "http://www.innse-berardi.com",
+  "groups": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   22,
+   26
+  ]
+ },
+ {
+  "name": "ISTECH",
+  "city": "Vanzago",
+  "prov": "MI",
+  "website": "http://www.istech-segatrici.com",
+  "groups": [
+   10
+  ]
+ },
+ {
+  "name": "ITF",
+  "city": "Mesero",
+  "prov": "MI",
+  "website": "http://www.itf.it",
+  "groups": [
+   27
+  ]
+ },
+ {
+  "name": "KIPP",
+  "city": "Saronno",
+  "prov": "VA",
+  "website": "https://www.kipp.it",
+  "groups": [
+   1
+  ]
+ },
+ {
+  "name": "LAZZATI",
+  "city": "Rescaldina",
+  "prov": "MI",
+  "website": "https://www.lazzati.eu",
+  "groups": [
+   2,
+   5,
+   6
+  ]
+ },
+ {
+  "name": "LOSMA",
+  "city": "Curno",
+  "prov": "BG",
+  "website": "http://www.losma.it",
+  "groups": [
+   26
+  ]
+ },
+ {
+  "name": "LTF",
+  "city": "Antegnate",
+  "prov": "BG",
+  "website": "http://www.ltf.it",
+  "groups": [
+   2,
+   3,
+   4,
+   6,
+   8,
+   10,
+   11,
+   12,
+   13,
+   25,
+   26,
+   27
+  ]
+ },
+ {
+  "name": "MAKINO",
+  "city": "Cavenago Di Brianza",
+  "prov": "MB",
+  "website": "http://www.makino.eu",
+  "groups": [
+   1,
+   2,
+   4,
+   5,
+   6,
+   11,
+   14,
+   22,
+   24
+  ]
+ },
+ {
+  "name": "MAUS ITALIA",
+  "city": "Bagnolo Cremasco",
+  "prov": "CR",
+  "website": "http://www.mausitalia.it",
+  "groups": [
+   2,
+   23
+  ]
+ },
+ {
+  "name": "MAZAK",
+  "city": "Cerro Maggiore",
+  "prov": "MI",
+  "website": "http://www.mazak.com",
+  "groups": [
+   1,
+   2,
+   3,
+   19,
+   20,
+   22
+  ]
+ },
+ {
+  "name": "MELCHIORRE",
+  "city": "Bollate",
+  "prov": "MI",
+  "website": "http://www.melchiorre.net",
+  "groups": [
+   11,
+   13,
+   27
+  ]
+ },
+ {
+  "name": "MILLUTENSIL",
+  "city": "Izano",
+  "prov": "CR",
+  "website": "http://www.millutensil.com",
+  "groups": [
+   16,
+   20
+  ]
+ },
+ {
+  "name": "MONZESI",
+  "city": "Nova Milanese",
+  "prov": "MB",
+  "website": "http://www.monzesi.com",
+  "groups": [
+   11
+  ]
+ },
+ {
+  "name": "OERLIKON",
+  "city": "Brugherio",
+  "prov": "MB",
+  "website": "http://www.oerlikon.com",
+  "groups": [
+   27
+  ]
+ },
+ {
+  "name": "ORT ITALIA",
+  "city": "Ticengo",
+  "prov": "CR",
+  "website": "http://www.ortitalia.com",
+  "groups": [
+   1,
+   7,
+   8,
+   13
+  ]
+ },
+ {
+  "name": "PG",
+  "city": "Mariano Comense",
+  "prov": "CO",
+  "website": "https://www.pgsrl.eu/",
+  "groups": [
+   20,
+   21
+  ]
+ },
+ {
+  "name": "PRODUTECH",
+  "city": "Albano Sant'Alessandro",
+  "prov": "BG",
+  "website": "http://www.produtech.it",
+  "groups": [
+   20,
+   21,
+   22
+  ]
+ },
+ {
+  "name": "REGG INSPECTION",
+  "city": "Gorgonzola",
+  "prov": "MI",
+  "website": "https://www.regginspection.com/",
+  "groups": [
+   8,
+   19,
+   25
+  ]
+ },
+ {
+  "name": "REMA CONTROL",
+  "city": "Stezzano",
+  "prov": "BG",
+  "website": "http://www.remacontrol.it",
+  "groups": [
+   2,
+   6
+  ]
+ },
+ {
+  "name": "ROSA",
+  "city": "Rescaldina",
+  "prov": "MI",
+  "website": "http://www.rosa.it",
+  "groups": [
+   11
+  ]
+ },
+ {
+  "name": "SACMA LIMBIATE",
+  "city": "Limbiate",
+  "prov": "MB",
+  "website": "http://www.sacmagroup.com",
+  "groups": [
+   3,
+   8,
+   14
+  ]
+ },
+ {
+  "name": "SCC",
+  "city": "Codevilla",
+  "prov": "PV",
+  "website": "http://www.sccitalia.it",
+  "groups": [
+   26
+  ]
+ },
+ {
+  "name": "SERVOPRESSE",
+  "city": "Settimo Milanese",
+  "prov": "MI",
+  "website": "http://www.servopresse.it",
+  "groups": [
+   1,
+   16,
+   20,
+   21,
+   23
+  ]
+ },
+ {
+  "name": "SITEC",
+  "city": "Mozzate",
+  "prov": "CO",
+  "website": "http://www.sitecmozzate.it",
+  "groups": [
+   1
+  ]
+ },
+ {
+  "name": "STREPARAVA",
+  "city": "Adro",
+  "prov": "BS",
+  "website": "https://www.streparava.com",
+  "groups": [
+   1,
+   2,
+   14
+  ]
+ },
+ {
+  "name": "TACCHI",
+  "city": "Castano Primo",
+  "prov": "MI",
+  "website": "http://www.tacchi.it",
+  "groups": [
+   3,
+   4,
+   13
+  ]
+ },
+ {
+  "name": "TECNO DELTA",
+  "city": "Saronno",
+  "prov": "VA",
+  "website": "http://www.tecno-delta.it",
+  "groups": [
+   14,
+   22
+  ]
+ },
+ {
+  "name": "TORNOS",
+  "city": "Rho",
+  "prov": "MI",
+  "website": "http://www.tornos.com",
+  "groups": [
+   3
+  ]
+ },
+ {
+  "name": "TTC",
+  "city": "Buccinasco",
+  "prov": "MI",
+  "website": "http://www.imuspa.it",
+  "groups": [
+   2,
+   3,
+   5,
+   6,
+   24,
+   25
+  ]
+ },
+ {
+  "name": "UNITED MACHINING",
+  "city": "Agrate Brianza",
+  "prov": "MB",
+  "website": "http://www.gfms.com/it",
+  "groups": [
+   2,
+   6,
+   22
+  ]
+ },
+ {
+  "name": "VARINELLI",
+  "city": "Arcore",
+  "prov": "MB",
+  "website": "http://www.varinelli.com",
+  "groups": [
+   9,
+   12
+  ]
+ },
+ {
+  "name": "WALCO",
+  "city": "Milano",
+  "prov": "MI",
+  "website": "http://www.walcosrl.it",
+  "groups": [
+   14,
+   17,
+   26
+  ]
+ },
+ {
+  "name": "WALLRAM GRINDTEC",
+  "city": "Montichiari",
+  "prov": "BS",
+  "website": "http://lizzini.de",
+  "groups": [
+   11
+  ]
+ },
+ {
+  "name": "ZANI",
+  "city": "Turate",
+  "prov": "CO",
+  "website": "http://www.zani.net",
+  "groups": [
+   15,
+   20
+  ]
+ }
+]

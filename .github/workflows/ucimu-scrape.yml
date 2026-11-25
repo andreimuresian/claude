@@ -4,7 +4,9 @@ on:
   push:
     branches: [claude/ucimu-scraper]
     paths:
-      - 'ucimu_scraper/**'
+      - 'ucimu_scraper/ucimu_scrape.py'
+      - 'ucimu_scraper/lombardy_members.json'
+      - 'ucimu_scraper/taxonomy.json'
       - '.github/workflows/ucimu-scrape.yml'
   workflow_dispatch:
 
@@ -36,4 +38,5 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add ucimu_scraper/out
           git commit -m "Add scraped UCIMU data" || exit 0
+          git pull --rebase origin claude/ucimu-scraper
           git push
