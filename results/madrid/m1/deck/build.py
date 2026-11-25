@@ -55,6 +55,8 @@ box(s, 6.85, 5.65, 5.95, 1.25, [("Minimum buffer: 90 nm nominal → 50 nm with �
     ("50 nm: round trip ≤ 10⁻¹⁴; 2D flat at both band edges (0.071 % at 1525 nm, 0.07 % at 1625 nm). Working minimum 100 nm (IL)", {"size": 11.5})])
 
 exec(open(D + "slides_5_9.py").read())
+exec(open(D + "slides_uslot.py").read())
+exec(open(D + "slides_concl.py").read())
 sldIdLst = prs.slides._sldIdLst
 for sid in list(sldIdLst)[:first_new]:
     prs.part.drop_rel(sid.rId); sldIdLst.remove(sid)
