@@ -1,0 +1,2187 @@
+[
+ {
+  "name": "ABB ROBOTICS",
+  "website": "http://new.abb.com/products/robotics/it",
+  "domain": "new.abb.com",
+  "tld": "com",
+  "groups": [
+   24,
+   27
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ReadTimeout",
+  "families": {}
+ },
+ {
+  "name": "AIDA",
+  "website": "http://www.aida-europe.com",
+  "domain": "aida-europe.com",
+  "tld": "com",
+  "groups": [
+   1,
+   14,
+   15,
+   18,
+   20
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 2,
+    "snippets": [
+     "ices to suit any customer requirements. AIDA remote assistance can diagnose and resolve many issues online,",
+     "ices to suit any customer requirements. AIDA remote assistance can diagnose and resolve many issues online,"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "ANDRITZ FARINA PRESSE",
+  "website": "http://www.farinapresse.com",
+  "domain": "farinapresse.com",
+  "tld": "com",
+  "groups": [
+   1,
+   15,
+   18,
+   20,
+   21,
+   24
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectTimeout",
+  "families": {}
+ },
+ {
+  "name": "ASSERVIMENTIPRESSE",
+  "website": "http://www.asservimentipresse.it",
+  "domain": "asservimentipresse.it",
+  "tld": "it",
+  "groups": [
+   20,
+   21
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 4,
+    "snippets": [
+     "a 360° Supporto post vendita, ricambistica e teleassistenza Contattaci Asservimentipresse S.R.L. La nost",
+     "estazioni delle macchine costanti nel tempo. Teleassistenza Per un supporto immediato e una diagnosi rap"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "AUTOMATOR",
+  "website": "http://www.automator.com",
+  "domain": "automator.com",
+  "tld": "com",
+  "groups": [
+   6,
+   13,
+   15,
+   16,
+   17,
+   20,
+   22,
+   24,
+   26
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "meccanici complessi o sostituzioni hardware Assistenza da remoto ✅ Diagnosi rapida via telefono, email o col"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 1,
+    "snippets": [
+     "to tecnico specializzato per configurazione, aggiornamenti software, ottimizzazione dei parametri di marcatura e"
+    ]
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "BALCONI",
+  "website": "http://www.balconi.it",
+  "domain": "balconi.it",
+  "tld": "it",
+  "groups": [
+   1,
+   15
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "BELOTTI",
+  "website": "https://www.belotti.com/it/",
+  "domain": "belotti.com",
+  "tld": "com",
+  "groups": [
+   2,
+   22
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 1,
+    "snippets": [
+     "cheda BES Belotti Equipment Supervisor per l'Industria 4.0 Vai alla scheda CAD – CAM Plug-in CAD/CAM pe"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 6,
+    "snippets": [
+     "cy Cookie policy Codice etico Whistleblowing Cyber Security FAQ Group Social © Belotti S.p.A. a socio un",
+     "cy Cookie policy Codice etico Whistleblowing Cyber Security FAQ Group Social © Belotti S.p.A. a socio un"
+    ]
+   }
+  }
+ },
+ {
+  "name": "BENTIVOGLIO MAKE & TRADE",
+  "website": "http://www.make-srl.com",
+  "domain": "make-srl.com",
+  "tld": "com",
+  "groups": [
+   6
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "BLM",
+  "website": "https://www.blmgroup.com/",
+  "domain": "blmgroup.com",
+  "tld": "com",
+  "groups": [
+   2,
+   19,
+   22
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 16,
+    "snippets": [
+     "ser Innovations Bending ecosystem All-in-one Industry 4.0 Reconditioned machines Automation Sectors Wh",
+     "ser Innovations Bending ecosystem All-in-one Industry 4.0 Reconditioned machines Automation Sectors Wh"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 12,
+    "snippets": [
+     "work Headquarters and offices Whistleblowing Cybersecurity Worldwide Deutsch Polski Portugues Nederland",
+     "UP for education Where we are Whistleblowing Cybersecurity © 2026 BLM GROUP - P.IVA 01653120137 Privacy"
+    ]
+   }
+  }
+ },
+ {
+  "name": "BONETTI",
+  "website": "http://www.bonettigroup.eu",
+  "domain": "bonettigroup.eu",
+  "tld": "eu",
+  "groups": [
+   10
+  ],
+  "pages_read": 3,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "BRAGONZI",
+  "website": "http://www.bragonzi.it",
+  "domain": "bragonzi.it",
+  "tld": "it",
+  "groups": [
+   2,
+   5
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectionError",
+  "families": {}
+ },
+ {
+  "name": "BUFFOLI TRANSFER",
+  "website": "http://www.buffoli.com",
+  "domain": "buffoli.com",
+  "tld": "com",
+  "groups": [
+   1,
+   2,
+   3,
+   4,
+   8,
+   14,
+   19,
+   22,
+   24,
+   25
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 12,
+    "snippets": [
+     "ed area Utilities Video area Restricted area Remote service Remote Customer training News News Fairs & h",
+     "s watch the video Video area Restricted area Remote service Remote customer training ABOUT US Buffoli In"
+    ]
+   },
+   "iot_i40": {
+    "count": 26,
+    "snippets": [
+     "le Parts and Cycle Times Customer commitment Industry 4.0 Innovation Reliability Precision and Flexibi",
+     "foli Precision Intro watch the video Buffoli Industry 4.0 watch the video Automotive applications watc"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "BYSTRONIC",
+  "website": "http://www.bystronic.it",
+  "domain": "bystronic.it",
+  "tld": "it",
+  "groups": [
+   22
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 24,
+    "snippets": [
+     "ial Aluminium Stainless Steel Steel by Goals Smart Factory Bystronic Pre-owned Software & Servizi Servi",
+     "ial Aluminium Stainless Steel Steel by Goals Smart Factory Bystronic Pre-owned Service 360° Customer Ad"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CAMU",
+  "website": "http://www.camuitaly.com",
+  "domain": "camuitaly.com",
+  "tld": "com",
+  "groups": [
+   2,
+   3,
+   4,
+   6
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CARLO SALVI",
+  "website": "http://www.carlosalvi.com",
+  "domain": "carlosalvi.com",
+  "tld": "com",
+  "groups": [
+   1
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CARNAGHI MARIO",
+  "website": "http://www.mariocarnaghi.it",
+  "domain": "mariocarnaghi.it",
+  "tld": "it",
+  "groups": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   9
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CARPENTERIA COLOMBO",
+  "website": "http://www.carpenteriacolombo.com",
+  "domain": "carpenteriacolombo.com",
+  "tld": "com",
+  "groups": [
+   27
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CB FERRARI",
+  "website": "http://www.cbferrari.com",
+  "domain": "cbferrari.com",
+  "tld": "com",
+  "groups": [
+   1,
+   2,
+   5,
+   6,
+   11,
+   22,
+   24
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CEMSA INTERNATIONAL",
+  "website": "http://www.cemsa.it",
+  "domain": "cemsa.it",
+  "tld": "it",
+  "groups": [
+   23,
+   24,
+   26
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectionError",
+  "families": {}
+ },
+ {
+  "name": "CHIRON",
+  "website": "http://www.chironitalia.it",
+  "domain": "chironitalia.it",
+  "tld": "it",
+  "groups": [
+   2,
+   3
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "upport with troubleshooting by telephone and remote diagnosis with a real-time view of the machine's contr"
+    ]
+   },
+   "iot_i40": {
+    "count": 2,
+    "snippets": [
+     "ore about the SmartServices digital services umati: a common language connects machines Togethe",
+     "roup is actively engaged in establishing the umati (universal machine technology interface): th"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CMS",
+  "website": "http://www.cms.it",
+  "domain": "cms.it",
+  "tld": "it",
+  "groups": [
+   2,
+   6,
+   19,
+   22
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 5,
+    "snippets": [
+     "ain pillars\" of... Read more 11 January 2022 Digital Twin and 3D printing: the two cornerstones of the",
+     "nerstones of the Siemens and Cms partnership Digital Twin and 3D printing: the two cornerstones of the"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "COMI",
+  "website": "http://www.comispa.it",
+  "domain": "comispa.it",
+  "tld": "it",
+  "groups": [
+   2,
+   6,
+   14
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "COSBERG",
+  "website": "http://www.cosberg.com",
+  "domain": "cosberg.com",
+  "tld": "com",
+  "groups": [
+   1,
+   24
+  ],
+  "pages_read": 5,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 22,
+    "snippets": [
+     "HOME HOBBY HARDWARE ELECTRONICS HYDRAULIC PNEUMATIC Tecnologie Valori Azienda Introduzione Stor",
+     "HOME HOBBY HARDWARE ELECTRONICS HYDRAULIC PNEUMATIC Tecnologie Tecnologie Vedi Tutte Alimentazi"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "COSEMA INTERNATIONAL",
+  "website": "http://cosema.cloud",
+  "domain": "cosema.cloud",
+  "tld": "cloud",
+  "groups": [
+   1
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "CRIPPA",
+  "website": "http://www.crippa.it",
+  "domain": "crippa.it",
+  "tld": "it",
+  "groups": [
+   14,
+   19,
+   25
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 5,
+    "snippets": [
+     "n investment in the future of your business. Remote assistance Send us a message The exclusive services of",
+     "your business. Discover Octa Service Service Remote Support Maintenance Fin-Dies Spareparts Tooling Soft"
+    ]
+   },
+   "iot_i40": {
+    "count": 2,
+    "snippets": [
+     "ometries in a single cycle. Designed for the Smart Factory, it ensures maximum rigidity and efficiency",
+     "lso schedules production and interfaces with Industry 4.0 systems for data exchange. More than just UI"
+    ]
+   },
+   "update": {
+    "count": 5,
+    "snippets": [
+     "port Maintenance Fin-Dies Spareparts Tooling Software Updates Line Relocation Retrofitting Training Servic",
+     "ational continuity . Discover the advantages Software Updates Our software solutions are designed to optim"
+    ]
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "DELTA",
+  "website": "http://www.delta-spa.it",
+  "domain": "delta-spa.it",
+  "tld": "it",
+  "groups": [
+   11
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "DMG MORI BERGAMO",
+  "website": "http://www.dmgmori.com",
+  "domain": "dmgmori.com",
+  "tld": "com",
+  "groups": [
+   3
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 6,
+    "snippets": [
+     "peed in all service processes Recommendation Digital Twin Showroom Experience Iga Global Solution Cent",
+     "peed in all service processes Recommendation Digital Twin Showroom Experience Iga Global Solution Cent"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "EMAG SU",
+  "website": "http://www.emag.com",
+  "domain": "emag.com",
+  "tld": "com",
+  "groups": [
+   6,
+   7,
+   11,
+   12
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 23,
+    "snippets": [
+     "ONE Automate maintenance with EDNA ONE EDNA IoT Ready Package After Sales & Service After Sa",
+     "epair Spare and wear parts Service Contracts IoT After Sales Academy Academy Academy Customer"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "FANUC",
+  "website": "https://www.fanuc.eu/it/it",
+  "domain": "fanuc.eu",
+  "tld": "eu",
+  "groups": [
+   2,
+   22,
+   24
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 24,
+    "snippets": [
+     "zazione del prodotto SIMULAZIONE - Soluzioni Digital Twin Sostenibilità macchine CNC Prodotti Educatio",
+     "genti per aumentare l'efficienza produttiva (iOT) REGISTRAZIONE DEI PRODOTTI \" PORTALE FANUC"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "FAP",
+  "website": "https://www.fapitaly.com",
+  "domain": "fapitaly.com",
+  "tld": "com",
+  "groups": [
+   1,
+   14,
+   18,
+   20,
+   23,
+   25
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 3,
+    "snippets": [
+     "igenze tecniche. I nostri servizi includono: Assistenza remota efficiente Supporto tecnico in loco Il nost",
+     "funzionamento continuo della tua produzione. Assistenza Remota FAP L'assistenza tecnica remota FAP è proge"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "FICEP",
+  "website": "https://www.ficepgroup.com/",
+  "domain": "ficepgroup.com",
+  "tld": "com",
+  "groups": [
+   1,
+   4,
+   6,
+   10,
+   14,
+   15,
+   19,
+   20,
+   21,
+   24
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectionError",
+  "families": {}
+ },
+ {
+  "name": "FIVES PIETRO CARNAGHI",
+  "website": "http://www.pietrocarnaghi.it",
+  "domain": "pietrocarnaghi.it",
+  "tld": "it",
+  "groups": [
+   1,
+   2,
+   3,
+   5,
+   6,
+   11
+  ],
+  "pages_read": 3,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 4,
+    "snippets": [
+     "artment here for any information. Assistance Remote Service/Teleservice Pietro Carnaghi offers its custo",
+     "r any information. Assistance Remote Service/Teleservice Pietro Carnaghi offers its customers remote"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "GALDABINI",
+  "website": "http://www.galdabini.it",
+  "domain": "galdabini.it",
+  "tld": "it",
+  "groups": [
+   4,
+   16,
+   19,
+   20,
+   25
+  ],
+  "pages_read": 3,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "ecnici specializzati e a sistemi avanzati di assistenza remota, garantiamo supporto rapido e qualificato p"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "GERARDI",
+  "website": "http://www.gerardispa.com",
+  "domain": "gerardispa.com",
+  "tld": "com",
+  "groups": [
+   11
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "GHIRINGHELLI",
+  "website": "http://www.ghiringhelli.it",
+  "domain": "ghiringhelli.it",
+  "tld": "it",
+  "groups": [
+   1,
+   11
+  ],
+  "pages_read": 3,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "GIUSEPPE GIANA",
+  "website": "http://www.giana.it",
+  "domain": "giana.it",
+  "tld": "it",
+  "groups": [
+   3,
+   4,
+   7,
+   11,
+   13
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "GOZIO",
+  "website": "http://www.goziotransfer.com",
+  "domain": "goziotransfer.com",
+  "tld": "com",
+  "groups": [
+   2,
+   14
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 6,
+    "snippets": [
+     "IVE OIL & GAS RUBINETTERIA SANITARIA ARMI PNEUMATICA SERRATURIERA PETROLCHIMICA IDROTERMICA PAR",
+     "LCHIMICA IDROTERMICA PARTNERS Elettronica Pneumatica ed idraulica Componenti di movimentazione"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "HURCO",
+  "website": "http://www.hurco.it",
+  "domain": "hurco.it",
+  "tld": "it",
+  "groups": [
+   2,
+   3
+  ],
+  "pages_read": 3,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "ettamente al telefono o tramite i servizi di Remote Diagnostic . Ricambi Una documentazione tecnica complet"
+    ]
+   },
+   "iot_i40": {
+    "count": 1,
+    "snippets": [
+     "nsueta fiera dedicata alla manifattura e all’industria 4.0. Insieme al … Leggi tutto 2 Dicembre 2022 28"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "IMET",
+  "website": "http://www.imetsaws.com",
+  "domain": "imetsaws.com",
+  "tld": "com",
+  "groups": [
+   10
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectionError",
+  "families": {}
+ },
+ {
+  "name": "INNSE BERARDI",
+  "website": "http://www.innse-berardi.com",
+  "domain": "innse-berardi.com",
+  "tld": "com",
+  "groups": [
+   2,
+   3,
+   4,
+   5,
+   6,
+   22,
+   26
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectTimeout",
+  "families": {}
+ },
+ {
+  "name": "ISTECH",
+  "website": "http://www.istech-segatrici.com",
+  "domain": "istech-segatrici.com",
+  "tld": "com",
+  "groups": [
+   10
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ReadTimeout",
+  "families": {}
+ },
+ {
+  "name": "ITF",
+  "website": "http://www.itf.it",
+  "domain": "itf.it",
+  "tld": "it",
+  "groups": [
+   27
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectionError",
+  "families": {}
+ },
+ {
+  "name": "KIPP",
+  "website": "https://www.kipp.it",
+  "domain": "kipp.it",
+  "tld": "it",
+  "groups": [
+   1
+  ],
+  "pages_read": 0,
+  "status": "home_failed:403",
+  "families": {}
+ },
+ {
+  "name": "LAZZATI",
+  "website": "https://www.lazzati.eu",
+  "domain": "lazzati.eu",
+  "tld": "eu",
+  "groups": [
+   2,
+   5,
+   6
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 19,
+    "snippets": [
+     "LIA 1.0, enabling predictive maintenance and remote monitoring N Flexible applications One machine, multipl",
+     "d real-time updates during the service. Free Teleservice: By subscribing to a scheduled maintenance c"
+    ]
+   },
+   "iot_i40": {
+    "count": 11,
+    "snippets": [
+     "ng precision and value N Digital integration Industry 4.0/5.0 readiness with LHI 5.0 and LIA 1.0, enab",
+     "tatic, high-performance boring mills — fully Industry 4.0-ready — so our customers can focus on what t"
+    ]
+   },
+   "update": {
+    "count": 1,
+    "snippets": [
+     "ions, geometric checks, digital diagnostics, software updates and performance evaluations. Technologies su"
+    ]
+   },
+   "cyber": {
+    "count": 2,
+    "snippets": [
+     "ts and targeted interventions through secure NIS2 compliance remote connection. Additional LAZ",
+     "ZZATI Remote Diagnosis), which allows secure NIS2 compliance remote access to machine data and"
+    ]
+   }
+  }
+ },
+ {
+  "name": "LOSMA",
+  "website": "http://www.losma.it",
+  "domain": "losma.it",
+  "tld": "it",
+  "groups": [
+   26
+  ],
+  "pages_read": 0,
+  "status": "robots_disallowed",
+  "families": {}
+ },
+ {
+  "name": "LTF",
+  "website": "http://www.ltf.it",
+  "domain": "ltf.it",
+  "tld": "it",
+  "groups": [
+   2,
+   3,
+   4,
+   6,
+   8,
+   10,
+   11,
+   12,
+   13,
+   25,
+   26,
+   27
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "MAKINO",
+  "website": "http://www.makino.eu",
+  "domain": "makino.eu",
+  "tld": "eu",
+  "groups": [
+   1,
+   2,
+   4,
+   5,
+   6,
+   11,
+   14,
+   22,
+   24
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "MAUS ITALIA",
+  "website": "http://www.mausitalia.it",
+  "domain": "mausitalia.it",
+  "tld": "it",
+  "groups": [
+   2,
+   23
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "sign in order to offer a high-quality system Remote control with display Simple and intuitive interface"
+    ]
+   },
+   "iot_i40": {
+    "count": 3,
+    "snippets": [
+     "e bundle Maintenance Tube bundle cleaning Pneumatic cleaners Maintenance 01 Costumer oriented L",
+     "xchangers, boilers or condensers. Fastrol Pneumatic PUSH/PULL torque-controlled tube rolling mo"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "MAZAK",
+  "website": "http://www.mazak.com",
+  "domain": "mazak.com",
+  "tld": "com",
+  "groups": [
+   1,
+   2,
+   3,
+   19,
+   20,
+   22
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 38,
+    "snippets": [
+     "tware Free Trial Programming & Setup support Smart Factory Tool Management 5 Levels of Multi-Tasking Ne",
+     "tware Free Trial Programming & Setup support Smart Factory Tool Management Smooth Oscillation Cutting N"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "MELCHIORRE",
+  "website": "http://www.melchiorre.net",
+  "domain": "melchiorre.net",
+  "tld": "net",
+  "groups": [
+   11,
+   13,
+   27
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "MILLUTENSIL",
+  "website": "http://www.millutensil.com",
+  "domain": "millutensil.com",
+  "tld": "com",
+  "groups": [
+   16,
+   20
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "MONZESI",
+  "website": "http://www.monzesi.com",
+  "domain": "monzesi.com",
+  "tld": "com",
+  "groups": [
+   11
+  ],
+  "pages_read": 0,
+  "status": "home_failed:SSLError",
+  "families": {}
+ },
+ {
+  "name": "OERLIKON",
+  "website": "http://www.oerlikon.com",
+  "domain": "oerlikon.com",
+  "tld": "com",
+  "groups": [
+   27
+  ],
+  "pages_read": 0,
+  "status": "home_failed:ConnectTimeout",
+  "families": {}
+ },
+ {
+  "name": "ORT ITALIA",
+  "website": "http://www.ortitalia.com",
+  "domain": "ortitalia.com",
+  "tld": "com",
+  "groups": [
+   1,
+   7,
+   8,
+   13
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "PG",
+  "website": "https://www.pgsrl.eu/",
+  "domain": "pgsrl.eu",
+  "tld": "eu",
+  "groups": [
+   20,
+   21
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 9,
+    "snippets": [
+     "sistenza Service diretto, ricambi originali, teleassistenza CN [ DETAIL · 01 ] PG/CRAFT · MARIANO COMENS",
+     "o la sede di PG SRL a Mariano Comense. + A03 Teleassistenza remota Collegamento web remoto direttamente"
+    ]
+   },
+   "iot_i40": {
+    "count": 20,
+    "snippets": [
+     "bilità del processo. Compatibili con sistemi MES e Industria 4.0. Tolleranze ±0,1 mm Industri",
+     "del processo. Compatibili con sistemi MES e Industria 4.0. Tolleranze ±0,1 mm Industria 4.0 MES S.05 I"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "PRODUTECH",
+  "website": "http://www.produtech.it",
+  "domain": "produtech.it",
+  "tld": "it",
+  "groups": [
+   20,
+   21,
+   22
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "ed efficiente delle problematiche, mediante teleassistenza. Affidabilità garantita Affidabilità estrema"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "REGG INSPECTION",
+  "website": "https://www.regginspection.com/",
+  "domain": "regginspection.com",
+  "tld": "com",
+  "groups": [
+   8,
+   19,
+   25
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "a 360°. Supporto remoto Grazie al sistema di teleassistenza integrato con webcam, i nostri tecnici posso"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "REMA CONTROL",
+  "website": "http://www.remacontrol.it",
+  "domain": "remacontrol.it",
+  "tld": "it",
+  "groups": [
+   2,
+   6
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 1,
+    "snippets": [
+     "nnovative funzionalità di realtà aumentata e industria 4.0 Vi aspettiamo numerosi! 18-23 Settembre 2017"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "ROSA",
+  "website": "http://www.rosa.it",
+  "domain": "rosa.it",
+  "tld": "it",
+  "groups": [
+   11
+  ],
+  "pages_read": 5,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 6,
+    "snippets": [
+     "nza digitale di GrindTech Service+ : sensori IoT e sistemi di intelligenza artificiale monito",
+     "ne predittiva e prevenzione Grazie a sensori IoT e intelligenza artificiale, il sistema regis"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "SACMA LIMBIATE",
+  "website": "http://www.sacmagroup.com",
+  "domain": "sacmagroup.com",
+  "tld": "com",
+  "groups": [
+   3,
+   8,
+   14
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 4,
+    "snippets": [
+     "repairs at the customer's premises and even remote assistance. In this way, Sacma Group provides real prag",
+     "repairs at the customer's premises and even remote assistance. In this way, Sacma Group provides real prag"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "SCC",
+  "website": "http://www.sccitalia.it",
+  "domain": "sccitalia.it",
+  "tld": "it",
+  "groups": [
+   26
+  ],
+  "pages_read": 3,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "SERVOPRESSE",
+  "website": "http://www.servopresse.it",
+  "domain": "servopresse.it",
+  "tld": "it",
+  "groups": [
+   1,
+   16,
+   20,
+   21,
+   23
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 1,
+    "snippets": [
+     "impianti esistenti Assistenza post vendita e aggiornamenti software Via Enrico Fermi 48 20019 Settimo Milanese ("
+    ]
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "SITEC",
+  "website": "http://www.sitecmozzate.it",
+  "domain": "sitecmozzate.it",
+  "tld": "it",
+  "groups": [
+   1
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 2,
+    "snippets": [
+     "e revamping Assistenza e revamping Forniamo assistenza da remoto e interventi in loco su impianti di automaz",
+     "ato, da remoto o in stabilimento. Contattaci Assistenza da remoto o interventi on-site Lâ assistenza tecnic"
+    ]
+   },
+   "iot_i40": {
+    "count": 22,
+    "snippets": [
+     "tallazione e start-up Assistenza e revamping Industria 4.0 e 5.0 Case study Contatti Automazione indust",
+     "tenza e revamping $ Lavoriamo per creare lâindustria 4.0 e 5.0 In SITEC SRL progettiamo impianti di a"
+    ]
+   },
+   "update": {
+    "count": 1,
+    "snippets": [
+     "aggiorniamo, se necessario, parti software o firmware . Forniamo inoltre ricambi per componenti di"
+    ]
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "STREPARAVA",
+  "website": "https://www.streparava.com",
+  "domain": "streparava.com",
+  "tld": "com",
+  "groups": [
+   1,
+   2,
+   14
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "TACCHI",
+  "website": "http://www.tacchi.it",
+  "domain": "tacchi.it",
+  "tld": "it",
+  "groups": [
+   3,
+   4,
+   13
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "osì la possibilità di collegarsi in modalità tele-assistenza, condividere con i nostri specialisti i para"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "TECNO DELTA",
+  "website": "http://www.tecno-delta.it",
+  "domain": "tecno-delta.it",
+  "tld": "it",
+  "groups": [
+   14,
+   22
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "TORNOS",
+  "website": "http://www.tornos.com",
+  "domain": "tornos.com",
+  "tld": "com",
+  "groups": [
+   3
+  ],
+  "pages_read": 6,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "TTC",
+  "website": "http://www.imuspa.it",
+  "domain": "imuspa.it",
+  "tld": "it",
+  "groups": [
+   2,
+   3,
+   5,
+   6,
+   24,
+   25
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "UNITED MACHINING",
+  "website": "http://www.gfms.com/it",
+  "domain": "gfms.com",
+  "tld": "com",
+  "groups": [
+   2,
+   6,
+   22
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 1,
+    "snippets": [
+     "consumo Pezzi originali eCatalog My rConnect OPC UA Eventi e fiere Venite a trovarci di persona"
+    ]
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 1,
+    "snippets": [
+     "di United Machining Responsabilità aziendale Cybersicurezza e sicurezza dei prodotti Sostenibilità Sedi"
+    ]
+   }
+  }
+ },
+ {
+  "name": "VARINELLI",
+  "website": "http://www.varinelli.com",
+  "domain": "varinelli.com",
+  "tld": "com",
+  "groups": [
+   9,
+   12
+  ],
+  "pages_read": 2,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "WALCO",
+  "website": "http://www.walcosrl.it",
+  "domain": "walcosrl.it",
+  "tld": "it",
+  "groups": [
+   14,
+   17,
+   26
+  ],
+  "pages_read": 1,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "WALLRAM GRINDTEC",
+  "website": "http://lizzini.de",
+  "domain": "lizzini.de",
+  "tld": "de",
+  "groups": [
+   11
+  ],
+  "pages_read": 3,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 0,
+    "snippets": []
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ },
+ {
+  "name": "ZANI",
+  "website": "http://www.zani.net",
+  "domain": "zani.net",
+  "tld": "net",
+  "groups": [
+   15,
+   20
+  ],
+  "pages_read": 4,
+  "status": "ok",
+  "families": {
+   "remote": {
+    "count": 1,
+    "snippets": [
+     "posizione almeno tre modalità di assistenza: TELE-SERVICE (per una prima tempestiva diagnosi via remot"
+    ]
+   },
+   "iot_i40": {
+    "count": 0,
+    "snippets": []
+   },
+   "update": {
+    "count": 0,
+    "snippets": []
+   },
+   "cyber": {
+    "count": 0,
+    "snippets": []
+   }
+  }
+ }
+]
