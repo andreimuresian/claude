@@ -1,0 +1,854 @@
+[
+ {
+  "slug": "ab-mach",
+  "name": "AB MACH",
+  "city": "VIGEVANO",
+  "prov": "PV"
+ },
+ {
+  "slug": "abb",
+  "name": "ABB",
+  "city": "SESTO SAN GIOVANNI",
+  "prov": "MI"
+ },
+ {
+  "slug": "abb-robotics",
+  "name": "ABB ROBOTICS",
+  "city": "SESTO SAN GIOVANNI",
+  "prov": "MI"
+ },
+ {
+  "slug": "aida",
+  "name": "AIDA",
+  "city": "PAVONE DEL MELLA",
+  "prov": "BS"
+ },
+ {
+  "slug": "alberti",
+  "name": "ALBERTI",
+  "city": "SARONNO",
+  "prov": "VA"
+ },
+ {
+  "slug": "farina-presse",
+  "name": "ANDRITZ FARINA PRESSE",
+  "city": "SUELLO",
+  "prov": "LC"
+ },
+ {
+  "slug": "argomatic",
+  "name": "ARGOMATIC",
+  "city": "OSIO SOTTO",
+  "prov": "BG"
+ },
+ {
+  "slug": "asservimentipresse",
+  "name": "ASSERVIMENTIPRESSE",
+  "city": "MASSALENGO",
+  "prov": "LO"
+ },
+ {
+  "slug": "automator",
+  "name": "AUTOMATOR",
+  "city": "CORSICO",
+  "prov": "MI"
+ },
+ {
+  "slug": "br-automazione-industriale",
+  "name": "B&R AUTOMAZIONE INDUSTRIALE",
+  "city": "CESATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "balance-systems",
+  "name": "BALANCE SYSTEMS",
+  "city": "PESSANO CON BORNAGO",
+  "prov": "MI"
+ },
+ {
+  "slug": "balconi",
+  "name": "BALCONI",
+  "city": "VAREDO",
+  "prov": "MB"
+ },
+ {
+  "slug": "baruffaldi",
+  "name": "BARUFFALDI",
+  "city": "TRIBIANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "bcodeautomation",
+  "name": "BCODEAUTOMATION",
+  "city": "BIASSONO",
+  "prov": "MB"
+ },
+ {
+  "slug": "belotti",
+  "name": "BELOTTI",
+  "city": "SUISIO",
+  "prov": "BG"
+ },
+ {
+  "slug": "gmg-lathes",
+  "name": "BENTIVOGLIO MAKE & TRADE",
+  "city": "ROVATO",
+  "prov": "BS"
+ },
+ {
+  "slug": "blm",
+  "name": "BLM",
+  "city": "CANTÙ",
+  "prov": "CO"
+ },
+ {
+  "slug": "bonetti-costruzioni-meccaniche",
+  "name": "BONETTI",
+  "city": "CASTELLEONE",
+  "prov": "CR"
+ },
+ {
+  "slug": "bosch-rexroth",
+  "name": "BOSCH REXROTH",
+  "city": "CERNUSCO SUL NAVIGLIO",
+  "prov": "MI"
+ },
+ {
+  "slug": "bragonzi",
+  "name": "BRAGONZI",
+  "city": "LONATE POZZOLO",
+  "prov": "VA"
+ },
+ {
+  "slug": "bruno-balducci",
+  "name": "BRUNO BALDUCCI",
+  "city": "LODI",
+  "prov": "LO"
+ },
+ {
+  "slug": "bsd",
+  "name": "BSD",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "buffoli-transfer",
+  "name": "BUFFOLI TRANSFER",
+  "city": "BRESCIA",
+  "prov": "BS"
+ },
+ {
+  "slug": "bystronic",
+  "name": "BYSTRONIC",
+  "city": "Rozzano",
+  "prov": "MI"
+ },
+ {
+  "slug": "camu",
+  "name": "CAMU",
+  "city": "LEGNANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "carlo-salvi",
+  "name": "CARLO SALVI",
+  "city": "GARLATE",
+  "prov": "LC"
+ },
+ {
+  "slug": "carnaghi-mario",
+  "name": "CARNAGHI MARIO",
+  "city": "OLGIATE OLONA",
+  "prov": "VA"
+ },
+ {
+  "slug": "carpenteria-colombo",
+  "name": "CARPENTERIA COLOMBO",
+  "city": "MONTE MARENZO",
+  "prov": "LC"
+ },
+ {
+  "slug": "cb-ferrari",
+  "name": "CB FERRARI",
+  "city": "MORNAGO",
+  "prov": "VA"
+ },
+ {
+  "slug": "cemb",
+  "name": "CEMB",
+  "city": "MANDELLO DEL LARIO",
+  "prov": "LC"
+ },
+ {
+  "slug": "cemsa-international",
+  "name": "CEMSA INTERNATIONAL",
+  "city": "COLOGNO MONZESE",
+  "prov": "MI"
+ },
+ {
+  "slug": "ceratizit-italia",
+  "name": "CERATIZIT ITALIA",
+  "city": "CINISELLO BALSAMO",
+  "prov": "MI"
+ },
+ {
+  "slug": "chiron",
+  "name": "CHIRON",
+  "city": "RODANO MILLEPINI",
+  "prov": "MI"
+ },
+ {
+  "slug": "cia",
+  "name": "CIA AUTOMATION AND ROBOTICS",
+  "city": "ALBIATE",
+  "prov": "MB"
+ },
+ {
+  "slug": "cms",
+  "name": "CMS",
+  "city": "ZOGNO",
+  "prov": "BG"
+ },
+ {
+  "slug": "comat",
+  "name": "COMAT",
+  "city": "OSSONA",
+  "prov": "MI"
+ },
+ {
+  "slug": "comi",
+  "name": "COMI",
+  "city": "CISERANO",
+  "prov": "BG"
+ },
+ {
+  "slug": "cosberg",
+  "name": "COSBERG",
+  "city": "TERNO D'ISOLA",
+  "prov": "BG"
+ },
+ {
+  "slug": "cosema-trading",
+  "name": "COSEMA INTERNATIONAL",
+  "city": "LOMAGNA",
+  "prov": "LC"
+ },
+ {
+  "slug": "crippa",
+  "name": "CRIPPA",
+  "city": "AROSIO",
+  "prov": "CO"
+ },
+ {
+  "slug": "cucchi-giovanni",
+  "name": "CUCCHI GIOVANNI",
+  "city": "BUSSERO",
+  "prov": "MI"
+ },
+ {
+  "slug": "dandrea",
+  "name": "D'ANDREA",
+  "city": "LAINATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "delta",
+  "name": "DELTA",
+  "city": "CURA CARPIGNANO",
+  "prov": "PV"
+ },
+ {
+  "slug": "gildemeister-italiana",
+  "name": "DMG MORI BERGAMO",
+  "city": "BREMBATE DI SOPRA",
+  "prov": "BG"
+ },
+ {
+  "slug": "elbo-controlli",
+  "name": "ELBO CONTROLLI",
+  "city": "MEDA",
+  "prov": "MB"
+ },
+ {
+  "slug": "elesa",
+  "name": "ELESA",
+  "city": "MONZA",
+  "prov": "MB"
+ },
+ {
+  "slug": "emag-su",
+  "name": "EMAG SU",
+  "city": "SAN GIULIANO MILANESE",
+  "prov": "MI"
+ },
+ {
+  "slug": "fagor",
+  "name": "FAGOR",
+  "city": "CASSINA DE' PECCHI",
+  "prov": "MI"
+ },
+ {
+  "slug": "fanuc",
+  "name": "FANUC",
+  "city": "LAINATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "fap",
+  "name": "FAP",
+  "city": "BESANA IN BRIANZA",
+  "prov": "MB"
+ },
+ {
+  "slug": "felm",
+  "name": "FELM",
+  "city": "INVERUNO",
+  "prov": "MI"
+ },
+ {
+  "slug": "festo",
+  "name": "FESTO",
+  "city": "ASSAGO",
+  "prov": "MI"
+ },
+ {
+  "slug": "ficep",
+  "name": "FICEP",
+  "city": "GAZZADA SCHIANNO",
+  "prov": "VA"
+ },
+ {
+  "slug": "fium",
+  "name": "FIUM",
+  "city": "ROBECCO SUL NAVIGLIO",
+  "prov": "MI"
+ },
+ {
+  "slug": "carnaghi-pietro",
+  "name": "FIVES PIETRO CARNAGHI",
+  "city": "VILLA CORTESE",
+  "prov": "MI"
+ },
+ {
+  "slug": "fraisa-italia",
+  "name": "FRAISA ITALIA",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "galdabini",
+  "name": "GALDABINI",
+  "city": "CARDANO AL CAMPO",
+  "prov": "VA"
+ },
+ {
+  "slug": "gerardi",
+  "name": "GERARDI",
+  "city": "LONATE POZZOLO",
+  "prov": "VA"
+ },
+ {
+  "slug": "ghiringhelli",
+  "name": "GHIRINGHELLI",
+  "city": "LUINO",
+  "prov": "VA"
+ },
+ {
+  "slug": "gima-technology",
+  "name": "GIMA TECHNOLOGY",
+  "city": "SUMIRAGO",
+  "prov": "VA"
+ },
+ {
+  "slug": "giuseppe-giana",
+  "name": "GIUSEPPE GIANA",
+  "city": "MAGNAGO",
+  "prov": "MI"
+ },
+ {
+  "slug": "gozio",
+  "name": "GOZIO",
+  "city": "OSPITALETTO",
+  "prov": "BS"
+ },
+ {
+  "slug": "haimer",
+  "name": "HAIMER",
+  "city": "BERNAREGGIO",
+  "prov": "MB"
+ },
+ {
+  "slug": "heidenhain",
+  "name": "HEIDENHAIN ITALIANA",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "hilti",
+  "name": "HILTI ITALIA",
+  "city": "SESTO SAN GIOVANNI",
+  "prov": "MI"
+ },
+ {
+  "slug": "hiwin",
+  "name": "HIWIN",
+  "city": "BRUGHERIO",
+  "prov": "MB"
+ },
+ {
+  "slug": "holonix",
+  "name": "HOLONIX",
+  "city": "MEDA",
+  "prov": "MB"
+ },
+ {
+  "slug": "hurco",
+  "name": "HURCO",
+  "city": "ROZZANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "imet",
+  "name": "IMET",
+  "city": "CISANO BERGAMASCO",
+  "prov": "BG"
+ },
+ {
+  "slug": "innse-berardi",
+  "name": "INNSE BERARDI",
+  "city": "BRESCIA",
+  "prov": "BS"
+ },
+ {
+  "slug": "iscar",
+  "name": "ISCAR",
+  "city": "LAINATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "iss",
+  "name": "ISS",
+  "city": "LOMAZZO",
+  "prov": "CO"
+ },
+ {
+  "slug": "istech",
+  "name": "ISTECH",
+  "city": "VANZAGO",
+  "prov": "MI"
+ },
+ {
+  "slug": "itf",
+  "name": "ITF",
+  "city": "MESERO",
+  "prov": "MI"
+ },
+ {
+  "slug": "kennametal",
+  "name": "KENNAMETAL",
+  "city": "ASSAGO",
+  "prov": "MI"
+ },
+ {
+  "slug": "kipp",
+  "name": "KIPP",
+  "city": "SARONNO",
+  "prov": "VA"
+ },
+ {
+  "slug": "la-protec",
+  "name": "LA PROTEC",
+  "city": "SAN GIOVANNI IN CROCE",
+  "prov": "CR"
+ },
+ {
+  "slug": "lapp",
+  "name": "LAPP",
+  "city": "DESIO",
+  "prov": "MB"
+ },
+ {
+  "slug": "lazzati",
+  "name": "LAZZATI",
+  "city": "RESCALDINA",
+  "prov": "MI"
+ },
+ {
+  "slug": "leuze-electronic",
+  "name": "LEUZE ELECTRONIC",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "lorenzon",
+  "name": "LORENZON",
+  "city": "BOLLATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "losma",
+  "name": "LOSMA",
+  "city": "CURNO",
+  "prov": "BG"
+ },
+ {
+  "slug": "ltf",
+  "name": "LTF",
+  "city": "ANTEGNATE",
+  "prov": "BG"
+ },
+ {
+  "slug": "makino",
+  "name": "MAKINO",
+  "city": "CAVENAGO DI BRIANZA",
+  "prov": "MB"
+ },
+ {
+  "slug": "mapal",
+  "name": "MAPAL ITALIA",
+  "city": "GESSATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "maus",
+  "name": "MAUS ITALIA",
+  "city": "BAGNOLO CREMASCO",
+  "prov": "CR"
+ },
+ {
+  "slug": "mazak",
+  "name": "MAZAK",
+  "city": "CERRO MAGGIORE",
+  "prov": "MI"
+ },
+ {
+  "slug": "melchiorre",
+  "name": "MELCHIORRE",
+  "city": "BOLLATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "millutensil",
+  "name": "MILLUTENSIL",
+  "city": "IZANO",
+  "prov": "CR"
+ },
+ {
+  "slug": "mitsubishi-electric",
+  "name": "MITSUBISHI ELECTRIC EUROPE",
+  "city": "VIMERCATE",
+  "prov": "MB"
+ },
+ {
+  "slug": "mitutoyo",
+  "name": "MITUTOYO",
+  "city": "LAINATE",
+  "prov": "MI"
+ },
+ {
+  "slug": "mmc-italia",
+  "name": "MMC ITALIA",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "monguzzi",
+  "name": "MONGUZZI",
+  "city": "BIASSONO",
+  "prov": "MB"
+ },
+ {
+  "slug": "monzesi",
+  "name": "MONZESI",
+  "city": "NOVA MILANESE",
+  "prov": "MB"
+ },
+ {
+  "slug": "moretti",
+  "name": "MORETTI",
+  "city": "VILLA GUARDIA",
+  "prov": "CO"
+ },
+ {
+  "slug": "num",
+  "name": "NUM",
+  "city": "CUGGIONO",
+  "prov": "MI"
+ },
+ {
+  "slug": "oerlikon",
+  "name": "OERLIKON",
+  "city": "BRUGHERIO",
+  "prov": "MB"
+ },
+ {
+  "slug": "ort-italia",
+  "name": "ORT ITALIA",
+  "city": "TICENGO",
+  "prov": "CR"
+ },
+ {
+  "slug": "pg",
+  "name": "PG",
+  "city": "MARIANO COMENSE",
+  "prov": "CO"
+ },
+ {
+  "slug": "produtech",
+  "name": "PRODUTECH",
+  "city": "ALBANO SANT'ALESSANDRO",
+  "prov": "BG"
+ },
+ {
+  "slug": "regg-inspection",
+  "name": "REGG INSPECTION",
+  "city": "GORGONZOLA",
+  "prov": "MI"
+ },
+ {
+  "slug": "rego-fix",
+  "name": "REGO-FIX",
+  "city": "LOMAZZO",
+  "prov": "CO"
+ },
+ {
+  "slug": "rema-control",
+  "name": "REMA CONTROL",
+  "city": "STEZZANO",
+  "prov": "BG"
+ },
+ {
+  "slug": "repar-2",
+  "name": "REPAR 2",
+  "city": "GORLA MINORE",
+  "prov": "VA"
+ },
+ {
+  "slug": "rime",
+  "name": "RIME",
+  "city": "PREGNO DI VILLA CARCINA",
+  "prov": "BS"
+ },
+ {
+  "slug": "rockwell-automation",
+  "name": "ROCKWELL AUTOMATION",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "rohm-italia",
+  "name": "ROHM ITALIA",
+  "city": "SETTIMO MILANESE",
+  "prov": "MI"
+ },
+ {
+  "slug": "rosa",
+  "name": "ROSA",
+  "city": "RESCALDINA",
+  "prov": "MI"
+ },
+ {
+  "slug": "rosa-sistemi",
+  "name": "ROSA SISTEMI",
+  "city": "LEGNANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "sacma-limbiate",
+  "name": "SACMA LIMBIATE",
+  "city": "LIMBIATE",
+  "prov": "MB"
+ },
+ {
+  "slug": "sandvik",
+  "name": "SANDVIK",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "scaglia-indeva",
+  "name": "SCAGLIA INDEVA",
+  "city": "VAL BREMBILLA",
+  "prov": "BG"
+ },
+ {
+  "slug": "scc",
+  "name": "SCC",
+  "city": "CODEVILLA",
+  "prov": "PV"
+ },
+ {
+  "slug": "schneider-electric",
+  "name": "SCHNEIDER ELECTRIC",
+  "city": "STEZZANO",
+  "prov": "BG"
+ },
+ {
+  "slug": "schunk-intec",
+  "name": "SCHUNK INTEC",
+  "city": "LURATE CACCIVIO",
+  "prov": "CO"
+ },
+ {
+  "slug": "seco",
+  "name": "SECO",
+  "city": "GUANZATE",
+  "prov": "CO"
+ },
+ {
+  "slug": "serinex",
+  "name": "SERINEX",
+  "city": "ANNONE DI BRIANZA",
+  "prov": "LC"
+ },
+ {
+  "slug": "servitly",
+  "name": "SERVITLY",
+  "city": "LOMAZZO",
+  "prov": "CO"
+ },
+ {
+  "slug": "servopresse",
+  "name": "SERVOPRESSE",
+  "city": "SETTIMO MILANESE",
+  "prov": "MI"
+ },
+ {
+  "slug": "sick",
+  "name": "SICK",
+  "city": "VIMODRONE",
+  "prov": "MI"
+ },
+ {
+  "slug": "siemens",
+  "name": "SIEMENS",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "sitec",
+  "name": "SITEC",
+  "city": "MOZZATE",
+  "prov": "CO"
+ },
+ {
+  "slug": "softeam",
+  "name": "SOFTEAM",
+  "city": "LECCO",
+  "prov": "LC"
+ },
+ {
+  "slug": "speroni",
+  "name": "SPERONI",
+  "city": "SOSTEGNO DI SPESSA",
+  "prov": "PV"
+ },
+ {
+  "slug": "streparava",
+  "name": "STREPARAVA",
+  "city": "ADRO",
+  "prov": "BS"
+ },
+ {
+  "slug": "tacchi",
+  "name": "TACCHI",
+  "city": "CASTANO PRIMO",
+  "prov": "MI"
+ },
+ {
+  "slug": "tamburini",
+  "name": "TAMBURINI",
+  "city": "MAZZANO",
+  "prov": "BS"
+ },
+ {
+  "slug": "technai",
+  "name": "TECHNAI",
+  "city": "LONATE POZZOLO",
+  "prov": "VA"
+ },
+ {
+  "slug": "tecnica-1",
+  "name": "TECNICA",
+  "city": "BRESCIA",
+  "prov": "BS"
+ },
+ {
+  "slug": "tecno-delta",
+  "name": "TECNO DELTA",
+  "city": "SARONNO",
+  "prov": "VA"
+ },
+ {
+  "slug": "tiesse-robot",
+  "name": "TIESSE ROBOT",
+  "city": "VISANO",
+  "prov": "BS"
+ },
+ {
+  "slug": "tornos",
+  "name": "TORNOS",
+  "city": "RHO",
+  "prov": "MI"
+ },
+ {
+  "slug": "ttc",
+  "name": "TTC",
+  "city": "BUCCINASCO",
+  "prov": "MI"
+ },
+ {
+  "slug": "ubiemme-guhring",
+  "name": "UBIEMME GUHRING",
+  "city": "CORNAREDO",
+  "prov": "MI"
+ },
+ {
+  "slug": "gf-machining-solutions",
+  "name": "UNITED MACHINING",
+  "city": "AGRATE BRIANZA",
+  "prov": "MB"
+ },
+ {
+  "slug": "varinelli",
+  "name": "VARINELLI",
+  "city": "ARCORE",
+  "prov": "MB"
+ },
+ {
+  "slug": "vimas",
+  "name": "VIMAS",
+  "city": "CARDANO AL CAMPO",
+  "prov": "VA"
+ },
+ {
+  "slug": "walco",
+  "name": "WALCO",
+  "city": "MILANO",
+  "prov": "MI"
+ },
+ {
+  "slug": "wallram",
+  "name": "WALLRAM GRINDTEC",
+  "city": "MONTICHIARI",
+  "prov": "BS"
+ },
+ {
+  "slug": "walter-italia",
+  "name": "WALTER ITALIA",
+  "city": "CADORAGO",
+  "prov": "CO"
+ },
+ {
+  "slug": "weidmuller",
+  "name": "WEIDMULLER",
+  "city": "CINISELLO BALSAMO",
+  "prov": "MI"
+ },
+ {
+  "slug": "zani",
+  "name": "ZANI",
+  "city": "TURATE",
+  "prov": "CO"
+ }
+]
