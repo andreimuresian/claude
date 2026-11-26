@@ -142,14 +142,37 @@ eqrow(s, "4.", "Matching 2 and 3", "eq_ts_zc", 4.1, 0.34, xe=1.0); eqimg(s, "eq_
 eqrow(s, "5.", "Attenuation and microwave index", "eq_ts_an", 4.95, 0.46)
 card(s, 0.5, 5.95, 12.35, 1.0, "Limit", ["Port transitions are folded into γ and Z_{c}. At βL = mπ, sinh γL ≈ 0: B and C both vanish and Z_{c} = √(B/C) is set by the ports."], hc=RED, size=12.5)
 
-# 3 ---------------------------------------------------------------- field extraction
-s = new(); title(s, "Field extraction of α, n_{m} and Z_{c}", "Gap voltage along the line, fitted with a forward and a backward wave")
-eqrow(s, "1.", "Gap voltage from E_{y} at the centre of both gaps (x = 1 µm), 5 µm steps", "eq_f_v", 1.5, 0.42)
-eqrow(s, "2.", "Least squares on γ; V^{+}, V^{−} solved linearly for each trial γ; 0.18 mm excluded at each end", "eq_f_fit", 2.42, 0.36)
-eqrow(s, "3.", "Attenuation and microwave index", "eq_f_an", 3.28, 0.36)
-eqrow(s, "4.", "Impedance from the reflection at port 2 (z = L, 50 Ω load)", "eq_f_zc", 4.14, 0.44)
-card(s, 0.5, 5.15, 6.05, 1.8, "Strength", ["γ is fitted away from the ends: ports only set V^{+} and V^{−}. Reflections are kept as V^{−} (|Γ_{L}| ≈ 0.08). Fit residual ≤ 2.3 %."], size=12.5)
-card(s, 6.8, 5.15, 6.05, 1.8, "Limit", ["Z_{c} needs the load at z = L: the port-2 transition enters Z_{c}. Below ≈ 4 GHz the line is < 0.05 λ long and the two waves are hard to separate."], hc=RED, size=12.5)
+# 3 ---------------------------------------------------------------- field extraction (1/2)
+EK = 0.0028   # inches per pixel of the equation images
+def eqk(s, name, x, y):
+    H_ = Image.open(os.path.join(IMG, name + ".png")).size[1]; eqimg(s, name, x, y, H_ * EK); return y + H_ * EK
+s = new(); title(s, "Field extraction (1/2): gap voltage and two-wave fit", "A uniform single-mode line carries one forward and one backward wave: their standing wave fixes γ")
+fig(s, "field_fit_30GHz.png", 0.5, 1.45, 6.2, 5.07, "Gap voltage along the straight line at 30 GHz: samples, cell average and two-wave fit")
+X = 6.95
+text(s, X, 1.42, 5.9, 0.5, "**1. Gap voltage.** E_{y} (field across the gap) read at the centre of the upper and lower gap, electrode mid-height (x = 1 µm), every 5 µm:", size=11.5)
+y = eqk(s, "eq4_v", X + 0.2, 1.95)
+text(s, X, y + 0.04, 5.9, 0.3, "**2. Model.** One forward and one backward wave:", size=11.5)
+y = eqk(s, "eq4_model", X + 0.2, y + 0.36)
+text(s, X, y + 0.06, 5.9, 0.55, "**3. Fit.** 649 complex equations, three unknowns: for each trial γ, V^{+} and V^{−} by linear least squares; γ adjusted until the misfit is smallest:", size=11.5)
+y = eqk(s, "eq4_fit", X + 0.2, y + 0.62)
+text(s, X, y + 0.04, 5.9, 0.3, "One minimum for n_{m} = 1.5–3.5 (checked 10–130 GHz); start from the touchstone γ.", size=10.5, color=MUTED)
+text(s, X, y + 0.42, 5.9, 0.95, "**4. Cell average.** The field at the sample point halves over 15 µm of each 0.18 mm cell (tee aperture, zoom). γ is the change from cell to cell, so V is averaged over one cell before the fit: misfit 14 % → 0.5 %.", size=11.5)
+note(s, "Files L1_gap+.txt (y = -0.082925 mm) and L1_gap-.txt (y = -0.122075 mm), x = 0.001 mm, z step 5 um, 649 samples; columns EyRe, EyIm. GAP = 4.45 um. The two gap fields point in opposite directions for the line mode, hence the difference. Outer fit: scipy least_squares on (alpha, beta); inner: 649 x 2 linear least squares. Fit range 0.18-3.06 mm (end cut tested: <= 0.0008 in n_m above 4 GHz). 30 GHz: n_m 2.226, alpha 2.22 dB/cm, |V-/V+| 0.07.")
+
+# 3b --------------------------------------------------------------- field extraction (2/2)
+s = new(); title(s, "Field extraction (2/2): results, assumptions, limits", "Same fit; α and n_{m} from γ, Z_{c} from the reflection at port 2")
+text(s, 0.5, 1.45, 6.0, 0.3, "**Attenuation and microwave index**", size=12)
+eqk(s, "eq4_an", 0.7, 1.8)
+text(s, 6.8, 1.45, 6.0, 0.3, "**Impedance: port 2 taken as a 50 Ω load at z = L**", size=12)
+eqk(s, "eq4_zc", 7.0, 1.8)
+table(s, 0.5, 2.55, 12.35, [["Assumption", "Strength", "Evidence"],
+      ["One propagating mode", "Strong", "Two waves leave 0.5 % misfit after the cell average"],
+      ["Uniform line (same γ everywhere)", "Strong", "Cell 0.18 mm ≤ λ/5.6 at 130 GHz; cells reflect coherently only near 360 GHz"],
+      ["Point field ∝ gap voltage", "Weak, no effect here", "The scale factor cancels in γ and in Γ_{L}"],
+      ["Port 2 is an ideal 50 Ω load", "Weak, Z_{c} only", "The port transition enters Z_{c}: Im Z_{c} differs from the touchstone by up to 2 Ω"],
+      ["Line long enough for a standing wave", "Weak below 4 GHz", "Line < 0.05 λ: the processing choices move n_{m} by up to 0.07 at 1 GHz"]], [3.4, 2.3, 6.65], size=11, row_h=0.36)
+card(s, 0.5, 4.9, 6.05, 2.05, "Processing checks (≥ 4 GHz)", ["Without the cell average: Δn_{m} ≤ 0.002, Δα ≤ 0.006 dB/cm, ΔZ_{c} ≤ 0.2 Ω. Without the 0.18 mm end cut: Δn_{m} ≤ 0.001, Δα ≤ 0.005 dB/cm. Below 4 GHz the field route is not reliable."], size=11.5)
+card(s, 6.8, 4.9, 6.05, 2.05, "Z_{c} from the H field (10 + 5 + 5 run)", ["Current from the H loop: Re Z_{c} = 39–40 Ω on all three lines, 8 % below the touchstone: the voltage is still point field × gap. Power flow (Z_{c} = 2P/|I|^{2}) needs E and H on one plane of a straight line: not done yet."], hc=RED, size=11.5)
 
 # 4 ---------------------------------------------------------------- line: touchstone vs fields
 s = new(); title(s, "Line parameters: touchstone and fields agree", "Straight line 3.24 mm (L+S run), 50 Ω ports, 0–130 GHz")
