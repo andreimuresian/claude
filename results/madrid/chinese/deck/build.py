@@ -7,7 +7,7 @@ C = "/home/user/claude/results/madrid/chinese/"; RED = RGBColor(0xC0, 0x39, 0x2B
 first_new = len(prs.slides); B = {"size": 12, "space": 4}; H = lambda t: (t, {"size": 15, "bold": True, "color": NAVY, "space": 8})
 # 1 design
 s = new("MTX tall – Chinese version: design", "Etched slab (SLAB_W), gold directly on LN/BOX (no buffer, no ALD) · femwell 2D FEM, C+L band 1525–1625 nm")
-image(s, C + "deck/xs.png", 0.4, 1.55, w=7.9)
+image(s, C + "deck/xs_user.png", 0.4, 1.9, w=8.0)
 table(s, [["Parameter", "Value"], ["LN film / etch", "550 / 275 nm, 60°"], ["WG_W (rib top)", "1.5 µm"], ["GAP", "4.0 µm"], ["SLAB_W (swept)", "4.0 – 6.0 µm"],
           ["CAP_W × CAP_H", "2.5 × 1.4 µm (SiO₂)"], ["MTX_signal / MTX_ground", "10 / 0.5 µm"], ["Gold over slab", "conformal; wraps slab end"]],
       8.6, 1.7, 4.3, [2.2, 2.1], size=11)
@@ -22,7 +22,7 @@ box(s, 8.5, 1.8, 4.3, 3.6, [H("Choice: MESH_SCALE 1.4"), ("Vπ·L converged (≤
     ("Peak positions and trends reliable; absolute IL slightly pessimistic", B)])
 # 3 sweep
 s = new("Standing wave across the C+L band", "SLAB_W 4.0–6.0 µm (0.1 µm step) × λ 1525–1625 nm (25 nm step) · 105 FEM runs")
-image(s, C + "chinese_sweep.png", 0.35, 1.55, w=12.6)
+image(s, C + "chinese_sweep.png", 1.55, 1.55, w=10.2)
 box(s, 0.6, 5.5, 4.0, 1.3, [("Resonance at SLAB_W ≈ 4.8 µm (1525–1575) → 4.9 µm (1600–1625): IL 10–24 dB/cm", {"size": 11})])
 box(s, 4.75, 5.5, 4.0, 1.3, [("Low-IL windows: 4.2–4.5 µm (0.16–0.33) and 5.6–6.0 µm (0.08–0.19 dB/cm)", {"size": 11})])
 box(s, 8.9, 5.5, 3.9, 1.3, [("Vπ·L flat for SLAB_W ≥ 4.6 µm: 1.94 (1525) → 2.12 V·cm (1625)", {"size": 11})])
