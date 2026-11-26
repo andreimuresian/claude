@@ -21,19 +21,19 @@ table(s, rows, 0.6, 1.8, 7.6, [1.2, 1.0, 1.5, 1.9, 2.0], size=11)
 box(s, 8.5, 1.8, 4.3, 3.6, [H("Choice: MESH_SCALE 1.4"), ("Vπ·L converged (≤ 0.07 %)", B), ("IL 0.2–9 % high vs 0.85 (largest on the resonance flank)", B),
     ("Peak positions and trends reliable; absolute IL slightly pessimistic", B)])
 # 3 sweep
-s = new("Standing wave across the C+L band", "SLAB_W 4.0–6.0 µm (0.1 µm step) × λ 1525–1625 nm (25 nm step) · 105 FEM runs")
+s = new("Standing wave across the C+L band", "SLAB_W 4.0–9.0 µm (0.1 µm step to 6, 0.2 µm beyond) × λ 1525–1625 nm (25 nm step) · 180 FEM runs")
 image(s, C + "chinese_sweep.png", 1.55, 1.55, w=10.2)
-box(s, 0.6, 5.5, 4.0, 1.3, [("Resonance at SLAB_W ≈ 4.8 µm (1525–1575) → 4.9 µm (1600–1625): IL 10–24 dB/cm", {"size": 11})])
-box(s, 4.75, 5.5, 4.0, 1.3, [("Low-IL windows: 4.2–4.5 µm (0.16–0.33) and 5.6–6.0 µm (0.08–0.19 dB/cm)", {"size": 11})])
+box(s, 0.6, 5.5, 4.0, 1.3, [("Resonances every ≈ 1.9 µm: 4.8–4.9, 6.6–7.0, 8.4–9.0 µm; they shift to larger SLAB_W with λ", {"size": 11})])
+box(s, 4.75, 5.5, 4.0, 1.3, [("Widest low-IL window: 5.5–6.2 µm, worst-case IL ≤ 0.29 dB/cm over C+L. Next one (7.6–8.0 µm) is narrower and lossier", {"size": 11})])
 box(s, 8.9, 5.5, 3.9, 1.3, [("Vπ·L flat for SLAB_W ≥ 4.6 µm: 1.94 (1525) → 2.12 V·cm (1625)", {"size": 11})])
 # 4 conclusions
 s = new("Conclusions", "MTX tall – Chinese version")
 table(s, [["SLAB_W (1625 nm)", "Vπ·L (V·cm)", "IL (dB/cm)", "Note"], ["4.6 µm (drawn)", "2.11", "0.57", "on resonance flank"],
-          ["≈ 5.7 µm", "2.12", "≈ 0.17", "recommended"]],
+          ["5.9 µm", "2.12", "0.19", "recommended, ±0.3 µm"]],
       0.6, 1.8, 8.2, [2.6, 1.6, 1.6, 2.4], size=13, highlight=(2,))
 box(s, 0.6, 3.0, 8.2, 1.05, [("No buffer → slab end under gold acts as a mirror → standing-wave resonance", B),
-    ("Move SLAB_W to ≈ 5.7 µm (or 4.3–4.4 µm) for low IL across C+L", B)])
-box(s, 9.1, 1.8, 3.7, 1.3, [H("Notes"), ("Mesh 1.4: IL ≤ 9 % high", B), ("Optional fine sweep 4.6–5.1 µm", B)])
+    ("Nominal SLAB_W 5.9 µm: tolerates ±0.3 µm with IL ≤ 0.25 dB/cm across C+L", B)])
+box(s, 9.1, 1.8, 3.7, 1.3, [H("Notes"), ("Mesh 1.4: IL ≤ 9 % high", B), ("Peak heights under-sampled (0.2 µm step above 6 µm)", B)])
 sldIdLst = prs.slides._sldIdLst
 for sid in list(sldIdLst)[:first_new]:
     prs.part.drop_rel(sid.rId); sldIdLst.remove(sid)

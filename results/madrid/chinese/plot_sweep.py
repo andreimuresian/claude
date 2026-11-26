@@ -8,7 +8,7 @@ for w,c in zip(W,cm):
     il=np.array([r["IL_dBcm"] for r in s]); i=int(np.argmax(il)); print(f"{w*1e3:.0f} nm: IL {il.min():.3f}-{il.max():.3f} (peak at {x[i]}), VpiL {min(r['VpiL_Vcm'] for r in s):.3f}-{max(r['VpiL_Vcm'] for r in s):.3f}")
 for a in (ax[0],ax[1]): a.axvline(4.6,c="k",ls="--",lw=1.2)
 ax[0].text(4.62,0.07,"nominal 4.6 µm",fontsize=9,rotation=90,va="bottom")
-ax[0].set_yscale("log"); ax[0].set_xlabel("SLAB_W (µm)"); ax[0].set_ylabel("IL (dB/cm)"); ax[0].legend(); ax[0].grid(alpha=.3,which="both"); ax[0].set_title("IL vs SLAB_W (4.0 = slab ends at the gold)",fontsize=10.5)
+ax[0].set_yscale("log"); ax[0].set_xlabel("SLAB_W (µm)"); ax[0].set_ylabel("IL (dB/cm)"); ax[0].grid(alpha=.3,which="both"); ax[0].set_title("IL vs SLAB_W (4.0 = slab ends at the gold)",fontsize=10.5)
 ax[1].set_xlabel("SLAB_W (µm)"); ax[1].set_ylabel("Vπ·L (V·cm)"); ax[1].grid(alpha=.3); ax[1].legend(loc="lower right",ncol=3,fontsize=8,columnspacing=0.8,handlelength=1.4); ax[1].set_title("Vπ·L vs SLAB_W",fontsize=10.5)
 f.suptitle("MTX tall – Chinese: etched slab, no buffer, gap 4.0 µm, WG 1.5 µm, cap 2.5 × 1.4 µm, signal 10 µm / ground 0.5 µm · FEM, mesh 1.4 (IL up to +9 % high)",fontsize=11)
 f.tight_layout(); f.savefig("chinese_sweep.png",dpi=150)
