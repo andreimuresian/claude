@@ -142,37 +142,63 @@ eqrow(s, "4.", "Matching 2 and 3", "eq_ts_zc", 4.1, 0.34, xe=1.0); eqimg(s, "eq_
 eqrow(s, "5.", "Attenuation and microwave index", "eq_ts_an", 4.95, 0.46)
 card(s, 0.5, 5.95, 12.35, 1.0, "Limit", ["Port transitions are folded into γ and Z_{c}. At βL = mπ, sinh γL ≈ 0: B and C both vanish and Z_{c} = √(B/C) is set by the ports."], hc=RED, size=12.5)
 
-# 3 ---------------------------------------------------------------- field extraction (1/2)
-EK = 0.0028   # inches per pixel of the equation images
-def eqk(s, name, x, y):
-    H_ = Image.open(os.path.join(IMG, name + ".png")).size[1]; eqimg(s, name, x, y, H_ * EK); return y + H_ * EK
-s = new(); title(s, "Field extraction (1/2): gap voltage and two-wave fit", "A uniform single-mode line carries one forward and one backward wave: their standing wave fixes γ")
-fig(s, "field_fit_30GHz.png", 0.5, 1.45, 6.2, 5.07, "Gap voltage along the straight line at 30 GHz: samples, cell average and two-wave fit")
-X = 6.95
-text(s, X, 1.42, 5.9, 0.5, "**1. Gap voltage.** E_{y} (field across the gap) read at the centre of the upper and lower gap, electrode mid-height (x = 1 µm), every 5 µm:", size=11.5)
-y = eqk(s, "eq4_v", X + 0.2, 1.95)
-text(s, X, y + 0.04, 5.9, 0.3, "**2. Model.** One forward and one backward wave:", size=11.5)
-y = eqk(s, "eq4_model", X + 0.2, y + 0.36)
-text(s, X, y + 0.06, 5.9, 0.55, "**3. Fit.** 649 complex equations, three unknowns: for each trial γ, V^{+} and V^{−} by linear least squares; γ adjusted until the misfit is smallest:", size=11.5)
-y = eqk(s, "eq4_fit", X + 0.2, y + 0.62)
-text(s, X, y + 0.04, 5.9, 0.3, "One minimum for n_{m} = 1.5–3.5 (checked 10–130 GHz); start from the touchstone γ.", size=10.5, color=MUTED)
-text(s, X, y + 0.42, 5.9, 0.95, "**4. Cell average.** The field at the sample point halves over 15 µm of each 0.18 mm cell (tee aperture, zoom). γ is the change from cell to cell, so V is averaged over one cell before the fit: misfit 14 % → 0.5 %.", size=11.5)
-note(s, "Files L1_gap+.txt (y = -0.082925 mm) and L1_gap-.txt (y = -0.122075 mm), x = 0.001 mm, z step 5 um, 649 samples; columns EyRe, EyIm. GAP = 4.45 um. The two gap fields point in opposite directions for the line mode, hence the difference. Outer fit: scipy least_squares on (alpha, beta); inner: 649 x 2 linear least squares. Fit range 0.18-3.06 mm (end cut tested: <= 0.0008 in n_m above 4 GHz). 30 GHz: n_m 2.226, alpha 2.22 dB/cm, |V-/V+| 0.07.")
+# 3 ---------------------------------------------------------------- field extraction (1/4): voltage
+EK = 0.0027   # inches per pixel of the equation images
+def eqk(s, name, x, y, k=None):
+    H_ = Image.open(os.path.join(IMG, name + ".png")).size[1]; eqimg(s, name, x, y, H_ * (k or EK)); return y + H_ * (k or EK)
+s = new(); title(s, "Field extraction (1/4): line voltage from the gap field", "Straight line 3.24 mm (L+S run); the export gives E at the centre of each gap, every 5 µm")
+fig(s, "xs_voltage.png", 0.5, 1.5, 6.3, 2.8, "Cross-section seen from port 1: two gaps, sample points and integration paths")
+card(s, 0.5, 4.5, 6.3, 2.45, "Export files", ["Columns: f, x, y, z, Re and Im of E_{x}, E_{y}, E_{z}.", "Right gap (+y): L1_gap+.txt, y = −0.082925 mm. Left gap (−y): L1_gap−.txt, y = −0.122075 mm. Both at x = 0.001 mm (electrode mid-height).",
+     "The field points from signal to ground: along +y in the right gap, along −y in the left gap, hence the minus sign in V_{L}."], size=11)
+X = 7.05
+text(s, X, 1.45, 5.8, 1.1, "**1. Voltage between two conductors:** integral of E along a path from signal to ground (on a quasi-TEM line, the same for every path in the cross-section). Path: straight across the gap at mid-height, so only E_{y} counts (E_{x} 0.9 %, E_{z} 0.03 % of E_{y} there). E is nearly uniform across the gap:", size=11)
+y = eqk(s, "eqA_int", X + 0.2, 2.6)
+text(s, X, y + 0.08, 5.8, 0.55, "**2. Two gaps:** each carries the full signal-to-ground voltage (V_{R} = V_{L} within 0.03 %). V is their average; the ½ is the average:", size=11)
+y = eqk(s, "eqA_avg", X + 0.2, y + 0.68)
+text(s, X, y + 0.08, 5.8, 0.3, "**3. Samples:** one value per exported point:", size=11)
+eqk(s, "eqA_zk", X + 0.2, y + 0.42, 0.0028)
+note(s, "GAP = 4.45 um. Checks at 30 GHz on the L+S export: median |Ex|/|Ey| 0.009, |Ez|/|Ey| 0.0003 in the gap; |V_R - V_L|/|V| 0.0003.")
 
-# 3b --------------------------------------------------------------- field extraction (2/2)
-s = new(); title(s, "Field extraction (2/2): results, assumptions, limits", "Same fit; α and n_{m} from γ, Z_{c} from the reflection at port 2")
-text(s, 0.5, 1.45, 6.0, 0.3, "**Attenuation and microwave index**", size=12)
-eqk(s, "eq4_an", 0.7, 1.8)
-text(s, 6.8, 1.45, 6.0, 0.3, "**Impedance: port 2 taken as a 50 Ω load at z = L**", size=12)
-eqk(s, "eq4_zc", 7.0, 1.8)
-table(s, 0.5, 2.55, 12.35, [["Assumption", "Strength", "Evidence"],
-      ["One propagating mode", "Strong", "Two waves leave 0.5 % misfit after the cell average"],
-      ["Uniform line (same γ everywhere)", "Strong", "Cell 0.18 mm ≤ λ/5.6 at 130 GHz; cells reflect coherently only near 360 GHz"],
-      ["Point field ∝ gap voltage", "Weak, no effect here", "The scale factor cancels in γ and in Γ_{L}"],
-      ["Port 2 is an ideal 50 Ω load", "Weak, Z_{c} only", "The port transition enters Z_{c}: Im Z_{c} differs from the touchstone by up to 2 Ω"],
-      ["Line long enough for a standing wave", "Weak below 4 GHz", "Line < 0.05 λ: the processing choices move n_{m} by up to 0.07 at 1 GHz"]], [3.4, 2.3, 6.65], size=11, row_h=0.36)
-card(s, 0.5, 4.9, 6.05, 2.05, "Processing checks (≥ 4 GHz)", ["Without the cell average: Δn_{m} ≤ 0.002, Δα ≤ 0.006 dB/cm, ΔZ_{c} ≤ 0.2 Ω. Without the 0.18 mm end cut: Δn_{m} ≤ 0.001, Δα ≤ 0.005 dB/cm. Below 4 GHz the field route is not reliable."], size=11.5)
-card(s, 6.8, 4.9, 6.05, 2.05, "Z_{c} from the H field (10 + 5 + 5 run)", ["Current from the H loop: Re Z_{c} = 39–40 Ω on all three lines, 8 % below the touchstone: the voltage is still point field × gap. Power flow (Z_{c} = 2P/|I|^{2}) needs E and H on one plane of a straight line: not done yet."], hc=RED, size=11.5)
+# 3b --------------------------------------------------------------- field extraction (2/4): model and fit
+s = new(); title(s, "Field extraction (2/4): line model and fit", "α, β and Z_{c} are parameters of the transmission-line equation: they are found by fitting its solution to V(z)")
+fig(s, "vz_fit_30GHz.png", 0.5, 1.45, 6.3, 3.54, "Cell-averaged gap voltage along the line at 30 GHz with the two-wave fit and the forward wave alone")
+card(s, 0.5, 5.15, 6.3, 1.8, "Verification", ["Misfit (rms of V − fit over rms of V): 0.5 % median, 2.3 % max over 1–130 GHz: the hypothesis holds.",
+     "Uniqueness: misfit computed for trial indices 1.5–3.5 (10, 30, 60, 100, 130 GHz): one minimum only."], size=11)
+text(s, X, 1.42, 5.8, 0.75, "**Hypothesis** (the simplest, verified afterwards): a uniform line carrying one mode. V then obeys the telegrapher equation, whose general solution is two waves:", size=11)
+y = eqk(s, "eqB_tl", X + 0.1, 2.2, 0.0033)
+text(s, X, y + 0.08, 5.8, 1.45, ["- V^{+}, V^{−}: complex amplitudes at z = 0 of the forward and backward wave of the line voltage V (both gaps together).",
+     "- Constant in z: inside a uniform line nothing reflects or converts; the decay and the phase are in e^{∓γz}. The backward wave comes from the reflection at port 2.",
+     "- One γ for both: the line is the same seen from either end."], size=10.5)
+text(s, X, y + 1.6, 5.8, 0.75, "**Fit:** for a trial γ, V^{+} and V^{−} by linear least squares over all 649 samples at once; γ is then varied until this sum is smallest:", size=11)
+y2 = eqk(s, "eqB_fit", X + 0.2, y + 2.38)
+text(s, X, y2 + 0.05, 5.8, 0.5, "Squared deviations (least squares): the V^{±} step is then linear, with an exact solution.", size=10.5, color=MUTED)
+
+# 3c --------------------------------------------------------------- field extraction (3/4): cell pattern
+s = new(); title(s, "Field extraction (3/4): cell pattern and line ends", "The slow-wave line repeats every 0.18 mm; the sampled field shows it, the line voltage does not")
+fig(s, "cell_pattern_30GHz.png", 0.5, 1.45, 6.3, 3.35, "Gap voltage samples and their average over one cell, 1.0-1.6 mm at 30 GHz")
+text(s, X, 1.42, 5.8, 1.05, "**Dips:** at each tee aperture the local gap is wider. The conductors keep their voltage, so E_{y} at the sample point drops (to 0.48–0.55): there E_{y}·GAP underestimates V. 3 of 36 samples per cell.", size=11)
+text(s, X, 2.5, 5.8, 0.55, "**Periodic line:** the pattern repeats in every cell; one cell further, the whole pattern is multiplied by e^{−γp}:", size=11)
+y = eqk(s, "eqC_fl", X + 0.2, 3.08)
+text(s, X, y + 0.1, 5.8, 1.1, "**Cell average:** every averaged value spans one full cell, aperture included: the pattern becomes the same constant factor everywhere (no effect on γ or Γ_{L}); the e^{−γz} change remains. Misfit 14 % → 0.5 %.", size=11)
+text(s, X, y + 1.2, 5.8, 0.55, "**Line ends:** the first and last 0.18 mm are left out: there the field is shaped by the ports.", size=11)
+table(s, 0.5, 5.0, 6.3, [["Processing changed", "n_{m}, ≥ 4 GHz", "n_{m}, 1 GHz"],
+      ["no cell average", "≤ 0.002", "−0.028"], ["no end cut", "≤ 0.001", "+0.009"], ["neither", "≤ 0.006", "+0.066"], ["aperture samples dropped instead", "≤ 0.002", "−0.004"]], [3.1, 1.6, 1.6], size=10.5, row_h=0.36)
+card(s, X, 5.0, 5.8, 1.95, "Consequence", ["Above 4 GHz the processing is irrelevant. Below 4 GHz the line is < 0.05 λ: the standing wave barely forms and the result depends on the processing (field route not reliable there)."], hc=RED, size=11)
+note(s, "Changes against the reference (cell average + end cut); alpha changes <= 0.006 dB/cm, Re Zc <= 0.2 ohm above 4 GHz. Aperture samples: |V| below 0.9 x the local median (54 of 649).")
+
+# 3d --------------------------------------------------------------- field extraction (4/4): results
+s = new(); title(s, "Field extraction (4/4): α, n_{m}, Z_{c} and assumptions", "From the fitted γ and from the reflection at port 2")
+text(s, 0.5, 1.42, 4.2, 0.3, "**Attenuation and microwave index**", size=12)
+eqk(s, "eqD_an", 0.7, 1.8)
+text(s, 5.0, 1.42, 7.85, 0.55, "**Impedance:** at z = L the line ends on port 2 (Z_{L} = 50 Ω). The reflection there is backward over forward wave; the line reflection formula, solved for Z_{c}:", size=11.5)
+eqk(s, "eqD_gl", 5.2, 2.0, 0.003)
+table(s, 0.5, 2.7, 12.35, [["Assumption", "Strength", "Evidence"],
+      ["One propagating mode", "Strong", "Two waves leave 0.5 % misfit"],
+      ["Uniform line (same γ everywhere)", "Strong", "Cell 0.18 mm ≤ λ/5.6 at 130 GHz; the cells reflect coherently only near 360 GHz"],
+      ["E_{y}·GAP proportional to the line voltage", "Weak, no effect", "The scale factor cancels in γ and in Γ_{L}"],
+      ["Port 2 is an ideal 50 Ω load at z = L", "Weak, Z_{c} only", "The port transition enters Z_{c}: Im Z_{c} differs from the touchstone by up to 2 Ω"],
+      ["Line long enough for a standing wave", "Weak below 4 GHz", "Line < 0.05 λ: the result depends on the processing (previous slide)"]], [3.6, 2.2, 6.55], size=11, row_h=0.35)
+card(s, 0.5, 5.0, 12.35, 1.25, "Z_{c} from the H field (10 + 5 + 5 run)", ["Current from the loop integral of H: Re Z_{c} = 39–40 Ω on all three lines, 8 % below the touchstone, because the voltage is still E_{y}·GAP. Power flow, Z_{c} = 2P/|I|^{2} with P = ½∫(E × H^{*})·dA, needs no voltage but E and H on one plane of a straight line: not done yet."], hc=RED, size=11.5)
 
 # 4 ---------------------------------------------------------------- line: touchstone vs fields
 s = new(); title(s, "Line parameters: touchstone and fields agree", "Straight line 3.24 mm (L+S run), 50 Ω ports, 0–130 GHz")
