@@ -6,7 +6,7 @@ from head5 import *
 C = "/home/user/claude/results/ps_meas/"; F = json.load(open(C + "fit.json"))
 first_new = len(prs.slides); B = {"size": 12, "space": 4}; H = lambda t: (t, {"size": 15, "bold": True, "color": NAVY, "space": 8})
 # 1 boxplots
-s = new("Phase-shifter resistance: measurements", "2-point DC probe, I = 10 mA · wafers 6LS0004 and 6LS0005 · 9 of 16 fields each · 71 values (0005 field 00 R4 missing)")
+s = new("Phase-shifter resistance: measurements", "2-point DC probe, I = 10 mA · wafers 6LS0004 and 6LS0005 (Lisbona tape-out) · 9 of 16 fields each · 71 values (0005 field 00 R4 missing)")
 image(s, C + "boxplots.png", 0.5, 1.75, w=9.0)
 box(s, 9.8, 1.75, 3.0, 3.5, [H("Boxplot"), ("Line: median", B), ("Box: Q1–Q3 (middle 50 %)", B), ("Whiskers: last point within 1.5 × IQR", B),
     H("Reading"), ("The two wafers agree: medians within 3 Ω", B), ("Same fields high on both wafers (06–10): across-wafer film variation, ≈ ±4 %", B)])
