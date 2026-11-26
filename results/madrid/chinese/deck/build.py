@@ -28,14 +28,12 @@ box(s, 4.75, 5.5, 4.0, 1.3, [("Low-IL windows: 4.2–4.5 µm (0.16–0.33) and 5
 box(s, 8.9, 5.5, 3.9, 1.3, [("Vπ·L flat for SLAB_W ≥ 4.6 µm: 1.94 (1525) → 2.12 V·cm (1625)", {"size": 11})])
 # 4 conclusions
 s = new("Conclusions", "MTX tall – Chinese version")
-table(s, [["Design (1625 nm)", "Vπ·L (V·cm)", "IL (dB/cm)", "Tolerance"], ["Chinese, drawn SLAB_W 4.6 µm", "2.11", "0.57", "+0.1 µm → 1.4–2.4 dB/cm"],
-          ["Chinese, SLAB_W ≈ 5.7 µm", "2.12", "≈ 0.17", "far from the resonance"], ["Madrid 1, gap 3.5 + U-slot (tongues)", "1.79", "0.19", "buffer −40 nm: 0.32"]],
-      0.6, 1.8, 8.2, [3.2, 1.4, 1.3, 2.3], size=11.5, highlight=(3,))
-box(s, 0.6, 3.7, 8.2, 2.6, [("Standing wave confirmed: without buffer the slab end under the gold is a strong mirror", B),
-    ("The resonance moves to larger SLAB_W as λ grows (+0.1 µm over the band): the low-IL design must sit away from it at all wavelengths", B),
-    ("The drawn SLAB_W 4.6 µm sits on the resonance flank: choose ≈ 5.7 µm (or 4.3–4.4 µm)", B),
-    ("At its best the Chinese design is ≈ 18 % worse in Vπ·L than Madrid 1 + U-slot at similar IL", B)])
-box(s, 9.1, 1.8, 3.7, 4.5, [H("Notes"), ("Mesh 1.4: IL up to ≈ 9 % high", B), ("0.1 µm step may under-sample the peak height", B), ("Optional: 0.02 µm sweep over 4.6–5.1 µm to resolve peak width", B)])
+table(s, [["SLAB_W (1625 nm)", "Vπ·L (V·cm)", "IL (dB/cm)", "Note"], ["4.6 µm (drawn)", "2.11", "0.57", "on resonance flank"],
+          ["≈ 5.7 µm", "2.12", "≈ 0.17", "recommended"]],
+      0.6, 1.8, 8.2, [2.6, 1.6, 1.6, 2.4], size=13, highlight=(2,))
+box(s, 0.6, 3.0, 8.2, 1.05, [("No buffer → slab end under gold acts as a mirror → standing-wave resonance", B),
+    ("Move SLAB_W to ≈ 5.7 µm (or 4.3–4.4 µm) for low IL across C+L", B)])
+box(s, 9.1, 1.8, 3.7, 1.3, [H("Notes"), ("Mesh 1.4: IL ≤ 9 % high", B), ("Optional fine sweep 4.6–5.1 µm", B)])
 sldIdLst = prs.slides._sldIdLst
 for sid in list(sldIdLst)[:first_new]:
     prs.part.drop_rel(sid.rId); sldIdLst.remove(sid)
