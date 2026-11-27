@@ -33,6 +33,14 @@ table(s, rows, 8.0, 1.8, 4.9, [1.0, 0.95, 1.15, 0.9, 0.9], size=12, highlight=(2
 box(s, 8.0, 3.4, 4.9, 2.0, [("190 Ω → ΔL ≈ 178 µm (not 185 µm: 185 µm gives ≈ 197 Ω on average)", B),
     ("Across-wafer spread ±5 µm (1σ) dominates; fit 95 % CI only ±3 µm", B),
     ("All targets lie below the shortest structure (197.1 µm): short extrapolation", B)])
+# 4 comparison
+s = new("Manual vs automatic prober: 6LS0004", "Same structures, two methods · our R2 = colleague PS-3, our R4 = colleague PS-1")
+image(s, C + "compare_6LS0004.png", 0.5, 1.7, w=7.6)
+table(s, [["Median (Ω)", "Manual", "Automatic", "Δ"], ["R2 / PS-3", "239.8", "246.0", "+6.2"], ["R4 / PS-1", "329.4", "335.8", "+6.4"]],
+      8.4, 1.8, 4.5, [1.4, 1.0, 1.1, 1.0], size=12)
+box(s, 8.4, 3.2, 4.5, 2.0, [("Automatic reads ≈ 6 Ω higher on both: same offset, not proportional → series term (probe / cable), not the heater", B),
+    ("Minima agree within 3 Ω; automatic spread (IQR 16 / 24 Ω) wider than manual (12 / 17 Ω)", B),
+    ("Field sets may differ: automatic boxes from summary statistics only", B)])
 sldIdLst = prs.slides._sldIdLst
 for sid in list(sldIdLst)[:first_new]:
     prs.part.drop_rel(sid.rId); sldIdLst.remove(sid)
