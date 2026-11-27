@@ -13,14 +13,14 @@ for i in range(4):
     for j,w in enumerate(W):
         p=i*3+j+1; pos.append(p); lab.append(f"R{i+1}\n{w[-4:]}")
         y=[v[i] for (ww,f),v in D.items() if ww==w and v[i] is not None]
-        ax.text(p+0.36,np.median(y),f"{np.median(y):.1f}",va="center",fontsize=8)
+        ax.text(p+(0.36 if j else -0.36),np.median(y),f"{np.median(y):.1f}",va="center",ha="left" if j else "right",fontsize=8)
         ax.boxplot([y],positions=[p],widths=0.6,whis=1.5,showfliers=False,
            boxprops=dict(color="k"),medianprops=dict(color="k"),whiskerprops=dict(color="k"),capprops=dict(color="k"))
         for (ww,f),v in D.items():
             if ww==w and v[i] is not None: ax.scatter(p,v[i],color=col[f],edgecolor="w",lw=.5,s=30,zorder=3,marker="o" if j==0 else "s")
 ax.set_xticks(pos,lab); ax.set_ylabel("R (Ω)"); ax.grid(axis="y",alpha=.3)
 for i in range(4): ax.text(i*3+1.5,ax.get_ylim()[1] if False else 352,f"ΔL = {L[i]} µm",ha="center",fontsize=9)
-ax.set_ylim(195,358)
+ax.set_ylim(195,358); ax.set_xlim(-0.4,11.8)
 for f in fields: ax.scatter([],[],color=col[f],label=f"{f:02d}")
 ax.legend(title="field",fontsize=8,title_fontsize=8,loc="center left",bbox_to_anchor=(1.0,.5),frameon=False)
 ax.set_title("Phase-shifter resistance, 2-point DC @ 10 mA · wafers 6LS0004 (o) and 6LS0005 (s), 9 fields each",fontsize=10.5)
@@ -59,6 +59,9 @@ for rw in rows:
 tk=[140]+[r["dL"] for r in rows]+list(range(220,321,20)); ax.set_xticks(tk,[f"{v:.1f}" if v%1 else f"{v:.0f}" for v in tk])
 for lbl,v in zip(ax.get_xticklabels(),tk):
     if v%1: lbl.set_color("C3"); lbl.set_rotation(45)
+ty=[150,175,190,205]+list(range(225,351,25)); ax.set_yticks(ty)
+for lbl,v in zip(ax.get_yticklabels(),ty):
+    if v in (175,190,205): lbl.set_color("C3")
 ax.axvspan(140,197.1,color="C3",alpha=.05); ax.text(143,345,"extrapolation (ΔL < 197.1 µm)",color="C3",fontsize=9)
 ax.set_xlim(140,320); ax.set_ylim(150,360); ax.set_xlabel("ΔL (µm)"); ax.set_ylabel("R (Ω)"); ax.grid(alpha=.3); ax.legend(fontsize=8.5,loc="lower right")
 fig.tight_layout(); fig.savefig("fit.png",dpi=200)
