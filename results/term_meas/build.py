@@ -27,9 +27,19 @@ image(s, C + "box_rsq.png", 0.5, 1.7, w=6.0)
 table(s, [["Wafer", "R_sh (Ω/sq), fields 0,10,14", "ρ at t = 100 nm"], ["6LS0004", f"{S['6LS0004/clean']['med']:.1f}", f"{S['6LS0004/clean']['med']*10:.0f} µΩ·cm"],
           ["6LS0005", f"{S['6LS0005/clean']['med']:.1f}", f"{S['6LS0005/clean']['med']*10:.0f} µΩ·cm"]], 6.9, 1.8, 6.0, [1.4, 2.6, 2.0], size=12)
 box(s, 6.9, 3.2, 6.0, 2.1, [("Planar R gives only ρ / t: ρ needs the nominal t (≈ 100 nm)", B),
-    ("ρ ≈ 270 µΩ·cm: high for TiN (bulk 15–25, sputtered 100–150)", B),
-    ("Either resistive film (N-rich, porous, oxidised) or exposed strips thinner (etch / TiO₂): ρ = 135 µΩ·cm ⇔ 50 nm conducting", B),
+    ("ρ ≈ 270 µΩ·cm: high for sputtered TiN (typ. 100–150; bulk 15–25)", B),
+    ("Sputtered (confirmed): either resistive film (N-rich, low T, porous, oxidised) or exposed strips thinner (etch / TiO₂): ρ = 135 µΩ·cm ⇔ 50 nm conducting", B),
     ("Check: 4-point probe on monitor wafer, step height of exposed strips", B)])
+# predictor
+P = json.load(open(C + "predictor.json"))
+s = new("Predictor: Rtot from wg, ws at fixed ratio", "Assuming Rtot = Rs + Rg / 2 · ws / wg = 2.63 as in all measured variants · L = 56 µm")
+rows = [["Rtot target (Ω)", "wg (µm)", "ws (µm)", "Field spread ±7 % (Ω)"]]
+for r in P["rows"]: rows.append([f"{r['R']:.1f}", f"{r['wg']:.1f}", f"{r['ws']:.1f}", f"{r['lo']:.1f} – {r['hi']:.1f}"])
+table(s, rows, 0.6, 1.8, 6.6, [1.7, 1.4, 1.4, 2.1], size=12, row_h=0.36, highlight=(5,))
+box(s, 7.6, 1.8, 5.2, 3.2, [H("Model"), ("Rtot = R_sh · L · [1/(ws − δ) + 1/(2(wg − δ))]", B), ("R_sh = 27.2 Ω/sq, δ = 0.9 µm (fields 10, 14)", B),
+    H("Validity"), ("Measured range: wg 12.6–27.3 µm (Rtot ≈ 50–120 Ω)", B), ("Rtot < 50 Ω: wider strips, mild extrapolation (δ matters less)", B),
+    ("Alternative fit (R₀ = 2 Ω): wg within 0.4 µm of the table", B), ("Other ws / wg ratios: needs the Rs + Rg/2 split, untested → add one off-ratio variant", B)])
+text(s, 0.6, 5.6, 6.6, 0.6, [("50 Ω ≈ variant 2 (71.8 / 27.3 µm), measured 50–52 Ω on fields 0, 10, 14", {"size": 11.5})])
 # 5 variant 1 + conclusions
 s = new("Variant 1 check and conclusions", "Crossed layout, L = 28 µm, not used in the fit")
 table(s, [["Variant 1", "R (Ω)"], ["Predicted (R_sh 27.2, δ 0.9)", "48.1"], ["Measured, median fields 10, 14", "50.2"], ["Difference", "+2.1 (+4 %)"]],
