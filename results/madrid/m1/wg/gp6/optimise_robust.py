@@ -7,7 +7,7 @@ import os
 GAP_MIN = float(os.environ.get("GAP_MIN", "3.0"))
 G = np.round(np.arange(GAP_MIN, 4.5001, 0.05), 3); Bf = np.round(np.arange(0.10, 0.2001, 0.005), 4)
 F = np.round(np.linspace(0, 1, 11), 3); CH = np.round(np.arange(0.5, 1.4001, 0.1), 3); MS = np.round(np.arange(0.5, 1.0001, 0.1), 3); WGs = np.round(np.arange(1.0, 1.5001, 0.1), 3)
-X = np.array(list(itertools.product(G, Bf, F, CH, MS, WGs))); Xw = X.copy(); Xw[:, 1] -= 0.04
+X = np.array(list(itertools.product(G, Bf, F, CH, MS, WGs))); X = X[~((X[:, 0] - 2 * X[:, 5] < 1e-6) & (X[:, 2] > 0))]; Xw = X.copy(); Xw[:, 1] -= 0.04
 V, ILn, ILw, ILwhi, Vw = [], [], [], [], []
 for i in range(0, len(X), 20000):
     a = P.predict_array(X[i:i + 20000]); b = P.predict_array(Xw[i:i + 20000])
