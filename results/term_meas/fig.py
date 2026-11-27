@@ -19,5 +19,5 @@ for k,v in D.items():
     r=v[I]-(q[0]*L[I]*(1/(Ws[I]-q[1])+1/(2*(Wg[I]-q[1]))))
     c=k[1] in cl; ax[1].plot(I+1+(0.15 if k[0]=="6LS0005" else -0.15),r,"o" if k[0]=="6LS0004" else "s",ms=4,color=cl.get(k[1],"0.6"),mfc=cl.get(k[1],"none") if c else "none")
 ax[1].axhline(0,c="k",lw=1); ax[1].set_xlabel("variant"); ax[1].set_ylabel("R − model (Ω)"); ax[1].set_xticks(range(2,16)); ax[1].grid(alpha=.3)
-ax[1].set_title("Residuals vs common model: clean fields smooth (field-to-field slope ±7 %); noisy fields scattered high (up to +41 Ω)",fontsize=10)
+ax[1].set_title("Residuals vs model: clean fields smooth, noisy fields up to +41 Ω",fontsize=10)
 fig.tight_layout(); fig.savefig("term_fit.png",dpi=170)
