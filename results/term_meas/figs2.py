@@ -28,6 +28,6 @@ for w in ["6LS0004","6LS0005"]:
         m=np.median(y); ax.text(pos+.36,m,f"{m:.1f}",va="center",fontsize=9)
         S[f"{w}/{grp}"]=dict(med=float(m),q1=float(np.percentile(y,25)),q3=float(np.percentile(y,75)),n=int(len(y)))
         tp.append(pos); tl.append(f"{w[-4:]}\n{'fields 0,10,14' if grp=='clean' else 'all fields'}"); pos+=1 if grp=="clean" else 1.6
-ax.set_xticks(tp,tl,fontsize=9); ax.set_ylabel("R□ per measurement (Ω/□)"); ax.grid(axis="y",alpha=.3)
-ax.set_title(f"R□ = R / x_eff, widths corrected by δ = {DW:.1f} µm (variants 2–15)",fontsize=10)
+ax.set_xticks(tp,tl,fontsize=9); ax.set_ylabel("R_sh per measurement (Ω/sq)"); ax.grid(axis="y",alpha=.3)
+ax.set_title(f"R_sh = R / x_eff, widths corrected by δ = {DW:.1f} µm (variants 2–15)",fontsize=10)
 fig.tight_layout(); fig.savefig("box_rsq.png",dpi=200); json.dump(S,open("rsq_box.json","w"),indent=1); print(json.dumps(S,indent=1))
