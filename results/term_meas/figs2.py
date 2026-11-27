@@ -18,7 +18,22 @@ ax.set_xticks(tp,tl); ax.set_xlabel("termination variant (left box 6LS0004 ○, 
 ax.plot([],[],"o",color="0.25",ms=4,label="fields 0, 10, 14"); ax.plot([],[],"o",color="0.25",mfc="none",ms=4,label="fields 2, 5, 7, 8 (contact problems)")
 ax.legend(loc="upper left",fontsize=9); ax.set_xlim(-0.2,tp[-1]+1.3)
 ax.set_title("TiN terminations: 3-point DC probe, 7 fields per wafer",fontsize=10.5)
+ax.set_yticks(range(40,141,10)); ax.set_ylim(40,142)
 fig.tight_layout(); fig.savefig("box_variants.png",dpi=200)
+for j,w in enumerate(["6LS0004","6LS0005"]):
+    fig,ax=plt.subplots(figsize=(14,5.2)); tp=[];tl=[]
+    for v in range(15):
+        p=v+1+(0.6 if v>0 else 0); y=[D[(w,f)][v] for f in F]
+        ax.boxplot([y],positions=[p],widths=.6,whis=1.5,showfliers=False,boxprops=K,medianprops=K,whiskerprops=K,capprops=K)
+        for f in F: ax.plot(p,D[(w,f)][v],"o" if j==0 else "s",ms=4,color="0.25",mfc="none" if f in NOISY else "0.25",mew=.8,zorder=3)
+        m=np.median(y); ax.text(p+.33,m,f"{m:.1f}",va="center",fontsize=8.5)
+        tp.append(p); tl.append(f"{v+1}"+("\ncross" if v==0 else ""))
+    ax.axvline(1.8,color="0.5",ls=":",lw=1); ax.set_xticks(tp,tl); ax.set_xlim(0.4,tp[-1]+0.9)
+    ax.set_yticks(range(40,141,10)); ax.set_ylim(40,142); ax.grid(axis="y",alpha=.3)
+    ax.set_xlabel("termination variant"); ax.set_ylabel("R (Ω)")
+    ax.plot([],[],"o" if j==0 else "s",color="0.25",ms=4,label="fields 0, 10, 14"); ax.plot([],[],"o" if j==0 else "s",color="0.25",mfc="none",ms=4,label="fields 2, 5, 7, 8 (contact problems)")
+    ax.legend(loc="upper left",fontsize=9); ax.set_title(f"{w}: TiN terminations, 7 fields, median values labelled",fontsize=10.5)
+    fig.tight_layout(); fig.savefig(f"box_{w}.png",dpi=200)
 # 2) per-measurement sheet resistance
 fig,ax=plt.subplots(figsize=(6.5,5)); S={}; pos=1; tl=[];tp=[]
 for w in ["6LS0004","6LS0005"]:
