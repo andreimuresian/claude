@@ -14,7 +14,7 @@ box(s, 5.6, 1.8, 7.2, 3.0, [H("Model"), ("Grounds tied by the probe: Rtot = Rs +
     H("Design matrix"), ("Variants 2–15: in-line, L = 56 µm, ws / wg = 2.63 in all → Rs and Rg not separable; split assumed", B),
     ("Variant 1: crossed layout, L = 28 µm → excluded from fit, used as check", B)])
 # 2 boxplots variants
-s = new("Measured resistance per variant", "Boxes: median, Q1–Q3, whiskers 1.5 × IQR · filled: fields 0, 10, 14 · hollow: fields 2, 5, 7, 8")
+s = new("Measured resistance per variant", "Blue: 6LS0004 · orange: 6LS0005 · boxes: median, Q1–Q3, whiskers 1.5 × IQR · filled: fields 0, 10, 14 · hollow: 2, 5, 7, 8")
 image(s, C + "box_variants.png", 0.4, 1.7, w=12.5)
 text(s, 0.6, 6.4, 12.2, 0.6, [("Fields 2, 5, 7, 8 scatter only upward (up to +41 Ω): probe-contact problems → excluded from the fit. Fields 0, 10, 14: smooth, 0.2–1.8 Ω about their own line", {"size": 11.5})])
 for w in ["6LS0004", "6LS0005"]:
