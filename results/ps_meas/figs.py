@@ -13,6 +13,7 @@ for i in range(4):
     for j,w in enumerate(W):
         p=i*3+j+1; pos.append(p); lab.append(f"R{i+1}\n{w[-4:]}")
         y=[v[i] for (ww,f),v in D.items() if ww==w and v[i] is not None]
+        ax.text(p+0.36,np.median(y),f"{np.median(y):.1f}",va="center",fontsize=8)
         ax.boxplot([y],positions=[p],widths=0.6,whis=1.5,showfliers=False,
            boxprops=dict(color="k"),medianprops=dict(color="k"),whiskerprops=dict(color="k"),capprops=dict(color="k"))
         for (ww,f),v in D.items():
@@ -54,8 +55,10 @@ ax.plot(xx,m*xx+b,"k-",lw=1.6,label=f"fit, all {n} points: R = {m:.4f}·ΔL {b:+
 ax.plot(L,means,"kD",ms=6,mfc="w",label="mean per ΔL")
 for rw in rows:
     ax.plot([140,rw["dL"]],[rw["R"]]*2,"k:",lw=1); ax.plot([rw["dL"]]*2,[150,rw["R"]],"k:",lw=1)
-    ax.errorbar(rw["dL"],rw["R"],xerr=[[rw["dL"]-rw["lo"]],[rw["hi"]-rw["dL"]]],fmt="o",color="C3",capsize=4,ms=5)
-    ax.text(rw["dL"]+3,rw["R"]-9,f"{rw['dL']:.1f} µm",color="C3",fontsize=9)
+    ax.plot(rw["dL"],rw["R"],"o",color="C3",ms=5)
+tk=[140]+[r["dL"] for r in rows]+list(range(220,321,20)); ax.set_xticks(tk,[f"{v:.1f}" if v%1 else f"{v:.0f}" for v in tk])
+for lbl,v in zip(ax.get_xticklabels(),tk):
+    if v%1: lbl.set_color("C3"); lbl.set_rotation(45)
 ax.axvspan(140,197.1,color="C3",alpha=.05); ax.text(143,345,"extrapolation (ΔL < 197.1 µm)",color="C3",fontsize=9)
 ax.set_xlim(140,320); ax.set_ylim(150,360); ax.set_xlabel("ΔL (µm)"); ax.set_ylabel("R (Ω)"); ax.grid(alpha=.3); ax.legend(fontsize=8.5,loc="lower right")
 fig.tight_layout(); fig.savefig("fit.png",dpi=200)
