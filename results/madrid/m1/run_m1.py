@@ -8,6 +8,8 @@ pre += ("_figc=[0]\ndef _show(*a,**k):\n    _figc[0]+=1; plt.savefig(%r+f'_{_fig
 src = "\n".join("".join(c["source"]) for c in nb["cells"][:5])
 for k, v in (("wl", float(os.environ.get("WL", "1.625"))), ("T_ALD", 0.0), ("MESH_SCALE", float(os.environ.get("MS", "1.4")))):
     src, n = re.subn(rf"\n{k} = (?:[0-9.]+|None)", f"\n{k} = {v}", src, count=1); assert n == 1, k
+_WG = float(os.environ.get("WG", "1.4"))
+src, n = re.subn(r"\nWG_TOP = [0-9.]+", "\nWG_TOP = %g" % _WG, src, count=1); assert n == 1
 src, n = re.subn(r"\nUSE_ALD = \w+", "\nUSE_ALD = True", src, count=1); assert n == 1
 src, n = re.subn(r"\nnum_modes_search = \d+", "\nnum_modes_search = %d" % int(os.environ.get("NMODES", "16")), src, count=1); assert n == 1
 src, n = re.subn(r"\nn_guess = [0-9.]+", "\nn_guess = %s" % os.environ.get("NGUESS", "1.895"), src, count=1); assert n == 1
@@ -21,6 +23,6 @@ src = src.replace('if d["te_ratio"] >= 0.75 and d["core_conf"] >= 0.20 and d["un
 assert "abs(d[\"neff\"].real - n_guess)" in src
 t0 = time.time(); g = {}
 exec(compile(pre + src, "nb", "exec"), g)
-print("RESULT " + json.dumps(dict(tgl=float(os.environ.get("TGL","0")), tgr=float(os.environ.get("TGR","0")), trw=float(os.environ.get("TRW","0")), trf=float(os.environ.get("TRF","0.2")), stw=float(os.environ.get("STW","0")), stt=float(os.environ.get("STT","0")), sbx=float(os.environ.get("SBX","0")), wl=float(os.environ.get("WL", "1.625")), gap=G, buf=B, cap_w=CW, cap_h=CH, mtx_small=MS_, w_s=WS, tri=int(g["skfem_mesh"].nelements),
+print("RESULT " + json.dumps(dict(wg=_WG, tgl=float(os.environ.get("TGL","0")), tgr=float(os.environ.get("TGR","0")), trw=float(os.environ.get("TRW","0")), trf=float(os.environ.get("TRF","0.2")), stw=float(os.environ.get("STW","0")), stt=float(os.environ.get("STT","0")), sbx=float(os.environ.get("SBX","0")), wl=float(os.environ.get("WL", "1.625")), gap=G, buf=B, cap_w=CW, cap_h=CH, mtx_small=MS_, w_s=WS, tri=int(g["skfem_mesh"].nelements),
       neff=float(g["n_eff"].real), IL_dBcm=float(g["att_opt_dB_cm"]), VpiL_Vcm=float(g["Vpi_L_Vcm"]),
       gamma=float(abs(g["overlap"])), t_s=round(time.time() - t0, 1))), flush=True)
