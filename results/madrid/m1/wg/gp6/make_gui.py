@@ -38,7 +38,7 @@ const P=[{k:"GAP",lab:"GAP",u:"µm",min:3.0,max:4.5,step:0.01,v:3.2,d:2},{k:"BUF
 {k:"CAP_W",lab:"CAP_W (≥ 2·WG)",u:"µm",min:2.0,max:4.5,step:0.01,v:3.0,d:2},{k:"CAP_H",lab:"CAP_H",u:"µm",min:0.5,max:1.4,step:0.01,v:0.5,d:2},{k:"MTX_SMALL",lab:"MTX_small",u:"µm",min:0.5,max:1.0,step:0.01,v:1.0,d:2},{k:"WG",lab:"WG (rib top width)",u:"µm",min:1.0,max:1.5,step:0.01,v:1.4,d:2}];
 const ctrl=document.getElementById("ctrl");
 P.forEach(p=>{const d=document.createElement("div");d.className="p";d.innerHTML=`<label>${p.lab}<span id="l_${p.k}"></span></label><input type="range" id="s_${p.k}" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.v}"><small>${p.min}–${p.max} ${p.u}</small>`;ctrl.appendChild(d)});
-ctrl.insertAdjacentHTML("beforeend",`<button id="best">Load optimiser best</button> <button id="base">Baseline</button>`);
+ctrl.insertAdjacentHTML("beforeend",`<button id="best">Load robust best (gap ≥ 3.5, FEM-checked)</button> <button id="base">Baseline</button>`);
 document.getElementById("n").textContent=C.n_samples;document.getElementById("created").textContent=C.created;
 const O={};for(const k in C.outputs){const m=C.outputs[k];O[k]=m}
 function kern(a,b,m){let s=0;for(let i=0;i<a.length;i++){const t=(a[i]-b[i])/m.length_scales[i];s+=t*t}const d=Math.sqrt(s);
@@ -78,7 +78,7 @@ g("cvt").innerHTML="<tr><th>10-fold CV</th><th>R²</th><th>MAPE</th><th>max erro
 upd();
 </script></body></html>"""
 try:
-    t = json.load(open("optimum_IL0.4_buf0.1.json"))["top"][0]
+    t = json.load(open("optimum_robust_IL0.4_gap3.5.json"))[0]
     best = dict(WG=t["WG"], GAP=t["GAP"], BUFFER_H=round(t["BUFFER_H"] * 1e3), CAP_W=t["CAP_W"], CAP_H=t["CAP_H"], MTX_SMALL=t["MTX_SMALL"])
 except Exception:
     best = dict(WG=1.4, GAP=3.2, BUFFER_H=100, CAP_W=3.0, CAP_H=0.5, MTX_SMALL=1.0)
