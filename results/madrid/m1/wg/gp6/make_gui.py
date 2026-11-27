@@ -71,7 +71,7 @@ function upd(){const G=val("GAP"),WG=val("WG");const cw=g("s_CAP_W");cw.max=G;cw
  if(r.IL.hi>0.4)fl.push("IL upper 95 % bound above 0.4 dB/cm");
  g("flags").innerHTML=fl.length?fl.map(t=>`<div class="flag bad">${t}</div>`).join(""):`<div class="flag good">Inside the trained space · IL ≤ 0.4 dB/cm with 95 % confidence</div>`;draw(G,B,CW,CH,MS,WG)}
 P.forEach(p=>g("s_"+p.k).addEventListener("input",upd));
-function setv(o){for(const k in o){g("s_"+k).value=o[k]}upd()}
+function setv(o){const c=g("s_CAP_W");c.max=4.5;c.min=2.0;for(const k in o){if(k!=="CAP_W")g("s_"+k).value=o[k]}c.value=o.CAP_W;upd()}
 g("base").onclick=()=>setv({GAP:3.2,BUFFER_H:100,CAP_W:3.0,CAP_H:0.5,MTX_SMALL:1.0,WG:1.4});g("best").onclick=()=>setv(__BEST__);
 g("mod").textContent=Object.entries(C.outputs).map(([k,m])=>`${k}: ${m.kernel}${m.linear_mean?" + linear mean":""}${m.log10?", log10":""}`).join(" · ");
 g("cvt").innerHTML="<tr><th>10-fold CV</th><th>R²</th><th>MAPE</th><th>max error</th><th>95 % coverage</th></tr>"+Object.entries(C.outputs).map(([k,m])=>`<tr><td>${k}</td><td>${m.cv.R2_phys.toFixed(4)}</td><td>${m.cv.MAPE_pct.toFixed(2)} %</td><td>${m.cv.maxAPE_pct.toFixed(1)} %</td><td>${m.cv.cover95_pct.toFixed(0)} %</td></tr>`).join("");
